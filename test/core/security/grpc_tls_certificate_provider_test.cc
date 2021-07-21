@@ -590,7 +590,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.ReloadRootCertificate("");
+  absl::Status status = provider.SetRootCertificate("");
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -608,7 +608,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.ReloadRootCertificate(root_cert_);
+  absl::Status status = provider.SetRootCertificate(root_cert_);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -626,7 +626,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.ReloadRootCertificate(root_cert_2_);
+  absl::Status status = provider.SetRootCertificate(root_cert_2_);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -646,7 +646,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
       watcher_state_1->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.ReloadKeyCertificatePair({});
+  absl::Status status = provider.SetKeyCertificatePairs({});
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(
@@ -668,8 +668,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
       watcher_state_1->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
   CancelWatch(watcher_state_1);
-  absl::Status status =
-      provider.ReloadKeyCertificatePair(pem_key_cert_pair_list);
+  absl::Status status = provider.SetKeyCertificatePairs(pem_key_cert_pair_list);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(
@@ -693,8 +692,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   pem_key_cert_pair_list =
       MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str());
-  absl::Status status =
-      provider.ReloadKeyCertificatePair(pem_key_cert_pair_list);
+  absl::Status status = provider.SetKeyCertificatePairs(pem_key_cert_pair_list);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(

@@ -98,9 +98,9 @@ class DataWatcherCertificateProvider : public CertificateProviderInterface {
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  grpc::Status ReloadRootCertificate(const std::string& root_certificate);
+  grpc::Status SetRootCertificate(const std::string& root_certificate);
 
-  grpc::Status ReloadKeyCertificatePair(
+  grpc::Status SetKeyCertificatePairs(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
  private:

@@ -375,7 +375,7 @@ DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     : StaticDataCertificateProvider(std::move(root_certificate),
                                     std::move(pem_key_cert_pairs)) {}
 
-absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
+absl::Status DataWatcherCertificateProvider::SetRootCertificate(
     const std::string& root_certificate) {
   if (root_certificate.empty()) {
     return absl::InvalidArgumentError("Root Certificate string is empty.");
@@ -404,7 +404,7 @@ absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
   return absl::OkStatus();
 }
 
-absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
+absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
   if (pem_key_cert_pairs.empty()) {
     return absl::InvalidArgumentError("Empty Key-Cert pair list.");
@@ -415,6 +415,7 @@ absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
   }
   absl::Status status = IsKeyCertPairsListValid(pem_key_cert_pairs);
   if (!status.ok()) {
+    gpr_log(GPR_ERROR, "Error: %s", status.message().data());
     return status;
   }
   grpc_core::MutexLock lock(&mu_);
@@ -504,21 +505,31 @@ absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
-  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::PemKeyCertPairList identity_pairs_core;
+namespace {
+
+grpc_core::PemKeyCertPairList ConvertToCoreObject(
+    grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  grpc_core::PemKeyCertPairList identity_pairs_core = {};
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
     delete pem_key_cert_pairs;
   }
-  std::string root_cert_core;
-  if (root_certificate != nullptr) {
-    root_cert_core = root_certificate;
-  }
+  return identity_pairs_core;
+}
+
+std::string ConvertToCoreObject(const char* root_certificate) {
+  return root_certificate == nullptr ? "" : root_certificate;
+}
+
+}  // namespace
+
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_core::StaticDataCertificateProvider(
-      std::move(root_cert_core), std::move(identity_pairs_core));
+      ConvertToCoreObject(root_certificate),
+      ConvertToCoreObject(pem_key_cert_pairs));
 }
 
 grpc_tls_certificate_provider*
@@ -526,17 +537,9 @@ grpc_tls_certificate_provider_data_watcher_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::PemKeyCertPairList identity_pairs_core;
-  if (pem_key_cert_pairs != nullptr) {
-    identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
-    delete pem_key_cert_pairs;
-  }
-  std::string root_cert_core;
-  if (root_certificate != nullptr) {
-    root_cert_core = root_certificate;
-  }
   return new grpc_core::DataWatcherCertificateProvider(
-      std::move(root_cert_core), std::move(identity_pairs_core));
+      ConvertToCoreObject(root_certificate),
+      ConvertToCoreObject(pem_key_cert_pairs));
 }
 
 grpc_tls_certificate_provider*

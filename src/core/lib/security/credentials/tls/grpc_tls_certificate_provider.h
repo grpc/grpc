@@ -133,8 +133,7 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
-// A provider class that initializes its credentials from strings and supports
-// reloading said credentials from memory.
+// A provider class that loads and refreshes the credential data from memory
 class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
  public:
   DataWatcherCertificateProvider(
@@ -142,10 +141,10 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   // Reloads the root_certificate and updates the distributor.
-  absl::Status ReloadRootCertificate(const std::string& root_certificate);
+  absl::Status SetRootCertificate(const std::string& root_certificate);
 
   // Reloads the key-cert pair list and updates the distributor.
-  absl::Status ReloadKeyCertificatePair(
+  absl::Status SetKeyCertificatePairs(
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 

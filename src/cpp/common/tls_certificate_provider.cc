@@ -60,18 +60,18 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 }
 
-grpc::Status DataWatcherCertificateProvider::ReloadRootCertificate(
+grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
     const std::string& root_certificate) {
   grpc_core::DataWatcherCertificateProvider* in_memory_provider =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
   GPR_ASSERT(in_memory_provider != nullptr);
   absl::Status status =
-      in_memory_provider->ReloadRootCertificate(root_certificate);
+      in_memory_provider->SetRootCertificate(root_certificate);
   return grpc::Status(static_cast<StatusCode>(status.code()),
                       std::string(status.message()));
 }
 
-grpc::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
+grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
@@ -81,7 +81,7 @@ grpc::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
   grpc_core::DataWatcherCertificateProvider* in_memory_provider =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
   GPR_ASSERT(in_memory_provider != nullptr);
-  absl::Status status = in_memory_provider->ReloadKeyCertificatePair(
+  absl::Status status = in_memory_provider->SetKeyCertificatePairs(
       pairs_core->pem_key_cert_pairs);
   return grpc::Status(static_cast<StatusCode>(status.code()),
                       status.message().data());
