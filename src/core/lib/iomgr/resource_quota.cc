@@ -999,6 +999,7 @@ void grpc_slice_allocator_init(
 void grpc_slice_allocator_destroy(
     grpc_slice_allocator* slice_allocator) {
   ru_unref_by(slice_allocator->resource_user, 1);
+  delete slice_allocator;
 }
 
 bool grpc_resource_user_alloc_slices(
@@ -1023,23 +1024,27 @@ bool grpc_resource_user_alloc_slices(
   return ret;
 }
 
-void grpc_slice_allocator_factory_init(
-    grpc_slice_allocator_factory* slice_allocator_factory,
+grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
     grpc_resource_quota* resource_quota) {
-  GPR_ASSERT(slice_allocator_factory != nullptr);
-  slice_allocator_factory->resource_quota = resource_quota;
+  grpc_slice_allocator_factory* factory =
+      static_cast<grpc_slice_allocator_factory*>(
+          gpr_malloc(sizeof(grpc_slice_allocator_factory)));
+  factory->resource_quota = resource_quota;
+  return factory;
 }
 
-void grpc_slice_allocator_factory_initialize_slice_allocator(
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    const char* name, grpc_slice_allocator* slice_allocator) {
-  GPR_ASSERT(slice_allocator != nullptr);
+grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
+    grpc_slice_allocator_factory* slice_allocator_factory, const char* name) {
+  grpc_slice_allocator* slice_allocator = static_cast<grpc_slice_allocator*>(
+      gpr_malloc(sizeof(grpc_slice_allocator)));
   grpc_resource_user* ru =
       grpc_resource_user_create(slice_allocator_factory->resource_quota, name);
   grpc_slice_allocator_init(slice_allocator, ru);
+  return slice_allocator;
 }
 
 void grpc_slice_allocator_factory_destroy(
     grpc_slice_allocator_factory* slice_allocator_factory) {
   grpc_resource_quota_unref_internal(slice_allocator_factory->resource_quota);
+  delete slice_allocator_factory;
 }

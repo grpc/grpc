@@ -188,21 +188,19 @@ typedef struct grpc_slice_allocator_factory {
   grpc_resource_quota* resource_quota;
 } grpc_slice_allocator_factory;
 
-/* Initialize a slice allocator factory. Takes ownership of a ref on \a
- * resource_quota from the caller. Caller is responsible for calling
- * \a grpc_slice_allocator_factory_destroy. */
-void grpc_slice_allocator_factory_init(
-    grpc_slice_allocator_factory* slice_allocator_factory,
+/* Constructs a slice allocator factory. Takes ownership of a ref on
+ * \a resource_quota from the caller. Caller is responsible for calling \a
+ * grpc_slice_allocator_factory_destroy. */
+grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
     grpc_resource_quota* resource_quota);
 
 /* Cleans up after a slice_allocator. */
 void grpc_slice_allocator_factory_destroy(
     grpc_slice_allocator_factory* slice_allocator_factory);
 
-/* Initializes a provided slice_allocator using the factory's resource quota. \a
- * name is the resulting resource_user name. */
-void grpc_slice_allocator_factory_initialize_slice_allocator(
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    const char* name, grpc_slice_allocator* slice_allocator);
+/* A factory method to create and initialize a slice_allocator using the
+ * factory's resource quota. \a name is the resulting resource_user name. */
+grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
+    grpc_slice_allocator_factory* slice_allocator_factory, const char* name);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */
