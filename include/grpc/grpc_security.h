@@ -1122,6 +1122,14 @@ struct grpc_status_or_bool{
   bool boolean;
 };
 
+/**
+ * Checks if the private key matches the certificate's public key.
+ * Returns a not-OK status on failure, or a bool indicating
+ * whether the key/cert pair matches.
+ */
+GRPCAPI grpc_status_or_bool* grpc_tls_certificate_key_match(
+    const char* private_key, const char* cert_chain);
+
 #ifdef __cplusplus
 }
 
