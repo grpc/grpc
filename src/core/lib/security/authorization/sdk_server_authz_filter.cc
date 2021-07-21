@@ -24,9 +24,8 @@ namespace grpc_core {
 TraceFlag grpc_sdk_authz_trace(false, "sdk_authz");
 
 SdkServerAuthzFilter::SdkServerAuthzFilter(
-    grpc_core::RefCountedPtr<grpc_auth_context> auth_context,
-    grpc_endpoint* endpoint,
-    grpc_core::RefCountedPtr<grpc_authorization_policy_provider> provider)
+    RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
+    RefCountedPtr<grpc_authorization_policy_provider> provider)
     : auth_context_(std::move(auth_context)),
       per_channel_evaluate_args_(auth_context_.get(), endpoint),
       provider_(std::move(provider)) {}
@@ -37,14 +36,17 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
   grpc_transport* transport = args->optional_transport;
-  GPR_ASSERT(transport != nullptr);
-  grpc_endpoint* endpoint = grpc_transport_get_endpoint(transport);
+  grpc_endpoint* endpoint = nullptr;
+  if (transport != nullptr) {
+    endpoint = grpc_transport_get_endpoint(transport);
+  }
   grpc_authorization_policy_provider* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
           args->channel_args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
   GPR_ASSERT(provider != nullptr);
-  new (elem->channel_data)
-      SdkServerAuthzFilter(auth_context->Ref(), endpoint, provider->Ref());
+  new (elem->channel_data) SdkServerAuthzFilter(
+      auth_context != nullptr ? auth_context->Ref() : nullptr, endpoint,
+      provider->Ref());
   return GRPC_ERROR_NONE;
 }
 
@@ -77,12 +79,6 @@ void SdkServerAuthzFilter::CallData::StartTransportStreamOpBatch(
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready_;
-  }
-  if (batch->recv_trailing_metadata) {
-    calld->original_recv_trailing_metadata_ready_ =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->recv_trailing_metadata_ready_;
   }
   grpc_call_next_op(elem, batch);
 }
