@@ -19,9 +19,37 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+
 namespace grpc_core {
 
 extern const char* kXdsClusterAttribute;
+
+// Client channel map to store the max_retries number for each cluster.
+// The map is passed to CDS LB policy which will set the max_retries in the map
+// when receiving updates.
+#define GRPC_ARG_CLUSTER_MAX_RETRIES_MAP "grpc.xds_cluster_max_retries_map"
+
+class XdsClusterMaxRetriesMap {
+ public:
+  class ClusterMaxRetries {
+   public:
+    virtual ~ClusterMaxRetries() = default;
+
+    virtual void SetMaxRetries(uint32_t max_retries) = 0;
+  };
+
+  virtual ~XdsClusterMaxRetriesMap() = default;
+
+  virtual std::unique_ptr<ClusterMaxRetries> GetCluster(
+      const std::string& cluster) = 0;
+
+  grpc_arg MakeChannelArg() const;
+
+  static XdsClusterMaxRetriesMap* GetFromChannelArgs(
+      const grpc_channel_args* args);
+};
 
 }  // namespace grpc_core
 

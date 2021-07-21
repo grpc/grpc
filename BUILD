@@ -1675,6 +1675,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "grpc_resolver_xds_header",
         "grpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
@@ -2152,6 +2153,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_lb_policy_ring_hash",
+        "grpc_resolver_xds_header",
         "grpc_xds_client",
     ],
 )

@@ -3140,8 +3140,8 @@ grpc_error_handle CdsResponseParse(
             cds_update.max_concurrent_requests =
                 google_protobuf_UInt32Value_value(max_requests);
           }
-          //TODO(donnadionne): guard with env var after retry code submitted and
-          //merged.
+          // TODO(donnadionne): guard with env var after retry code submitted
+          // and merged.
           const google_protobuf_UInt32Value* max_retries =
               envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_retries(
                   threshold);

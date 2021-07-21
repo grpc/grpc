@@ -23,10 +23,10 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_max_retries_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -146,8 +146,8 @@ class CdsLb : public LoadBalancingPolicy {
   grpc_error_handle UpdateXdsCertificateProvider(
       const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
 
-  void UpdateXdsMaxRetriesMap(
-      const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
+  void UpdateXdsMaxRetriesMap(const std::string& cluster_name,
+                              const XdsApi::CdsUpdate& cluster_data);
 
   void CancelClusterDataWatch(absl::string_view cluster_name,
                               XdsClient::ClusterWatcherInterface* watcher,
@@ -670,12 +670,24 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
   return GRPC_ERROR_NONE;
 }
 
-void CdsLb::UpdateXdsMaxRetriesMap(
-    const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data) {
-  RefCountedPtr<XdsMaxRetriesMap> xds_max_retries_map =
-      XdsMaxRetriesMap::GetFromChannelArgs(args_);
-  xds_max_retries_map->DebugPrint();
-  xds_max_retries_map->Update(cluster_name, cluster_data.max_retries);
+void CdsLb::UpdateXdsMaxRetriesMap(const std::string& cluster_name,
+                                   const XdsApi::CdsUpdate& cluster_data) {
+  XdsClusterMaxRetriesMap* xds_cluster_max_retries_map =
+      XdsClusterMaxRetriesMap::GetFromChannelArgs(args_);
+  if (xds_cluster_max_retries_map != nullptr) {
+    std::unique_ptr<XdsClusterMaxRetriesMap::ClusterMaxRetries>
+        cluster_max_retries =
+            xds_cluster_max_retries_map->GetCluster(cluster_name);
+    if (cluster_max_retries != nullptr) {
+      cluster_max_retries->SetMaxRetries(cluster_data.max_retries);
+      // donna testing:
+      cluster_max_retries->SetMaxRetries(105);
+    } else {
+      gpr_log(GPR_INFO, "donna max retries is null");
+    }
+  } else {
+    gpr_log(GPR_INFO, "donna arg map is null");
+  }
 }
 
 void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,

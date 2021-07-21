@@ -27,6 +27,7 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
@@ -58,7 +59,8 @@ class XdsResolver : public Resolver {
         result_handler_(std::move(args.result_handler)),
         server_name_(absl::StripPrefix(args.uri.path(), "/")),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set) {
+        interested_parties_(args.pollset_set),
+        cluster_max_retries_map_(XdsClusterMaxRetriesMapImpl(this)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
               server_name_.c_str());
@@ -149,6 +151,7 @@ class XdsResolver : public Resolver {
         : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first),
+          max_retries_(3),
           retry_counter_(std::move(retry_counter)) {}
 
     void Orphan() override {
@@ -163,6 +166,10 @@ class XdsResolver : public Resolver {
 
     const std::string& cluster() const { return it_->first; }
 
+    void SetMaxRetries(uint32_t max_retries) { max_retries_ = max_retries; }
+
+    uint32_t max_retries() const { return max_retries_; }
+
     RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter()
         const {
       return retry_counter_;
@@ -171,7 +178,38 @@ class XdsResolver : public Resolver {
    private:
     RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
+    uint32_t max_retries_;
     RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
+  };
+
+  class XdsClusterMaxRetriesMapImpl : public XdsClusterMaxRetriesMap {
+   public:
+    class ClusterMaxRetriesImpl : public ClusterMaxRetries {
+     public:
+      explicit ClusterMaxRetriesImpl(RefCountedPtr<ClusterState> cluster_state)
+          : cluster_state_(std::move(cluster_state)) {}
+
+      void SetMaxRetries(uint32_t max_retries) override {
+        cluster_state_->SetMaxRetries(max_retries);
+      }
+
+     private:
+      RefCountedPtr<ClusterState> cluster_state_;
+    };
+
+    explicit XdsClusterMaxRetriesMapImpl(XdsResolver* resolver)
+        : resolver_(resolver) {}
+
+    std::unique_ptr<ClusterMaxRetries> GetCluster(
+        const std::string& cluster) override {
+      RefCountedPtr<ClusterState> cluster_state =
+          resolver_->GetClusterState(cluster);
+      if (cluster_state == nullptr) return nullptr;
+      return absl::make_unique<ClusterMaxRetriesImpl>(cluster_state);
+    }
+
+   private:
+    XdsResolver* resolver_;
   };
 
   // Call dispatch controller, created for each call handled by the
@@ -181,13 +219,16 @@ class XdsResolver : public Resolver {
       : public ConfigSelector::CallDispatchController {
    public:
     explicit XdsCallDispatchController(
-        RefCountedPtr<ClusterState> cluster_state, const uint32_t max_retries)
-        : cluster_state_(std::move(cluster_state)), max_retries_(max_retries) {}
+        RefCountedPtr<ClusterState> cluster_state)
+        : cluster_state_(std::move(cluster_state)) {
+      gpr_log(GPR_INFO, "donna testing max_retry is %d",
+              cluster_state_->max_retries());
+    }
 
     bool ShouldRetry() override {
       uint32_t current = cluster_state_->retry_counter()->Load();
       // Check and see if we exceeded the max retries
-      if (current >= max_retries_) return false;
+      if (current >= cluster_state_->max_retries()) return false;
       cluster_state_->retry_counter()->Increment();
       return true;
     }
@@ -202,7 +243,6 @@ class XdsResolver : public Resolver {
     // so do not add any data members that require destruction unless you have
     // some other way to clean them up.
     RefCountedPtr<ClusterState> cluster_state_;
-    uint32_t max_retries_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -267,9 +307,9 @@ class XdsResolver : public Resolver {
 
   grpc_error_handle CreateServiceConfig(
       RefCountedPtr<ServiceConfig>* service_config);
-  void CreateClusterMaxRetriesMap();
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
+  RefCountedPtr<ClusterState> GetClusterState(const std::string& name);
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
@@ -290,7 +330,7 @@ class XdsResolver : public Resolver {
   XdsApi::RdsUpdate::VirtualHost current_virtual_host_;
 
   ClusterState::ClusterStateMap cluster_state_map_;
-  RefCountedPtr<XdsMaxRetriesMap> cluster_max_retries_map_;
+  XdsClusterMaxRetriesMapImpl cluster_max_retries_map_;
 };
 
 //
@@ -587,8 +627,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(
-          resolver_, name,
-          XdsCircuitBreakerRetryMap::GetOrCreate(name));
+          resolver_, name, XdsCircuitBreakerRetryMap::GetOrCreate(name));
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -753,15 +792,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    // Look up max retry value, should have been filled by CDS udpates.
-    auto debug_max_retry =
-        resolver_->cluster_max_retries_map_->Lookup(std::string(cluster_name));
-    gpr_log(GPR_INFO, "donna looked up newly updated max retry value of %d",
-            debug_max_retry);
     call_config.call_dispatch_controller =
-        args.arena->New<XdsCallDispatchController>(
-            it->second->Ref(), resolver_->cluster_max_retries_map_->Lookup(
-                                   std::string(cluster_name)));
+        args.arena->New<XdsCallDispatchController>(it->second->Ref());
     return call_config;
   }
   return CallConfig();
@@ -931,13 +963,6 @@ grpc_error_handle XdsResolver::CreateServiceConfig(
   return error;
 }
 
-void XdsResolver::CreateClusterMaxRetriesMap() {
-  cluster_max_retries_map_ = MakeRefCounted<XdsMaxRetriesMap>();
-  for (const auto& cluster : cluster_state_map_) {
-    cluster_max_retries_map_->Add(cluster.first, 3);
-  }
-}
-
 void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
@@ -958,15 +983,25 @@ void XdsResolver::GenerateResult() {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config->json_string().c_str());
   }
-  CreateClusterMaxRetriesMap();
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
-      cluster_max_retries_map_->MakeChannelArg(),
+      cluster_max_retries_map_.MakeChannelArg(),
   };
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
   result_handler_->ReturnResult(std::move(result));
+}
+
+RefCountedPtr<XdsResolver::ClusterState> XdsResolver::GetClusterState(
+    const std::string& name) {
+  auto it = cluster_state_map_.find(name);
+  if (it == cluster_state_map_.end()) {
+    // TODO(donnadionne) handle aggregate
+    return nullptr;
+  } else {
+    return it->second->Ref();
+  }
 }
 
 void XdsResolver::MaybeRemoveUnusedClusters() {
@@ -1009,6 +1044,38 @@ class XdsResolverFactory : public ResolverFactory {
 };
 
 }  // namespace
+
+namespace {
+
+void* XdsClusterMaxRetriesMapArgCopy(void* p) {
+  XdsClusterMaxRetriesMap* xds_cluster_max_retries_map =
+      static_cast<XdsClusterMaxRetriesMap*>(p);
+  return xds_cluster_max_retries_map;
+}
+
+void XdsClusterMaxRetriesMapArgDestroy(void* p) {}
+
+int XdsClusterMaxRetriesMapArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+
+const grpc_arg_pointer_vtable kChannelArgVtable = {
+    XdsClusterMaxRetriesMapArgCopy, XdsClusterMaxRetriesMapArgDestroy,
+    XdsClusterMaxRetriesMapArgCmp};
+
+}  // namespace
+
+grpc_arg XdsClusterMaxRetriesMap::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CLUSTER_MAX_RETRIES_MAP),
+      const_cast<XdsClusterMaxRetriesMap*>(this), &kChannelArgVtable);
+}
+
+XdsClusterMaxRetriesMap* XdsClusterMaxRetriesMap::GetFromChannelArgs(
+    const grpc_channel_args* args) {
+  XdsClusterMaxRetriesMap* xds_cluster_max_retries_map =
+      grpc_channel_args_find_pointer<XdsClusterMaxRetriesMap>(
+          args, GRPC_ARG_CLUSTER_MAX_RETRIES_MAP);
+  return xds_cluster_max_retries_map;
+}
 
 }  // namespace grpc_core
 
