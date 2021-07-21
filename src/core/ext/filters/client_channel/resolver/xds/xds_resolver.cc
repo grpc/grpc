@@ -33,7 +33,6 @@
 #include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_max_retries_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -146,13 +145,13 @@ class XdsResolver : public Resolver {
         std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
     ClusterState(
-        RefCountedPtr<XdsResolver> resolver, const std::string& cluster_name,
-        RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter)
+        RefCountedPtr<XdsResolver> resolver, const std::string& cluster_name)
         : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first),
-          max_retries_(3),
-          retry_counter_(std::move(retry_counter)) {}
+          max_retries_(3) {
+           retry_counter_ = grpc_core::XdsCircuitBreakerRetryMap::GetOrCreate(cluster_name);
+          }
 
     void Orphan() override {
       auto* resolver = resolver_.release();
@@ -636,7 +635,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(
-          resolver_, name, XdsCircuitBreakerRetryMap::GetOrCreate(name));
+          resolver_, name);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
