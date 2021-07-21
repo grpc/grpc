@@ -23,31 +23,16 @@
 
 namespace grpc_core {
 
-OwnedOpenSslPrivateKey::OwnedOpenSslPrivateKey(const char* private_key,
-                                               int size) {
+OpenSslPKey::OpenSslPKey(const char* private_key, int size) {
   BIO* bio = BIO_new_mem_buf(private_key, size);
   private_key_ = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }
 
-OwnedOpenSslPrivateKey::OwnedOpenSslPrivateKey(EVP_PKEY* pkey) {
-  private_key_ = pkey;
-}
-
-OwnedOpenSslPrivateKey::~OwnedOpenSslPrivateKey() {
-  if (private_key_ != nullptr) {
-    EVP_PKEY_free(private_key_);
-  }
-}
-
-OwnedOpenSslX509::OwnedOpenSslX509(const char* cert, int size) {
+OpenSslX509::OpenSslX509(const char* cert, int size) {
   BIO* bio = BIO_new_mem_buf(cert, size);
   x_509_ = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }
-
-OwnedOpenSslX509::OwnedOpenSslX509(X509* x509) { x_509_ = x509; }
-
-OwnedOpenSslX509::~OwnedOpenSslX509() { X509_free(x_509_); }
 
 }  // namespace grpc_core

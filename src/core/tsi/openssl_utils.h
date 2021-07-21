@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef SRC_CORE_TSI_OPENSSL_UTILS_H_
-#define SRC_CORE_TSI_OPENSSL_UTILS_H_
+#ifndef SRC_CORE_TSI_OPENSSL_UTILS_H
+#define SRC_CORE_TSI_OPENSSL_UTILS_H
 
 #include "openssl/bio.h"
 #include "openssl/evp.h"
@@ -23,14 +23,14 @@
 
 namespace grpc_core {
 
-// A class for managing openssl `EVP_PKEY` structures.
-class OwnedOpenSslPrivateKey {
+// A class for managing OpenSSL |EVP_PKEY| structures.
+class OpenSslPKey {
  public:
-  explicit OwnedOpenSslPrivateKey(const char* private_key, int size);
+  OpenSslPKey(const char* private_key, int size);
 
-  explicit OwnedOpenSslPrivateKey(EVP_PKEY* pkey);
+  explicit OpenSslPKey(EVP_PKEY* pkey) { private_key_ = pkey; }
 
-  ~OwnedOpenSslPrivateKey();
+  ~OpenSslPKey() { EVP_PKEY_free(private_key_); }
 
   EVP_PKEY* get_private_key() { return private_key_; }
 
@@ -38,14 +38,14 @@ class OwnedOpenSslPrivateKey {
   EVP_PKEY* private_key_ = nullptr;
 };
 
-// A class for managing openssl `X509` structures.
-class OwnedOpenSslX509 {
+// A class for managing OpenSSL |X509| structures.
+class OpenSslX509 {
  public:
-  explicit OwnedOpenSslX509(const char* cert, int size);
+  OpenSslX509(const char* cert, int size);
 
-  explicit OwnedOpenSslX509(X509* x509);
+  explicit OpenSslX509(X509* x509) { x_509_ = x509; }
 
-  ~OwnedOpenSslX509();
+  ~OpenSslX509() { X509_free(x_509_); }
 
   X509* get_x509() { return x_509_; }
 
@@ -55,4 +55,4 @@ class OwnedOpenSslX509 {
 
 }  // namespace grpc_core
 
-#endif  // SRC_CORE_TSI_OPENSSL_UTILS_H_
+#endif  // SRC_CORE_TSI_OPENSSL_UTILS_H

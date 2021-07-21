@@ -373,19 +373,18 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  OwnedOpenSslX509 x509(cert_chain.data(), cert_chain.size());
-  if (!x509.get_x509()) {
+  OpenSslX509 x509(cert_chain.data(), cert_chain.size());
+  if (x509.get_x509() == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
-  OwnedOpenSslPrivateKey public_evp_pkey(X509_get_pubkey(x509.get_x509()));
-  if (!public_evp_pkey.get_private_key()) {
+  OpenSslPKey public_evp_pkey(X509_get_pubkey(x509.get_x509()));
+  if (public_evp_pkey.get_private_key() == nullptr) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  OwnedOpenSslPrivateKey private_evp_pkey(private_key.data(),
-                                          private_key.size());
-  if (!private_evp_pkey.get_private_key()) {
+  OpenSslPKey private_evp_pkey(private_key.data(), private_key.size());
+  if (private_evp_pkey.get_private_key() == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
