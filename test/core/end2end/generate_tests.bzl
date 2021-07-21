@@ -302,6 +302,12 @@ END2END_TESTS = {
     "retry_per_attempt_recv_timeout": _test_options(
         needs_client_channel = True,
     ),
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
+        needs_client_channel = True,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
+    ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
     "retry_recv_trailing_metadata_error": _test_options(
