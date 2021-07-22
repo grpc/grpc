@@ -136,7 +136,18 @@ namespace Grpc.Core.Internal
             {
                 // TODO(jtattermusch): populate the error on Windows
                 errorMsg = null;
-                return Windows.LoadLibrary(libraryPath);
+                var handle = Windows.LoadLibrary(libraryPath);
+
+                if (handle == IntPtr.Zero)
+                {
+                    int win32Error = Marshal.GetLastWin32Error();
+                    errorMsg = $"Error {win32Error}: ";
+
+                    if (win32Error == 126)
+                        errorMsg += "The specified module could not be found";
+                }
+
+                return handle;
             }
             if (PlatformApis.IsLinux)
             {
@@ -179,13 +190,13 @@ namespace Grpc.Core.Internal
                 }
             }
             throw new FileNotFoundException(
-                String.Format("Error loading native library. Not found in any of the possible locations: {0}", 
+                String.Format("Error loading native library. Not found in any of the possible locations: {0}",
                     string.Join(",", libraryPathAlternatives)));
         }
 
         private static class Windows
         {
-            [DllImport("kernel32.dll")]
+            [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
             internal static extern IntPtr LoadLibrary(string filename);
 
             [DllImport("kernel32.dll")]
