@@ -14,12 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_generate_one_off_targets",
+    "grpc_upb_proto_library",
+    "python_config_settings",
+)
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
-exports_files([
-    "LICENSE",
-    "etc/roots.pem",
-])
+licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -29,14 +33,10 @@ package(
     ],
 )
 
-load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
-    "grpc_generate_one_off_targets",
-    "grpc_upb_proto_library",
-    "python_config_settings",
-)
-load("@bazel_skylib//lib:selects.bzl", "selects")
+exports_files([
+    "LICENSE",
+    "etc/roots.pem",
+])
 
 config_setting(
     name = "grpc_no_ares",
