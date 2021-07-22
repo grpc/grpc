@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -40,7 +41,14 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     // Deadline for connection.
     grpc_millis deadline;
     // Channel args to be passed to handshakers and transport.
-    const grpc_channel_args* channel_args;
+    const grpc_channel_args* channel_args = nullptr;
+
+    Args() = default;
+    ~Args() { grpc_channel_args_destroy(channel_args); }
+    Args(const Args& other);
+    Args(Args&& other) noexcept;
+    Args& operator=(const Args& other);
+    Args& operator=(Args&& other) noexcept;
   };
 
   struct Result {
@@ -61,7 +69,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
   // Attempts to connect.
   // When complete, populates *result and invokes notify.
   // Only one connection attempt may be in progress at any one time.
-  virtual void Connect(const Args& args, Result* result,
+  virtual void Connect(Args args, Result* result,
                        grpc_closure* notify) = 0;
 
   // Cancels any in-flight connection attempt and shuts down the

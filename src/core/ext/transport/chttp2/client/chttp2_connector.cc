@@ -48,7 +48,7 @@ Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
 }
 
-void Chttp2Connector::Connect(const Args& args, Result* result,
+void Chttp2Connector::Connect(Args args, Result* result,
                               grpc_closure* notify) {
   grpc_resolved_address addr;
   Subchannel::GetAddressFromSubchannelAddressArg(args.channel_args, &addr);
@@ -56,7 +56,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
-    args_ = args;
+    args_ = std::move(args);
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(!connecting_);

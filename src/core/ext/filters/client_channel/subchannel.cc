@@ -993,7 +993,7 @@ void Subchannel::ContinueConnectingLocked() {
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
   next_attempt_deadline_ = backoff_.NextAttemptTime();
   args.deadline = std::max(next_attempt_deadline_, min_deadline);
-  args.channel_args = args_;
+  args.channel_args = grpc_channel_args_copy(args_);
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status());
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
