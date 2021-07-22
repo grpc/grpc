@@ -221,7 +221,25 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
-    def client_init_config(rpc: str, metadata: str):
+    def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
+        """Updates the initial RPC configs for this test case.
+
+        Each test case will start a test client. The client takes RPC configs
+        and starts to send RPCs immediately. The config returned by this
+        function will be used to replace the default configs.
+
+        The default configs are passed in as arguments, so this method can
+        modify part of them.
+
+        Args:
+            rpc: The default rpc config, specifying RPCs to send, format
+            'UnaryCall,EmptyCall'
+            metadata: The metadata config, specifying metadata to send with each
+            RPC, format 'EmptyCall:key1:value1,UnaryCall:key2:value2'.
+
+        Returns:
+            A tuple contains the updated rpc and metadata config.
+        """
         return rpc, metadata
 
     @staticmethod

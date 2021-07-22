@@ -41,7 +41,7 @@ _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
 
 # Testing metadata consts
-_TEST_METADATA_KEY = 'xds_md'
+TEST_AFFINITY_METADATA_KEY = 'xds_md'
 
 
 class TrafficDirectorManager:
@@ -131,10 +131,6 @@ class TrafficDirectorManager:
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
         self.delete_forwarding_rule(force=force)
-        # Variable target_proxy_is_http is only set in create_backend_service
-        # (otherwise it's always false), which means this will always try to
-        # delete grpc_proxy, strategy=keep will be stuck in deleting url-maps,
-        # backend services and others.
         self.delete_target_http_proxy(force=force)
         self.delete_target_grpc_proxy(force=force)
         self.delete_url_map(force=force)
@@ -303,7 +299,7 @@ class TrafficDirectorManager:
             name,
             health_check=self.health_check,
             protocol=protocol,
-            affinity_header=_TEST_METADATA_KEY)
+            affinity_header=TEST_AFFINITY_METADATA_KEY)
         self.affinity_backend_service = resource
         self.affinity_backend_service_protocol = protocol
 

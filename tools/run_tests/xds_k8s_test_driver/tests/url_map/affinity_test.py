@@ -20,6 +20,7 @@ from absl import flags
 from framework import xds_url_map_testcase
 from framework.rpc import grpc_channelz
 from framework.test_app import client_app
+from framework.infrastructure import traffic_director
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
 
 _NUM_RPCS = 150
-_TEST_METADATA_KEY = 'xds_md'
+_TEST_METADATA_KEY = traffic_director.TEST_AFFINITY_METADATA_KEY
 _TEST_METADATA_VALUE_UNARY = 'unary_yranu'
 _TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
 _TEST_METADATA_NUMERIC_KEY = 'xds_md_numeric'

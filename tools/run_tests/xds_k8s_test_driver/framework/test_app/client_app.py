@@ -215,14 +215,14 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     def find_subchannels_with_state(self, state: _ChannelzChannelState,
                                     **kwargs) -> List[_ChannelzSubchannel]:
-        channels = self.channelz.find_channels_for_target(
-            self.server_target, **kwargs)
-        subchannels = self.channelz.list_channel_subchannels(
-            next(channels), **kwargs)
-        return [
-            subchannel for subchannel in subchannels
-            if subchannel.data.state.state is state
-        ]
+        subchannels = []
+        for channel in self.channelz.find_channels_for_target(
+                self.server_target, **kwargs):
+            for subchannel in self.channelz.list_channel_subchannels(
+                    channel, **kwargs):
+                if subchannel.data.state.state is state:
+                    subchannels.append(subchannel)
+        return subchannels
 
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
