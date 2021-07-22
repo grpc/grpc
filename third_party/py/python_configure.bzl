@@ -313,7 +313,7 @@ def _create_single_version_package(
     # To build Python C/C++ extension on Windows, we need to link to python import library pythonXY.lib
     # See https://docs.python.org/3/extending/windows.html
     if _is_windows(repository_ctx):
-        python_include = _normalize_path(python_include)
+        python_include = _normalize_path(_get_python_include(repository_ctx, python_bin))
         python_import_lib_name = _get_python_import_lib_name(
             repository_ctx,
             python_bin,
