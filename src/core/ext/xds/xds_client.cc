@@ -1277,6 +1277,9 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
               xds_client(), result.type_url.c_str(), result.version.c_str(),
               state.nonce.c_str(),
               grpc_error_std_string(result.parse_error).c_str());
+      result.parse_error =
+          grpc_error_set_int(result.parse_error, GRPC_ERROR_INT_GRPC_STATUS,
+                             GRPC_STATUS_UNAVAILABLE);
       GRPC_ERROR_UNREF(state.error);
       state.error = result.parse_error;
       if (result.type_url == XdsApi::kLdsTypeUrl) {
