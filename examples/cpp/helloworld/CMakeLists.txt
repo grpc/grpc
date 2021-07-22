@@ -47,11 +47,27 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 # hw_grpc_proto
 add_library(hw_grpc_proto
+  SHARED
   ${hw_grpc_srcs}
   ${hw_grpc_hdrs}
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
 target_link_libraries(hw_grpc_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
+
+# Added by Keith to compile other_service.cc to a DLL
+set(other_service_hdrs "${CMAKE_CURRENT_BINARY_DIR}/other_service.h")
+set(other_service_srcs "${CMAKE_CURRENT_BINARY_DIR}/other_service.cc")
+add_library(other_service_shared
+  SHARED
+  ${other_service_srcs}
+  ${hw_grpc_srcs}
+  ${hw_grpc_hdrs}
+  ${hw_proto_srcs}
+  ${hw_proto_hdrs})
+target_link_libraries(other_service_shared
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -63,7 +79,9 @@ foreach(_target
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
+    other_service_shared
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
+

@@ -30,6 +30,8 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
+#include "other_service.h"
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -50,7 +52,9 @@ class GreeterServiceImpl final : public Greeter::Service {
 
 void RunServer() {
   std::string server_address("0.0.0.0:50051");
-  GreeterServiceImpl service;
+  // GreeterServiceImpl service;
+
+  OtherServiceImpl otherService;
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -59,7 +63,10 @@ void RunServer() {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
+  // builder.RegisterService(&service);
+
+  builder.RegisterService(&otherService);
+
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
