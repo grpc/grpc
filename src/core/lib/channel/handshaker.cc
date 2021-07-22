@@ -167,7 +167,6 @@ void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
 }
 
 void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   grpc_resource_user* resource_user,
                                    const grpc_channel_args* channel_args,
                                    grpc_millis deadline,
                                    grpc_tcp_server_acceptor* acceptor,
@@ -180,7 +179,6 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     // Construct handshaker args.  These will be passed through all
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;
-    args_.resource_user = resource_user;
     args_.args = grpc_channel_args_copy(channel_args);
     args_.user_data = user_data;
     args_.read_buffer =

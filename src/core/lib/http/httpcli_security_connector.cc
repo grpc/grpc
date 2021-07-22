@@ -175,15 +175,13 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   } else {
     grpc_channel_args_destroy(args->args);
     grpc_slice_buffer_destroy_internal(args->read_buffer);
-    grpc_resource_user_unref(args->resource_user);
     gpr_free(args->read_buffer);
     c->func(c->arg, args->endpoint);
   }
   delete c;
 }
 
-static void ssl_handshake(void* arg, grpc_endpoint* tcp,
-                          grpc_resource_user* resource_user, const char* host,
+static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   auto* c = new on_done_closure();
@@ -211,8 +209,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp,
   grpc_core::HandshakerRegistry::AddHandshakers(
       grpc_core::HANDSHAKER_CLIENT, &args,
       /*interested_parties=*/nullptr, c->handshake_mgr.get());
-  c->handshake_mgr->DoHandshake(tcp, resource_user, /*channel_args=*/nullptr,
-                                deadline,
+  c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
                                 /*acceptor=*/nullptr, on_handshake_done,
                                 /*user_data=*/c);
   sc.reset(DEBUG_LOCATION, "httpcli");

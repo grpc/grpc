@@ -63,13 +63,13 @@ class Chttp2Connector : public SubchannelConnector {
   // Holds the endpoint when first created before being handed off to
   // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
-  grpc_resource_user* resource_user_ = nullptr;
   grpc_closure connected_;
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
+  grpc_slice_allocator_factory* slice_allocator_factory_;
 };
 
 }  // namespace grpc_core

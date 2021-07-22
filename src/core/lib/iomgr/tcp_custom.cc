@@ -64,8 +64,7 @@ struct custom_tcp_endpoint {
   grpc_slice_buffer* read_slices = nullptr;
   grpc_slice_buffer* write_slices = nullptr;
 
-  grpc_resource_user* resource_user;
-  grpc_slice_allocator slice_allocator;
+  grpc_slice_allocator* slice_allocator;
 
   bool shutting_down;
 
@@ -75,7 +74,7 @@ struct custom_tcp_endpoint {
 static void tcp_free(grpc_custom_socket* s) {
   custom_tcp_endpoint* tcp =
       reinterpret_cast<custom_tcp_endpoint*>(s->endpoint);
-  grpc_resource_user_unref(tcp->resource_user);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   delete tcp;
   s->refs--;
   if (s->refs == 0) {
@@ -204,7 +203,7 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   grpc_slice_buffer_reset_and_unref_internal(read_slices);
   TCP_REF(tcp, "read");
   if (grpc_resource_user_alloc_slices(
-          &tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+          tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
           tcp->read_slices, tcp_read_allocation_done, tcp)) {
     tcp_read_allocation_done(tcp, GRPC_ERROR_NONE);
   }
@@ -318,7 +317,7 @@ static void custom_close_callback(grpc_custom_socket* socket) {
 
 static void endpoint_destroy(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
-  grpc_slice_allocator_destroy(&tcp->slice_allocator);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 
@@ -349,7 +348,7 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
                                       endpoint_can_track_err};
 
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
-                                          grpc_resource_user* resource_user,
+                                          grpc_slice_allocator* slice_allocator,
                                           const char* peer_string) {
   custom_tcp_endpoint* tcp = new custom_tcp_endpoint;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -375,9 +374,6 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->shutting_down = false;
-  tcp->resource_user = resource_user;
-  grpc_slice_allocator_init(&tcp->slice_allocator,
-                                          tcp->resource_user);
-
+  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }

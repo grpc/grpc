@@ -19,4 +19,6 @@
 grpc_resource_user* grpc_resource_user_create_unlimited(
     grpc_resource_quota* resource_quota = nullptr);
 
+grpc_slice_allocator* grpc_slice_allocator_create_unlimited();
+
 #endif  // GRPC_TEST_CORE_UTIL_RESOURCE_USER_UTIL_H

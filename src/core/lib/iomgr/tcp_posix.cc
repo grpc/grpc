@@ -393,8 +393,7 @@ struct grpc_tcp {
   std::string peer_string;
   std::string local_address;
 
-  grpc_resource_user* resource_user;
-  grpc_slice_allocator slice_allocator;
+  grpc_slice_allocator* slice_allocator;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
   gpr_mu tb_mu; /* Lock for access to list of traced buffers */
@@ -586,6 +585,9 @@ static void finish_estimate(grpc_tcp* tcp) {
 }
 
 static size_t get_target_read_size(grpc_tcp* tcp) {
+  // DO NOT SUBMIT(hork): See @roth's comments on adding "peek size" to the
+  // slice_allocator.
+  /*
   grpc_resource_quota* rq = grpc_resource_user_quota(tcp->resource_user);
   double pressure = grpc_resource_quota_get_memory_pressure(rq);
   double target =
@@ -594,13 +596,16 @@ static size_t get_target_read_size(grpc_tcp* tcp) {
                                               tcp->max_read_chunk_size)) +
                255) &
               ~static_cast<size_t>(255);
-  /* don't use more than 1/16th of the overall resource quota for a single read
-   * alloc */
+  // don't use more than 1/16th of the overall resource quota for a single read
+  // alloc
   size_t rqmax = grpc_resource_quota_peek_size(rq);
   if (sz > rqmax / 16 && rqmax > 1024) {
     sz = rqmax / 16;
   }
   return sz;
+  */
+  // DO NOT SUBMIT(hork): 42 might break things
+  return 42;
 }
 
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
@@ -622,14 +627,13 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, why);
-  grpc_resource_user_shutdown(tcp->resource_user);
 }
 
 static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_resource_user_unref(tcp->resource_user);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
   grpc_core::TracedBuffer::Shutdown(
@@ -670,7 +674,6 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-  grpc_slice_allocator_destroy(&tcp->slice_allocator);
   if (grpc_event_engine_can_track_errors()) {
     ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
@@ -874,7 +877,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
     if (GPR_UNLIKELY(!grpc_resource_user_alloc_slices(
-            &tcp->slice_allocator, target_read_size, 1, tcp->incoming_buffer,
+            tcp->slice_allocator, target_read_size, 1, tcp->incoming_buffer,
             tcp_read_allocation_done, tcp))) {
       // Wait for allocation.
       return;
@@ -1688,7 +1691,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
                                const char* peer_string,
-                               grpc_resource_user* resource_user) {
+                               grpc_slice_allocator* slice_allocator) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
@@ -1747,7 +1750,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = peer_string;
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->resource_user = resource_user;
+  tcp->slice_allocator = slice_allocator;
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
@@ -1792,8 +1795,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_slice_allocator_init(&tcp->slice_allocator,
-                                          tcp->resource_user);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,

@@ -22,7 +22,6 @@
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
@@ -40,15 +39,17 @@ int main(int argc, char** argv) {
        of descriptors */
     rlim.rlim_cur = rlim.rlim_max = 10;
     GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
+    grpc_slice_allocator_factory* slice_allocator_factory =
+        grpc_slice_allocator_factory_create(
+            grpc_resource_quota_create("fd_conservation_posix_test"));
     for (i = 0; i < 100; i++) {
-      p = grpc_iomgr_create_endpoint_pair(
-          "test", nullptr,
-          /*client_resource_user=*/grpc_resource_user_create_unlimited(),
-          /*server_resource_user=*/grpc_resource_user_create_unlimited());
+      p = grpc_iomgr_create_endpoint_pair("test", nullptr,
+                                          slice_allocator_factory);
       grpc_endpoint_destroy(p.client);
       grpc_endpoint_destroy(p.server);
       grpc_core::ExecCtx::Get()->Flush();
     }
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
 
   grpc_shutdown();

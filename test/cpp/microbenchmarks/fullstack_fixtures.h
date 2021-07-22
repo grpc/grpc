@@ -111,14 +111,13 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  explicit TCP(Service* service, grpc_resource_user* client_resource_user,
-               grpc_resource_user* server_resource_user,
+  explicit TCP(Service* service,
+               grpc_slice_allocator_factory* slice_allocator_factory,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_unref(client_resource_user);
-    grpc_resource_user_unref(server_resource_user);
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
 
   ~TCP() override { grpc_recycle_unused_port(port_); }
@@ -136,14 +135,13 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  explicit UDS(Service* service, grpc_resource_user* client_resource_user,
-               grpc_resource_user* server_resource_user,
+  explicit UDS(Service* service,
+               grpc_slice_allocator_factory* slice_allocator_factory,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_unref(client_resource_user);
-    grpc_resource_user_unref(server_resource_user);
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
 
   ~UDS() override { grpc_recycle_unused_port(port_); }
@@ -162,25 +160,23 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  explicit InProcess(Service* service, grpc_resource_user* client_resource_user,
-                     grpc_resource_user* server_resource_user,
+  explicit InProcess(Service* service,
+                     grpc_slice_allocator_factory* slice_allocator_factory,
                      const FixtureConfiguration& fixture_configuration =
                          FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_unref(client_resource_user);
-    grpc_resource_user_unref(server_resource_user);
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
   ~InProcess() override {}
 };
 
 class EndpointPairFixture : public BaseFixture {
  public:
-  // Takes ownership of a ref on both resource users.
+  // Takes ownership the slice_allocator_factory
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
-                      const FixtureConfiguration& fixture_configuration,
-                      grpc_resource_user* client_resource_user,
-                      grpc_resource_user* server_resource_user)
+                      grpc_slice_allocator_factory* slice_allocator_factory,
+                      const FixtureConfiguration& fixture_configuration)
       : endpoint_pair_(endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
@@ -196,7 +192,8 @@ class EndpointPairFixture : public BaseFixture {
           server_->c_server()->core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
-          server_resource_user);
+          grpc_resource_user_create(slice_allocator_factory->resource_quota,
+                                    "server_transport"));
 
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
@@ -217,7 +214,9 @@ class EndpointPairFixture : public BaseFixture {
 
       grpc_channel_args c_args = args.c_channel_args();
       client_transport_ = grpc_create_chttp2_transport(
-          &c_args, endpoints.client, true, client_resource_user);
+          &c_args, endpoints.client, true,
+          grpc_resource_user_create(slice_allocator_factory->resource_quota,
+                                    "client_transport"));
       GPR_ASSERT(client_transport_);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
@@ -229,6 +228,7 @@ class EndpointPairFixture : public BaseFixture {
           std::vector<std::unique_ptr<
               experimental::ClientInterceptorFactoryInterface>>());
     }
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
 
   ~EndpointPairFixture() override {
@@ -263,23 +263,18 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  explicit SockPair(Service* service, grpc_resource_user* client_resource_user,
-                    grpc_resource_user* server_resource_user,
+  explicit SockPair(Service* service,
+                    grpc_slice_allocator_factory* slice_allocator_factory,
                     const FixtureConfiguration& fixture_configuration =
                         FixtureConfiguration())
-      : EndpointPairFixture(
-            service,
-            MakeEndpoints(client_resource_user, server_resource_user),
-            fixture_configuration, client_resource_user, server_resource_user) {
-  }
-  private:
+      : EndpointPairFixture(service, MakeEndpoints(slice_allocator_factory),
+                            slice_allocator_factory, fixture_configuration) {}
+
+ private:
   static grpc_endpoint_pair MakeEndpoints(
-      grpc_resource_user* client_resource_user,
-      grpc_resource_user* server_resource_user) {
-    grpc_resource_user_ref(client_resource_user);
-    grpc_resource_user_ref(server_resource_user);
-    return grpc_iomgr_create_endpoint_pair("test", nullptr, client_resource_user,
-                                  server_resource_user);
+      grpc_slice_allocator_factory* slice_allocator_factory) {
+    return grpc_iomgr_create_endpoint_pair("test", nullptr,
+                                           slice_allocator_factory);
   }
 };
 
@@ -291,13 +286,11 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(
       Service* service, grpc_passthru_endpoint_stats* stats,
-      const FixtureConfiguration& fixture_configuration,
-      grpc_resource_user* client_resource_user,
-      grpc_resource_user* server_resource_user)
-      : EndpointPairFixture(
-            service,
-            MakeEndpoints(stats, client_resource_user, server_resource_user),
-            fixture_configuration, client_resource_user, server_resource_user),
+      grpc_slice_allocator_factory* slice_allocator_factory,
+      const FixtureConfiguration& fixture_configuration)
+      : EndpointPairFixture(service,
+                            MakeEndpoints(stats, slice_allocator_factory),
+                            slice_allocator_factory, fixture_configuration),
         stats_(stats) {}
 
   ~InProcessCHTTP2WithExplicitStats() override {
@@ -318,29 +311,23 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(
       grpc_passthru_endpoint_stats* stats,
-      grpc_resource_user* client_resource_user,
-      grpc_resource_user* server_resource_user) {
+      grpc_slice_allocator_factory* slice_allocator_factory) {
     grpc_endpoint_pair p;
-    grpc_resource_user_ref(client_resource_user);
-    grpc_resource_user_ref(server_resource_user);
-    grpc_passthru_endpoint_create(&p.client, &p.server, client_resource_user,
-                                  server_resource_user, stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, slice_allocator_factory,
+                                  stats);
     return p;
   }
 };
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  explicit InProcessCHTTP2(Service* service,
-                           grpc_resource_user* client_resource_user,
-                           grpc_resource_user* server_resource_user,
-                           const FixtureConfiguration& fixture_configuration =
-                               FixtureConfiguration())
+  explicit InProcessCHTTP2(
+      Service* service, grpc_slice_allocator_factory* slice_allocator_factory,
+      const FixtureConfiguration& fixture_configuration =
+          FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(
             service, grpc_passthru_endpoint_stats_create(),
-            fixture_configuration, client_resource_user, server_resource_user) {
-
-  }
+            slice_allocator_factory, fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -362,10 +349,8 @@ template <class Base>
 class MinStackize : public Base {
  public:
   explicit MinStackize(Service* service,
-                       grpc_resource_user* client_resource_user,
-                       grpc_resource_user* server_resource_user)
-      : Base(service, client_resource_user, server_resource_user,
-             MinStackConfiguration()) {}
+                       grpc_slice_allocator_factory* slice_allocator_factory)
+      : Base(service, slice_allocator_factory, MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;

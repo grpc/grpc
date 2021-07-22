@@ -36,7 +36,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 /* chttp2 transport that is immediately available (used for testing
@@ -44,8 +43,7 @@
 
 struct custom_fixture_data {
   grpc_endpoint_pair ep;
-  grpc_resource_user* client_ru;
-  grpc_resource_user* server_ru;
+  grpc_slice_allocator_factory* slice_allocator_factory;
 };
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
@@ -117,14 +115,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   a[2].type = GRPC_ARG_INTEGER;
   a[2].value.integer = 1;
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  fixture_data->client_ru = grpc_resource_user_create_unlimited();
-  fixture_data->server_ru = grpc_resource_user_create_unlimited();
-  // The fixture needs to hold a ref to the resource users for later creation of
-  // the transport.
-  grpc_resource_user_ref(fixture_data->client_ru);
-  grpc_resource_user_ref(fixture_data->server_ru);
+  fixture_data->slice_allocator_factory = grpc_slice_allocator_factory_create(
+      grpc_resource_quota_create("h2_sockpair_1byte"));
   fixture_data->ep = grpc_iomgr_create_endpoint_pair(
-      "fixture", &args, fixture_data->client_ru, fixture_data->server_ru);
+      "fixture", &args, fixture_data->slice_allocator_factory);
   return f;
 }
 
@@ -136,8 +130,11 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, fixture_data->ep.client,
-                                           true, fixture_data->client_ru);
+  transport = grpc_create_chttp2_transport(
+      client_args, fixture_data->ep.client, true,
+      grpc_resource_user_create(
+          fixture_data->slice_allocator_factory->resource_quota,
+          "client_transport"));
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
 }
@@ -151,12 +148,18 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, fixture_data->ep.server,
-                                           false, fixture_data->server_ru);
+  transport = grpc_create_chttp2_transport(
+      server_args, fixture_data->ep.server, false,
+      grpc_resource_user_create(
+          fixture_data->slice_allocator_factory->resource_quota,
+          "server_transport"));
   server_setup_transport(f, transport);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
+  grpc_core::ExecCtx exec_ctx;
+  auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
+  grpc_slice_allocator_factory_destroy(fixture_data->slice_allocator_factory);
   gpr_free(f->fixture_data);
 }
 

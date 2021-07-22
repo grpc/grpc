@@ -163,23 +163,22 @@ typedef struct grpc_slice_allocator {
 /* Initialize a slice allocator. Takes ownership of a ref on \a resource_user
    from the caller. Caller is responsible for calling
    \a grpc_slice_allocator_destroy. */
-void grpc_slice_allocator_init(
-    grpc_slice_allocator* slice_allocator,
-    grpc_resource_user* resource_user);
+void grpc_slice_allocator_init(grpc_slice_allocator* slice_allocator,
+                               grpc_resource_user* resource_user);
 
 /* Cleans up after a slice_allocator. */
-void grpc_slice_allocator_destroy(
-    grpc_slice_allocator* slice_allocator);
+void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);
 
 /* Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time. When an allocation is completed, calls \a cb
    with arg \a p. Returns whether the slice was allocated inline in the
    function. If true, the \a slice_allocator->on_allocated callback will not be
    called. */
-bool grpc_resource_user_alloc_slices(
-    grpc_slice_allocator* slice_allocator, size_t length,
-    size_t count, grpc_slice_buffer* dest, grpc_iomgr_cb_func cb,
-    void* p) GRPC_MUST_USE_RESULT;
+bool grpc_resource_user_alloc_slices(grpc_slice_allocator* slice_allocator,
+                                     size_t length, size_t count,
+                                     grpc_slice_buffer* dest,
+                                     grpc_iomgr_cb_func cb,
+                                     void* p) GRPC_MUST_USE_RESULT;
 
 /* Allows creation of slice_allocators (thus resource_users) without calling
  * code having to understand resource_user concepts. */

@@ -24,7 +24,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
@@ -41,10 +40,12 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair(
-      "test", &args,
-      /*client_resource_user=*/grpc_resource_user_create_unlimited(),
-      /*server_resource_user=*/grpc_resource_user_create_unlimited());
+  grpc_slice_allocator_factory* slice_allocator_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("fd_conservation_posix_test"));
+  grpc_endpoint_pair p =
+      grpc_iomgr_create_endpoint_pair("test", &args, slice_allocator_factory);
+  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   f.client_ep = p.client;
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);

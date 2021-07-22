@@ -142,11 +142,11 @@ class TestTcpServer {
   }
 
   static void OnConnect(void* arg, grpc_endpoint* tcp,
-                        grpc_resource_user* resource_user,
+                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset* accepting_pollset,
                         grpc_tcp_server_acceptor* acceptor) {
     auto* self = static_cast<TestTcpServer*>(arg);
-    self->OnConnect(tcp, resource_user, accepting_pollset, acceptor);
+    self->OnConnect(tcp, slice_allocator, accepting_pollset, acceptor);
   }
 
   static void OnFdReleased(void* arg, grpc_error_handle err) {
@@ -155,10 +155,9 @@ class TestTcpServer {
   }
 
  private:
-  void OnConnect(grpc_endpoint* tcp, grpc_resource_user* resource_user,
+  void OnConnect(grpc_endpoint* tcp, grpc_slice_allocator* /*slice_allocator*/,
                  grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
-    grpc_resource_user_unref(resource_user);
     std::string peer(grpc_endpoint_get_peer(tcp));
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
     EXPECT_FALSE(acceptor->external_connection);

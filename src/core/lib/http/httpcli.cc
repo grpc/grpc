@@ -48,7 +48,7 @@ struct internal_request {
   grpc_resolved_addresses* addresses;
   size_t next_address;
   grpc_endpoint* ep;
-  grpc_resource_user* resource_user;
+  grpc_slice_allocator_factory* slice_allocator_factory;
   char* host;
   char* ssl_host_override;
   grpc_millis deadline;
@@ -69,11 +69,9 @@ static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                grpc_resource_user* resource_user,
                                 const char* /*host*/, grpc_millis /*deadline*/,
                                 void (*on_done)(void* arg,
                                                 grpc_endpoint* endpoint)) {
-  grpc_resource_user_unref(resource_user);
   on_done(arg, endpoint);
 }
 
@@ -108,7 +106,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->incoming);
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_user_unref(req->resource_user);
+  grpc_slice_allocator_factory_destroy(req->slice_allocator_factory);
   gpr_free(req);
 }
 
@@ -191,10 +189,8 @@ static void on_connected(void* arg, grpc_error_handle error) {
     next_address(req, GRPC_ERROR_REF(error));
     return;
   }
-  grpc_resource_user_ref(req->resource_user);
   req->handshaker->handshake(
-      req, req->ep, req->resource_user,
-      req->ssl_host_override ? req->ssl_host_override : req->host,
+      req, req->ep, req->ssl_host_override ? req->ssl_host_override : req->host,
       req->deadline, on_handshake_done);
 }
 
@@ -212,9 +208,12 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   addr = &req->addresses->addrs[req->next_address++];
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_resource_user_ref(req->resource_user);
-  grpc_tcp_client_connect(&req->connected, &req->ep, req->resource_user,
-                          req->context->pollset_set, {}, addr, req->deadline);
+  grpc_tcp_client_connect(
+      &req->connected, &req->ep,
+      grpc_slice_allocator_factory_create_slice_allocator(
+          req->slice_allocator_factory,
+          std::string(grpc_endpoint_get_peer(req->ep)).c_str()),
+      req->context->pollset_set, {}, addr, req->deadline);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {
@@ -247,7 +246,8 @@ static void internal_request_begin(grpc_httpcli_context* context,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->resource_user = grpc_resource_user_create(resource_quota, name);
+  req->slice_allocator_factory =
+      grpc_slice_allocator_factory_create(resource_quota);
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);

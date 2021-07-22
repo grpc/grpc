@@ -593,8 +593,7 @@ static void ru_destroy(void* ru, grpc_error_handle /*error*/) {
   delete resource_user;
 }
 
-static void ru_alloc_slices(
-    grpc_slice_allocator* slice_allocator) {
+static void ru_alloc_slices(grpc_slice_allocator* slice_allocator) {
   for (size_t i = 0; i < slice_allocator->count; i++) {
     grpc_slice_buffer_add_indexed(
         slice_allocator->dest, ru_slice_create(slice_allocator->resource_user,
@@ -988,23 +987,22 @@ void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
       GRPC_ERROR_NONE);
 }
 
-void grpc_slice_allocator_init(
-    grpc_slice_allocator* slice_allocator,
-    grpc_resource_user* resource_user) {
+void grpc_slice_allocator_init(grpc_slice_allocator* slice_allocator,
+                               grpc_resource_user* resource_user) {
   GRPC_CLOSURE_INIT(&slice_allocator->on_allocated, ru_allocated_slices,
                     slice_allocator, grpc_schedule_on_exec_ctx);
   slice_allocator->resource_user = resource_user;
 }
 
-void grpc_slice_allocator_destroy(
-    grpc_slice_allocator* slice_allocator) {
+void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
   ru_unref_by(slice_allocator->resource_user, 1);
   delete slice_allocator;
 }
 
-bool grpc_resource_user_alloc_slices(
-    grpc_slice_allocator* slice_allocator, size_t length,
-    size_t count, grpc_slice_buffer* dest, grpc_iomgr_cb_func cb, void* p) {
+bool grpc_resource_user_alloc_slices(grpc_slice_allocator* slice_allocator,
+                                     size_t length, size_t count,
+                                     grpc_slice_buffer* dest,
+                                     grpc_iomgr_cb_func cb, void* p) {
   if (GPR_UNLIKELY(
           gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown))) {
     grpc_core::ExecCtx::Run(

@@ -296,7 +296,7 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   std::string peer_string;
 
-  grpc_resource_user* resource_user = nullptr;
+  grpc_resource_user* resource_user;
 
   grpc_core::Combiner* combiner;
 

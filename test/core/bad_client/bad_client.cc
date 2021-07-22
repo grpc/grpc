@@ -35,7 +35,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/resource_user_util.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -197,13 +196,11 @@ void grpc_run_bad_client_test(
   /* Init grpc */
   grpc_init();
 
-  /* Create endpoints */
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  // a server_ru ref is needed later for transport creation.
-  grpc_resource_user_ref(server_ru);
-  sfd =
-      grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
+  grpc_slice_allocator_factory* slice_allocator_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("h2_sockpair+trace"));
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr,
+                                        slice_allocator_factory);
   /* Create server, completion events */
   a.server = grpc_server_create(nullptr, nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -215,8 +212,10 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport =
-      grpc_create_chttp2_transport(nullptr, sfd.server, false, server_ru);
+  transport = grpc_create_chttp2_transport(
+      nullptr, sfd.server, false,
+      grpc_resource_user_create(slice_allocator_factory->resource_quota,
+                                "server_transport"));
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -251,6 +250,7 @@ void grpc_run_bad_client_test(
                  .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
+  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   grpc_completion_queue_destroy(a.cq);
   grpc_completion_queue_destroy(client_cq);
   grpc_shutdown();

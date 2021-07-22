@@ -43,7 +43,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/util/resource_user_util.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -94,17 +93,19 @@ static void client_setup_transport(grpc_transport* transport) {
   grpc_channel_args_destroy(args);
 }
 
-static void init_client() {
+static void init_client(grpc_slice_allocator_factory* slice_allocator_factory) {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport* transport;
   transport = grpc_create_chttp2_transport(
-      nullptr, g_ctx.ep->client, true, grpc_resource_user_create_unlimited());
+      nullptr, g_ctx.ep->client, true,
+      grpc_resource_user_create(slice_allocator_factory->resource_quota,
+                                "client_transport"));
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
 
-static void init_server() {
+static void init_server(grpc_slice_allocator_factory* slice_allocator_factory) {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport* transport;
   GPR_ASSERT(!g_ctx.server);
@@ -112,7 +113,9 @@ static void init_server() {
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
   transport = grpc_create_chttp2_transport(
-      nullptr, g_ctx.ep->server, false, grpc_resource_user_create_unlimited());
+      nullptr, g_ctx.ep->server, false,
+      grpc_resource_user_create(slice_allocator_factory->resource_quota,
+                                "client_transport"));
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
@@ -128,13 +131,15 @@ static void test_init() {
   g_ctx.client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* Create endpoints */
-  *sfd = grpc_iomgr_create_endpoint_pair(
-      "fixture", nullptr,
-      /*client_resource_user=*/grpc_resource_user_create_unlimited(),
-      /*server_resource_user=*/grpc_resource_user_create_unlimited());
+  grpc_slice_allocator_factory* slice_allocator_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("fd_conservation_posix_test"));
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr,
+                                         slice_allocator_factory);
   /* Create client, server and setup transport over endpoint pair */
-  init_server();
-  init_client();
+  init_server(slice_allocator_factory);
+  init_client(slice_allocator_factory);
+  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
 }
 
 static void drain_cq(grpc_completion_queue* cq) {

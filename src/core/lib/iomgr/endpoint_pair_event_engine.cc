@@ -24,8 +24,7 @@
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* /* name */, grpc_channel_args* /* args */,
-    grpc_resource_user* /* client_resource_user */,
-    grpc_resource_user* /* server_resource_user */) {
+    grpc_slice_allocator_factory* /* saf */) {
   // TODO(hork): determine what's needed here in the long run
   GPR_ASSERT(
       false &&

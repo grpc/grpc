@@ -102,13 +102,12 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
             str);
   }
-  grpc_resource_user_shutdown(eeep->ru);
   eeep->endpoint.reset();
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  grpc_resource_user_unref(eeep->ru);
+  grpc_slice_allocator_destroy(ep->slice_allocator);
   delete eeep;
 }
 
@@ -167,11 +166,10 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address,
-                               grpc_resource_user* resource_user) {
+                               grpc_slice_allocator* slice_allocator) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  grpc_resource_user_ref(resource_user);
-  endpoint->ru = resource_user;
+  endpoint->slice_allocator = slice_allocator;
   return &endpoint->base;
 }
 

@@ -725,17 +725,16 @@ static void test_one_slice_through_slice_allocator_factory(void) {
       "test_one_slice_through_slice_allocator_factory");
   int num_allocs = 0;
   grpc_resource_quota_resize(rq, 1024);
-  grpc_slice_allocator_factory alloc_factory;
-  grpc_slice_allocator_factory_init(&alloc_factory, rq);
-  grpc_slice_allocator alloc;
-  grpc_slice_allocator_factory_initialize_slice_allocator(
-      &alloc_factory, "usr", &alloc);
+  grpc_slice_allocator_factory* alloc_factory =
+      grpc_slice_allocator_factory_create(rq);
+  grpc_slice_allocator* alloc =
+      grpc_slice_allocator_factory_create_slice_allocator(alloc_factory, "usr");
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer,
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(alloc, 1024, 1, &buffer,
                                                 inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
@@ -743,8 +742,8 @@ static void test_one_slice_through_slice_allocator_factory(void) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_slice_buffer_destroy_internal(&buffer);
-    grpc_slice_allocator_destroy(&alloc);
-    grpc_slice_allocator_factory_destroy(&alloc_factory);
+    grpc_slice_allocator_destroy(alloc);
+    grpc_slice_allocator_factory_destroy(alloc_factory);
   }
 }
 

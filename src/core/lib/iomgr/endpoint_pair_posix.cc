@@ -54,18 +54,23 @@ static void create_sockets(int sv[2]) {
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* name, grpc_channel_args* args,
-    grpc_resource_user* client_resource_user,
-    grpc_resource_user* server_resource_user) {
+    grpc_slice_allocator_factory* slice_allocator_factory) {
   int sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
-                             args, "socketpair-server", server_resource_user);
+  p.client =
+      grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false), args,
+                      "socketpair-server",
+                      grpc_slice_allocator_factory_create_slice_allocator(
+                          slice_allocator_factory, "server_endpoint"));
   final_name = absl::StrCat(name, ":server");
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
-                             args, "socketpair-client", client_resource_user);
+  p.server =
+      grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false), args,
+                      "socketpair-client",
+                      grpc_slice_allocator_factory_create_slice_allocator(
+                          slice_allocator_factory, "client_endpoint"));
   return p;
 }
 

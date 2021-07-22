@@ -125,6 +125,7 @@ class Server : public InternallyRefCounted<Server> {
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
+  // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,

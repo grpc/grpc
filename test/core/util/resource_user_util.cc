@@ -31,3 +31,17 @@ grpc_resource_user* grpc_resource_user_create_unlimited(
   grpc_resource_quota_unref_internal(resource_quota);
   return ru;
 }
+
+grpc_slice_allocator* grpc_slice_allocator_create_unlimited() {
+  grpc_slice_allocator_factory* slice_allocator_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("anonymous mock quota"));
+  grpc_slice_allocator* slice_allocator =
+      grpc_slice_allocator_factory_create_slice_allocator(
+          slice_allocator_factory,
+          absl::StrFormat("mock_resource_user_from_saf_%p",
+                          slice_allocator_factory)
+              .c_str());
+  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
+  return slice_allocator;
+}

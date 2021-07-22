@@ -60,9 +60,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", &args, client_ru, server_ru);
+  grpc_slice_allocator_factory* slice_allocator_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("secure_endpoint"));
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", &args,
+                                        slice_allocator_factory);
+  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
 

@@ -44,8 +44,7 @@ typedef struct grpc_httpcli_context {
 
 struct grpc_httpcli_handshaker {
   const char* default_port;
-  void (*handshake)(void* arg, grpc_endpoint* endpoint,
-                    grpc_resource_user* resource_user, const char* host,
+  void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host,
                     grpc_millis deadline,
                     void (*on_done)(void* arg, grpc_endpoint* endpoint));
 };

@@ -27,10 +27,9 @@ struct grpc_endpoint_pair {
   grpc_endpoint* client;
   grpc_endpoint* server;
 };
-// Note: takes ownership of a ref from the caller on both resource users.
+// Note: does not take ownership of the \a slice_allocator_factory.
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* name, grpc_channel_args* args,
-    grpc_resource_user* client_resource_user,
-    grpc_resource_user* server_resource_user);
+    grpc_slice_allocator_factory* slice_allocator_factory);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

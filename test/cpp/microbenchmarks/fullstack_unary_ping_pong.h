@@ -41,9 +41,10 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
+  grpc_slice_allocator_factory* alloc_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("bm_unary_pingpong"));
+  std::unique_ptr<Fixture> fixture(new Fixture(&service, alloc_factory));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

@@ -47,9 +47,10 @@ typedef struct grpc_tcp_server_acceptor {
 } grpc_tcp_server_acceptor;
 
 /* Called for newly connected TCP connections.
-   Takes ownership of acceptor and resource_user. */
+   Takes ownership of acceptor.
+   Does NOT take ownership of slice_allocator. */
 typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
-                                   grpc_resource_user* resource_user,
+                                   grpc_slice_allocator* slice_allocator,
                                    grpc_pollset* accepting_pollset,
                                    grpc_tcp_server_acceptor* acceptor);
 namespace grpc_core {
@@ -64,9 +65,10 @@ class TcpServerFdHandler {
 }  // namespace grpc_core
 
 typedef struct grpc_tcp_server_vtable {
-  grpc_error_handle (*create)(grpc_closure* shutdown_complete,
-                              const grpc_channel_args* args,
-                              grpc_tcp_server** server);
+  grpc_error_handle (*create)(
+      grpc_closure* shutdown_complete, const grpc_channel_args* args,
+      grpc_slice_allocator_factory* slice_allocator_factory,
+      grpc_tcp_server** server);
   void (*start)(grpc_tcp_server* server,
                 const std::vector<grpc_pollset*>* pollsets,
                 grpc_tcp_server_cb on_accept_cb, void* cb_arg);
@@ -85,10 +87,12 @@ typedef struct grpc_tcp_server_vtable {
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
-   grpc_tcp_server_unref() when the ref count reaches zero. */
-grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                         const grpc_channel_args* args,
-                                         grpc_tcp_server** server);
+   grpc_tcp_server_unref() when the ref count reaches zero.
+   Takes ownership of the slice_allocator_factory. */
+grpc_error_handle grpc_tcp_server_create(
+    grpc_closure* shutdown_complete, const grpc_channel_args* args,
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    grpc_tcp_server** server);
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server* server,

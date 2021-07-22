@@ -45,7 +45,7 @@ typedef struct {
   grpc_slice_buffer read_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
-  grpc_resource_user* resource_user;
+  grpc_slice_allocator* slice_allocator;
 } half;
 
 struct passthru_endpoint {
@@ -131,7 +131,6 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
-  grpc_resource_user_shutdown(m->resource_user);
   GRPC_ERROR_UNREF(why);
 }
 
@@ -144,8 +143,8 @@ static void me_destroy(grpc_endpoint* ep) {
     grpc_passthru_endpoint_stats_destroy(p->stats);
     grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
     grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-    grpc_resource_user_unref(p->client.resource_user);
-    grpc_resource_user_unref(p->server.resource_user);
+    grpc_slice_allocator_destroy(p->client.slice_allocator);
+    grpc_slice_allocator_destroy(p->server.slice_allocator);
     gpr_free(p);
   } else {
     gpr_mu_unlock(&p->mu);
@@ -185,7 +184,7 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half* m, passthru_endpoint* parent,
-                      grpc_resource_user* resource_user,
+                      grpc_slice_allocator* slice_allocator,
                       const char* half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
@@ -193,14 +192,13 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  m->resource_user = resource_user;
+  m->slice_allocator = slice_allocator;
 }
 
-void grpc_passthru_endpoint_create(grpc_endpoint** client,
-                                   grpc_endpoint** server,
-                                   grpc_resource_user* client_resource_user,
-                                   grpc_resource_user* server_resource_user,
-                                   grpc_passthru_endpoint_stats* stats) {
+void grpc_passthru_endpoint_create(
+    grpc_endpoint** client, grpc_endpoint** server,
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
@@ -211,8 +209,14 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  half_init(&m->client, m, client_resource_user, "client");
-  half_init(&m->server, m, server_resource_user, "server");
+  half_init(&m->client, m,
+            grpc_slice_allocator_factory_create_slice_allocator(
+                slice_allocator_factory, "client"),
+            "client");
+  half_init(&m->server, m,
+            grpc_slice_allocator_factory_create_slice_allocator(
+                slice_allocator_factory, "server"),
+            "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

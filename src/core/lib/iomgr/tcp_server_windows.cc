@@ -97,13 +97,15 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   grpc_channel_args* channel_args;
+  grpc_slice_allocator_factory* slice_allocator_factory;
 };
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const grpc_channel_args* args,
-                                           grpc_tcp_server** server) {
+static grpc_error_handle tcp_server_create(
+    grpc_closure* shutdown_complete, const grpc_channel_args* args,
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
@@ -116,6 +118,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.head = NULL;
   s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
+  s->slice_allocator_factory = slice_allocator_factory;
   *server = s;
   return GRPC_ERROR_NONE;
 }
@@ -166,6 +169,7 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void tcp_server_destroy(grpc_tcp_server* s) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
+  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
 
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts due to the normal operation mechanism. */
@@ -324,25 +328,12 @@ static void on_accept(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&sp->server->mu);
     return;
   }
-
-  // Create Resource User
-  grpc_resource_quota* resource_quota =
-      grpc_channel_args_find_pointer<grpc_resource_quota>(
-          sp->server->channel_args, GRPC_ARG_RESOURCE_QUOTA);
-  if (resource_quota == nullptr) {
-    resource_quota = grpc_resource_quota_create(nullptr);
-  } else {
-    grpc_resource_quota_ref_internal(resource_quota);
-  }
-  grpc_resource_user* resource_user =
-      grpc_resource_user_create(resource_quota, "tcp_server_windows");
-  grpc_resource_quota_unref_internal(resource_quota);
-
   /* The IOCP notified us of a completed operation. Let's grab the results,
      and act accordingly. */
   transfered_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                        &transfered_bytes, FALSE, &flags);
+  grpc_slice_allocator* allocator;
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
@@ -371,11 +362,12 @@ static void on_accept(void* arg, grpc_error_handle error) {
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
+      allocator = grpc_slice_allocator_factory_create_slice_allocator(
+          sp->server->slice_allocator_factory, peer_name_string.c_str());
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
                            sp->server->channel_args, peer_name_string.c_str(),
-                           resource_user);
+                           allocator);
     } else {
-      grpc_resource_user_unref(resource_user);
       closesocket(sock);
     }
   }
@@ -390,8 +382,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
     acceptor->external_connection = false;
-    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, resource_user,
-                             NULL, acceptor);
+    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, allocator, NULL,
+                             acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned

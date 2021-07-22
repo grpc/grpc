@@ -49,23 +49,18 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
-  grpc_resource_quota* resource_quota =
-      grpc_channel_args_find_pointer<grpc_resource_quota>(
-          args, GRPC_ARG_RESOURCE_QUOTA);
-  if (resource_quota == nullptr) {
-    resource_quota = grpc_resource_quota_create(nullptr);
-  } else {
-    grpc_resource_quota_ref_internal(resource_quota);
-  }
-  grpc_resource_user* resource_user =
-      grpc_resource_user_create(resource_quota, "fd-client");
-  grpc_resource_quota_unref_internal(resource_quota);
-  grpc_resource_user_ref(resource_user);
+  grpc_slice_allocator_factory* alloc_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_from_channel_args(args, true));
+  grpc_slice_allocator* allocator =
+      grpc_slice_allocator_factory_create_slice_allocator(
+          alloc_factory, "fd-client:transport");
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), args, "fd-client", resource_user);
-
-  grpc_transport* transport =
-      grpc_create_chttp2_transport(final_args, client, true, resource_user);
+      grpc_fd_create(fd, "client", true), args, "fd-client", allocator);
+  grpc_resource_user_ref(allocator->resource_user);
+  grpc_transport* transport = grpc_create_chttp2_transport(
+      final_args, client, true, allocator->resource_user);
+  grpc_slice_allocator_factory_destroy(alloc_factory);
   GPR_ASSERT(transport);
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =

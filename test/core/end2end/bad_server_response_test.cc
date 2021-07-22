@@ -148,11 +148,10 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_resource_user* resource_user,
+                       grpc_slice_allocator* /*slice_allocator*/,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  grpc_resource_user_unref(resource_user);
   test_tcp_server* server = static_cast<test_tcp_server*>(arg);
   GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_writing_settings_frame, done_writing_settings_frame,

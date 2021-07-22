@@ -43,11 +43,11 @@ struct grpc_custom_tcp_connect {
   grpc_endpoint** endpoint;
   int refs;
   std::string addr_name;
-  grpc_resource_user* resource_user;
+  grpc_slice_allocator* slice_allocator;
 };
 
 static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
-  grpc_resource_user_unref(connect->resource_user);
+  grpc_slice_allocator_destroy(connect->slice_allocator);
   grpc_custom_socket* socket = connect->socket;
   delete connect;
   socket->refs--;
@@ -87,7 +87,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   grpc_timer_cancel(&connect->alarm);
   if (error == GRPC_ERROR_NONE) {
     *connect->endpoint = custom_tcp_endpoint_create(
-        socket, connect->resource_user, connect->addr_name.c_str());
+        socket, connect->slice_allocator, connect->addr_name.c_str());
   }
   done = (--connect->refs == 0);
   if (done) {
@@ -111,7 +111,7 @@ static void custom_connect_callback(grpc_custom_socket* socket,
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_resource_user* resource_user,
+                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* resolved_addr,
@@ -127,7 +127,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
-  connect->resource_user = resource_user;
+  connect->slice_allocator = slice_allocator;
   connect->socket = socket;
   socket->connector = connect;
   socket->endpoint = nullptr;

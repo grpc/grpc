@@ -41,7 +41,7 @@ typedef struct mock_endpoint {
   grpc_slice_buffer read_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
-  grpc_resource_user* resource_user;
+  grpc_slice_allocator* slice_allocator;
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -86,14 +86,13 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
-  grpc_resource_user_shutdown(m->resource_user);
   GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_endpoint* ep) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   grpc_slice_buffer_destroy(&m->read_buffer);
-  grpc_resource_user_unref(m->resource_user);
+  grpc_slice_allocator_destroy(m->slice_allocator);
   gpr_mu_destroy(&m->mu);
   gpr_free(m);
 }
@@ -122,11 +121,11 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_get_fd,
                                             me_can_track_err};
 
-grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
-                                         grpc_resource_user* resource_user) {
+grpc_endpoint* grpc_mock_endpoint_create(
+    void (*on_write)(grpc_slice slice), grpc_slice_allocator* slice_allocator) {
   mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
-  m->resource_user = resource_user;
+  m->slice_allocator = slice_allocator;
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;

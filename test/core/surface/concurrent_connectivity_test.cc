@@ -116,7 +116,7 @@ void server_thread(void* vargs) {
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
-                       grpc_resource_user* resource_user,
+                       grpc_slice_allocator* /*slice_allocator*/,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
@@ -124,7 +124,6 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
-  grpc_resource_user_unref(resource_user);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
                     grpc_pollset_kick(args->pollset[0], nullptr));
@@ -139,7 +138,10 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error_handle error = grpc_tcp_server_create(nullptr, nullptr, &s);
+  grpc_error_handle error = grpc_tcp_server_create(
+      nullptr, nullptr,
+      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
+      &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;

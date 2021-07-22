@@ -28,7 +28,7 @@ struct grpc_event_engine_endpoint {
       endpoint;
   std::string peer_address;
   std::string local_address;
-  grpc_resource_user* ru = nullptr;
+  grpc_slice_allocator* slice_allocator;
   std::aligned_storage<
       sizeof(grpc_event_engine::experimental::SliceBuffer),
       alignof(grpc_event_engine::experimental::SliceBuffer)>::type read_buffer;
@@ -46,10 +46,10 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
 
 /// Creates a new internal grpc_endpoint struct, when no EventEngine Endpoint
 /// has yet been created. This is used in client code before connections are
-/// established.
+/// established. Takes ownership of the slice_allocator.
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address,
-                               grpc_resource_user* resource_user);
+                               grpc_slice_allocator* slice_allocator);
 
 #endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H

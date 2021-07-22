@@ -109,9 +109,9 @@ void test_succeeds(void) {
   GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr*)addr,
                                 (int*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  auto* ru = grpc_resource_user_create_unlimited();
-  grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting,
+                          grpc_slice_allocator_create_unlimited(), NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
   gpr_mu_lock(g_mu);
 
   while (g_connections_complete == connections_complete_before) {
@@ -152,9 +152,9 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  auto* ru = grpc_resource_user_create_unlimited();
-  grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting,
+                          grpc_slice_allocator_create_unlimited(), NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */

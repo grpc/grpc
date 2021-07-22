@@ -59,11 +59,12 @@ struct CFStreamEndpoint {
 
   std::string peer_string;
   std::string local_address;
-  grpc_resource_user* resource_user;
-  grpc_slice_allocator slice_allocator;
+  grpc_slice_allocator* slice_allocator;
 };
 static void CFStreamFree(CFStreamEndpoint* ep) {
-  grpc_resource_user_unref(ep->resource_user);
+  if (ep->slice_allocator != nullptr) {
+    grpc_slice_allocator_destroy(ep->slice_allocator);
+  }
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
   CFSTREAM_HANDLE_UNREF(ep->stream_sync, "free");
@@ -292,7 +293,10 @@ void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
-  grpc_resource_user_unref(ep_impl->resource_user);
+  if (ep_impl->slice_allocator != nullptr) {
+    grpc_slice_allocator_destroy(ep_impl->slice_allocator);
+    ep_impl->slice_allocator = nullptr;
+  }
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%p)", ep_impl, why);
   }
@@ -338,11 +342,10 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamGetFD,
                                             CFStreamCanTrackErr};
 
-grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
-                                             CFWriteStreamRef write_stream,
-                                             const char* peer_string,
-                                             grpc_resource_user* resource_user,
-                                             CFStreamHandle* stream_sync) {
+grpc_endpoint* grpc_cfstream_endpoint_create(
+    CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
+    const char* peer_string, grpc_slice_allocator* slice_allocator,
+    CFStreamHandle* stream_sync) {
   CFStreamEndpoint* ep_impl = new CFStreamEndpoint;
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG,
@@ -383,10 +386,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
-  grpc_resource_user_ref(resource_user);
-  ep_impl->resource_user = resource_user;
-  grpc_slice_allocator_init(&ep_impl->slice_allocator,
-                                          ep_impl->resource_user);
+  ep_impl->slice_allocator = slice_allocator;
 
   return &ep_impl->base;
 }
