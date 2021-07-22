@@ -5692,9 +5692,10 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
   SetRouteConfiguration(0, new_route_config);
-  CheckRpcSendFailure(
-      1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
-      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_timeout_ms(0).set_server_expected_error(
+                          StatusCode::DEADLINE_EXCEEDED),
+                      StatusCode::UNAVAILABLE);
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -5776,9 +5777,10 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
-  CheckRpcSendFailure(
-      1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
-      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_timeout_ms(0).set_server_expected_error(
+                          StatusCode::DEADLINE_EXCEEDED),
+                      StatusCode::UNAVAILABLE);
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
