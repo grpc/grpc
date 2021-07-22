@@ -10,3 +10,8 @@ Status OtherServiceImpl::SayHello(
   reply->set_message(prefix + request->name());
   return Status::OK;
 }
+
+IDynamicService* CreateOtherServiceHelper() {
+  IDynamicService* service = new OtherServiceImpl();
+  return service;
+}

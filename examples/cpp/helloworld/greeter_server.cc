@@ -30,7 +30,8 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
-#include "other_service.h"
+// #include "other_service.h"
+#include "IDynamicService.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -40,7 +41,12 @@ using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
+
+typedef IDynamicService* (*CreateOtherService)();
+
+
 // Logic and data behind the server's behavior.
+/*
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
@@ -49,23 +55,47 @@ class GreeterServiceImpl final : public Greeter::Service {
     return Status::OK;
   }
 };
+*/
 
 void RunServer() {
   std::string server_address("0.0.0.0:50051");
-  // GreeterServiceImpl service;
-
-  OtherServiceImpl otherService;
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+
   ServerBuilder builder;
+
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
+
+  // GreeterServiceImpl service;
   // builder.RegisterService(&service);
 
-  builder.RegisterService(&otherService);
+  const std::string& path = "C:\\Users\\keithl\\repos\\grpc\\examples\\cpp\\helloworld\\cmake\\build\\Debug\\other_service_shared.dll"; 
+
+  std::wstring temp = std::wstring(path.begin(), path.end());
+  LPCWSTR str = temp.c_str();
+  HINSTANCE hDLL = LoadLibraryW(str);
+
+  if (!hDLL) {
+    throw std::exception("Unable to load DLL");
+  }
+
+  // OtherServiceImpl otherService;
+  // CreateOtherService createOtherService = reinterpret_cast<CreateOtherService>(::GetProcAddress(hDLL, "CreateService"));
+  CreateOtherService createOtherService = (CreateOtherService)(GetProcAddress(hDLL, "CreateOtherServiceHelper"));
+
+  if (!createOtherService) {
+    throw std::exception("Unable to get proc from DLL");
+  }
+
+  // CreateOtherService createOtherService = func();
+  grpc::Service* otherService = createOtherService();
+
+  builder.RegisterService(otherService);
 
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());

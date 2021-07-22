@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef OTHER_SERVICE_H 
+#define OTHER_SERVICE_H
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -14,6 +17,8 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
+#include "IDynamicService.h"
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -23,7 +28,7 @@ using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
-class OtherServiceImpl final : public Greeter::Service {
+class OtherServiceImpl final : public Greeter::Service, public IDynamicService {
  public:
   Status SayHello(
     ServerContext* context,
@@ -31,3 +36,9 @@ class OtherServiceImpl final : public Greeter::Service {
     HelloReply* reply
   );
 };
+
+extern "C" {
+  __declspec(dllexport) IDynamicService* CreateOtherServiceHelper();
+}
+
+#endif
