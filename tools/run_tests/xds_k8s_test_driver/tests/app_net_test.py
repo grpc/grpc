@@ -23,6 +23,7 @@ from framework.infrastructure.gcp import network_services
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
+
 class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
 
     def test_ping_pong(self):
@@ -35,6 +36,7 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
         test_client: _XdsTestClient = self.startTestClient(test_server)
         self.assertXdsConfigExists(test_client)
         self.assertSuccessfulRpcs(test_client)
+
 
 if __name__ == '__main__':
     absltest.main(failfast=True)

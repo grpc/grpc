@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 _ComputeV1 = gcp.compute.ComputeV1
 GcpResource = _ComputeV1.GcpResource
 
+
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
     GRPC_ROUTES = 'grpcRoutes'
@@ -83,7 +84,6 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
                     value=d["value"],
                 )
 
-
         @dataclasses.dataclass(frozen=True)
         class RouteMatch:
             method: Optional['MethodMatch']
@@ -92,8 +92,11 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             @staticmethod
             def from_dict(d: dict) -> 'RouteMatch':
                 return RouteMatch(
-                    method=NetworkServicesV1Alpha1.MethodMatch.from_dict(d["method"]) if "method" in d else None,
-                    headers=tuple(NetworkServicesV1Alpha1.HeaderMatch.from_dict(h) for h in d["headers"]) if "headers" in d else (),
+                    method=NetworkServicesV1Alpha1.MethodMatch.from_dict(
+                        d["method"]) if "method" in d else None,
+                    headers=tuple(
+                        NetworkServicesV1Alpha1.HeaderMatch.from_dict(h)
+                        for h in d["headers"]) if "headers" in d else (),
                 )
 
         @dataclasses.dataclass(frozen=True)
@@ -116,10 +119,10 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             @staticmethod
             def from_dict(d: dict) -> 'RouteAction':
                 return NetworkServicesV1Alpha1.RouteAction(
-                    destination=NetworkServicesV1Alpha1.Destination.from_dict(d["destination"]) if "destination" in d else None,
+                    destination=NetworkServicesV1Alpha1.Destination.from_dict(
+                        d["destination"]) if "destination" in d else None,
                     drop=d.get("drop"),
                 )
-
 
         @dataclasses.dataclass(frozen=True)
         class RouteRule:
@@ -129,10 +132,11 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             @staticmethod
             def from_dict(d: dict) -> 'RouteRule':
                 return NetworkServicesV1Alpha1.RouteRule(
-                    match=NetworkServicesV1Alpha1.RouteMatch.from_dict(d["match"]) if "match" in d else "",
-                    action=NetworkServicesV1Alpha1.RouteAction.from_dict(d["action"]),
+                    match=NetworkServicesV1Alpha1.RouteMatch.from_dict(
+                        d["match"]) if "match" in d else "",
+                    action=NetworkServicesV1Alpha1.RouteAction.from_dict(
+                        d["action"]),
                 )
-
 
         name: str
         url: str
@@ -220,36 +224,31 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         )
 
     def get_router(self, name: str) -> Router:
-        result = self._get_resource(
-            collection=self._api_locations.routers(),
-            full_name=self.resource_full_name(name,
-                                              self.ROUTERS))
+        result = self._get_resource(collection=self._api_locations.routers(),
+                                    full_name=self.resource_full_name(
+                                        name, self.ROUTERS))
         return self.Router.from_dict(name, result)
 
     def delete_router(self, name: str) -> None:
-        return self._delete_resource(
-            collection=self._api_locations.routers(),
-            full_name=self.resource_full_name(name,
-                                              self.ROUTERS))
+        return self._delete_resource(collection=self._api_locations.routers(),
+                                     full_name=self.resource_full_name(
+                                         name, self.ROUTERS))
 
     def create_grpc_route(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(
-                self._api_locations.grpcRoutes(),
-                body,
-                grpcRouteId=name)
+        return self._create_resource(self._api_locations.grpcRoutes(),
+                                     body,
+                                     grpcRouteId=name)
 
     def get_grpc_route(self, name: str) -> GrpcRoute:
-        result = self._get_resource(
-            collection=self._api_locations.grpcRoutes(),
-            full_name=self.resource_full_name(name,
-                                              self.GRPC_ROUTES))
+        result = self._get_resource(collection=self._api_locations.grpcRoutes(),
+                                    full_name=self.resource_full_name(
+                                        name, self.GRPC_ROUTES))
         return self.GrpcRoute.from_dict(name, result)
 
     def delete_grpc_route(self, name: str) -> None:
         return self._delete_resource(
             collection=self._api_locations.grpcRoutes(),
-            full_name=self.resource_full_name(name,
-                                              self.GRPC_ROUTES))
+            full_name=self.resource_full_name(name, self.GRPC_ROUTES))
 
     @staticmethod
     def _operation_internal_error(exception):

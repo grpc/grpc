@@ -342,6 +342,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         test_client.wait_for_active_server_channel()
         return test_client
 
+
 class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
     td: TrafficDirectorAppNetManager
 
@@ -352,6 +353,7 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
             network=self.network)
+
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
     td: TrafficDirectorSecureManager
