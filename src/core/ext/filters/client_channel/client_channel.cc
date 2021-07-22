@@ -61,7 +61,6 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -1692,6 +1691,40 @@ void ClientChannel::UpdateStateAndPickerLocked(
   pending_subchannel_updates_.clear();
 }
 
+namespace {
+
+// TODO(roth): Remove this in favor of the gprpp Match() function once
+// we can do that without breaking lock annotations.
+template <typename T>
+T HandlePickResult(
+    LoadBalancingPolicy::PickResult* result,
+    std::function<T(LoadBalancingPolicy::PickResult::Complete*)> complete_func,
+    std::function<T(LoadBalancingPolicy::PickResult::Queue*)> queue_func,
+    std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
+    std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
+  auto* complete_pick =
+      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+  if (complete_pick != nullptr) {
+    return complete_func(complete_pick);
+  }
+  auto* queue_pick =
+      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+  if (queue_pick != nullptr) {
+    return queue_func(queue_pick);
+  }
+  auto* fail_pick =
+      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+  if (fail_pick != nullptr) {
+    return fail_func(fail_pick);
+  }
+  auto* drop_pick =
+      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+  GPR_ASSERT(drop_pick != nullptr);
+  return drop_func(drop_pick);
+}
+
+}  // namespace
+
 grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel not connected");
@@ -1701,13 +1734,13 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
     MutexLock lock(&data_plane_mu_);
     result = picker_->Pick(LoadBalancingPolicy::PickArgs());
   }
-  return Match(
-      result.result,
+  return HandlePickResult<grpc_error_handle>(
+      &result,
       // Complete pick.
-      [op](const LoadBalancingPolicy::PickResult::Complete& complete_pick)
+      [op](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::work_serializer_) {
-            SubchannelWrapper* subchannel =
-                static_cast<SubchannelWrapper*>(complete_pick.subchannel.get());
+            SubchannelWrapper* subchannel = static_cast<SubchannelWrapper*>(
+                complete_pick->subchannel.get());
             ConnectedSubchannel* connected_subchannel =
                 subchannel->connected_subchannel();
             connected_subchannel->Ping(op->send_ping.on_initiate,
@@ -1715,16 +1748,16 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
             return GRPC_ERROR_NONE;
           },
       // Queue pick.
-      [](const LoadBalancingPolicy::PickResult::Queue& /*queue_pick*/) {
+      [](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB picker queued call");
       },
       // Fail pick.
-      [](const LoadBalancingPolicy::PickResult::Fail& fail_pick) {
-        return absl_status_to_grpc_error(fail_pick.status);
+      [](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
+        return absl_status_to_grpc_error(fail_pick->status);
       },
       // Drop pick.
-      [](const LoadBalancingPolicy::PickResult::Drop& drop_pick) {
-        return absl_status_to_grpc_error(drop_pick.status);
+      [](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
+        return absl_status_to_grpc_error(drop_pick->status);
       });
 }
 
@@ -3003,8 +3036,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
   Metadata initial_metadata(this, initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;
   auto result = chand_->picker_->Pick(pick_args);
-  return MatchMutable(
-      &result.result,
+  return HandlePickResult<bool>(
+      &result,
       // CompletePick
       [this](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
