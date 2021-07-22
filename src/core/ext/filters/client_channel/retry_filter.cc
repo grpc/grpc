@@ -512,7 +512,6 @@ class RetryFilter::CallData {
   BackOff retry_backoff_;
 
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -2044,7 +2043,6 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
               .set_max_backoff(
                   retry_policy_ == nullptr ? 0 : retry_policy_->max_backoff())),
       path_(grpc_slice_ref_internal(args.path)),
-      call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -2178,7 +2176,7 @@ RefCountedPtr<ClientChannel::LoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
-                                 path_,        call_start_time_, deadline_,
+                                 path_,        /*start_time=*/0, deadline_,
                                  arena_,       call_combiner_};
   return chand_->client_channel_->CreateLoadBalancedCall(
       args, pollent_,

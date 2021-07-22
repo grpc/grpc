@@ -464,7 +464,6 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -475,6 +474,8 @@ class ClientChannel::LoadBalancedCall
   ConfigSelector::CallDispatchController* call_dispatch_controller_;
 
   CallTracer::CallAttemptTracer* call_attempt_tracer_;
+
+  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
@@ -501,13 +502,13 @@ class ClientChannel::LoadBalancedCall
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
   // For intercepting send_initial_metadata on_complete.
+  gpr_atm* peer_string_ = nullptr;
   grpc_closure send_initial_metadata_on_complete_;
   grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   uint32_t* recv_initial_metadata_flags_ = nullptr;
-  gpr_atm* peer_string_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
 
@@ -518,6 +519,7 @@ class ClientChannel::LoadBalancedCall
 
   // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_transport_stream_stats* transport_stream_stats_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
