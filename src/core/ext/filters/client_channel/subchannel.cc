@@ -296,6 +296,47 @@ void SubchannelCall::IncrementRefCount(
 }
 
 //
+// SubchannelConnector::Args
+//
+
+SubchannelConnector::Args::Args(const Args& other) {
+  interested_parties = other.interested_parties;
+  deadline = other.deadline;
+  channel_args = grpc_channel_args_copy(other.channel_args);
+}
+
+SubchannelConnector::Args::Args(Args&& other) noexcept {
+  interested_parties = other.interested_parties;
+  deadline = other.deadline;
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  channel_args = other.channel_args;
+  other.channel_args = nullptr;
+}
+
+SubchannelConnector::Args& SubchannelConnector::Args::operator=(
+    const Args& other) {
+  if (&other == this) {
+    return *this;
+  }
+  interested_parties = other.interested_parties;
+  deadline = other.deadline;
+  grpc_channel_args_destroy(channel_args);
+  channel_args = grpc_channel_args_copy(other.channel_args);
+  return *this;
+}
+
+SubchannelConnector::Args& SubchannelConnector::Args::operator=(
+    Args&& other) noexcept {
+  interested_parties = other.interested_parties;
+  deadline = other.deadline;
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(channel_args);
+  channel_args = other.channel_args;
+  other.channel_args = nullptr;
+  return *this;
+}
+
+//
 // Subchannel::ConnectedSubchannelStateWatcher
 //
 
@@ -993,9 +1034,9 @@ void Subchannel::ContinueConnectingLocked() {
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
   next_attempt_deadline_ = backoff_.NextAttemptTime();
   args.deadline = std::max(next_attempt_deadline_, min_deadline);
-  args.channel_args = args_;
+  args.channel_args = grpc_channel_args_copy(args_);
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status());
-  connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
+  connector_->Connect(std::move(args), &connecting_result_, &on_connecting_finished_);
 }
 
 void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {

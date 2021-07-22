@@ -32,7 +32,7 @@ class Chttp2Connector : public SubchannelConnector {
   Chttp2Connector();
   ~Chttp2Connector() override;
 
-  void Connect(const Args& args, Result* result, grpc_closure* notify) override;
+  void Connect(Args args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override;
 
  private:
