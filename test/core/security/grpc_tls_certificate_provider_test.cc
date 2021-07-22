@@ -46,8 +46,11 @@ namespace testing {
 
 constexpr const char* kCertName = "cert_name";
 constexpr const char* kRootError = "Unable to get latest root certificates.";
+constexpr const char* kEmptyRootError = "Empty root certificate.";
 constexpr const char* kIdentityError =
     "Unable to get latest identity certificates.";
+constexpr const char* kEmptyIdentityError = "Empty identity certificates.";
+constexpr const char* kEmptyIdentityError = "Invalid Key-cert pair list.";
 
 class GrpcTlsCertificateProviderTest : public ::testing::Test {
  protected:
@@ -543,7 +546,6 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   EXPECT_FALSE(*status);
 }
 
-// TODO(itsemmanuel): Add check for empty certs.
 TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   DataWatcherCertificateProvider provider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -585,7 +587,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 // TODO(itsemmanuel): Refactor
-//TEST_F(GrpcTlsCertificateProviderTest,
+// TEST_F(GrpcTlsCertificateProviderTest,
 //       DataWatcherCertificateProviderReloadEmptyRootCertificate) {
 //  DataWatcherCertificateProvider provider(root_cert_, {});
 //  WatcherState* watcher_state_1 =
@@ -639,7 +641,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 // TODO(itsemmanuel): Refactor
-//TEST_F(GrpcTlsCertificateProviderTest,
+// TEST_F(GrpcTlsCertificateProviderTest,
 //       DataWatcherCertificateProviderReloadEmptyKeyCertificatePair) {
 //  PemKeyCertPairList pem_key_cert_pair_list =
 //      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());

@@ -46,7 +46,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_core::MutexLock lock(&mu_);
     const char* error_message = pem_key_cert_pairs.empty()
                                     ? "Empty identity certificates."
-                                    : "Key-cert pair list failed match.";
+                                    : "Invalid Key-cert pair list.";
     ReportIdentityCertStatus(error_message, false, true);
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
