@@ -1134,7 +1134,7 @@ void* XdsClusterMaxRetriesMapArgCopy(void* p) {
   return xds_cluster_max_retries_map;
 }
 
-void XdsClusterMaxRetriesMapArgDestroy(void* p) {}
+void XdsClusterMaxRetriesMapArgDestroy(void* /*p*/) {}
 
 int XdsClusterMaxRetriesMapArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
