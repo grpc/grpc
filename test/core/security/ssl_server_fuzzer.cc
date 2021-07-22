@@ -60,10 +60,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
 
-    grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
-    grpc_resource_user_ref(resource_user);
+    grpc_slice_allocator* slice_allocator =
+        grpc_slice_allocator_create_unlimited();
     grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, resource_user);
+        grpc_mock_endpoint_create(discard_write, slice_allocator);
 
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
@@ -100,9 +100,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     sc->add_handshakers(nullptr, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(
-        mock_endpoint, resource_user, nullptr /* channel_args */, deadline,
-        nullptr /* acceptor */, on_handshake_done, &state);
+    handshake_mgr->DoHandshake(mock_endpoint, nullptr /* channel_args */,
+                               deadline, nullptr /* acceptor */,
+                               on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
