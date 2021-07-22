@@ -198,14 +198,6 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             logging.info('GcpResourceManager: skipping setup for strategy [%s]',
                          self.strategy)
             return
-        # Construct UrlMap from test classes
-        # This is the step that mostly likely to go wrong. Lifting it to be the
-        # first task ensures fail fast.
-        aggregator = _UrlMapChangeAggregator(
-            url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
-        for test_case_class in test_case_classes:
-            aggregator.apply_change(test_case_class)
-        final_url_map = aggregator.get_map()
         # Clean up debris from previous runs
         self._pre_cleanup()
         # Start creating GCP resources
@@ -219,6 +211,12 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Backend Services
         self.td.create_backend_service()
         self.td.create_alternative_backend_service()
+        # Construct UrlMap from test classes
+        aggregator = _UrlMapChangeAggregator(
+            url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
+        for test_case_class in test_case_classes:
+            aggregator.apply_change(test_case_class)
+        final_url_map = aggregator.get_map()
         # UrlMap
         self.td.create_url_map_with_content(final_url_map)
         # Target Proxy
@@ -266,10 +264,11 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
     @functools.lru_cache(None)
     def default_backend_service(self) -> str:
         """Returns default backend service URL."""
-        return self.td.make_resource_name(self.td.BACKEND_SERVICE_NAME)
+        self.td.load_backend_service()
+        return self.td.backend_service.url
 
     @functools.lru_cache(None)
     def alternative_backend_service(self) -> str:
         """Returns alternative backend service URL."""
-        return self.td.make_resource_name(
-            self.td.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        self.td.load_alternative_backend_service()
+        return self.td.alternative_backend_service.url
