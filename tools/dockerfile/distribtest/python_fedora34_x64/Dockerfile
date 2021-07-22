@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM fedora:34
 
-RUN apt-get update && apt-get install -y python3 python3-pip
-RUN pip3 install virtualenv==16.7.9
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
+RUN pip3 install virtualenv
