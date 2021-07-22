@@ -149,9 +149,15 @@ LICENSE_YEAR = f'Copyright {YEAR} gRPC authors.'
 
 def join_license_text(header, prefix, footer, notice):
     text = (header + '\n') if header else ""
-    text += '\n'.join(prefix + ' ' +
-                      (LICENSE_YEAR if re.search(RE_YEAR, line) else line)
-                      for line in LICENSE_NOTICE)
+
+    def add_prefix(prefix, line):
+        # Don't put whitespace between prefix and empty line to avoid having
+        # trailing whitespaces.
+        return prefix + ('' if len(line) == 0 else ' ') + line
+
+    text += '\n'.join(
+        add_prefix(prefix, (LICENSE_YEAR if re.search(RE_YEAR, line) else line))
+        for line in LICENSE_NOTICE)
     text += '\n'
     if footer:
         text += footer + '\n'
