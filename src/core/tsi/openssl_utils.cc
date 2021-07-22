@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <absl/strings/string_view.h>
 #include "openssl/bio.h"
 #include "openssl/evp.h"
 #include "openssl/pem.h"
@@ -23,14 +24,14 @@
 
 namespace grpc_core {
 
-OpenSslPKey::OpenSslPKey(const char* private_key, int size) {
-  BIO* bio = BIO_new_mem_buf(private_key, size);
-  private_key_ = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
+OpenSslPKey::OpenSslPKey(absl::string_view private_key) {
+  BIO* bio = BIO_new_mem_buf(private_key.data(), private_key.size());
+  p_key_ = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }
 
-OpenSslX509::OpenSslX509(const char* cert, int size) {
-  BIO* bio = BIO_new_mem_buf(cert, size);
+OpenSslX509::OpenSslX509(absl::string_view cert) {
+  BIO* bio = BIO_new_mem_buf(cert.data(), cert.size());
   x_509_ = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }

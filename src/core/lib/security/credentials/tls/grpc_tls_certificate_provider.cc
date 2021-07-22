@@ -373,23 +373,23 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  OpenSslX509 x509(cert_chain.data(), cert_chain.size());
+  OpenSslX509 x509(cert_chain);
   if (x509.get_x509() == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
   OpenSslPKey public_evp_pkey(X509_get_pubkey(x509.get_x509()));
-  if (public_evp_pkey.get_private_key() == nullptr) {
+  if (public_evp_pkey.get_p_key() == nullptr) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  OpenSslPKey private_evp_pkey(private_key.data(), private_key.size());
-  if (private_evp_pkey.get_private_key() == nullptr) {
+  OpenSslPKey private_evp_pkey(private_key);
+  if (private_evp_pkey.get_p_key() == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  return EVP_PKEY_cmp(private_evp_pkey.get_private_key(),
-                      public_evp_pkey.get_private_key()) == 1;
+  return EVP_PKEY_cmp(private_evp_pkey.get_p_key(),
+                      public_evp_pkey.get_p_key()) == 1;
 }
 
 }  // namespace grpc_core
