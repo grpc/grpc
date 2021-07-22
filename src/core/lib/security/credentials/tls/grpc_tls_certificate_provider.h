@@ -68,6 +68,9 @@ class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
   }
 
  protected:
+  // Reports errors related to obtaining the key-cert pair list to the
+  // distributor
+  void ReportIdentityCertError(const char* error);
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
