@@ -105,6 +105,7 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(
   if (deny_engine != nullptr) {
     AuthorizationEngine::Decision decision = deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
+      gpr_log(GPR_ERROR, "Match found in deny policy.");
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
         gpr_log(GPR_INFO, "Request denied. Matching policy name: %s.",
                 decision.matching_policy_name.c_str());
@@ -117,6 +118,7 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(
   if (allow_engine != nullptr) {
     AuthorizationEngine::Decision decision = allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
+      gpr_log(GPR_ERROR, "Match found in allow policy.");
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
         gpr_log(GPR_INFO, "Request allowed. Matching policy name: %s.",
                 decision.matching_policy_name.c_str());
@@ -124,6 +126,7 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(
       return true;
     }
   }
+  gpr_log(GPR_ERROR, "Deny by default.");
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
     gpr_log(GPR_INFO, "Request denied. No match found.");
   }
