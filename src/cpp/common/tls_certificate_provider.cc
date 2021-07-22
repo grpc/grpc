@@ -19,7 +19,6 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "absl/container/inlined_vector.h"
-#include "tls_credentials_options_util.h"
 
 namespace grpc {
 namespace experimental {
@@ -61,14 +60,9 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 }
 
 grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
-    const std::string& root_certificate) {
-  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
-      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
-  GPR_ASSERT(in_memory_provider != nullptr);
-  absl::Status status =
-      in_memory_provider->SetRootCertificate(root_certificate);
-  return grpc::Status(static_cast<StatusCode>(status.code()),
-                      std::string(status.message()));
+    const char* root_certificate) {
+  grpc_core::MutexLock lock(&mu_);
+  return set_data_watcher_root_certificate(c_provider_, root_certificate);
 }
 
 grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
@@ -78,13 +72,8 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
-      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
-  GPR_ASSERT(in_memory_provider != nullptr);
-  absl::Status status = in_memory_provider->SetKeyCertificatePairs(
-      pairs_core->pem_key_cert_pairs);
-  return grpc::Status(static_cast<StatusCode>(status.code()),
-                      status.message().data());
+  grpc_core::MutexLock lock(&mu_);
+  return set_data_watcher_key_certificate_pairs(c_provider_, pairs_core);
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(

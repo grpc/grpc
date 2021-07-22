@@ -14,16 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include "include/grpcpp/impl/codegen/status.h"
+
 #include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -399,6 +399,10 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
       distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
                                     absl::nullopt);
     }
+    if (info.root_being_watched && root_certificate_.empty()) {
+      distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(root_cert_error),
+                                    absl::nullopt);
+    }
   }
   GRPC_ERROR_UNREF(root_cert_error);
   return absl::OkStatus();
@@ -433,6 +437,10 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     if (identity_to_report.has_value()) {
       distributor_->SetKeyMaterials(cert_name, absl::nullopt,
                                     std::move(identity_to_report));
+    }
+    if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
+      distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                    GRPC_ERROR_REF(identity_cert_error));
     }
   }
   GRPC_ERROR_UNREF(identity_cert_error);
@@ -540,6 +548,29 @@ grpc_tls_certificate_provider_data_watcher_create(
   return new grpc_core::DataWatcherCertificateProvider(
       ConvertToCoreObject(root_certificate),
       ConvertToCoreObject(pem_key_cert_pairs));
+}
+
+grpc::Status set_data_watcher_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_certificate) {
+  GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
+  grpc_core::DataWatcherCertificateProvider* data_watcher =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
+  absl::Status status =
+      data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
+  return grpc::Status(static_cast<grpc::StatusCode>(status.code()),
+                      std::string(status.message()));
+}
+
+grpc::Status set_data_watcher_key_certificate_pairs(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
+  grpc_core::DataWatcherCertificateProvider* data_watcher =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
+  absl::Status status = data_watcher->SetKeyCertificatePairs(
+      ConvertToCoreObject(pem_key_cert_pairs));
+  return grpc::Status(static_cast<grpc::StatusCode>(status.code()),
+                      std::string(status.message()));
 }
 
 grpc_tls_certificate_provider*
