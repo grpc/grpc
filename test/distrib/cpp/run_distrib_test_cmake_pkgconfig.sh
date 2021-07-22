@@ -54,7 +54,7 @@ cd "third_party/s2a_core"
 git submodule update --init
 cd ../..
 pushd "third_party/s2a_core/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE  ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_INSTALL_BINDIR=bin -DCMAKE_INSTALL_INCLUDEDIR=include ../..
 make -j4 install
 popd
 

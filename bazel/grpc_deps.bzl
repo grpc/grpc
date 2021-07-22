@@ -186,7 +186,7 @@ def grpc_deps():
 
     native.bind(
         name = "s2a_core",
-        actual = "@s2a_core//:s2a_core",
+        actual = "@com_google_s2a_core//:s2a_core",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -449,11 +449,11 @@ def grpc_deps():
             ],
         )
 
-    if "s2a_core" not in native.existing_rules():
+    if "com_google_s2a_core" not in native.existing_rules():
         http_archive(
-            name = "s2a_core",
-            #sha256 = "68d6c6c6149a2285edafc9a148688db0b774e18eefe49630cf6bfc9402d12da5",
-            strip_prefix = "s2a_core-81f6aadc2d25fddd6200212695a2fc4d493f90b9",
+            name = "com_google_s2a_core",
+            sha256 = "0081a7e9ab3b953e38a56b0a8eaaf7ce8eade35c7f61a4430af683ec397782a6",
+            strip_prefix = "s2a-core-81f6aadc2d25fddd6200212695a2fc4d493f90b9",
             urls = [
                 "https://github.com/google/s2a-core/archive/81f6aadc2d25fddd6200212695a2fc4d493f90b9.tar.gz",
             ],
