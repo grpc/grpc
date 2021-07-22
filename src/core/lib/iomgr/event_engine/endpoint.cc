@@ -59,7 +59,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         exec_ctx.Flush();
         grpc_pollset_ee_broadcast_event();
       },
-      read_buffer, absl::InfiniteFuture());
+      read_buffer);
 }
 
 void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -83,7 +83,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         exec_ctx.Flush();
         grpc_pollset_ee_broadcast_event();
       },
-      write_buffer, absl::InfiniteFuture());
+      write_buffer);
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
                              grpc_pollset* /* pollset */) {}
@@ -123,9 +123,8 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->peer_address.empty()) {
-    const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetPeerAddress();
-    GPR_ASSERT(addr != nullptr);
-    eeep->peer_address = ResolvedAddressToURI(*addr);
+    const EventEngine::ResolvedAddress& addr = eeep->endpoint->GetPeerAddress();
+    eeep->peer_address = ResolvedAddressToURI(addr);
   }
   return eeep->peer_address;
 }
@@ -136,10 +135,9 @@ absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->local_address.empty()) {
-    const EventEngine::ResolvedAddress* addr =
+    const EventEngine::ResolvedAddress& addr =
         eeep->endpoint->GetLocalAddress();
-    GPR_ASSERT(addr != nullptr);
-    eeep->local_address = ResolvedAddressToURI(*addr);
+    eeep->local_address = ResolvedAddressToURI(addr);
   }
   return eeep->local_address;
 }

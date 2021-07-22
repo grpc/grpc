@@ -44,8 +44,6 @@ def check_port_platform_inclusion(directory_root):
             with open(path) as f:
                 all_lines_in_file = f.readlines()
                 for index, l in enumerate(all_lines_in_file):
-                    if l == '// Portable code. port_platform.h is not required.\n':
-                        break
                     if '#include' in l:
                         if l not in [
                                 '#include <grpc/support/port_platform.h>\n',

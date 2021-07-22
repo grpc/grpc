@@ -147,6 +147,8 @@ extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grp
 extern void retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init(void);
 extern void retry_per_attempt_recv_timeout(grpc_end2end_test_config config);
 extern void retry_per_attempt_recv_timeout_pre_init(void);
+extern void retry_per_attempt_recv_timeout_on_last_attempt(grpc_end2end_test_config config);
+extern void retry_per_attempt_recv_timeout_on_last_attempt_pre_init(void);
 extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
 extern void retry_recv_initial_metadata_pre_init(void);
 extern void retry_recv_message(grpc_end2end_test_config config);
@@ -264,6 +266,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_non_retriable_status_pre_init();
   retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
   retry_per_attempt_recv_timeout_pre_init();
+  retry_per_attempt_recv_timeout_on_last_attempt_pre_init();
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
@@ -293,6 +296,7 @@ void grpc_end2end_tests_pre_init(void) {
   write_buffering_at_end_pre_init();
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 void grpc_end2end_tests(int argc, char **argv,
                         grpc_end2end_test_config config) {
   int i;
@@ -359,6 +363,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_non_retriable_status(config);
     retry_non_retriable_status_before_recv_trailing_metadata_started(config);
     retry_per_attempt_recv_timeout(config);
+    retry_per_attempt_recv_timeout_on_last_attempt(config);
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
     retry_recv_trailing_metadata_error(config);
@@ -624,6 +629,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_per_attempt_recv_timeout", argv[i])) {
       retry_per_attempt_recv_timeout(config);
+      continue;
+    }
+    if (0 == strcmp("retry_per_attempt_recv_timeout_on_last_attempt", argv[i])) {
+      retry_per_attempt_recv_timeout_on_last_attempt(config);
       continue;
     }
     if (0 == strcmp("retry_recv_initial_metadata", argv[i])) {

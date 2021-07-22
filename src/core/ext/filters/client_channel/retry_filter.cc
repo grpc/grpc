@@ -257,7 +257,7 @@ class RetryFilter::CallData {
       // Adds retriable recv_trailing_metadata op.
       void AddRetriableRecvTrailingMetadataOp();
       // Adds cancel_stream op.
-      void AddCancelStreamOp();
+      void AddCancelStreamOp(const char* reason);
 
      private:
       // Frees cached send ops that were completed by the completed batch in
@@ -390,7 +390,7 @@ class RetryFilter::CallData {
 
     // Cancels the call attempt.  Unrefs any deferred batches.
     // Adds a batch to closures to cancel this call attempt.
-    void Cancel(CallCombinerClosureList* closures);
+    void Cancel(const char* reason, CallCombinerClosureList* closures);
 
     static void OnPerAttemptRecvTimer(void* arg, grpc_error_handle error);
     static void OnPerAttemptRecvTimerLocked(void* arg, grpc_error_handle error);
@@ -459,7 +459,7 @@ class RetryFilter::CallData {
     //       save space but will also result in a data race because compiler
     //       will generate a 2 byte store which overwrites the meta-data
     //       fields upon setting this field.
-    bool cancelled_ : 1;
+    bool abandoned_ : 1;
   };
 
   CallData(RetryFilter* chand, const grpc_call_element_args& args);
@@ -512,7 +512,6 @@ class RetryFilter::CallData {
   BackOff retry_backoff_;
 
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -654,7 +653,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
       started_recv_trailing_metadata_(false),
       completed_recv_trailing_metadata_(false),
       seen_recv_trailing_metadata_from_surface_(false),
-      cancelled_(false) {
+      abandoned_(false) {
   lb_call_ = calld->CreateLoadBalancedCall(&attempt_dispatch_controller_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: create lb_call=%p",
@@ -742,8 +741,8 @@ void RetryFilter::CallData::CallAttempt::MaybeSwitchToFastPath() {
   // If we're not yet committed, we can't switch yet.
   // TODO(roth): As part of implementing hedging, this logic needs to
   // check that *this* call attempt is the one that we've committed to.
-  // Might need to replace cancelled_ with an enum indicating whether we're
-  // in flight, cancelled, or the winning call attempt.
+  // Might need to replace abandoned_ with an enum indicating whether we're
+  // in flight, abandoned, or the winning call attempt.
   if (!calld_->retry_committed_) return;
   // If we've already switched to fast path, there's nothing to do here.
   if (calld_->committed_call_ != nullptr) return;
@@ -1131,9 +1130,7 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
 }
 
 void RetryFilter::CallData::CallAttempt::Cancel(
-    CallCombinerClosureList* closures) {
-  // Record that this attempt has been cancelled.
-  cancelled_ = true;
+    const char* reason, CallCombinerClosureList* closures) {
   // Unref batches for deferred completion callbacks that will now never
   // be invoked.
   if (started_recv_trailing_metadata_ &&
@@ -1162,7 +1159,7 @@ void RetryFilter::CallData::CallAttempt::Cancel(
   // transport knows that this call should be cleaned up, even if it
   // hasn't received any ops.
   BatchData* cancel_batch_data = CreateBatch(1, /*set_on_complete=*/true);
-  cancel_batch_data->AddCancelStreamOp();
+  cancel_batch_data->AddCancelStreamOp(reason);
   AddClosureForBatch(cancel_batch_data->batch(),
                      "start cancellation batch on call attempt", closures);
 }
@@ -1196,11 +1193,13 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     // Cancel this attempt.
     // TODO(roth): When implementing hedging, we should not cancel the
     // current attempt.
-    call_attempt->Cancel(&closures);
+    call_attempt->Cancel("retry perAttemptRecvTimeout exceeded", &closures);
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(
             /*status=*/absl::nullopt, /*is_lb_drop=*/false,
             /*server_pushback_md=*/nullptr, /*server_pushback_ms=*/nullptr)) {
+      // Mark current attempt as abandoned.
+      call_attempt->abandoned_ = true;
       // We are retrying.  Start backoff timer.
       calld->StartRetryTimer(/*server_pushback_ms=*/-1);
     } else {
@@ -1350,11 +1349,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
             grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_initial_metadata_ = true;
-  // If this attempt has been cancelled, then we're not going to use the
+  // If this attempt has been abandoned, then we're not going to use the
   // result of this recv_initial_metadata op, so do nothing.
-  if (call_attempt->cancelled_) {
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "recv_initial_metadata_ready after cancellation");
+  if (call_attempt->abandoned_) {
+    GRPC_CALL_COMBINER_STOP(
+        calld->call_combiner_,
+        "recv_initial_metadata_ready for abandoned attempt");
     return;
   }
   // Cancel per-attempt recv timer, if any.
@@ -1443,11 +1443,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
             grpc_error_std_string(error).c_str());
   }
   ++call_attempt->completed_recv_message_count_;
-  // If this attempt has been cancelled, then we're not going to use the
+  // If this attempt has been abandoned, then we're not going to use the
   // result of this recv_message op, so do nothing.
-  if (call_attempt->cancelled_) {
+  if (call_attempt->abandoned_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "recv_message_ready after cancellation");
+                            "recv_message_ready for abandoned attempt");
     return;
   }
   // Cancel per-attempt recv timer, if any.
@@ -1641,11 +1641,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
             grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
-  // If this attempt has been cancelled, then we're not going to use the
+  // If this attempt has been abandoned, then we're not going to use the
   // result of this recv_trailing_metadata op, so do nothing.
-  if (call_attempt->cancelled_) {
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "recv_trailing_metadata_ready after cancellation");
+  if (call_attempt->abandoned_) {
+    GRPC_CALL_COMBINER_STOP(
+        calld->call_combiner_,
+        "recv_trailing_metadata_ready for abandoned attempt");
     return;
   }
   // Cancel per-attempt recv timer, if any.
@@ -1673,7 +1674,9 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     calld->StartRetryTimer(server_pushback_ms);
     // Cancel call attempt.
     CallCombinerClosureList closures;
-    call_attempt->Cancel(&closures);
+    call_attempt->Cancel("call attempt failed", &closures);
+    // Record that this attempt has been abandoned.
+    call_attempt->abandoned_ = true;
     // Yields call combiner.
     closures.RunClosures(calld->call_combiner_);
     return;
@@ -1758,11 +1761,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
             grpc_error_std_string(error).c_str(),
             grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
   }
-  // If this attempt has been cancelled, then we're not going to propagate
+  // If this attempt has been abandoned, then we're not going to propagate
   // the completion of this batch, so do nothing.
-  if (call_attempt->cancelled_) {
+  if (call_attempt->abandoned_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "on_complete after cancellation");
+                            "on_complete for abandoned attempt");
     return;
   }
   // If we got an error and have not yet gotten the
@@ -1956,10 +1959,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::
       &call_attempt_->recv_trailing_metadata_ready_;
 }
 
-void RetryFilter::CallData::CallAttempt::BatchData::AddCancelStreamOp() {
+void RetryFilter::CallData::CallAttempt::BatchData::AddCancelStreamOp(
+    const char* reason) {
   batch_.cancel_stream = true;
   batch_.payload->cancel_stream.cancel_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("retry attempt abandoned");
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
 }
 
 //
@@ -2038,7 +2043,6 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
               .set_max_backoff(
                   retry_policy_ == nullptr ? 0 : retry_policy_->max_backoff())),
       path_(grpc_slice_ref_internal(args.path)),
-      call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -2172,14 +2176,16 @@ RefCountedPtr<ClientChannel::LoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
-                                 path_,        call_start_time_, deadline_,
+                                 path_,        /*start_time=*/0, deadline_,
                                  arena_,       call_combiner_};
   return chand_->client_channel_->CreateLoadBalancedCall(
       args, pollent_,
       // This callback holds a ref to the CallStackDestructionBarrier
       // object until the LB call is destroyed.
       call_stack_destruction_barrier_->MakeLbCallDestructionClosure(this),
-      call_dispatch_controller);
+      call_dispatch_controller,
+      // TODO(roth): Change this when we support transparent retries.
+      /*is_transparent_retry=*/false);
 }
 
 void RetryFilter::CallData::CreateCallAttempt() {
@@ -2437,7 +2443,7 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     // retry attempt is started, in which case we'll just pass the real
     // call dispatch controller down into the LB call, and it won't be
     // our problem anymore.
-    if (call_attempt_->lb_call_committed()) {
+    if (call_attempt->lb_call_committed()) {
       auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
           call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       service_config_call_data->call_dispatch_controller()->Commit();
