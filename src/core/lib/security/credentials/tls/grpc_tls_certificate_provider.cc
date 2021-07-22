@@ -377,9 +377,6 @@ DataWatcherCertificateProvider::DataWatcherCertificateProvider(
 
 absl::Status DataWatcherCertificateProvider::SetRootCertificate(
     const std::string& root_certificate) {
-  if (root_certificate.empty()) {
-    return absl::InvalidArgumentError("Root Certificate string is empty.");
-  }
   grpc_core::MutexLock lock(&mu_);
   if (root_certificate_ == root_certificate) {
     return absl::InvalidArgumentError("Root Certificate has not changed.");
@@ -410,9 +407,6 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
 
 absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
-  if (pem_key_cert_pairs.empty()) {
-    return absl::InvalidArgumentError("Empty Key-Cert pair list.");
-  }
   if (pem_key_cert_pairs == pem_key_cert_pairs_) {
     return absl::InvalidArgumentError(
         "The Key-Cert pair list has not changed.");
