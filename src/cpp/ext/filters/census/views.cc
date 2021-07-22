@@ -172,7 +172,7 @@ const ViewDescriptor& ClientRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retries/cumulative")
-          .set_measure(kRpcClientRetriesMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;
@@ -192,7 +192,7 @@ const ViewDescriptor& ClientTransparentRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/transparent_retries/cumulative")
-          .set_measure(kRpcClientTransparentRetriesMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;
@@ -356,7 +356,7 @@ const ViewDescriptor& ClientRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retries/minute")
-          .set_measure(kRpcClientRetriesMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;
@@ -376,7 +376,7 @@ const ViewDescriptor& ClientTransparentRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/transparent_retries/minute")
-          .set_measure(kRpcClientTransparentRetriesMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;
@@ -540,7 +540,7 @@ const ViewDescriptor& ClientRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retries/hour")
-          .set_measure(kRpcClientRetriesMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;
@@ -560,7 +560,7 @@ const ViewDescriptor& ClientTransparentRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/transparent_retries/hour")
-          .set_measure(kRpcClientTransparentRetriesMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
           .add_column(ClientMethodTagKey());
   return descriptor;

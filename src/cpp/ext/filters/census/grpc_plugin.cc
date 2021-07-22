@@ -118,16 +118,9 @@ ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
 ABSL_CONST_INIT const absl::string_view kRpcClientRetriesPerCallMeasureName =
     "grpc.io/client/retries_per_call";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientRetriesMeasureName =
-    "grpc.io/client/retries";
-
 ABSL_CONST_INIT const absl::string_view
     kRpcClientTransparentRetriesPerCallMeasureName =
         "grpc.io/client/transparent_retries_per_call";
-
-ABSL_CONST_INIT const absl::string_view
-    kRpcClientTransparentRetriesMeasureName =
-        "grpc.io/client/transparent_retries";
 
 ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
     "grpc.io/client/retry_delay_per_call";
