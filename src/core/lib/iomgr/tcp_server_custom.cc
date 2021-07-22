@@ -86,11 +86,8 @@ static grpc_error_handle tcp_server_create(
     grpc_tcp_server** server) {
   grpc_tcp_server* s =
       static_cast<grpc_tcp_server*>(gpr_malloc(sizeof(grpc_tcp_server)));
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true)) {
-    s->so_reuseport = false;
-  } else {
-    s->so_reuseport = true;
-  }
+  s->so_reuseport =
+      grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true);
   gpr_ref_init(&s->refs, 1);
   s->on_accept_cb = nullptr;
   s->on_accept_cb_arg = nullptr;

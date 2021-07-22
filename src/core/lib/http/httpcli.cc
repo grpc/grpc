@@ -211,8 +211,7 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   grpc_tcp_client_connect(
       &req->connected, &req->ep,
       grpc_slice_allocator_factory_create_slice_allocator(
-          req->slice_allocator_factory,
-          std::string(grpc_endpoint_get_peer(req->ep)).c_str()),
+          req->slice_allocator_factory, grpc_sockaddr_to_uri(addr).c_str()),
       req->context->pollset_set, {}, addr, req->deadline);
 }
 

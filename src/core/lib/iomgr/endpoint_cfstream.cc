@@ -62,9 +62,7 @@ struct CFStreamEndpoint {
   grpc_slice_allocator* slice_allocator;
 };
 static void CFStreamFree(CFStreamEndpoint* ep) {
-  if (ep->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(ep->slice_allocator);
-  }
+  grpc_slice_allocator_destroy(ep->slice_allocator);
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
   CFSTREAM_HANDLE_UNREF(ep->stream_sync, "free");
@@ -293,10 +291,6 @@ void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
-  if (ep_impl->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(ep_impl->slice_allocator);
-    ep_impl->slice_allocator = nullptr;
-  }
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%p)", ep_impl, why);
   }
@@ -307,7 +301,6 @@ void CFStreamDestroy(grpc_endpoint* ep) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
   }
-  grpc_slice_allocator_destroy(&ep_impl->slice_allocator);
   EP_UNREF(ep_impl, "destroy");
 }
 

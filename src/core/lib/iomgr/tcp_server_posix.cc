@@ -117,9 +117,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
                             GRPC_ERROR_NONE);
   }
-
   gpr_mu_destroy(&s->mu);
-
   while (s->head) {
     grpc_tcp_listener* sp = s->head;
     s->head = sp->next;
@@ -127,7 +125,6 @@ static void finish_shutdown(grpc_tcp_server* s) {
   }
   grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
-
   gpr_free(s);
 }
 
@@ -275,6 +272,7 @@ static void on_read(void* arg, grpc_error_handle err) {
                              grpc_tcp_create(fdobj, sp->server->channel_args,
                                              addr_str.c_str(), allocator),
                              allocator, read_notifier_pollset, acceptor);
+    grpc_slice_allocator_destroy(allocator);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -623,6 +621,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
         s_->on_accept_cb_arg,
         grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(), allocator),
         allocator, read_notifier_pollset, acceptor);
+    grpc_slice_allocator_destroy(allocator);
   }
 
  private:

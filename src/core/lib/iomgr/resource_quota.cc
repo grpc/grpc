@@ -739,14 +739,16 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args, bool create) {
-  for (size_t i = 0; i < channel_args->num_args; i++) {
-    if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-      if (channel_args->args[i].type == GRPC_ARG_POINTER) {
-        return grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(
-                channel_args->args[i].value.pointer.p));
-      } else {
-        gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
+  if (channel_args != nullptr) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        if (channel_args->args[i].type == GRPC_ARG_POINTER) {
+          return grpc_resource_quota_ref_internal(
+              static_cast<grpc_resource_quota*>(
+                  channel_args->args[i].value.pointer.p));
+        } else {
+          gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
+        }
       }
     }
   }

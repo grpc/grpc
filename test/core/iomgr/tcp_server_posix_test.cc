@@ -195,8 +195,8 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_tcp_server_create(nullptr, nullptr,
                                     grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)) &
-                                        s));
+                                        grpc_resource_quota_create(nullptr)),
+                                    &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
