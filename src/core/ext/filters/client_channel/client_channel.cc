@@ -341,11 +341,10 @@ class DynamicTerminationFilter::CallData {
     auto* calld = static_cast<CallData*>(elem->call_data);
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannel* client_channel = chand->chand_;
-    grpc_call_element_args args = {
-        calld->owning_call_,     nullptr,
-        calld->call_context_,    calld->path_,
-        /*start_time=*/0,        calld->deadline_,
-        calld->arena_,           calld->call_combiner_};
+    grpc_call_element_args args = {calld->owning_call_,  nullptr,
+                                   calld->call_context_, calld->path_,
+                                   /*start_time=*/0,     calld->deadline_,
+                                   calld->arena_,        calld->call_combiner_};
     auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
         calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
