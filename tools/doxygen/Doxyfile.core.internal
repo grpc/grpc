@@ -1037,6 +1037,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1532,7 +1534,6 @@ src/core/lib/debug/trace.h \
 src/core/lib/event_engine/endpoint_config.cc \
 src/core/lib/event_engine/endpoint_config_internal.h \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/slice_allocator.cc \
 src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/README.md \
