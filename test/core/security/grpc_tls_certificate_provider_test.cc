@@ -543,6 +543,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   EXPECT_FALSE(*status);
 }
 
+// TODO(itsemmanuel): Add check for empty certs.
 TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   DataWatcherCertificateProvider provider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -570,6 +571,7 @@ TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   CancelWatch(watcher_state_3);
 }
 
+// TODO(itsemmanuel): Add check for invalid certs.
 TEST_F(GrpcTlsCertificateProviderTest,
        DataWatcherCertificateProviderCreationWithInvalidIdentityCerts) {
   DataWatcherCertificateProvider provider(

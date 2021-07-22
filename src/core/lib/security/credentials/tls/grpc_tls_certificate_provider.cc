@@ -18,7 +18,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include "include/grpcpp/impl/codegen/status.h"
 
 #include <openssl/ssl.h>
 
@@ -32,14 +31,23 @@ namespace grpc_core {
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_certificate_(std::move(root_certificate)) {
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+  if (root_certificate.empty()) {
+    root_certificate_ = "";
+    grpc_core::MutexLock lock(&mu_);
+    ReportRootCertStatus("Empty root certificate.", false, true);
+  } else {
+    root_certificate_ = std::move(root_certificate);
+  }
   if (IsKeyCertPairsListValid(pem_key_cert_pairs).ok()) {
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
     pem_key_cert_pairs_ = {};
     grpc_core::MutexLock lock(&mu_);
-    ReportIdentityCertStatus("Key-cert pair list failed match.", false, true);
+    const char* error_message = pem_key_cert_pairs.empty()
+                                    ? "Empty identity certificates."
+                                    : "Key-cert pair list failed match.";
+    ReportIdentityCertStatus(error_message, false, true);
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
@@ -89,6 +97,32 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
+}
+
+void StaticDataCertificateProvider::ReportRootCertStatus(
+    const char* error, bool report_credentials, bool report_errors) {
+  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest root certificates.");
+  if (report_errors || report_credentials) {
+    for (const auto& p : watcher_info_) {
+      const std::string& cert_name = p.first;
+      const WatcherInfo& info = p.second;
+      absl::optional<std::string> root_to_report;
+      if (info.root_being_watched) {
+        root_to_report = root_certificate_;
+      }
+      if (root_to_report.has_value() && report_credentials) {
+        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                      absl::nullopt);
+      }
+      if (info.root_being_watched && root_certificate_.empty() &&
+          report_errors) {
+        distributor_->SetErrorForCert(
+            cert_name, GRPC_ERROR_REF(root_cert_error), absl::nullopt);
+      }
+    }
+  }
+  GRPC_ERROR_UNREF(root_cert_error);
 }
 
 void StaticDataCertificateProvider::ReportIdentityCertStatus(
@@ -411,25 +445,7 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
   }
   root_certificate_ = root_certificate;
   ExecCtx exec_ctx;
-  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unable to get latest root certificates.");
-  for (const auto& p : watcher_info_) {
-    const std::string& cert_name = p.first;
-    const WatcherInfo& info = p.second;
-    absl::optional<std::string> root_to_report;
-    if (info.root_being_watched) {
-      root_to_report = root_certificate_;
-    }
-    if (root_to_report.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
-                                    absl::nullopt);
-    }
-    if (info.root_being_watched && root_certificate_.empty()) {
-      distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(root_cert_error),
-                                    absl::nullopt);
-    }
-  }
-  GRPC_ERROR_UNREF(root_cert_error);
+  ReportRootCertStatus("Unable to get latest root certificates.", true, true);
   return absl::OkStatus();
 }
 
@@ -555,18 +571,24 @@ grpc_tls_certificate_provider_data_watcher_create(
       ConvertToCoreObject(pem_key_cert_pairs));
 }
 
-grpc::Status set_data_watcher_root_certificate(
+SetCredentialsStatus* grpc_set_credentials_status_create(
+    grpc_status_code status_code, const std::string& error_message) {
+  return new SetCredentialsStatus{status_code, strdup(error_message.c_str())};
+}
+
+SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_certificate) {
   GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status =
       data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
-  return grpc::Status(static_cast<grpc::StatusCode>(status.code()),
-                      std::string(status.message()));
+  return grpc_set_credentials_status_create(
+      static_cast<grpc_status_code>(status.code()),
+      std::string(status.message()));
 }
 
-grpc::Status set_data_watcher_key_certificate_pairs(
+SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
@@ -574,8 +596,14 @@ grpc::Status set_data_watcher_key_certificate_pairs(
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status = data_watcher->SetKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
-  return grpc::Status(static_cast<grpc::StatusCode>(status.code()),
-                      std::string(status.message()));
+  return grpc_set_credentials_status_create(
+      static_cast<grpc_status_code>(status.code()),
+      std::string(status.message()));
+}
+
+void grpc_set_credentials_status_release(SetCredentialsStatus* status) {
+  free(const_cast<char*>(status->error_message));
+  delete status;
 }
 
 grpc_tls_certificate_provider*

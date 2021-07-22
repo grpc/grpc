@@ -18,8 +18,9 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/status.h>
+
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -51,6 +52,12 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
+// A struct that stores the status of a credentials setter in a provider.
+struct SetCredentialsStatus {
+  grpc_status_code status;
+  const char* error_message;
+};
+
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
@@ -69,7 +76,11 @@ class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
 
  protected:
   // Reports status (credentials and errors) related to obtaining the new
-  // identity certs to the distributor
+  // root cert to the distributor.
+  void ReportRootCertStatus(const char* error, bool report_credentials,
+                                bool report_errors);
+  // Reports status (credentials and errors) related to obtaining the new
+  // identity certs to the distributor.
   void ReportIdentityCertStatus(const char* error, bool report_credentials,
                                 bool report_errors);
   struct WatcherInfo {

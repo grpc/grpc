@@ -24,8 +24,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 
-#include "include/grpcpp/impl/codegen/status.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -769,6 +767,8 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
  */
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
+typedef struct SetCredentialsStatus SetCredentialsStatus;
+
 /**
  * A struct that stores the credential data presented to the peer in handshake
  * to show local identity. It is used for experimental purpose for now and
@@ -867,7 +867,7 @@ GRPCAPI void grpc_tls_certificate_provider_release(
 // TODO: @ZhenLian I keep getting this error:
 // "'set_data_watcher_root_certificate' has C-linkage specified, but
 // returns user-defined type 'grpc::Status' which is incompatible with C"
-GRPCAPI grpc::Status set_data_watcher_root_certificate(
+GRPCAPI SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_certificate);
 
 /* Given |provider| is expected to be a pointer to a
@@ -877,9 +877,12 @@ GRPCAPI grpc::Status set_data_watcher_root_certificate(
 // TODO: @ZhenLian I keep getting this error:
 // "'set_data_watcher_key_certificate_pairs' has C-linkage specified, but
 // returns user-defined type 'grpc::Status' which is incompatible with C"
-GRPCAPI grpc::Status set_data_watcher_key_certificate_pairs(
+GRPCAPI SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
+
+//TODO(itsemmanuel): add comments.
+GRPCAPI void grpc_set_credentials_status_release(SetCredentialsStatus* status);
 
 /**
  * Creates an grpc_tls_credentials_options.

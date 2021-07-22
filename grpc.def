@@ -148,6 +148,9 @@ EXPORTS
     grpc_tls_certificate_provider_file_watcher_create
     grpc_tls_certificate_provider_data_watcher_create
     grpc_tls_certificate_provider_release
+    grpc_set_data_watcher_root_certificate
+    grpc_set_data_watcher_key_certificate_pairs
+    grpc_set_credentials_status_release
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_server_verification_option
