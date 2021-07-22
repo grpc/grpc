@@ -176,6 +176,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_OK == status);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, ""));
 
@@ -294,6 +295,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
+  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
@@ -405,6 +407,7 @@ static void test_deny_request_no_match_in_policy(
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
+  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
