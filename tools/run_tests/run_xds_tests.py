@@ -2240,107 +2240,43 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
 
 
 def test_retry(gcp, original_backend_service, instance_group):
-    '''
-    Since backend service circuit_breakers configuration cannot be unset,
-    which causes trouble for restoring validate_for_proxy flag in target
-    proxy/global forwarding rule. This test uses dedicated backend sevices.
-    The url_map and backend services undergoes the following state changes:
-
-    Before test:
-       original_backend_service -> [instance_group]
-       extra_backend_service -> []
-       more_extra_backend_service -> []
-
-       url_map -> [original_backend_service]
-
-    In test:
-       extra_backend_service (with circuit_breakers) -> [instance_group]
-       more_extra_backend_service (with circuit_breakers) -> [same_zone_instance_group]
-
-       url_map -> [extra_backend_service, more_extra_backend_service]
-
-    After test:
-       original_backend_service -> [instance_group]
-       extra_backend_service (with circuit_breakers) -> []
-       more_extra_backend_service (with circuit_breakers) -> []
-
-       url_map -> [original_backend_service]
-    '''
     logger.info('Running test_retry')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    testcase_header = 'retry_testcase'
     passed = True
     try:
-        # TODO(chengyuanzhang): Dedicated backend services created for circuit
-        # breaking test. Once the issue for unsetting backend service circuit
-        # breakers is resolved or configuring backend service circuit breakers is
-        # enabled for config validation, these dedicated backend services can be
-        # eliminated.
-        additional_backend_services = []
-        extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra-for-retry' + gcp_suffix
-        more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra-for-retry' + gcp_suffix
-        extra_backend_service = add_backend_service(gcp,
-                                                    extra_backend_service_name)
-        additional_backend_services.append(extra_backend_service)
-        more_extra_backend_service = add_backend_service(
-            gcp, more_extra_backend_service_name)
-        additional_backend_services.append(more_extra_backend_service)
-        # The config validation for proxyless doesn't allow setting
-        # circuit_breakers. Disable validate validate_for_proxyless
-        # for this test. This can be removed when validation
-        # accepts circuit_breakers.
-        logger.info('disabling validate_for_proxyless in target proxy')
-        set_validate_for_proxyless(gcp, False)
-        extra_backend_service_max_retries = 1000
-        more_extra_backend_service_max_retries = 1
-        patch_backend_service(
-            gcp,
-            extra_backend_service, [instance_group],
-            circuit_breakers={'maxRetries': extra_backend_service_max_retries})
-        logger.info('Waiting for extra backends to become healthy')
-        wait_for_healthy_backends(gcp, extra_backend_service, instance_group)
-        patch_backend_service(gcp,
-                              more_extra_backend_service,
-                              [same_zone_instance_group],
-                              circuit_breakers={
-                                  'maxRetries':
-                                      more_extra_backend_service_max_retries
-                              })
-        logger.info('Waiting for more extra backend to become healthy')
-        wait_for_healthy_backends(gcp, more_extra_backend_service,
-                                  same_zone_instance_group)
-        extra_backend_instances = get_instance_names(gcp, instance_group)
-        more_extra_backend_instances = get_instance_names(
-            gcp, same_zone_instance_group)
-
-        testcase_header = 'retry_testcase'
-
-        # A list of tuples (testcase_name, retry_policy, backend_service, rpc_behavior, num_rpcs, expected_succeeded_rpcs).
+        test_runtime_secs = 10
+        num_rpcs = test_runtime_secs * args.qps
+        # A list of tuples (testcase_name, test_config, expected_succeeded_rpcs_range).
+        # test_config is a list of tuples (retry_policy, rpc_behavior).
         # Each test case will set the testcase_header with the testcase_name for routing
         # to the appropriate config for the case, defined above.
         test_cases = [
             (
                 'retry-up-to-3-attempts',
-                (3, "unavailable"),
-                extra_backend_service,
-                'error-code-14,succeed-on-retry-attempt-4',
-                1000,
+                (
+                    (3, "unavailable"),
+                    'error-code-14,succeed-on-retry-attempt-4',
+                ),
                 (0, 0),  # all fail
             ),
             (
                 'retry-up-to-4-attempts',
-                (4, "unavailable"),
-                extra_backend_service,
-                'error-code-14,succeed-on-retry-attempt-4',
-                1000,
-                (1000, 1000),  # all succeed
+                (
+                    (4, "unavailable"),
+                    'error-code-14,succeed-on-retry-attempt-4',
+                ),
+                (num_rpcs, num_rpcs),  # all succeed
             ),
-            ('retry-circuit-breaker', (1, "unavailable"),
-             more_extra_backend_service, 'error-code-14', 10000, (1000, 7000)),
         ]
 
-        def _route(name, retry_policy, backend_service):
+        def _route(pri, name, retry_policy):
             (num_retries, retry_on) = retry_policy
             return {
-                'priority': 0,
+                'priority': pri,
                 'matchRules': [{
                     'prefixMatch':
                         '/',
@@ -2349,7 +2285,7 @@ def test_retry(gcp, original_backend_service, instance_group):
                         'exactMatch': name,
                     }],
                 }],
-                'service': backend_service.url,
+                'service': original_backend_service.url,
                 'routeAction': {
                     'retryPolicy': {
                         'retryConditions': [retry_on],
@@ -2359,23 +2295,30 @@ def test_retry(gcp, original_backend_service, instance_group):
             }
 
         route_rules = []
-        for (testcase_name, retry_policy, backend_service, rpc_behavior,
-             num_rpcs, expected_succeeded_rpcs) in test_cases:
-            route_rules.append(_route(testcase_name, retry_policy))
+        pri = 0
+        for (testcase_name, test_config,
+             expected_succeeded_rpcs_range) in test_cases:
+            (retry_policy, rpc_behavior) = test_config
+            route_rules.append(_route(pri, testcase_name, retry_policy))
+            pri += 1
 
-        logger.info('Patching url map with %s', route_rules)
+        set_validate_for_proxyless(gcp, False)
         patch_url_map_backend_service(gcp,
-                                      extra_backend_service,
+                                      original_backend_service,
                                       route_rules=route_rules)
 
         first_case = True
-        for (testcase_name, retry_policy, backend_service, rpc_behavior,
-             num_rpcs, expected_succeeded_rpcs) in test_cases:
+        for (testcase_name, test_config,
+             expected_succeeded_rpcs_range) in test_cases:
+            (retry_policy, rpc_behavior) = test_config
             logger.info('starting case %s', testcase_name)
 
+            client_config = {}
             client_config['metadata'] = [
                 (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                 testcase_header, testcase_name, 'rpc-behavior', rpc_behavior)
+                 testcase_header, testcase_name),
+                (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                 'rpc-behavior', rpc_behavior),
             ]
             client_config['rpc_types'] = [
                 messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
@@ -2395,21 +2338,18 @@ def test_retry(gcp, original_backend_service, instance_group):
             for i in range(attempt_count):
                 logger.info('%s: attempt %d', testcase_name, i)
 
-                test_runtime_secs = 10
-                num_rpcs = test_runtime_secs * args.qps
+                # wait for 5 more seconds to allow retry complete
                 stats = get_client_stats(num_rpcs, test_runtime_secs + 5)
-                succeeded_rpcs = sum(
-                    stats.rpcs_by_peer.values()) - stats.num_failures
+                succeeded_rpcs = sum(stats.rpcs_by_peer.values())
                 success = True
-                for status, pct in expected_results.items():
-                    (expected_range_from,
-                     expected_range_to) = expected_succeeded_rpcs
-                    if succeeded_rpcs < expected_range_from or succeeded_rpcs > expected_range_to:
-                        logger.info(
-                            '%s: failed due to unexpected number of succeeded rpcs: got %d want %d ~ %d',
-                            testcase_name, succeeded_rpcs, expected_range_from,
-                            expected_range_to)
-                        success = False
+                (expected_range_from,
+                 expected_range_to) = expected_succeeded_rpcs_range
+                if succeeded_rpcs < expected_range_from or succeeded_rpcs > expected_range_to:
+                    logger.info(
+                        '%s: failed due to unexpected number of succeeded rpcs: got %d want %d ~ %d',
+                        testcase_name, succeeded_rpcs, expected_range_from,
+                        expected_range_to)
+                    success = False
                 if success:
                     logger.info('success')
                     break
@@ -2417,17 +2357,14 @@ def test_retry(gcp, original_backend_service, instance_group):
             else:
                 raise Exception(
                     '%s: timeout waiting for expected results: %s; got %s' %
-                    (testcase_name, expected_succeeded_rpcs, succeeded_rpcs))
+                    (testcase_name, expected_succeeded_rpcs_range,
+                     succeeded_rpcs))
     except Exception:
         passed = False
         raise
     finally:
         if passed or not args.halt_after_fail:
             patch_url_map_backend_service(gcp, original_backend_service)
-            patch_backend_service(gcp, original_backend_service,
-                                  [instance_group])
-            for backend_service in additional_backend_services:
-                delete_backend_service(gcp, backend_service)
             set_validate_for_proxyless(gcp, True)
 
 
