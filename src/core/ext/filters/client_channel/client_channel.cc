@@ -199,7 +199,7 @@ class ClientChannel::CallData {
 
   grpc_polling_entity* pollent_ = nullptr;
 
-  grpc_closure pick_closure_;
+  grpc_closure resolution_done_closure_;
 
   // Accessed while holding ClientChannel::resolution_mu_.
   bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
@@ -319,13 +319,11 @@ class DynamicTerminationFilter::CallData {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<SubchannelCall> subchannel_call;
-    if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
-      subchannel_call = calld->lb_call_->subchannel_call();
-    }
+    RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call =
+        std::move(calld->lb_call_);
     calld->~CallData();
-    if (GPR_LIKELY(subchannel_call != nullptr)) {
-      subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
+    if (GPR_LIKELY(lb_call != nullptr)) {
+      lb_call->set_on_call_destruction_complete(then_schedule_closure);
     } else {
       // TODO(yashkt) : This can potentially be a Closure::Run
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
@@ -343,16 +341,16 @@ class DynamicTerminationFilter::CallData {
     auto* calld = static_cast<CallData*>(elem->call_data);
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannel* client_channel = chand->chand_;
-    grpc_call_element_args args = {
-        calld->owning_call_,     nullptr,
-        calld->call_context_,    calld->path_,
-        calld->call_start_time_, calld->deadline_,
-        calld->arena_,           calld->call_combiner_};
+    grpc_call_element_args args = {calld->owning_call_,  nullptr,
+                                   calld->call_context_, calld->path_,
+                                   /*start_time=*/0,     calld->deadline_,
+                                   calld->arena_,        calld->call_combiner_};
     auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
         calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
-        service_config_call_data->call_dispatch_controller());
+        service_config_call_data->call_dispatch_controller(),
+        /*is_transparent_retry=*/false);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -363,7 +361,6 @@ class DynamicTerminationFilter::CallData {
  private:
   explicit CallData(const grpc_call_element_args& args)
       : path_(grpc_slice_ref_internal(args.path)),
-        call_start_time_(args.start_time),
         deadline_(args.deadline),
         arena_(args.arena),
         owning_call_(args.call_stack),
@@ -373,7 +370,6 @@ class DynamicTerminationFilter::CallData {
   ~CallData() { grpc_slice_unref_internal(path_); }
 
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -1174,10 +1170,11 @@ RefCountedPtr<ClientChannel::LoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller) {
-  return args.arena->New<LoadBalancedCall>(this, args, pollent,
-                                           on_call_destruction_complete,
-                                           call_dispatch_controller);
+    ConfigSelector::CallDispatchController* call_dispatch_controller,
+    bool is_transparent_retry) {
+  return args.arena->New<LoadBalancedCall>(
+      this, args, pollent, on_call_destruction_complete,
+      call_dispatch_controller, is_transparent_retry);
 }
 
 namespace {
@@ -2316,8 +2313,9 @@ void ClientChannel::CallData::
 
 void ClientChannel::CallData::AsyncResolutionDone(grpc_call_element* elem,
                                                   grpc_error_handle error) {
-  GRPC_CLOSURE_INIT(&pick_closure_, ResolutionDone, elem, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
+  // TODO(roth): Does this callback need to hold a ref to the call stack?
+  GRPC_CLOSURE_INIT(&resolution_done_closure_, ResolutionDone, elem, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &resolution_done_closure_, error);
 }
 
 void ClientChannel::CallData::ResolutionDone(void* arg,
@@ -2553,16 +2551,28 @@ class ClientChannel::LoadBalancedCall::LbCallState
 // LoadBalancedCall
 //
 
+namespace {
+
+CallTracer::CallAttemptTracer* GetCallAttemptTracer(
+    grpc_call_context_element* context, bool is_transparent_retry) {
+  auto* call_tracer =
+      static_cast<CallTracer*>(context[GRPC_CONTEXT_CALL_TRACER].value);
+  if (call_tracer == nullptr) return nullptr;
+  return call_tracer->StartNewAttempt(is_transparent_retry);
+}
+
+}  // namespace
+
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller)
+    ConfigSelector::CallDispatchController* call_dispatch_controller,
+    bool is_transparent_retry)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                      ? "LoadBalancedCall"
                      : nullptr),
       chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
-      call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -2570,7 +2580,9 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       call_context_(args.context),
       pollent_(pollent),
       on_call_destruction_complete_(on_call_destruction_complete),
-      call_dispatch_controller_(call_dispatch_controller) {}
+      call_dispatch_controller_(call_dispatch_controller),
+      call_attempt_tracer_(
+          GetCallAttemptTracer(args.context, is_transparent_retry)) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
@@ -2584,7 +2596,17 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
   }
-  if (on_call_destruction_complete_ != nullptr) {
+  // Compute latency and report it to the tracer.
+  if (call_attempt_tracer_ != nullptr) {
+    gpr_timespec latency =
+        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
+    call_attempt_tracer_->RecordEnd(latency);
+  }
+  // Arrange to invoke on_call_destruction_complete_ once we know that
+  // the call stack has been destroyed.
+  if (GPR_LIKELY(subchannel_call_ != nullptr)) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+  } else {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
                  GRPC_ERROR_NONE);
   }
@@ -2705,9 +2727,65 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
 
 void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  // Intercept recv_trailing_metadata_ready for LB callback.
+  // Handle call tracing.
+  if (call_attempt_tracer_ != nullptr) {
+    // Record send ops in tracer.
+    if (batch->cancel_stream) {
+      call_attempt_tracer_->RecordCancel(
+          GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error));
+    }
+    if (batch->send_initial_metadata) {
+      call_attempt_tracer_->RecordSendInitialMetadata(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          batch->payload->send_initial_metadata.send_initial_metadata_flags);
+      peer_string_ = batch->payload->send_initial_metadata.peer_string;
+      original_send_initial_metadata_on_complete_ = batch->on_complete;
+      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
+                        SendInitialMetadataOnComplete, this, nullptr);
+      batch->on_complete = &send_initial_metadata_on_complete_;
+    }
+    if (batch->send_message) {
+      call_attempt_tracer_->RecordSendMessage(
+          *batch->payload->send_message.send_message);
+    }
+    if (batch->send_trailing_metadata) {
+      call_attempt_tracer_->RecordSendTrailingMetadata(
+          batch->payload->send_trailing_metadata.send_trailing_metadata);
+    }
+    // Intercept recv ops.
+    if (batch->recv_initial_metadata) {
+      recv_initial_metadata_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata;
+      recv_initial_metadata_flags_ =
+          batch->payload->recv_initial_metadata.recv_flags;
+      original_recv_initial_metadata_ready_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
+                        this, nullptr);
+      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+          &recv_initial_metadata_ready_;
+    }
+    if (batch->recv_message) {
+      recv_message_ = batch->payload->recv_message.recv_message;
+      original_recv_message_ready_ =
+          batch->payload->recv_message.recv_message_ready;
+      GRPC_CLOSURE_INIT(&recv_message_ready_, RecvMessageReady, this, nullptr);
+      batch->payload->recv_message.recv_message_ready = &recv_message_ready_;
+    }
+  }
+  // Intercept recv_trailing_metadata even if there is no call tracer,
+  // since we may need to notify the LB policy about trailing metadata.
   if (batch->recv_trailing_metadata) {
-    InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(batch);
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    transport_stream_stats_ =
+        batch->payload->recv_trailing_metadata.collect_stats;
+    original_recv_trailing_metadata_ready_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                      this, nullptr);
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
   }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
@@ -2784,38 +2862,79 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ClientChannel::LoadBalancedCall::
-    RecvTrailingMetadataReadyForLoadBalancingPolicy(void* arg,
-                                                    grpc_error_handle error) {
+void ClientChannel::LoadBalancedCall::SendInitialMetadataOnComplete(
+    void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (self->lb_recv_trailing_metadata_ready_ != nullptr) {
-    // Set error if call did not succeed.
-    grpc_error_handle error_for_lb = GRPC_ERROR_NONE;
+  self->call_attempt_tracer_->RecordOnDoneSendInitialMetadata(
+      self->peer_string_);
+  Closure::Run(DEBUG_LOCATION,
+               self->original_send_initial_metadata_on_complete_,
+               GRPC_ERROR_REF(error));
+}
+
+void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  self->call_attempt_tracer_->RecordReceivedInitialMetadata(
+      self->recv_initial_metadata_, *self->recv_initial_metadata_flags_);
+  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
+               GRPC_ERROR_REF(error));
+}
+
+void ClientChannel::LoadBalancedCall::RecvMessageReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
+  Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
+               GRPC_ERROR_REF(error));
+}
+
+void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  // Check if we have a tracer or an LB callback to invoke.
+  if (self->call_attempt_tracer_ != nullptr ||
+      self->lb_recv_trailing_metadata_ready_ != nullptr) {
+    // Get the call's status.
+    absl::Status status;
     if (error != GRPC_ERROR_NONE) {
-      error_for_lb = error;
+      // Get status from error.
+      grpc_status_code code;
+      grpc_slice message = grpc_empty_slice();
+      grpc_error_get_status(error, self->deadline_, &code, &message,
+                            /*http_error=*/nullptr, /*error_string=*/nullptr);
+      status = absl::Status(static_cast<absl::StatusCode>(code),
+                            StringViewFromSlice(message));
     } else {
+      // Get status from headers.
       const auto& fields = self->recv_trailing_metadata_->idx.named;
       GPR_ASSERT(fields.grpc_status != nullptr);
-      grpc_status_code status =
+      grpc_status_code code =
           grpc_get_status_code_from_metadata(fields.grpc_status->md);
-      std::string msg;
-      if (status != GRPC_STATUS_OK) {
-        error_for_lb = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("call failed"),
-            GRPC_ERROR_INT_GRPC_STATUS, status);
+      if (code != GRPC_STATUS_OK) {
+        absl::string_view message;
         if (fields.grpc_message != nullptr) {
-          error_for_lb = grpc_error_set_str(
-              error_for_lb, GRPC_ERROR_STR_GRPC_MESSAGE,
-              grpc_slice_ref_internal(GRPC_MDVALUE(fields.grpc_message->md)));
+          message = StringViewFromSlice(GRPC_MDVALUE(fields.grpc_message->md));
         }
+        status = absl::Status(static_cast<absl::StatusCode>(code), message);
       }
     }
-    // Invoke callback to LB policy.
-    Metadata trailing_metadata(self, self->recv_trailing_metadata_);
-    LbCallState lb_call_state(self);
-    self->lb_recv_trailing_metadata_ready_(error_for_lb, &trailing_metadata,
-                                           &lb_call_state);
-    if (error == GRPC_ERROR_NONE) GRPC_ERROR_UNREF(error_for_lb);
+    // If we have a tracer, notify it.
+    if (self->call_attempt_tracer_ != nullptr) {
+      self->call_attempt_tracer_->RecordReceivedTrailingMetadata(
+          status, self->recv_trailing_metadata_,
+          *self->transport_stream_stats_);
+    }
+    // If the LB policy requested a callback for trailing metadata, invoke
+    // the callback.
+    if (self->lb_recv_trailing_metadata_ready_ != nullptr) {
+      grpc_error_handle error_for_lb = absl_status_to_grpc_error(status);
+      Metadata trailing_metadata(self, self->recv_trailing_metadata_);
+      LbCallState lb_call_state(self);
+      self->lb_recv_trailing_metadata_ready_(error_for_lb, &trailing_metadata,
+                                             &lb_call_state);
+      GRPC_ERROR_UNREF(error_for_lb);
+    }
   }
   // Chain to original callback.
   if (self->failure_error_ != GRPC_ERROR_NONE) {
@@ -2828,23 +2947,9 @@ void ClientChannel::LoadBalancedCall::
                error);
 }
 
-void ClientChannel::LoadBalancedCall::
-    InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-        grpc_transport_stream_op_batch* batch) {
-  recv_trailing_metadata_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-  original_recv_trailing_metadata_ready_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                    RecvTrailingMetadataReadyForLoadBalancingPolicy, this,
-                    grpc_schedule_on_exec_ctx);
-  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &recv_trailing_metadata_ready_;
-}
-
 void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
-      std::move(connected_subchannel_), pollent_, path_, call_start_time_,
+      std::move(connected_subchannel_), pollent_, path_, /*start_time=*/0,
       deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
@@ -2855,10 +2960,6 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
             this, subchannel_call_.get(), grpc_error_std_string(error).c_str());
-  }
-  if (on_call_destruction_complete_ != nullptr) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-    on_call_destruction_complete_ = nullptr;
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     PendingBatchesFail(error, YieldCallCombiner);
@@ -2940,6 +3041,7 @@ void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
 }
 
 void ClientChannel::LoadBalancedCall::AsyncPickDone(grpc_error_handle error) {
+  // TODO(roth): Does this callback need to hold a ref to LoadBalancedCall?
   GRPC_CLOSURE_INIT(&pick_closure_, PickDone, this, grpc_schedule_on_exec_ctx);
   ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
 }
