@@ -160,11 +160,10 @@ typedef struct grpc_slice_allocator {
   grpc_resource_user* resource_user;
 } grpc_slice_allocator;
 
-/* Initialize a slice allocator. Takes ownership of a ref on \a resource_user
-   from the caller. Caller is responsible for calling
+/* Constructs a slice allocator. Caller is responsible for calling
    \a grpc_slice_allocator_destroy. */
-void grpc_slice_allocator_init(grpc_slice_allocator* slice_allocator,
-                               grpc_resource_user* resource_user);
+grpc_slice_allocator* grpc_slice_allocator_create(
+    grpc_resource_quota* resource_quota, const char* name);
 
 /* Cleans up after a slice_allocator. */
 void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);

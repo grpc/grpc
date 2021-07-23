@@ -76,6 +76,7 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
    'pollset' indicates a grpc_pollset that is interested in the result
      of the get - work on this pollset may be used to progress the get
      operation
+   'resource_quota: this takes ownership of a ref from the caller
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)

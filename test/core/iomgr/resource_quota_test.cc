@@ -686,35 +686,24 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
 
 static void test_one_slice(void) {
   gpr_log(GPR_INFO, "** test_one_slice **");
-
   grpc_resource_quota* q = grpc_resource_quota_create("test_one_slice");
   grpc_resource_quota_resize(q, 1024);
-
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
-
-  grpc_slice_allocator alloc;
+  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
-  grpc_slice_allocator_init(&alloc, usr);
-
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
-
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer,
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(alloc, 1024, 1, &buffer,
                                                 inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
-
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_slice_buffer_destroy_internal(&buffer);
-  }
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_allocator_destroy(&alloc);
+    grpc_slice_allocator_destroy(alloc);
   }
   grpc_resource_quota_unref(q);
 }
@@ -749,24 +738,17 @@ static void test_one_slice_through_slice_allocator_factory(void) {
 
 static void test_one_slice_deleted_late(void) {
   gpr_log(GPR_INFO, "** test_one_slice_deleted_late **");
-
   grpc_resource_quota* q =
       grpc_resource_quota_create("test_one_slice_deleted_late");
   grpc_resource_quota_resize(q, 1024);
-
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
-
-  grpc_slice_allocator alloc;
+  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
-  grpc_slice_allocator_init(&alloc, usr);
-
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
-
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer,
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(alloc, 1024, 1, &buffer,
                                                 inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
@@ -774,11 +756,8 @@ static void test_one_slice_deleted_late(void) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_slice_allocator_destroy(&alloc);
-  }
-  grpc_resource_quota_unref(q);
-  {
-    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_allocator_destroy(alloc);
+    grpc_resource_quota_unref(q);
     grpc_slice_buffer_destroy_internal(&buffer);
   }
 }
@@ -795,20 +774,15 @@ static void test_negative_rq_free_pool(void) {
   grpc_resource_quota* q =
       grpc_resource_quota_create("test_negative_rq_free_pool");
   grpc_resource_quota_resize(q, 1024);
-
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
-
-  grpc_slice_allocator alloc;
+  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
-  grpc_slice_allocator_init(&alloc, usr);
-
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
 
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer,
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(alloc, 1024, 1, &buffer,
                                                 inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
@@ -822,12 +796,8 @@ static void test_negative_rq_free_pool(void) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_slice_allocator_destroy(&alloc);
-  }
-
-  grpc_resource_quota_unref(q);
-  {
-    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_allocator_destroy(alloc);
+    grpc_resource_quota_unref(q);
     grpc_slice_buffer_destroy_internal(&buffer);
   }
 }

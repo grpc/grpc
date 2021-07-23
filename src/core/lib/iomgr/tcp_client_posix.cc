@@ -121,7 +121,6 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
     gpr_mu_destroy(&ac->mu);
     if (ac->slice_allocator != nullptr) {
       grpc_slice_allocator_destroy(ac->slice_allocator);
-      ac->slice_allocator = nullptr;
     }
     grpc_channel_args_destroy(ac->channel_args);
     delete ac;
