@@ -1057,10 +1057,6 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 
 namespace {
 
-bool GetEnableRetries(const grpc_channel_args* args) {
-  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, false);
-}
-
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
   const bool use_local_subchannel_pool = grpc_channel_args_find_bool(
@@ -1082,7 +1078,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
                              grpc_error_handle* error)
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
-      enable_retries_(GetEnableRetries(args->channel_args)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
@@ -1507,14 +1502,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  // Construct dynamic filter stack.
-  std::vector<const grpc_channel_filter*> filters =
-      config_selector->GetFilters();
-  if (enable_retries_) {
-    filters.push_back(&kRetryFilterVtable);
-  } else {
-    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
-  }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL), this,
@@ -1526,6 +1513,16 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       channel_args_, args_to_add.data(), args_to_add.size());
   new_args = config_selector->ModifyChannelArgs(new_args);
+  bool enable_retries =
+      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, false);
+  // Construct dynamic filter stack.
+  std::vector<const grpc_channel_filter*> filters =
+      config_selector->GetFilters();
+  if (enable_retries) {
+    filters.push_back(&kRetryFilterVtable);
+  } else {
+    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
+  }
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);

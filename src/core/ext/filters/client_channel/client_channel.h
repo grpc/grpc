@@ -276,7 +276,6 @@ class ClientChannel {
   // Fields set at construction and never modified.
   //
   const bool deadline_checking_enabled_;
-  const bool enable_retries_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
