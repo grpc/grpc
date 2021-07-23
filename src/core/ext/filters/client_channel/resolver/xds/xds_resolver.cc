@@ -575,18 +575,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  // The max number of args to add is 1 so far; when more args need to be added
-  // we will increase the size of args_to_add accordingly;
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  if (retry_enabled_) {
-    args_to_add.emplace_back(grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1));
-  }
-  if (args_to_add.empty()) return args;
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      args, args_to_add.data(), args_to_add.size());
-  grpc_channel_args_destroy(args);
-  return new_args;
+  return args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
