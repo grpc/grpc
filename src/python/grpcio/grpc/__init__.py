@@ -21,11 +21,10 @@ import sys
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
-import six
-
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+import six
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

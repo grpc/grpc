@@ -16,7 +16,7 @@
 set -ex
 
 ACTION=${1:---overwrite-in-place}
-[[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--diff' ]]
+[[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--check' ]]
 
 # Change to root
 cd "$(dirname "${0}")/../.."
