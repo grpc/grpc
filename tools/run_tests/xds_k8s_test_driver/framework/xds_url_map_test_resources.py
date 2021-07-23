@@ -13,9 +13,9 @@
 # limitations under the License.
 """A test framework built for urlMap related xDS test cases."""
 
-import time
 import functools
 import inspect
+import time
 from typing import Any, Iterable, List, Mapping, Tuple
 
 from absl import flags
