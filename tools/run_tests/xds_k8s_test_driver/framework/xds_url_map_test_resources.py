@@ -24,6 +24,7 @@ from absl import logging
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
+import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -144,7 +145,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Pick a client_namespace_suffix if not set
         if self.resource_suffix is None:
             self.resource_suffix = ""
-            self.client_namespace_suffix = xds_k8s_testcase.XdsKubernetesTestCase.random_resource_suffix(
+            self.client_namespace_suffix = framework.helpers.rand.random_resource_suffix(
             )
         else:
             self.client_namespace_suffix = self.resource_suffix
