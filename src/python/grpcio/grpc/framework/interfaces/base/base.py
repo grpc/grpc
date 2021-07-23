@@ -26,9 +26,6 @@ import abc
 import enum
 import threading  # pylint: disable=unused-import
 
-# abandonment is referenced from specification in this module.
-from grpc.framework.foundation import \
-    abandonment  # pylint: disable=unused-import
 import six
 
 # pylint: disable=too-many-arguments
