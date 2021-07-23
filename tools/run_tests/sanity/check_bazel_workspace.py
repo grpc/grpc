@@ -69,7 +69,7 @@ _GRPC_DEP_NAMES = [
     'opencensus_proto',
     'com_envoyproxy_protoc_gen_validate',
     'com_google_googleapis',
-    's2a_core',
+    'com_google_s2a_core',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
