@@ -18,11 +18,11 @@ from concurrent import futures
 import logging
 
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
-
-from tests.interop import service
 from tests.interop import resources
+from tests.interop import service
 from tests.unit import test_common
+
+from src.proto.grpc.testing import test_pb2_grpc
 
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)

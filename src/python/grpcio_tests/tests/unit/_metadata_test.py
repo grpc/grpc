@@ -13,13 +13,12 @@
 # limitations under the License.
 """Tests server and client side metadata API."""
 
+import logging
 import unittest
 import weakref
-import logging
 
 import grpc
 from grpc import _channel
-
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 

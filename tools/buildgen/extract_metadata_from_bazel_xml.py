@@ -30,15 +30,16 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
-import subprocess
-import yaml
-import xml.etree.ElementTree as ET
-import os
 import collections
-import sys
+import os
 import re
-from typing import List, Any, Dict, Optional, Iterable
+import subprocess
+import sys
+from typing import Any, Dict, Iterable, List, Optional
+import xml.etree.ElementTree as ET
+
 import build_cleaner
+import yaml
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]

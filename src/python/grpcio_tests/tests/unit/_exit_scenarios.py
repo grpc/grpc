@@ -14,12 +14,11 @@
 """Defines a number of module-scope gRPC scenarios to test clean exit."""
 
 import argparse
+import logging
 import threading
 import time
-import logging
 
 import grpc
-
 from tests.unit.framework.common import test_constants
 
 WAIT_TIME = 1000

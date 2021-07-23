@@ -14,17 +14,17 @@
 """Defines test client behaviors (UNARY/STREAMING) (SYNC/ASYNC)."""
 
 import abc
+from concurrent import futures
 import threading
 import time
 
-from concurrent import futures
-from six.moves import queue
-
 import grpc
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from six.moves import queue
 from tests.unit import resources
 from tests.unit import test_common
+
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
 
 _TIMEOUT = 60 * 60 * 24
 

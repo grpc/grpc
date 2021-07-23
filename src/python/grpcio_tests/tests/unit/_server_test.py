@@ -13,11 +13,10 @@
 # limitations under the License.
 
 from concurrent import futures
-import unittest
 import logging
+import unittest
 
 import grpc
-
 from tests.unit import resources
 
 

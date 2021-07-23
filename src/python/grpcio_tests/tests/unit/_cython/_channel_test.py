@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 import threading
+import time
 import unittest
 
 from grpc._cython import cygrpc
-
 from tests.unit.framework.common import test_constants
 
 

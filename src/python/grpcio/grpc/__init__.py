@@ -18,10 +18,10 @@ import contextlib
 import enum
 import logging
 import sys
-import six
 
-from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
+from grpc._cython import cygrpc as _cygrpc
+import six
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -2092,7 +2092,10 @@ class Compression(enum.IntEnum):
     Gzip = _compression.Gzip
 
 
-from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
+from grpc._runtime_protos import \
+    protos  # pylint: disable=wrong-import-position
+from grpc._runtime_protos import protos_and_services
+from grpc._runtime_protos import services
 
 ###################################  __all__  #################################
 

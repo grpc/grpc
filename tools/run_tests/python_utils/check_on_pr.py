@@ -13,15 +13,16 @@
 # limitations under the License.
 
 from __future__ import print_function
+
+import datetime
+import json
 import os
 import sys
-import json
 import time
-import datetime
 import traceback
 
-import requests
 import jwt
+import requests
 
 _GITHUB_API_PREFIX = 'https://api.github.com'
 _GITHUB_REPO = 'grpc/grpc'

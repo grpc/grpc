@@ -14,16 +14,15 @@
 """Test of gRPC Python interceptors."""
 
 import collections
+from concurrent import futures
 import itertools
-import threading
-import unittest
 import logging
 import os
-from concurrent import futures
+import threading
+import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control

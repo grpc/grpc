@@ -27,13 +27,13 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+import six
 
 # Docker doesn't clean up after itself, so we do it on exit.
 atexit.register(lambda: subprocess.call(['stty', 'echo']))

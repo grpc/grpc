@@ -16,10 +16,11 @@
 
 import collections
 import ctypes
+import json
 import math
 import sys
+
 import yaml
-import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
     attrs = yaml.load(f.read())

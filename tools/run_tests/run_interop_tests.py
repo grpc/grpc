@@ -27,13 +27,14 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+import six
+
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:
     from python_utils.upload_test_results import upload_interop_results_to_bq

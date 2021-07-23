@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import grpc_testing
-
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 

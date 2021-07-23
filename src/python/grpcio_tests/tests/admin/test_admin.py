@@ -13,14 +13,16 @@
 # limitations under the License.
 """A test to ensure that admin services are registered correctly."""
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import unittest
-from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 import grpc_admin
-from grpc_csds import csds_pb2, csds_pb2_grpc
-from grpc_channelz.v1 import channelz_pb2, channelz_pb2_grpc
+from grpc_channelz.v1 import channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc
+from grpc_csds import csds_pb2
+from grpc_csds import csds_pb2_grpc
 
 
 class TestAdmin(unittest.TestCase):

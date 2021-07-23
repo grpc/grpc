@@ -15,14 +15,15 @@
 # limitations under the License.
 
 import os
+import re
 import sys
 import unittest
-import re
 
 # hack import paths to pick up extra code
 sys.path.insert(0, os.path.abspath('tools/run_tests/'))
-from run_tests_matrix import _create_test_jobs, _create_portability_test_jobs
 import python_utils.filter_pull_request_tests as filter_pull_request_tests
+from run_tests_matrix import _create_portability_test_jobs
+from run_tests_matrix import _create_test_jobs
 
 _LIST_OF_LANGUAGE_LABELS = [
     'c', 'c++', 'csharp', 'grpc-node', 'objc', 'php', 'php7', 'python', 'ruby'

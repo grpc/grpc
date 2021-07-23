@@ -21,18 +21,17 @@ try:
 except ImportError:
     pass
 
-import unittest
-
 import logging
 import traceback
-
-import grpc
-from grpc_status import rpc_status
-
-from tests.unit import test_common
+import unittest
 
 from google.protobuf import any_pb2
-from google.rpc import code_pb2, status_pb2, error_details_pb2
+from google.rpc import code_pb2
+from google.rpc import error_details_pb2
+from google.rpc import status_pb2
+import grpc
+from grpc_status import rpc_status
+from tests.unit import test_common
 
 _STATUS_OK = '/test/StatusOK'
 _STATUS_NOT_OK = '/test/StatusNotOk'

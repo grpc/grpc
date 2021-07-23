@@ -13,13 +13,14 @@
 # limitations under the License.
 """A setup module for the GRPC Python package."""
 
+# Monkey Patch the unix compiler to accept ASM
+# files used by boring SSL.
+from distutils.unixccompiler import UnixCCompiler
+
 # setuptools need to be imported before distutils. Otherwise it might lead to
 # undesirable behaviors or errors.
 import setuptools
 
-# Monkey Patch the unix compiler to accept ASM
-# files used by boring SSL.
-from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
 
@@ -28,18 +29,17 @@ from distutils import extension as _extension
 from distutils import util
 import os
 import os.path
-import pkg_resources
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
+import pkg_resources
 from setuptools.command import egg_info
-
-import subprocess
-from subprocess import PIPE
 
 import _metadata
 

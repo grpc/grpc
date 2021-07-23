@@ -13,12 +13,11 @@
 # limitations under the License.
 """The gRPC interoperability test server using AsyncIO stack."""
 
-import asyncio
 import argparse
+import asyncio
 import logging
 
 import grpc
-
 from tests.interop import server as interop_server_lib
 from tests_aio.unit import _test_server
 

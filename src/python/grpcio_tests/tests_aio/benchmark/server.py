@@ -17,9 +17,9 @@ import logging
 import unittest
 
 from grpc.experimental import aio
+from tests_aio.benchmark import benchmark_servicer
 
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
-from tests_aio.benchmark import benchmark_servicer
 
 
 async def _start_async_server():

@@ -19,7 +19,6 @@ import os
 
 import grpc
 from grpc.experimental import aio
-
 from tests.interop import client as interop_client_lib
 from tests_aio.interop import methods
 

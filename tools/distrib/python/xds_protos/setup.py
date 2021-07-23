@@ -15,6 +15,7 @@
 """A PyPI package for xDS protos generated Python code."""
 
 import os
+
 import setuptools
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))

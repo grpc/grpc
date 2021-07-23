@@ -17,9 +17,9 @@ import asyncio
 import logging
 
 from grpc.experimental import aio
+from tests_aio.benchmark import worker_servicer
 
 from src.proto.grpc.testing import worker_service_pb2_grpc
-from tests_aio.benchmark import worker_servicer
 
 
 async def run_worker_server(port: int) -> None:

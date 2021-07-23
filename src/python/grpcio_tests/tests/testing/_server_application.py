@@ -13,10 +13,9 @@
 # limitations under the License.
 """An example gRPC Python-using server-side application."""
 
-import grpc
-
 import threading
 
+import grpc
 # requests_pb2 is a semantic dependency of this module.
 from tests.testing import _application_common
 from tests.testing.proto import requests_pb2  # pylint: disable=unused-import

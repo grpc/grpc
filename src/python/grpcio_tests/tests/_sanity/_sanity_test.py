@@ -17,7 +17,6 @@ import pkgutil
 import unittest
 
 import six
-
 import tests
 
 

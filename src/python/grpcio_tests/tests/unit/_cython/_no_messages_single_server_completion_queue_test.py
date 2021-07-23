@@ -17,7 +17,6 @@ import threading
 import unittest
 
 from grpc._cython import cygrpc
-
 from tests.unit._cython import _common
 from tests.unit._cython import test_utilities
 

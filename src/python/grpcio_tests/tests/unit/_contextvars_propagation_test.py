@@ -21,9 +21,8 @@ import threading
 import unittest
 
 import grpc
-
-from tests.unit import test_common
 from six.moves import queue
+from tests.unit import test_common
 
 _UNARY_UNARY = "/test/UnaryUnary"
 _REQUEST = b"0000"

@@ -22,7 +22,6 @@ from xml.etree import ElementTree
 
 import coverage
 from six import moves
-
 from tests import _loader
 
 

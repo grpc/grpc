@@ -13,12 +13,12 @@
 # limitations under the License.
 """The example of four ways of data transmission using gRPC in Python."""
 
-from threading import Thread
 from concurrent import futures
+from threading import Thread
 
-import grpc
-import demo_pb2_grpc
 import demo_pb2
+import demo_pb2_grpc
+import grpc
 
 __all__ = 'DemoServer'
 SERVER_ADDRESS = 'localhost:23333'

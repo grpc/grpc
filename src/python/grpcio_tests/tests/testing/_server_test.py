@@ -17,7 +17,6 @@ import unittest
 
 import grpc
 import grpc_testing
-
 from tests.testing import _application_common
 from tests.testing import _application_testing_common
 from tests.testing import _server_application
