@@ -16,6 +16,9 @@
  *
  */
 
+// See https://github.com/protocolbuffers/protobuf/blob/master/cmake/README.md#dlls-vs-static-linking
+#define PROTOBUF_USE_DLLS
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -75,8 +78,8 @@ void RunServer() {
   // GreeterServiceImpl service;
   // builder.RegisterService(&service);
 
-  const std::string& path = "C:\\Users\\keithl\\repos\\grpc\\examples\\cpp\\helloworld\\cmake\\build\\Debug\\other_service_shared.dll"; 
-//                              C:\Users\keithl\repos\grpc\examples\cpp\helloworld\cmake\build\Debug
+  const std::string& path = "other_service_shared.dll"; 
+  // const std::string& path = "C:\\Users\\keithl\\repos\\grpc\\examples\\cpp\\helloworld\\cmake\\build\\Debug\\other_service_shared.dll"; 
 
   std::wstring temp = std::wstring(path.begin(), path.end());
   LPCWSTR str = temp.c_str();

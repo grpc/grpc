@@ -16,6 +16,9 @@
  *
  */
 
+// See https://github.com/protocolbuffers/protobuf/blob/master/cmake/README.md#dlls-vs-static-linking
+#define PROTOBUF_USE_DLLS
+
 #include <iostream>
 #include <memory>
 #include <string>
