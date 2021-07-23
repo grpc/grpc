@@ -16,7 +16,11 @@
 set -ex
 
 ACTION=${1:---overwrite-in-place}
-[[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--check' ]]
+[[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--diff' ]]
+
+if [[ $ACTION == '--diff' ]]; then
+    ACTION="--diff --check"
+fi
 
 # Change to root
 cd "$(dirname "${0}")/../.."
@@ -31,11 +35,11 @@ DIRS=(
 
 VIRTUALENV=isort_virtual_environment
 
-python3 -m virtualenv $VIRTUALENV -p $(which python3)
+python3 -m virtualenv $VIRTUALENV
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install isort==5.9.2
 
-$PYTHON -m isort "$ACTION" \
+$PYTHON -m isort $ACTION \
   --force-sort-within-sections \
   --force-single-line-imports --single-line-exclusions=typing \
   --src "examples/python/data_transmission" \
