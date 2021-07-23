@@ -319,11 +319,13 @@ class DynamicTerminationFilter::CallData {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call =
-        std::move(calld->lb_call_);
+    RefCountedPtr<SubchannelCall> subchannel_call;
+    if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
+      subchannel_call = calld->lb_call_->subchannel_call();
+    }
     calld->~CallData();
-    if (GPR_LIKELY(lb_call != nullptr)) {
-      lb_call->set_on_call_destruction_complete(then_schedule_closure);
+    if (GPR_LIKELY(subchannel_call != nullptr)) {
+      subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
     } else {
       // TODO(yashkt) : This can potentially be a Closure::Run
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
@@ -2599,11 +2601,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
         gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
     call_attempt_tracer_->RecordEnd(latency);
   }
-  // Arrange to invoke on_call_destruction_complete_ once we know that
-  // the call stack has been destroyed.
-  if (GPR_LIKELY(subchannel_call_ != nullptr)) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-  } else {
+  if (on_call_destruction_complete_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
                  GRPC_ERROR_NONE);
   }

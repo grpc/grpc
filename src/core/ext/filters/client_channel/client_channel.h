@@ -378,22 +378,16 @@ class ClientChannel::LoadBalancedCall
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
-  // If it is null, then the caller is responsible for calling
-  // set_on_call_destruction_complete() before the LoadBalancedCall is
-  // destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
-
-  // Callers must call this before unreffing if they did not set the
-  // closure via the ctor.
-  void set_on_call_destruction_complete(
-      grpc_closure* on_call_destruction_complete) {
-    on_call_destruction_complete_ = on_call_destruction_complete;
-  }
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -407,6 +401,10 @@ class ClientChannel::LoadBalancedCall
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
   void AsyncPickDone(grpc_error_handle error);
+
+  RefCountedPtr<SubchannelCall> subchannel_call() const {
+    return subchannel_call_;
+  }
 
  private:
   class LbQueuedCallCanceller;
