@@ -28,12 +28,15 @@ spec:
           - "--stats_port=${stats_port}"
           - "--qps=${qps}"
           - "--rpc=${rpc}"
+          - "--metadata=${metadata}"
           - "--print_response=${print_response}"
         ports:
           - containerPort: ${stats_port}
         env:
           - name: GRPC_XDS_BOOTSTRAP
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
+          - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH
+            value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
