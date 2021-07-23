@@ -13,6 +13,7 @@
 # limitations under the License.
 """A test framework built for urlMap related xDS test cases."""
 
+import time
 import functools
 import inspect
 from typing import Any, Iterable, List, Mapping, Tuple
@@ -139,6 +140,12 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         if absl_flags is not None:
             for key in absl_flags:
                 setattr(self, key, absl_flags[key])
+        # Pick a client_namespace_suffix if not set
+        if self.resource_suffix is None:
+            self.resource_suffix = ""
+            self.client_namespace_suffix = str(int(time.time()))
+        else:
+            self.client_namespace_suffix = self.resource_suffix
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()
@@ -150,11 +157,15 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             network=self.network,
         )
         # Kubernetes namespace
+        self.k8s_client_namespace = k8s.KubernetesNamespace(
+            self.k8s_api_manager,
+            client_app.KubernetesClientRunner.make_namespace_name(
+                self.resource_prefix, self.client_namespace_suffix))
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
                                                      self.resource_prefix)
         # Kubernetes Test Client
         self.test_client_runner = client_app.KubernetesClientRunner(
-            self.k8s_namespace,
+            self.k8s_client_namespace,
             deployment_name=self.client_name,
             image_name=self.client_image,
             gcp_project=self.project,
@@ -192,6 +203,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         logging.info('GcpResourceManager: pre clean-up')
         self.td.cleanup(force=True)
         self.test_client_runner.delete_namespace()
+        self.test_server_runner.delete_namespace()
 
     def setup(self, test_case_classes: 'Iterable[XdsUrlMapTestCase]') -> None:
         if self.strategy not in ['create', 'keep']:
@@ -254,7 +266,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         if hasattr(self, 'td'):
             self.td.cleanup(force=True)
         if hasattr(self, 'test_client_runner'):
-            self.test_client_runner.cleanup(force=True)
+            self.test_client_runner.cleanup(force=True, force_namespace=True)
         if hasattr(self, 'test_server_runner'):
             self.test_server_runner.cleanup(force=True)
         if hasattr(self, 'test_server_alternative_runner'):
