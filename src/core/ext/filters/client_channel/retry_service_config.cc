@@ -290,9 +290,9 @@ grpc_error_handle ParseRetryPolicy(
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* args, const Json& json,
-    grpc_error_handle* error) {
+RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
+                                               const Json& json,
+                                               grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   // Parse retry policy.
   auto it = json.object_value().find("retryPolicy");
