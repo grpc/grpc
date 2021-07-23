@@ -88,6 +88,32 @@ MeasureInt64 RpcClientReceivedMessagesPerRpc() {
   return measure;
 }
 
+// Client per-overall-client-call measures
+MeasureInt64 RpcClientRetriesPerCall() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcClientRetriesPerCallMeasureName,
+                             "Number of retry or hedging attempts excluding "
+                             "transparent retries made during the client call",
+                             kCount);
+  return measure;
+}
+
+MeasureInt64 RpcClientTransparentRetriesPerCall() {
+  static const auto measure = MeasureInt64::Register(
+      kRpcClientTransparentRetriesPerCallMeasureName,
+      "Number of transparent retries made during the client call", kCount);
+  return measure;
+}
+
+MeasureDouble RpcClientRetryDelayPerCall() {
+  static const auto measure =
+      MeasureDouble::Register(kRpcClientRetryDelayPerCallMeasureName,
+                              "Total time of delay while there is no active "
+                              "attempt during the client call",
+                              kUnitMilliseconds);
+  return measure;
+}
+
 // Server
 MeasureDouble RpcServerSentBytesPerRpc() {
   static const auto measure = MeasureDouble::Register(
