@@ -103,8 +103,8 @@ def _test_proto_module_imported_once():
 def _test_static_dynamic_combo():
     with _augmented_syspath(
         ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)):
+        from grpc_tools import protoc  # isort:skip
         import complicated_pb2
-        from grpc_tools import protoc
         protos = protoc._protos("simple.proto")
         static_message = complicated_pb2.ComplicatedMessage()
         dynamic_message = protos.SimpleMessage()

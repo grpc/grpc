@@ -24,7 +24,6 @@ import sys
 import tempfile
 import time
 
-
 argp = argparse.ArgumentParser(description='Run c-ares resolver tests')
 argp.add_argument('--test_bin_path', default=None, type=str,
                   help='Path to gtest test binary to invoke.')
