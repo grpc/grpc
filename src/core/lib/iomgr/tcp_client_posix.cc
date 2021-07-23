@@ -88,7 +88,8 @@ static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, channel_args);
+  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                                          channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
   goto done;

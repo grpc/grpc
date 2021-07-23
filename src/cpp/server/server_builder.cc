@@ -102,7 +102,6 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
   return *this;
 }
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
 ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     CallbackGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
@@ -121,26 +120,6 @@ ServerBuilder& ServerBuilder::SetContextAllocator(
   context_allocator_ = std::move(context_allocator);
   return *this;
 }
-#else
-ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
-    experimental::CallbackGenericService* service) {
-  if (builder_->generic_service_ || builder_->callback_generic_service_) {
-    gpr_log(GPR_ERROR,
-            "Adding multiple generic services is unsupported for now. "
-            "Dropping the service %p",
-            service);
-  } else {
-    builder_->callback_generic_service_ = service;
-  }
-  return *builder_;
-}
-
-ServerBuilder& ServerBuilder::experimental_type::SetContextAllocator(
-    std::unique_ptr<grpc::ContextAllocator> context_allocator) {
-  builder_->context_allocator_ = std::move(context_allocator);
-  return *builder_;
-}
-#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -399,12 +378,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     return nullptr;
   }
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   server->RegisterContextAllocator(std::move(context_allocator_));
-#else
-  server->experimental_registration()->RegisterContextAllocator(
-      std::move(context_allocator_));
-#endif
 
   for (const auto& value : services_) {
     if (!server->RegisterService(value->host.get(), value->service)) {

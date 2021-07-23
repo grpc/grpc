@@ -215,7 +215,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   cl = nullptr;
 
   grpc_slice_buffer_destroy_internal(&read_buffer);
-  grpc_chttp2_hpack_parser_destroy(&hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
@@ -485,7 +484,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       settings[j][i] = grpc_chttp2_settings_parameters[i].default_value;
     }
   }
-  grpc_chttp2_hpack_parser_init(&hpack_parser);
   grpc_chttp2_goaway_parser_init(&goaway_parser);
 
   // configure http2 the way we like it

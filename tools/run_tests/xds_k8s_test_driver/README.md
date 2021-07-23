@@ -8,18 +8,18 @@ changes to this codebase at the moment.
 
 ### Stabilization roadmap 
 - [ ] Replace retrying with tenacity
-- [ ] Generate namespace for each test to prevent resource name conflicts and
+- [x] Generate namespace for each test to prevent resource name conflicts and
       allow running tests in parallel
-- [ ] Security: run server and client in separate namespaces
+- [x] Security: run server and client in separate namespaces
 - [ ] Make framework.infrastructure.gcp resources [first-class
       citizen](https://en.wikipedia.org/wiki/First-class_citizen), support
       simpler CRUD
-- [ ] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
+- [x] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
       dynamically-named namespaces 
 - [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
       containing xDS-interop-specific logic
 - [ ] Address inline TODOs in code
-- [ ] Improve README.md documentation, explain helpers in bin/ folder
+- [x] Improve README.md documentation, explain helpers in bin/ folder
 
 ## Installation
 
@@ -44,13 +44,18 @@ Pre-populate environment variables for convenience. To find project id, refer to
 ```shell
 export PROJECT_ID="your-project-id"
 export PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+# Compute Engine default service account
+export GCE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+# The prefix to name GCP resources used by the framework
+export RESOURCE_PREFIX="xds-k8s-interop-tests"
 
 # The zone name your cluster, f.e. xds-k8s-test-cluster
-export CLUSTER_NAME="xds-k8s-test-cluster"
+export CLUSTER_NAME="${RESOURCE_PREFIX}-cluster"
 # The zone of your cluster, f.e. us-central1-a
-export ZONE="us-central1-a"
-# K8S namespace you'll use to run the cluster, f.e.
-export K8S_NAMESPACE="interop-psm-security" 
+export ZONE="us-central1-a" 
+# Dedicated GCP Service Account to use with workload identity.
+export WORKLOAD_SA_NAME="${RESOURCE_PREFIX}"
+export WORKLOAD_SA_EMAIL="${WORKLOAD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
 ##### Create the cluster 
@@ -70,23 +75,58 @@ Allow [health checking mechanisms](https://cloud.google.com/traffic-director/doc
 to query the workloads health.  
 This step can be skipped, if the driver is executed with `--ensure_firewall`.
 ```shell
-gcloud compute firewall-rules create "${K8S_NAMESPACE}-allow-health-checks" \
+gcloud compute firewall-rules create "${RESOURCE_PREFIX}-allow-health-checks" \
   --network=default --action=allow --direction=INGRESS \
   --source-ranges="35.191.0.0/16,130.211.0.0/22" \
   --target-tags=allow-health-checks \
   --rules=tcp:8080-8100
 ```
 
-##### Allow workload identities to talk to Traffic Director APIs
-```shell
-gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-client]"
+##### Setup GCP Service Account
 
-gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-server]"
-``` 
+Create dedicated GCP Service Account to use
+with [workload identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity).
+
+```shell
+gcloud iam service-accounts create "${WORKLOAD_SA_NAME}" \
+  --display-name="xDS K8S Interop Tests Workload Identity Service Account"
+```
+
+Enable the service account to [access the Traffic Director API](https://cloud.google.com/traffic-director/docs/prepare-for-envoy-setup#enable-service-account).
+```shell
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+   --member="serviceAccount:${WORKLOAD_SERVICE_ACCOUNT}" \
+   --role="roles/trafficdirector.client"
+```
+
+##### Allow test driver to configure workload identity automatically
+Test driver will automatically grant `roles/iam.workloadIdentityUser` to 
+allow the Kubernetes service account to impersonate the dedicated GCP workload
+service account (corresponds to the step 5
+of [Authenticating to Google Cloud](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)).
+This action requires the test framework to have `iam.serviceAccounts.create`
+permission on the project.
+
+If you're running test framework locally, and you have `roles/owner` to your
+project, **you can skip this step**.  
+If you're configuring the test framework to run on a CI: use `roles/owner`
+account once to allow test framework to grant `roles/iam.workloadIdentityUser`.
+
+```shell
+# Assuming CI is using Compute Engine default service account.
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${GCE_SA}" \
+  --role="roles/iam.serviceAccountAdmin" \
+  --condition-from-file=<(cat <<-END
+---
+title: allow_workload_identity_only
+description: Restrict serviceAccountAdmin to granting role iam.workloadIdentityUser
+expression: |-
+  api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', [])
+        .hasOnly(['roles/iam.workloadIdentityUser'])
+END
+)
+```
 
 ##### Configure GKE cluster access
 ```shell
@@ -158,23 +198,6 @@ python -m tests.security_test \
   --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
 ```
 
-### Test namespace
-It's possible to run multiple xDS interop test workloads in the same project.
-But we need to ensure the name of the global resources won't conflict. This can
-be solved by supplying `--namespace` and `--server_xds_port`. The xDS port needs
-to be unique across the entire project (default port range is [8080, 8280],
-avoid if possible). Here is an example:
-
-```shell
-python3 -m tests.baseline_test \
-  --flagfile="config/grpc-testing.cfg" \
-  --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --namespace="box-$(date +"%F-%R")" \
-  --server_xds_port="$(($RANDOM%1000 + 34567))"
-```
-
 ## Local development
 This test driver allows running tests locally against remote GKE clusters, right
 from your dev environment. You need:
@@ -185,6 +208,10 @@ from your dev environment. You need:
 4. Run tests with `--debug_use_port_forwarding` argument. The test driver 
    will automatically start and stop port forwarding using
    `kubectl` subprocesses. (experimental)
+
+### Making changes to the driver
+1. Install additional dev packages: `pip install -r requirements-dev.txt`
+2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
 
 ### Setup test configuration
 
@@ -246,7 +273,7 @@ This tool performs the following:
 EXAMPLES:
 ./run.sh bin/run_td_setup.py --help
 ./run.sh bin/run_td_setup.py --helpfull
-XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --namespace=override-namespace
+XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_suffix=override-suffix
 ./run.sh tests/baseline_test.py
 ./run.sh tests/security_test.py --verbosity=1 --logger_levels=__main__:DEBUG,framework:DEBUG
 ./run.sh tests/security_test.py SecurityTest.test_mtls --nocheck_local_certs

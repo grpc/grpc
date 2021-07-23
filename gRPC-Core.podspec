@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.39.0-dev'
+  version = '1.40.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -117,7 +117,10 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/event_engine/endpoint_config.h',
+                      'include/grpc/event_engine/event_engine.h',
                       'include/grpc/event_engine/port.h',
+                      'include/grpc/event_engine/slice_allocator.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -174,7 +177,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.18'
+    ss.dependency 'BoringSSL-GRPC', '0.0.19'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -182,6 +185,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -258,11 +262,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
@@ -344,6 +350,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
+                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc',
+                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list.cc',
@@ -795,6 +803,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.cc',
@@ -837,6 +846,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/endpoint_config.cc',
+                      'src/core/lib/event_engine/endpoint_config_internal.h',
+                      'src/core/lib/event_engine/event_engine.cc',
+                      'src/core/lib/event_engine/sockaddr.cc',
+                      'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
@@ -942,6 +956,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint_cfstream.cc',
                       'src/core/lib/iomgr/endpoint_cfstream.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
+                      'src/core/lib/iomgr/endpoint_pair_event_engine.cc',
                       'src/core/lib/iomgr/endpoint_pair_posix.cc',
                       'src/core/lib/iomgr/endpoint_pair_uv.cc',
                       'src/core/lib/iomgr/endpoint_pair_windows.cc',
@@ -961,6 +976,20 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_posix.cc',
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/ev_windows.cc',
+                      'src/core/lib/iomgr/event_engine/closure.cc',
+                      'src/core/lib/iomgr/event_engine/closure.h',
+                      'src/core/lib/iomgr/event_engine/endpoint.cc',
+                      'src/core/lib/iomgr/event_engine/endpoint.h',
+                      'src/core/lib/iomgr/event_engine/iomgr.cc',
+                      'src/core/lib/iomgr/event_engine/iomgr.h',
+                      'src/core/lib/iomgr/event_engine/pollset.cc',
+                      'src/core/lib/iomgr/event_engine/pollset.h',
+                      'src/core/lib/iomgr/event_engine/promise.h',
+                      'src/core/lib/iomgr/event_engine/resolved_address_internal.cc',
+                      'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
+                      'src/core/lib/iomgr/event_engine/resolver.cc',
+                      'src/core/lib/iomgr/event_engine/tcp.cc',
+                      'src/core/lib/iomgr/event_engine/timer.cc',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.cc',
@@ -1474,6 +1503,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                               'src/core/ext/transport/chttp2/transport/context_list.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -1699,6 +1729,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
@@ -1721,6 +1752,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/endpoint_config_internal.h',
+                              'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
@@ -1779,6 +1812,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_epollex_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
+                              'src/core/lib/iomgr/event_engine/closure.h',
+                              'src/core/lib/iomgr/event_engine/endpoint.h',
+                              'src/core/lib/iomgr/event_engine/iomgr.h',
+                              'src/core/lib/iomgr/event_engine/pollset.h',
+                              'src/core/lib/iomgr/event_engine/promise.h',
+                              'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -2101,8 +2140,12 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_lb_drop.cc',
                       'test/core/end2end/tests/retry_non_retriable_status.cc',
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
+                      'test/core/end2end/tests/retry_per_attempt_recv_timeout.cc',
+                      'test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
+                      'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
+                      'test/core/end2end/tests/retry_send_op_fails.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',
                       'test/core/end2end/tests/retry_streaming.cc',

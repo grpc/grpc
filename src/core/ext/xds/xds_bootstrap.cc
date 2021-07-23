@@ -403,7 +403,10 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
     CertificateProviderFactory* factory =
         CertificateProviderRegistry::LookupCertificateProviderFactory(
             plugin_name);
-    if (factory != nullptr) {
+    if (factory == nullptr) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Unrecognized plugin name: ", plugin_name).c_str()));
+    } else {
       RefCountedPtr<CertificateProviderFactory::Config> config;
       it = certificate_provider_json->mutable_object()->find("config");
       if (it != certificate_provider_json->mutable_object()->end()) {

@@ -1110,6 +1110,10 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
             GPR_INFO,
             "perform_stream_op error %p scheduling recv message-ready %s", s,
             grpc_error_std_string(error).c_str());
+        if (op->payload->recv_message.call_failed_before_recv_message !=
+            nullptr) {
+          *op->payload->recv_message.call_failed_before_recv_message = true;
+        }
         grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                 op->payload->recv_message.recv_message_ready,
                                 GRPC_ERROR_REF(error));

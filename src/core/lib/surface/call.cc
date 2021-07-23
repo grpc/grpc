@@ -1625,7 +1625,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
         compression_md.value = grpc_empty_slice();
-        compression_md.flags = 0;
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;

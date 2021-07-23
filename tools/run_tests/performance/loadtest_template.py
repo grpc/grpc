@@ -177,6 +177,15 @@ def template_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
                 self.write_indent()
                 self.write_indicator(header_comment, need_whitespace=False)
 
+    def str_presenter(dumper, data):
+        if '\n' in data:
+            return dumper.represent_scalar('tag:yaml.org,2002:str',
+                                           data,
+                                           style='|')
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+    TemplateDumper.add_representer(str, str_presenter)
+
     return TemplateDumper
 
 

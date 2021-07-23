@@ -23,56 +23,41 @@
 // forward-declaring an internal struct, not used publicly.
 struct grpc_resource_quota;
 struct grpc_resource_user;
+struct grpc_slice_buffer;
 
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(nnoble): forward declared here, needs definition.
-class SliceBuffer;
+// TODO(hork): stubbed out here, to be replaced with a real version in next PR.
+class SliceBuffer {
+ public:
+  SliceBuffer() { abort(); }
+  explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
+};
 
 class SliceAllocator {
  public:
-  // gRPC-internal constructor
-  explicit SliceAllocator(grpc_resource_user* user);
-  // Not copyable
-  SliceAllocator(SliceAllocator& other) = delete;
-  SliceAllocator& operator=(const SliceAllocator& other) = delete;
-  // Moveable
-  SliceAllocator(SliceAllocator&& other) = default;
-  SliceAllocator& operator=(SliceAllocator&& other) = default;
-  ~SliceAllocator();
-
-  using AllocateCallback =
-      std::function<void(absl::Status, SliceBuffer* buffer)>;
-  // TODO(hork): explain what happens under resource exhaustion.
+  using AllocateCallback = std::function<void(absl::Status)>;
+  virtual ~SliceAllocator() = default;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
   /// slices. Ownership of the \a SliceBuffer is not transferred.
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
-                        SliceAllocator::AllocateCallback cb);
-
- private:
-  grpc_resource_user* resource_user_;
+  ///
+  /// gRPC provides a ResourceQuota system to cap the amount of memory used by
+  /// the library. When a memory limit has been reached, slice allocation is
+  /// interrupted to attempt to reclaim memory from participating gRPC
+  /// internals. When there is sufficient memory available, slice allocation
+  /// proceeds as normal.
+  virtual absl::Status Allocate(size_t size, SliceBuffer* dest,
+                                SliceAllocator::AllocateCallback cb) = 0;
 };
 
 class SliceAllocatorFactory {
  public:
-  // gRPC-internal constructor
-  explicit SliceAllocatorFactory(grpc_resource_quota* quota);
-  // Not copyable
-  SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
-  SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
-  // Moveable
-  SliceAllocatorFactory(SliceAllocatorFactory&& other) = default;
-  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) = default;
-  ~SliceAllocatorFactory();
-
+  virtual ~SliceAllocatorFactory() = default;
   /// On Endpoint creation, call \a CreateSliceAllocator with the name of the
-  /// endpoint peer (a URI string, most likely). Note: \a peer_name must outlive
-  /// the Endpoint.
-  SliceAllocator CreateSliceAllocator(absl::string_view peer_name);
-
- private:
-  grpc_resource_quota* resource_quota_;
+  /// endpoint peer (a URI string, most likely).
+  virtual std::unique_ptr<SliceAllocator> CreateSliceAllocator(
+      absl::string_view peer_name) = 0;
 };
 
 }  // namespace experimental

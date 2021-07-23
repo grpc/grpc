@@ -485,6 +485,10 @@ class CLanguage(object):
             return ('ubuntu1804', [])
         elif compiler == 'gcc8.3':
             return ('buster', [])
+        elif compiler == 'gcc8.3_openssl102':
+            return ('buster_openssl102', [
+                "-DgRPC_SSL_PROVIDER=package",
+            ])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang4.0':
@@ -922,7 +926,7 @@ class CSharpLanguage(object):
             self._cmake_arch_option = 'x64'
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'stretch'
+            self._docker_distro = 'buster'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -1429,6 +1433,7 @@ argp.add_argument(
         'gcc5.3',
         'gcc7.4',
         'gcc8.3',
+        'gcc8.3_openssl102',
         'gcc_musl',
         'clang4.0',
         'clang5.0',

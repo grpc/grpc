@@ -123,7 +123,6 @@ proto_files=( \
   "google/protobuf/timestamp.proto" \
   "google/protobuf/wrappers.proto" \
   "google/rpc/status.proto" \
-  "src/proto/grpc/auth/v1/authz_policy.proto" \
   "src/proto/grpc/gcp/altscontext.proto" \
   "src/proto/grpc/gcp/handshaker.proto" \
   "src/proto/grpc/gcp/transport_security_common.proto" \

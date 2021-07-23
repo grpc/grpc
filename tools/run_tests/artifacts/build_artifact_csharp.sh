@@ -23,6 +23,7 @@ cd cmake/build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
       -DgRPC_BUILD_TESTS=OFF \
+      -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON \
       ../..
 
 make grpc_csharp_ext -j2

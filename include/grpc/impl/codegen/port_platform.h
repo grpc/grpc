@@ -566,6 +566,14 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GPR_HAS_CPP_ATTRIBUTE
+#ifdef __has_cpp_attribute
+#define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)
+#else
+#define GPR_HAS_CPP_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_CPP_ATTRIBUTE */
+
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
 #define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
@@ -590,6 +598,22 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NOINLINE
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_NO_UNIQUE_ADDRESS
+#if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
+#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#else
+#define GPR_NO_UNIQUE_ADDRESS
+#endif
+#endif /* GPR_NO_UNIQUE_ADDRESS */
+
+#ifndef GRPC_DEPRECATED
+#if GPR_HAS_CPP_ATTRIBUTE(deprecated)
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif
+#endif /* GRPC_DEPRECATED */
 
 #ifndef GPR_ATTRIBUTE_WEAK
 /* Attribute weak is broken on LLVM/windows:
@@ -663,6 +687,21 @@ typedef unsigned __int64 uint64_t;
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
+
+/* Selectively enable EventEngine on specific platforms. This default can be
+ * overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
+ */
+#ifndef GRPC_USE_EVENT_ENGINE
+/* Not enabled by default on any platforms yet. (2021.06) */
+#elif GRPC_USE_EVENT_ENGINE == 0
+/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default. */
+#undef GRPC_USE_EVENT_ENGINE
+#endif /* GRPC_USE_EVENT_ENGINE */
+
+#ifdef GRPC_USE_EVENT_ENGINE
+#undef GPR_SUPPORT_CHANNELS_FROM_FD
+#define GRPC_ARES 0
+#endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 

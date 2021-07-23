@@ -23,13 +23,11 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "grpc/event_engine/channel_args.h"
+#include "grpc/event_engine/endpoint_config.h"
 #include "grpc/event_engine/port.h"
 #include "grpc/event_engine/slice_allocator.h"
 
-// TODO(hork): explicitly define lifetimes and ownership of all objects.
 // TODO(hork): Define the Endpoint::Write metrics collection system
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -82,7 +80,7 @@ class EventEngine {
   using Callback = std::function<void(absl::Status)>;
   /// A callback handle, used to cancel a callback.
   struct TaskHandle {
-    intptr_t key;
+    intptr_t keys[2];
   };
   /// A thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -96,12 +94,14 @@ class EventEngine {
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
+    ResolvedAddress() = default;
+    ResolvedAddress(const ResolvedAddress&) = default;
     const struct sockaddr* address() const;
     socklen_t size() const;
 
    private:
     char address_[MAX_SIZE_BYTES];
-    socklen_t size_;
+    socklen_t size_ = 0;
   };
 
   /// An Endpoint represents one end of a connection between a gRPC client and
@@ -127,10 +127,8 @@ class EventEngine {
     ///
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
-    /// DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on
-    /// endpoint shutdown.
-    virtual void Read(Callback on_read, SliceBuffer* buffer,
-                      absl::Time deadline) = 0;
+    /// CANCELLED on endpoint shutdown.
+    virtual void Read(Callback on_read, SliceBuffer* buffer) = 0;
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -140,18 +138,13 @@ class EventEngine {
     ///
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
-    /// receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED
-    /// on endpoint shutdown.
-    virtual void Write(Callback on_writable, SliceBuffer* data,
-                       absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
-    // TODO(hork): define cleanup operations, lifetimes, responsibilities.
-    virtual void Close(Callback on_close) = 0;
+    /// receive CANCELLED on endpoint shutdown.
+    virtual void Write(Callback on_writable, SliceBuffer* data) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
-    virtual const ResolvedAddress* GetPeerAddress() const = 0;
-    virtual const ResolvedAddress* GetLocalAddress() const = 0;
+    virtual const ResolvedAddress& GetPeerAddress() const = 0;
+    virtual const ResolvedAddress& GetLocalAddress() const = 0;
   };
 
   /// Called when a new connection is established.
@@ -199,8 +192,8 @@ class EventEngine {
   /// for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
-      const ChannelArgs& args,
-      SliceAllocatorFactory slice_allocator_factory) = 0;
+      const EndpointConfig& args,
+      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
   /// \a Connect may return an error status immediately if there was a failure
@@ -216,8 +209,8 @@ class EventEngine {
   /// SliceAllocator API for more information.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
-                               const ChannelArgs& args,
-                               SliceAllocator slice_allocator,
+                               const EndpointConfig& args,
+                               std::unique_ptr<SliceAllocator> slice_allocator,
                                absl::Time deadline) = 0;
 
   /// The DNSResolver that provides asynchronous resolution.
@@ -225,7 +218,7 @@ class EventEngine {
    public:
     /// A task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key;
+      intptr_t key[2];
     };
     /// A DNS SRV record type.
     struct SRVRecord {
@@ -280,13 +273,16 @@ class EventEngine {
 
   virtual ~EventEngine() = default;
 
+  // TODO(nnoble): consider whether we can remove this method before we
+  // de-experimentalize this API.
+  virtual bool IsWorkerThread() = 0;
+
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
   virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver() = 0;
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};
-  // TODO(hork): consider recommendation to make TaskHandle an output arg
   /// Run a callback as soon as possible.
   ///
   /// The \a fn callback's \a status argument is used to indicate whether it was
@@ -324,11 +320,9 @@ class EventEngine {
   virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
-/// Lazily instantiate and return a default global EventEngine instance if no
-/// custom instance is provided. If a custom EventEngine is provided for every
-/// channel/server via ChannelArgs, this method should never be called, and the
-/// default instance will never be instantiated.
-std::shared_ptr<EventEngine> GetDefaultEventEngine();
+// TODO(hork): finalize the API and document it. We need to firm up the story
+// around user-provided EventEngines.
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -27,92 +27,6 @@
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
 /*
- * first byte LUT generation
- */
-
-typedef struct {
-  const char *call;
-  /* bit prefix for the field type */
-  unsigned char prefix;
-  /* length of the bit prefix for the field type */
-  unsigned char prefix_length;
-  /* index value: 0 = all zeros, 2 = all ones, 1 otherwise */
-  unsigned char index;
-} spec;
-
-static const spec fields[] = {
-    {"INDEXED_FIELD", 0X80, 1, 1},   {"INDEXED_FIELD_X", 0X80, 1, 2},
-    {"LITHDR_INCIDX", 0X40, 2, 1},   {"LITHDR_INCIDX_X", 0X40, 2, 2},
-    {"LITHDR_INCIDX_V", 0X40, 2, 0}, {"LITHDR_NOTIDX", 0X00, 4, 1},
-    {"LITHDR_NOTIDX_X", 0X00, 4, 2}, {"LITHDR_NOTIDX_V", 0X00, 4, 0},
-    {"LITHDR_NVRIDX", 0X10, 4, 1},   {"LITHDR_NVRIDX_X", 0X10, 4, 2},
-    {"LITHDR_NVRIDX_V", 0X10, 4, 0}, {"MAX_TBL_SIZE", 0X20, 3, 1},
-    {"MAX_TBL_SIZE_X", 0X20, 3, 2},
-};
-
-static const int num_fields = sizeof(fields) / sizeof(*fields);
-
-static unsigned char prefix_mask(unsigned char prefix_len) {
-  unsigned char i;
-  unsigned char out = 0;
-  for (i = 0; i < prefix_len; i++) {
-    /* NB: the following integer arithmetic operation needs to be in its
-     * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
-     * is then required to avoid the compiler warning */
-    out = (unsigned char)(out | (unsigned char)(1 << (7 - i)));
-  }
-  return out;
-}
-
-static unsigned char suffix_mask(unsigned char prefix_len) {
-  return (unsigned char)~prefix_mask(prefix_len);
-}
-
-static void generate_first_byte_lut(void) {
-  int i, j, n;
-  const spec *chrspec;
-  unsigned char suffix;
-
-  n = printf("static CALLTYPE first_byte[256] = {");
-  /* for each potential first byte of a header */
-  for (i = 0; i < 256; i++) {
-    /* find the field type that matches it */
-    chrspec = NULL;
-    for (j = 0; j < num_fields; j++) {
-      if ((prefix_mask(fields[j].prefix_length) & i) == fields[j].prefix) {
-        /* NB: the following integer arithmetic operation needs to be in its
-         * expanded form due to the "integral promotion" performed (see section
-         * 3.2.1.1 of the C89 draft standard). A cast to the smaller container
-         * type is then required to avoid the compiler warning */
-        suffix = (unsigned char)(suffix_mask(fields[j].prefix_length) &
-                                 (unsigned char)i);
-        if (suffix == suffix_mask(fields[j].prefix_length)) {
-          if (fields[j].index != 2) continue;
-        } else if (suffix == 0) {
-          if (fields[j].index != 0) continue;
-        } else {
-          if (fields[j].index != 1) continue;
-        }
-        GPR_ASSERT(chrspec == NULL);
-        chrspec = &fields[j];
-      }
-    }
-    if (chrspec) {
-      n += printf("%s, ", chrspec->call);
-    } else {
-      n += printf("ILLEGAL, ");
-    }
-    /* make some small effort towards readable output */
-    if (n > 70) {
-      printf("\n  ");
-      n = 2;
-    }
-  }
-  printf("};\n");
-}
-
-/*
  * Huffman decoder table generation
  */
 
@@ -325,29 +239,9 @@ static void generate_base64_huff_encoder_table(void) {
   printf("};\n");
 }
 
-static void generate_base64_inverse_table(void) {
-  static const char alphabet[] =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-  unsigned char inverse[256];
-  unsigned i;
-
-  memset(inverse, 255, sizeof(inverse));
-  for (i = 0; i < strlen(alphabet); i++) {
-    inverse[(unsigned char)alphabet[i]] = (unsigned char)i;
-  }
-
-  printf("static const gpr_uint8 inverse_base64[256] = {");
-  for (i = 0; i < 256; i++) {
-    printf("%d,", inverse[i]);
-  }
-  printf("};\n");
-}
-
 int main(void) {
   generate_huff_tables();
-  generate_first_byte_lut();
   generate_base64_huff_encoder_table();
-  generate_base64_inverse_table();
 
   return 0;
 }

@@ -628,7 +628,8 @@ class XdsApi {
     std::set<std::string> resource_names_failed;
   };
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
+         const CertificateProviderStore::PluginDefinitionMap* map);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
@@ -669,6 +670,8 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
+  const CertificateProviderStore::PluginDefinitionMap*
+      certificate_provider_definition_map_;  // Do not own.
   upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;

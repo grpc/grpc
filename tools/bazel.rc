@@ -103,4 +103,4 @@ build:mutrace --copt=-DNDEBUG
 build:mutrace --linkopt=-rdynamic
 
 # Compile database generation config
-build:compdb --build_tag_filters=-nocompdb
+build:compdb --build_tag_filters=-nocompdb --features=-layering_check

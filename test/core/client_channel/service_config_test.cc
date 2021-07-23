@@ -886,11 +886,88 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);
   EXPECT_EQ(parsed_config->max_backoff(), 120000);
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
   EXPECT_TRUE(
       parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttempts) {
+TEST_F(RetryParserTest, InvalidRetryPolicyWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": 5\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "field:retryPolicy error:should be of type object"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:maxAttempts error:required field missing.*"
+                  "field:initialBackoff error:does not exist.*"
+                  "field:maxBackoff error:does not exist.*"
+                  "field:backoffMultiplier error:required field missing"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": \"FOO\",\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:maxAttempts error:should be of type number"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -918,7 +995,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttempts) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoff) {
+TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -926,7 +1003,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoff) {
       "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
       "    ],\n"
       "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 1,\n"
+      "      \"maxAttempts\": 2,\n"
       "      \"initialBackoff\": \"1sec\",\n"
       "      \"maxBackoff\": \"120s\",\n"
       "      \"backoffMultiplier\": 1.6,\n"
@@ -947,7 +1024,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoff) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoff) {
+TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -955,7 +1032,35 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoff) {
       "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
       "    ],\n"
       "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 1,\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"0s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:initialBackoff error:must be greater than 0"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
       "      \"initialBackoff\": \"1s\",\n"
       "      \"maxBackoff\": \"120sec\",\n"
       "      \"backoffMultiplier\": 1.6,\n"
@@ -976,7 +1081,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoff) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplier) {
+TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -984,7 +1089,35 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplier) {
       "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
       "    ],\n"
       "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 1,\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"0s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:maxBackoff error:must be greater than 0"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
       "      \"initialBackoff\": \"1s\",\n"
       "      \"maxBackoff\": \"120s\",\n"
       "      \"backoffMultiplier\": \"1.6\",\n"
@@ -1004,7 +1137,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplier) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodes) {
+TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -1012,7 +1145,35 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodes) {
       "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
       "    ],\n"
       "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 1,\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 0,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:backoffMultiplier error:must be greater than 0"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
       "      \"initialBackoff\": \"1s\",\n"
       "      \"maxBackoff\": \"120s\",\n"
       "      \"backoffMultiplier\": \"1.6\",\n"
@@ -1028,7 +1189,227 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodes) {
                   "Method Params.*referenced_errors.*"
                   "methodConfig.*referenced_errors.*"
                   "retryPolicy.*referenced_errors.*"
-                  "field:retryableStatusCodes error:should be non-empty"));
+                  "field:retryableStatusCodes error:must be non-empty if "
+                  "perAttemptRecvTimeout not present"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"retryableStatusCodes\": 0\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:retryableStatusCodes error:must be of type array"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"retryableStatusCodes\": [\"FOO\", 2]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:retryableStatusCodes "
+                  "error:failed to parse status code.*"
+                  "field:retryableStatusCodes "
+                  "error:status codes should be of type string"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"perAttemptRecvTimeout\": \"1s\",\n"
+      "      \"retryableStatusCodes\": [\"ABORTED\"]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
+      grpc_slice_from_static_string("/TestServ/TestMethod"));
+  ASSERT_NE(vector_ptr, nullptr);
+  const auto* parsed_config =
+      static_cast<grpc_core::internal::RetryMethodConfig*>(
+          ((*vector_ptr)[0]).get());
+  ASSERT_NE(parsed_config, nullptr);
+  EXPECT_EQ(parsed_config->max_attempts(), 2);
+  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
+  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), 1000);
+  EXPECT_TRUE(
+      parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
+}
+
+TEST_F(RetryParserTest,
+       ValidRetryPolicyWithPerAttemptRecvTimeoutAndUnsetRetryableStatusCodes) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"perAttemptRecvTimeout\": \"1s\"\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
+      grpc_slice_from_static_string("/TestServ/TestMethod"));
+  ASSERT_NE(vector_ptr, nullptr);
+  const auto* parsed_config =
+      static_cast<grpc_core::internal::RetryMethodConfig*>(
+          ((*vector_ptr)[0]).get());
+  ASSERT_NE(parsed_config, nullptr);
+  EXPECT_EQ(parsed_config->max_attempts(), 2);
+  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
+  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), 1000);
+  EXPECT_TRUE(parsed_config->retryable_status_codes().Empty());
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"perAttemptRecvTimeout\": \"1sec\",\n"
+      "      \"retryableStatusCodes\": [\"ABORTED\"]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:perAttemptRecvTimeout error:type must be STRING "
+                  "of the form given by google.proto.Duration."));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"perAttemptRecvTimeout\": 1,\n"
+      "      \"retryableStatusCodes\": [\"ABORTED\"]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:perAttemptRecvTimeout error:type must be STRING "
+                  "of the form given by google.proto.Duration."));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"perAttemptRecvTimeout\": \"0s\",\n"
+      "      \"retryableStatusCodes\": [\"ABORTED\"]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error.*referenced_errors.*"
+                  "Method Params.*referenced_errors.*"
+                  "methodConfig.*referenced_errors.*"
+                  "retryPolicy.*referenced_errors.*"
+                  "field:perAttemptRecvTimeout error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
 
