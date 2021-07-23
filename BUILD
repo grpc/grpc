@@ -801,6 +801,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "bitset",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/bitset.h"],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
