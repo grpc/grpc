@@ -46,7 +46,9 @@ $PYTHON -m isort $ACTION \
   --src "examples/python/async_streaming" \
   --src "tools/run_tests/xds_k8s_test_driver" \
   --src "src/python/grpcio_tests" \
+  --src "tools/run_tests" \
   --project "examples" \
+  --project "src" \
   --thirdparty "grpc" \
   --skip-glob "third_party/*" \
   --skip-glob "*/env/*" \

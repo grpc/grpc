@@ -38,12 +38,13 @@ import time
 import traceback
 import uuid
 
+import six
+from six.moves import urllib
+
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
 import python_utils.watch_dirs as watch_dirs
-import six
-from six.moves import urllib
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq

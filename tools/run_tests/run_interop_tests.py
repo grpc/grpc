@@ -30,10 +30,11 @@ import time
 import traceback
 import uuid
 
+import six
+
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-import six
 
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:

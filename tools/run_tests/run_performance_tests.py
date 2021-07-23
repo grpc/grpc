@@ -31,10 +31,11 @@ import time
 import traceback
 import uuid
 
+import six
+
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-import six
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
