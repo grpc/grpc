@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests of grpc_status."""
+"""Tests of grpc_status.
+
+isort:skip_file
+"""
 
 # NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
 # please refer to comments in the "bazel_namespace_package_hack" module.
@@ -21,18 +24,18 @@ try:
 except ImportError:
     pass
 
-import logging
-import traceback
 import unittest
 
-from google.protobuf import any_pb2
-from google.rpc import code_pb2
-from google.rpc import error_details_pb2
-from google.rpc import status_pb2
+import logging
+import traceback
+
 import grpc
 from grpc_status import rpc_status
 
 from tests.unit import test_common
+
+from google.protobuf import any_pb2
+from google.rpc import code_pb2, status_pb2, error_details_pb2
 
 _STATUS_OK = '/test/StatusOK'
 _STATUS_NOT_OK = '/test/StatusNotOk'
