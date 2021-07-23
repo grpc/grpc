@@ -1058,7 +1058,7 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 namespace {
 
 bool GetEnableRetries(const grpc_channel_args* args) {
-  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, false);
+  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true);
 }
 
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(

@@ -93,13 +93,11 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests that we don't retry when retries are not enabled via the
+// Tests that we don't retry when retries are disabled via the
 // GRPC_ARG_ENABLE_RETRIES channel arg, even when there is retry
 // configuration in the service config.
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
-// TODO(roth): Update this when we change the default of
-// GRPC_ARG_ENABLE_RETRIES to true.
 static void test_retry_disabled(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -123,24 +121,28 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-      const_cast<char*>(
-          "{\n"
-          "  \"methodConfig\": [ {\n"
-          "    \"name\": [\n"
-          "      { \"service\": \"service\", \"method\": \"method\" }\n"
-          "    ],\n"
-          "    \"retryPolicy\": {\n"
-          "      \"maxAttempts\": 2,\n"
-          "      \"initialBackoff\": \"1s\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
-          "      \"backoffMultiplier\": 1.6,\n"
-          "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-          "    }\n"
-          "  } ]\n"
-          "}"));
-  grpc_channel_args client_args = {1, &arg};
+  grpc_arg args[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0),
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 2,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")),
+  };
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_disabled", &client_args, nullptr);
 
