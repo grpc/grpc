@@ -157,12 +157,15 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             network=self.network,
         )
         # Kubernetes namespace
-        self.k8s_client_namespace = k8s.KubernetesNamespace(
-            self.k8s_api_manager,
-            client_app.KubernetesClientRunner.make_namespace_name(
-                self.resource_prefix, self.client_namespace_suffix))
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
                                                      self.resource_prefix)
+        if self.client_namespace_suffix != self.resource_suffix:
+            self.k8s_client_namespace = k8s.KubernetesNamespace(
+                self.k8s_api_manager,
+                client_app.KubernetesClientRunner.make_namespace_name(
+                    self.resource_prefix, self.client_namespace_suffix))
+        else:
+            self.k8s_client_namespace = self.k8s_namespace
         # Kubernetes Test Client
         self.test_client_runner = client_app.KubernetesClientRunner(
             self.k8s_client_namespace,
@@ -257,6 +260,11 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.td.wait_for_alternative_backends_healthy_status()
 
     def cleanup(self) -> None:
+        if hasattr(self, 'test_client_runner'):
+            self.test_client_runner.cleanup(
+                force=True,
+                # Clean-up ephemeral client namespace
+                force_namespace=self.k8s_client_namespace != self.k8s_namespace)
         if self.strategy not in ['create']:
             logging.info(
                 'GcpResourceManager: skipping tear down for strategy [%s]',
@@ -265,8 +273,6 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         logging.info('GcpResourceManager: start tear down')
         if hasattr(self, 'td'):
             self.td.cleanup(force=True)
-        if hasattr(self, 'test_client_runner'):
-            self.test_client_runner.cleanup(force=True, force_namespace=True)
         if hasattr(self, 'test_server_runner'):
             self.test_server_runner.cleanup(force=True)
         if hasattr(self, 'test_server_alternative_runner'):
