@@ -17,8 +17,9 @@ The example would only successfully run in GCP environment."""
 
 from concurrent import futures
 
-import demo_pb2_grpc
 import grpc
+
+import demo_pb2_grpc
 from server import DemoServer
 
 SERVER_ADDRESS = 'localhost:23333'

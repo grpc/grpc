@@ -21,6 +21,7 @@ import unittest
 
 from grpc._cython import cygrpc
 import six
+
 from tests.fork import methods
 
 # New instance of multiprocessing.Process using fork without exec can and will

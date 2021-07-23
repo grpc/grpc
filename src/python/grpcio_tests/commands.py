@@ -249,10 +249,12 @@ class TestGevent(setuptools.Command):
         monkey.patch_all()
 
         import grpc.experimental.gevent
+
         import tests
         grpc.experimental.gevent.init_gevent()
 
         import gevent
+
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests', 'tests_gevent'])

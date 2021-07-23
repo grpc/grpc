@@ -38,7 +38,11 @@ PYTHON=${VIRTUALENV}/bin/python
 $PYTHON -m isort "$ACTION" \
   --force-sort-within-sections \
   --force-single-line-imports --single-line-exclusions=typing \
-  --project "framework" \
+  --src "examples/python/data_transmission" \
+  --src "examples/python/async_streaming" \
+  --src "tools/run_tests/xds_k8s_test_driver" \
+  --src "src/python/grpcio_tests" \
+  --project "examples" \
   --thirdparty "grpc" \
   --skip-glob "third_party/*" \
   --skip-glob "*/env/*" \

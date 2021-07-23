@@ -22,6 +22,7 @@ import unittest
 
 import grpc
 from six.moves import queue
+
 from tests.unit import test_common
 
 _UNARY_UNARY = "/test/UnaryUnary"

@@ -17,6 +17,7 @@ import logging
 import unittest
 
 import grpc
+
 from tests.unit import resources
 
 

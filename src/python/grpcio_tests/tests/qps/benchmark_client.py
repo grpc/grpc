@@ -20,11 +20,11 @@ import time
 
 import grpc
 from six.moves import queue
-from tests.unit import resources
-from tests.unit import test_common
 
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
+from tests.unit import resources
+from tests.unit import test_common
 
 _TIMEOUT = 60 * 60 * 24
 

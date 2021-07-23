@@ -17,6 +17,7 @@ import time
 import unittest
 
 from grpc._cython import cygrpc
+
 from tests.unit.framework.common import test_constants
 
 

@@ -17,12 +17,12 @@ import datetime
 
 import grpc
 from grpc.experimental import aio
-from tests.unit import resources
-from tests_aio.unit import _constants
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from tests.unit import resources
+from tests_aio.unit import _constants
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"

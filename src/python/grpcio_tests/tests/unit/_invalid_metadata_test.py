@@ -17,6 +17,7 @@ import logging
 import unittest
 
 import grpc
+
 from tests.unit.framework.common import test_constants
 
 _SERIALIZE_REQUEST = lambda bytestring: bytestring * 2

@@ -22,6 +22,7 @@ import weakref
 
 import grpc
 from six.moves import queue
+
 from tests.unit import test_common
 import tests.unit.framework.common
 from tests.unit.framework.common import get_socket

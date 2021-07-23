@@ -13,13 +13,13 @@
 # limitations under the License.
 """A setup module for the GRPC Python package."""
 
+# setuptools need to be imported before distutils. Otherwise it might lead to
+# undesirable behaviors or errors.
+import setuptools  # isort:skip
+
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
-
-# setuptools need to be imported before distutils. Otherwise it might lead to
-# undesirable behaviors or errors.
-import setuptools
 
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
@@ -38,10 +38,9 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
+import _metadata
 import pkg_resources
 from setuptools.command import egg_info
-
-import _metadata
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
@@ -86,8 +85,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
-import commands
 import grpc_core_dependencies
+
+import commands
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()

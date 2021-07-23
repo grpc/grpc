@@ -27,6 +27,7 @@ import unittest
 import grpc
 from grpc_tools import protoc
 import six
+
 from tests.unit import test_common
 
 _MESSAGES_IMPORT = b'import "messages.proto";'

@@ -40,8 +40,9 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
-import grpc_version
 import protoc_lib_deps
+
+import grpc_version
 
 _EXT_INIT_SYMBOL = None
 if sys.version_info[0] == 2:

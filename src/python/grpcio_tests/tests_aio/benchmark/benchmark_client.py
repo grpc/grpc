@@ -21,12 +21,12 @@ import time
 
 import grpc
 from grpc.experimental import aio
-from tests.qps import histogram
-from tests.unit import resources
 
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
 from src.proto.grpc.testing import control_pb2
 from src.proto.grpc.testing import messages_pb2
+from tests.qps import histogram
+from tests.unit import resources
 
 
 class GenericStub(object):

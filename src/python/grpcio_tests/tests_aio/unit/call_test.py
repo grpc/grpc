@@ -20,12 +20,12 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
-from tests_aio.unit._constants import UNREACHABLE_TARGET
-from tests_aio.unit._test_base import AioTestBase
-from tests_aio.unit._test_server import start_test_server
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from tests_aio.unit._constants import UNREACHABLE_TARGET
+from tests_aio.unit._test_base import AioTestBase
+from tests_aio.unit._test_server import start_test_server
 
 _SHORT_TIMEOUT_S = datetime.timedelta(seconds=1).total_seconds()
 

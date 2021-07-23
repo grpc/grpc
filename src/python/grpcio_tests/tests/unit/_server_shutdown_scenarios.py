@@ -22,6 +22,7 @@ import time
 
 import grpc
 from six.moves import queue
+
 from tests.unit import test_common
 
 WAIT_TIME = 1000

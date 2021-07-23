@@ -23,6 +23,7 @@ import threading
 import unittest
 
 import grpc
+
 from tests.unit import _signal_client
 from tests.unit import test_common
 

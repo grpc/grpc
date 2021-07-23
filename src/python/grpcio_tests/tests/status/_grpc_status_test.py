@@ -31,6 +31,7 @@ from google.rpc import error_details_pb2
 from google.rpc import status_pb2
 import grpc
 from grpc_status import rpc_status
+
 from tests.unit import test_common
 
 _STATUS_OK = '/test/StatusOK'

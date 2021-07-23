@@ -19,14 +19,14 @@ import threading
 
 import grpc
 from six.moves import queue
+
+from src.proto.grpc.testing import metrics_pb2_grpc
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
 from tests.interop import resources
 from tests.qps import histogram
 from tests.stress import metrics_server
 from tests.stress import test_runner
-
-from src.proto.grpc.testing import metrics_pb2_grpc
-from src.proto.grpc.testing import test_pb2_grpc
 
 
 def _args():

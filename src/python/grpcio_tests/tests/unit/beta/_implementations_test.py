@@ -18,6 +18,7 @@ import unittest
 
 from grpc.beta import implementations
 from oauth2client import client as oauth2client_client
+
 from tests.unit import resources
 
 

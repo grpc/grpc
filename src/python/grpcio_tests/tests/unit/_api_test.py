@@ -18,6 +18,7 @@ import unittest
 
 import grpc
 import six
+
 from tests.unit import _from_grpc_import_star
 
 

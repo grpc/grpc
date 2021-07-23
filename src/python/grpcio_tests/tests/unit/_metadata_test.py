@@ -19,6 +19,7 @@ import weakref
 
 import grpc
 from grpc import _channel
+
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 

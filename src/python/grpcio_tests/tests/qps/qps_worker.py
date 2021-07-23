@@ -18,10 +18,10 @@ import logging
 import time
 
 import grpc
-from tests.qps import worker_server
-from tests.unit import test_common
 
 from src.proto.grpc.testing import worker_service_pb2_grpc
+from tests.qps import worker_server
+from tests.unit import test_common
 
 
 def run_worker_server(driver_port, server_port):

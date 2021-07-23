@@ -39,6 +39,7 @@ import unittest
 
 import grpc
 import six
+
 from tests.testing import _application_common
 from tests.testing import _server_application
 from tests.testing.proto import services_pb2_grpc

@@ -22,11 +22,11 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental import wrap_server_method_handler
-from tests_aio.unit._test_base import AioTestBase
-from tests_aio.unit._test_server import start_test_server
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from tests_aio.unit._test_base import AioTestBase
+from tests_aio.unit._test_server import start_test_server
 
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7

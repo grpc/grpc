@@ -19,17 +19,17 @@ import threading
 import time
 
 import grpc
+
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import stats_pb2
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from tests.qps import benchmark_client
 from tests.qps import benchmark_server
 from tests.qps import client_runner
 from tests.qps import histogram
 from tests.unit import resources
 from tests.unit import test_common
-
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
-from src.proto.grpc.testing import control_pb2
-from src.proto.grpc.testing import stats_pb2
-from src.proto.grpc.testing import worker_service_pb2_grpc
 
 
 class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):

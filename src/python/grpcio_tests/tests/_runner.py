@@ -27,6 +27,7 @@ import uuid
 
 import six
 from six import moves
+
 from tests import _loader
 from tests import _result
 
