@@ -172,6 +172,11 @@ class WriteOptions {
     return *this;
   }
 
+  inline WriteOptions& clear_write_through() {
+    ClearBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
+
   inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
 
   /// Get value for the flag indicating that this is the last message, and
