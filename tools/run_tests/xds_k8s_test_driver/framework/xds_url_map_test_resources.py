@@ -41,6 +41,7 @@ UrlMapType = Any
 HostRule = Any
 PathMatcher = Any
 
+_BackendHTTP2 = gcp.compute.ComputeV1.BackendServiceProtocol.HTTP2
 _COMPUTE_V1_URL_PREFIX = 'https://www.googleapis.com/compute/v1'
 
 
@@ -185,6 +186,16 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             network=self.network,
             reuse_namespace=True)
+        self.test_server_affinity_runner = server_app.KubernetesServerRunner(
+            self.k8s_namespace,
+            deployment_name=self.server_name + '-affinity',
+            image_name=self.server_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
+            td_bootstrap_image=self.td_bootstrap_image,
+            network=self.network,
+            reuse_namespace=True)
         logging.info('Strategy of GCP resources management: %s', self.strategy)
 
     def _pre_cleanup(self):
@@ -209,8 +220,16 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Health Checks
         self.td.create_health_check()
         # Backend Services
-        self.td.create_backend_service()
-        self.td.create_alternative_backend_service()
+        #
+        # The backend services are created with HTTP2 instead of GRPC (the
+        # default) to disable validate-for-proxyless, because the affinity
+        # settings are not accepted by RCTH yet.
+        #
+        # TODO: delete _BackendHTTP2 from the parameters, to use the default
+        # GRPC.
+        self.td.create_backend_service(_BackendHTTP2)
+        self.td.create_alternative_backend_service(_BackendHTTP2)
+        self.td.create_affinity_backend_service(_BackendHTTP2)
         # Construct UrlMap from test classes
         aggregator = _UrlMapChangeAggregator(
             url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
@@ -231,18 +250,30 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.test_server_alternative_runner.run(
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port)
+        # Kubernetes Test Server Affinity. 3 endpoints to test that only the
+        # picked sub-channel is connected.
+        self.test_server_affinity_runner.run(
+            test_port=self.server_port,
+            maintenance_port=self.server_maintenance_port,
+            replica_count=3)
         # Add backend to default backend service
         neg_name, neg_zones = self.k8s_namespace.get_service_neg(
             self.test_server_runner.service_name, self.server_port)
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
         # Add backend to alternative backend service
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
+        neg_name_alt, neg_zones_alt = self.k8s_namespace.get_service_neg(
             self.test_server_alternative_runner.service_name, self.server_port)
         self.td.alternative_backend_service_add_neg_backends(
-            neg_name, neg_zones)
+            neg_name_alt, neg_zones_alt)
+        # Add backend to affinity backend service
+        neg_name_affinity, neg_zones_affinity = self.k8s_namespace.get_service_neg(
+            self.test_server_affinity_runner.service_name, self.server_port)
+        self.td.affinity_backend_service_add_neg_backends(
+            neg_name_affinity, neg_zones_affinity)
         # Wait for healthy backends
         self.td.wait_for_backends_healthy_status()
         self.td.wait_for_alternative_backends_healthy_status()
+        self.td.wait_for_affinity_backends_healthy_status()
 
     def cleanup(self) -> None:
         if self.strategy not in ['create']:
@@ -260,6 +291,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         if hasattr(self, 'test_server_alternative_runner'):
             self.test_server_alternative_runner.cleanup(force=True,
                                                         force_namespace=True)
+        if hasattr(self, 'test_server_affinity_runner'):
+            self.test_server_affinity_runner.cleanup(force=True,
+                                                     force_namespace=True)
 
     @functools.lru_cache(None)
     def default_backend_service(self) -> str:
@@ -272,3 +306,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         """Returns alternative backend service URL."""
         self.td.load_alternative_backend_service()
         return self.td.alternative_backend_service.url
+
+    @functools.lru_cache(None)
+    def affinity_backend_service(self) -> str:
+        """Returns affinity backend service URL."""
+        self.td.load_affinity_backend_service()
+        return self.td.affinity_backend_service.url

@@ -4397,6 +4397,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: bitset_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/bitset.h
+  src:
+  - test/core/gprpp/bitset_test.cc
+  deps: []
+  uses_polling: false
 - name: bm_alarm
   build: test
   language: c++

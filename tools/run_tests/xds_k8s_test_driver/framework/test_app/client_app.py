@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, List
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -213,6 +213,17 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Not found a {_ChannelzChannelState.Name(state)} '
             f'subchannel for channel_id {channel.ref.channel_id}')
 
+    def find_subchannels_with_state(self, state: _ChannelzChannelState,
+                                    **kwargs) -> List[_ChannelzSubchannel]:
+        subchannels = []
+        for channel in self.channelz.find_channels_for_target(
+                self.server_target, **kwargs):
+            for subchannel in self.channelz.list_channel_subchannels(
+                    channel, **kwargs):
+                if subchannel.data.state.state is state:
+                    subchannels.append(subchannel)
+        return subchannels
+
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
@@ -266,6 +277,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             server_target,
             rpc='UnaryCall',
             qps=25,
+            metadata='',
             secure_mode=False,
             print_response=False) -> XdsTestClient:
         super().run()
@@ -299,6 +311,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             server_target=server_target,
             rpc=rpc,
             qps=qps,
+            metadata=metadata,
             secure_mode=secure_mode,
             print_response=print_response)
 

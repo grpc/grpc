@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/debian:jessie
+FROM i386/debian:stretch
 
-RUN apt-get update && apt-get install -y python python-pip
+RUN apt-get update && apt-get install -y python3 python3-pip
 
-RUN pip install virtualenv
+RUN pip3 install virtualenv==16.7.9
 
 # docker is running on a 64-bit machine, so we need to
 # override "uname -m" to report i686 instead of x86_64, otherwise
