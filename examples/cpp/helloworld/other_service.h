@@ -28,7 +28,7 @@ using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
-class OtherServiceImpl final : public Greeter::Service, public IDynamicService {
+class OtherServiceImpl final : public Greeter::Service { //, public IDynamicService {
  public:
   Status SayHello(
     ServerContext* context,
@@ -39,6 +39,7 @@ class OtherServiceImpl final : public Greeter::Service, public IDynamicService {
 
 extern "C" {
   __declspec(dllexport) IDynamicService* CreateOtherServiceHelper();
+  __declspec(dllexport) void __stdcall CreateOtherServiceHelperWithArgs(grpc::Service** service);
 }
 
 #endif

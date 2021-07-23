@@ -43,6 +43,7 @@ using helloworld::HelloRequest;
 
 
 typedef IDynamicService* (*CreateOtherService)();
+typedef void (__stdcall *SetOtherServicePtr)(grpc::Service**);
 
 
 // Logic and data behind the server's behavior.
@@ -75,6 +76,7 @@ void RunServer() {
   // builder.RegisterService(&service);
 
   const std::string& path = "C:\\Users\\keithl\\repos\\grpc\\examples\\cpp\\helloworld\\cmake\\build\\Debug\\other_service_shared.dll"; 
+//                              C:\Users\keithl\repos\grpc\examples\cpp\helloworld\cmake\build\Debug
 
   std::wstring temp = std::wstring(path.begin(), path.end());
   LPCWSTR str = temp.c_str();
@@ -86,14 +88,20 @@ void RunServer() {
 
   // OtherServiceImpl otherService;
   // CreateOtherService createOtherService = reinterpret_cast<CreateOtherService>(::GetProcAddress(hDLL, "CreateService"));
-  CreateOtherService createOtherService = (CreateOtherService)(GetProcAddress(hDLL, "CreateOtherServiceHelper"));
+  // CreateOtherService createOtherService = (CreateOtherService)(GetProcAddress(hDLL, "CreateOtherServiceHelper"));
+  // CreateOtherService createOtherService = (CreateOtherService)(GetProcAddress(hDLL, "CreateOtherServiceHelperWithArgs"));
+  SetOtherServicePtr createOtherService = (SetOtherServicePtr)(GetProcAddress(hDLL, "CreateOtherServiceHelperWithArgs"));
 
   if (!createOtherService) {
     throw std::exception("Unable to get proc from DLL");
   }
 
-  // CreateOtherService createOtherService = func();
-  grpc::Service* otherService = createOtherService();
+  // grpc::Service* otherService = createOtherService();
+  // createOtherService();
+
+  grpc::Service* otherService = nullptr;
+  createOtherService(&otherService);
+  
 
   builder.RegisterService(otherService);
 

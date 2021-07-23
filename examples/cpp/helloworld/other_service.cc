@@ -12,6 +12,11 @@ Status OtherServiceImpl::SayHello(
 }
 
 IDynamicService* CreateOtherServiceHelper() {
-  IDynamicService* service = new OtherServiceImpl();
+  IDynamicService* service = nullptr;
+  // new OtherServiceImpl();
   return service;
+}
+
+void CreateOtherServiceHelperWithArgs(grpc::Service** service) {
+  *service = new OtherServiceImpl();
 }
