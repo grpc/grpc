@@ -368,7 +368,7 @@ struct WindowDelta {
 void StreamLocalWindowDeltaCallback(void* user_data, uint32_t /*key*/,
                                     void* stream) {
   WindowDelta* delta = static_cast<WindowDelta*>(user_data);
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+  auto* s = static_cast<const grpc_chttp2_stream*>(stream);
   delta->min = GPR_MIN(delta->min, s->flow_control->local_window_delta());
   delta->max = GPR_MAX(delta->max, s->flow_control->local_window_delta());
 }
@@ -376,7 +376,7 @@ void StreamLocalWindowDeltaCallback(void* user_data, uint32_t /*key*/,
 // Loops over all streams in the transport and returns WindowDelta where max has
 // the highest window delta from all the streams and min has the lowest window
 // delta. Min has a ceiling of 0, while max has a floor of 0.
-WindowDelta ComputeLocalWindowDeltaBoundaries(grpc_chttp2_transport* t) {
+WindowDelta ComputeLocalWindowDeltaBoundaries(const grpc_chttp2_transport* t) {
   WindowDelta delta;
   grpc_chttp2_stream_map_for_each(&t->stream_map,
                                   StreamLocalWindowDeltaCallback, &delta);

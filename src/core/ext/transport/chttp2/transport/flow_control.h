@@ -373,9 +373,9 @@ class StreamFlowControlBase {
   virtual void TestOnlyForceHugeWindow() {}
 
   // Getters
-  int64_t remote_window_delta() { return remote_window_delta_; }
-  int64_t local_window_delta() { return local_window_delta_; }
-  int64_t announced_window_delta() { return announced_window_delta_; }
+  int64_t remote_window_delta() const { return remote_window_delta_; }
+  int64_t local_window_delta() const { return local_window_delta_; }
+  int64_t announced_window_delta() const { return announced_window_delta_; }
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;

@@ -64,4 +64,9 @@ void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
                                                void* value),
                                      void* user_data);
 
+void grpc_chttp2_stream_map_for_each(const grpc_chttp2_stream_map* map,
+                                     void (*f)(void* user_data, uint32_t key,
+                                               void* value),
+                                     void* user_data);
+
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_MAP_H */
