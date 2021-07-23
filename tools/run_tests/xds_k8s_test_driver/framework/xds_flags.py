@@ -17,11 +17,27 @@ import googleapiclient.discovery
 # GCP
 PROJECT = flags.DEFINE_string("project",
                               default=None,
-                              help="GCP Project ID. Required")
+                              help="(required) GCP Project ID.")
+RESOURCE_PREFIX = flags.DEFINE_string(
+    "resource_prefix",
+    default=None,
+    help=("(required) The prefix used to name GCP resources.\n"
+          "Together with `resource_suffix` used to create unique "
+          "resource names."))
+# TODO(sergiitk): remove after all migration to --resource_prefix completed.
+#   Known migration work: url map, staging flagfiles.
 NAMESPACE = flags.DEFINE_string(
     "namespace",
     default=None,
-    help="Isolate GCP resources using given namespace / name prefix. Required")
+    help="Deprecated. Use --resource_prefix instead.")
+RESOURCE_SUFFIX = flags.DEFINE_string(
+    "resource_suffix",
+    default=None,
+    help=("The suffix used to name GCP resources.\n"
+          "Together with `resource_prefix` used to create unique "
+          "resource names.\n"
+          "(default: test suite will generate a random suffix, based on suite "
+          "resource management preferences)"))
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
@@ -29,7 +45,7 @@ NETWORK = flags.DEFINE_string("network",
 XDS_SERVER_URI = flags.DEFINE_string(
     "xds_server_uri",
     default=None,
-    help="Override Traffic Director server uri, for testing")
+    help="Override Traffic Director server URI.")
 ENSURE_FIREWALL = flags.DEFINE_bool(
     "ensure_firewall",
     default=False,
@@ -44,37 +60,62 @@ FIREWALL_ALLOWED_PORTS = flags.DEFINE_list(
     help="Update the allowed ports of the firewall rule.")
 
 # Test server
-SERVER_NAME = flags.DEFINE_string("server_name",
-                                  default="psm-grpc-server",
-                                  help="Server deployment and service name")
-SERVER_PORT = flags.DEFINE_integer("server_port",
-                                   default=8080,
-                                   lower_bound=0,
-                                   upper_bound=65535,
-                                   help="Server test port")
+SERVER_NAME = flags.DEFINE_string(
+    "server_name",
+    default="psm-grpc-server",
+    help="The name to use for test server deployments.")
+SERVER_PORT = flags.DEFINE_integer(
+    "server_port",
+    default=8080,
+    lower_bound=1,
+    upper_bound=65535,
+    help="Server test port.\nMust be within --firewall_allowed_ports.")
 SERVER_MAINTENANCE_PORT = flags.DEFINE_integer(
     "server_maintenance_port",
+    default=None,
+    lower_bound=1,
+    upper_bound=65535,
+    help=("Server port running maintenance services: Channelz, CSDS, Health, "
+          "XdsUpdateHealth, and ProtoReflection (optional).\n"
+          "Must be within --firewall_allowed_ports.\n"
+          "(default: the port is chosen automatically based on "
+          "the security configuration)"))
+SERVER_XDS_HOST = flags.DEFINE_string(
+    "server_xds_host",
+    default="xds-test-server",
+    help=("The xDS hostname of the test server.\n"
+          "Together with `server_xds_port` makes test server target URI, "
+          "xds:///hostname:port"))
+# Note: port 0 known to represent a request for dynamically-allocated port
+# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
+SERVER_XDS_PORT = flags.DEFINE_integer(
+    "server_xds_port",
+    default=8080,
     lower_bound=0,
     upper_bound=65535,
-    default=None,
-    help="Server port running maintenance services: health check, channelz, etc"
-)
-SERVER_XDS_HOST = flags.DEFINE_string("server_xds_host",
-                                      default='xds-test-server',
-                                      help="Test server xDS hostname")
-SERVER_XDS_PORT = flags.DEFINE_integer("server_xds_port",
-                                       default=8000,
-                                       help="Test server xDS port")
+    help=("The xDS port of the test server.\n"
+          "Together with `server_xds_host` makes test server target URI, "
+          "xds:///hostname:port\n"
+          "Must be unique within a GCP project.\n"
+          "Set to 0 to select any unused port."))
 
 # Test client
-CLIENT_NAME = flags.DEFINE_string("client_name",
-                                  default="psm-grpc-client",
-                                  help="Client deployment and service name")
-CLIENT_PORT = flags.DEFINE_integer("client_port",
-                                   default=8079,
-                                   help="Client test port")
+CLIENT_NAME = flags.DEFINE_string(
+    "client_name",
+    default="psm-grpc-client",
+    help="The name to use for test client deployments")
+CLIENT_PORT = flags.DEFINE_integer(
+    "client_port",
+    default=8079,
+    lower_bound=1,
+    upper_bound=65535,
+    help=(
+        "The port test client uses to run gRPC services: Channelz, CSDS, "
+        "XdsStats, XdsUpdateClientConfigure, and ProtoReflection (optional).\n"
+        "Doesn't have to be within --firewall_allowed_ports."))
 
 flags.mark_flags_as_required([
     "project",
-    "namespace",
+    # TODO(sergiitk): Make required when --namespace is removed.
+    # "resource_prefix",
 ])

@@ -1011,6 +1011,7 @@ src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h \
 src/core/ext/filters/workarounds/workaround_utils.cc \
 src/core/ext/filters/workarounds/workaround_utils.h \
 src/core/ext/transport/README.md \
+src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
@@ -1036,6 +1037,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1485,6 +1488,7 @@ src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
+src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.cc \
@@ -1530,7 +1534,6 @@ src/core/lib/debug/trace.h \
 src/core/lib/event_engine/endpoint_config.cc \
 src/core/lib/event_engine/endpoint_config_internal.h \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/slice_allocator.cc \
 src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/README.md \

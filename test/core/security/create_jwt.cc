@@ -45,7 +45,7 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
   }
   jwt = grpc_jwt_encode_and_sign(
       &key, service_url == nullptr ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
-      grpc_max_auth_token_lifetime(), scope, false);
+      grpc_max_auth_token_lifetime(), scope);
   grpc_auth_json_key_destruct(&key);
   if (jwt == nullptr) {
     fprintf(stderr, "Could not create JWT.\n");

@@ -469,6 +469,37 @@ TEST_P(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
   GRPC_ERROR_UNREF(error);
 }
 
+TEST_P(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"plugin\": {"
+      "      \"plugin_name\":\"unknown\""
+      "    }"
+      "  }"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  XdsBootstrap bootstrap(std::move(json), &error);
+  if (GetParam().parse_xds_certificate_providers()) {
+    EXPECT_THAT(grpc_error_std_string(error),
+                ::testing::ContainsRegex(
+                    "errors parsing \"certificate_providers\" object.*"
+                    "errors parsing element \"plugin\".*"
+                    "Unrecognized plugin name: unknown"));
+  } else {
+    EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 class FakeCertificateProviderFactory : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {

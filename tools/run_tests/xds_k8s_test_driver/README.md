@@ -8,9 +8,9 @@ changes to this codebase at the moment.
 
 ### Stabilization roadmap 
 - [ ] Replace retrying with tenacity
-- [ ] Generate namespace for each test to prevent resource name conflicts and
+- [x] Generate namespace for each test to prevent resource name conflicts and
       allow running tests in parallel
-- [ ] Security: run server and client in separate namespaces
+- [x] Security: run server and client in separate namespaces
 - [ ] Make framework.infrastructure.gcp resources [first-class
       citizen](https://en.wikipedia.org/wiki/First-class_citizen), support
       simpler CRUD
@@ -198,23 +198,6 @@ python -m tests.security_test \
   --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
 ```
 
-### Test namespace
-It's possible to run multiple xDS interop test workloads in the same project.
-But we need to ensure the name of the global resources won't conflict. This can
-be solved by supplying `--namespace` and `--server_xds_port`. The xDS port needs
-to be unique across the entire project (default port range is [8080, 8280],
-avoid if possible). Here is an example:
-
-```shell
-python3 -m tests.baseline_test \
-  --flagfile="config/grpc-testing.cfg" \
-  --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --namespace="box-$(date +"%F-%R")" \
-  --server_xds_port="$(($RANDOM%1000 + 34567))"
-```
-
 ## Local development
 This test driver allows running tests locally against remote GKE clusters, right
 from your dev environment. You need:
@@ -290,7 +273,7 @@ This tool performs the following:
 EXAMPLES:
 ./run.sh bin/run_td_setup.py --help
 ./run.sh bin/run_td_setup.py --helpfull
-XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --namespace=override-namespace
+XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_suffix=override-suffix
 ./run.sh tests/baseline_test.py
 ./run.sh tests/security_test.py --verbosity=1 --logger_levels=__main__:DEBUG,framework:DEBUG
 ./run.sh tests/security_test.py SecurityTest.test_mtls --nocheck_local_certs

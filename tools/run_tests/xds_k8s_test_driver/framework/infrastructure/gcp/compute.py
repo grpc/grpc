@@ -112,18 +112,25 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             self,
             name: str,
             health_check: GcpResource,
+            affinity_header: str = None,
             protocol: Optional[BackendServiceProtocol] = None) -> GcpResource:
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
-        return self._insert_resource(
-            self.api.backendServices(),
-            {
-                'name': name,
-                'loadBalancingScheme':
-                    'INTERNAL_SELF_MANAGED',  # Traffic Director
-                'healthChecks': [health_check.url],
-                'protocol': protocol.name,
-            })
+        body = {
+            'name': name,
+            'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',  # Traffic Director
+            'healthChecks': [health_check.url],
+            'protocol': protocol.name,
+        }
+        # If affinity header is specified, config the backend service to support
+        # affinity, and set affinity header to the one given.
+        if affinity_header:
+            body['sessionAffinity'] = 'HEADER_FIELD'
+            body['localityLbPolicy'] = 'RING_HASH'
+            body['consistentHash'] = {
+                'httpHeaderName': affinity_header,
+            }
+        return self._insert_resource(self.api.backendServices(), body)
 
     def get_backend_service_traffic_director(self, name: str) -> GcpResource:
         return self._get_resource(self.api.backendServices(),
@@ -235,6 +242,17 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 'target': target_proxy.url,
             })
 
+    def exists_forwarding_rule(self, src_port) -> bool:
+        # TODO(sergiitk): Better approach for confirming the port is available.
+        #   It's possible a rule allocates actual port range, e.g 8000-9000,
+        #   and this wouldn't catch it. For now, we assume there's no
+        #   port ranges used in the project.
+        filter_str = (f'(portRange eq "{src_port}-{src_port}") '
+                      f'(IPAddress eq "0.0.0.0")'
+                      f'(loadBalancingScheme eq "INTERNAL_SELF_MANAGED")')
+        return self._exists_resource(self.api.globalForwardingRules(),
+                                     filter=filter_str)
+
     def delete_forwarding_rule(self, name):
         self._delete_resource(self.api.globalForwardingRules(),
                               'forwardingRule', name)
@@ -328,6 +346,16 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         logger.info('Loaded compute resource:\n%s',
                     self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
+
+    def _exists_resource(self, collection: discovery.Resource,
+                         filter: str) -> bool:
+        resp = collection.list(
+            project=self.project, filter=filter,
+            maxResults=1).execute(num_retries=self._GCP_API_RETRIES)
+        if 'kind' not in resp:
+            # TODO(sergiitk): better error
+            raise ValueError('List response "kind" is missing')
+        return 'items' in resp and resp['items']
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:

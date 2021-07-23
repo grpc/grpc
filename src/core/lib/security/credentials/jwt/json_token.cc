@@ -165,8 +165,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
 
 static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope,
-                               bool clear_audience) {
+                               gpr_timespec token_lifetime, const char* scope) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
@@ -176,19 +175,15 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
 
   Json::Object object = {
       {"iss", json_key->client_email},
+      {"aud", audience},
       {"iat", now.tv_sec},
       {"exp", expiration.tv_sec},
   };
-
   if (scope != nullptr) {
     object["scope"] = scope;
-    if (!clear_audience) {
-      object["aud"] = audience;
-    }
   } else {
     /* Unscoped JWTs need a sub field. */
     object["sub"] = json_key->client_email;
-    object["aud"] = audience;
   }
 
   Json json(object);
@@ -269,8 +264,7 @@ end:
 
 char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope,
-                               bool clear_audience) {
+                               gpr_timespec token_lifetime, const char* scope) {
   if (g_jwt_encode_and_sign_override != nullptr) {
     return g_jwt_encode_and_sign_override(json_key, audience, token_lifetime,
                                           scope);
@@ -278,8 +272,7 @@ char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
     const char* sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
     char* to_sign = dot_concat_and_free_strings(
         encoded_jwt_header(json_key->private_key_id, sig_algo),
-        encoded_jwt_claim(json_key, audience, token_lifetime, scope,
-                          clear_audience));
+        encoded_jwt_claim(json_key, audience, token_lifetime, scope));
     char* sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
     if (sig == nullptr) {
       gpr_free(to_sign);

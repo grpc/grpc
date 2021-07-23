@@ -495,8 +495,55 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-}  // namespace testing
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Private key string is empty.");
+}
 
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, /*cert_chain=*/"");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Certificate string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, "invalid_certificate");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to X509 failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FailedKeyCertMatchOnInvalidPrivateKeyFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch("invalid_private_key", cert_chain_2_);
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to EVP_PKEY failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(*status);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_FALSE(*status);
+}
+
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

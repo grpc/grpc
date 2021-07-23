@@ -22,6 +22,15 @@ grpc_package(
 )
 
 grpc_cc_library(
+    name = "grpc_suppressions",
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
@@ -67,17 +76,13 @@ grpc_cc_library(
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
-    data = [
-        "lsan_suppressions.txt",
-        "tsan_suppressions.txt",
-        "ubsan_suppressions.txt",
-    ],
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/debugging:symbolize",
     ],
     language = "C++",
     deps = [
+        ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
         "//:grpc_base_c",

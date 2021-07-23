@@ -26,7 +26,7 @@ gcloud auth configure-docker
 
 # Connect to benchmarks-prod cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod \
+gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
 
 # List tests that have running pods and are in errored state.
@@ -83,7 +83,7 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
@@ -101,6 +101,7 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -l "csharp:${GRPC_CORE_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
+    -l "php7:${GRPC_CORE_GITREF}" \
     -l "python:${GRPC_CORE_GITREF}" \
     -l "ruby:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \

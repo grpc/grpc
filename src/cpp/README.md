@@ -122,6 +122,13 @@ first install gRPC C++ using CMake, and have your non-CMake project rely on the
 `pkgconfig` files which are provided by gRPC installation.
 [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
 
+**Note for CentOS 7 users**
+
+CentOS-7 ships with `pkg-config` 0.27.1, which has a
+[bug](https://bugs.freedesktop.org/show_bug.cgi?id=54716) that can make
+invocations take extremely long to complete. If you plan to use `pkg-config`,
+you'll want to upgrade it to something newer.
+
 ## make (deprecated)
 
 The default choice for building on UNIX based systems used to be `make`, but we are no longer recommending it.

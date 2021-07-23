@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/debian:jessie
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-RUN apt-get update && apt-get install -y python python-pip
+licenses(["notice"])
 
-RUN pip install virtualenv
+grpc_package(name = "test/core/transport/binder")
 
-# docker is running on a 64-bit machine, so we need to
-# override "uname -m" to report i686 instead of x86_64, otherwise
-# python will choose a wrong binary package to install.
-ENTRYPOINT ["linux32"]
+grpc_cc_test(
+    name = "binder_smoke_test",
+    srcs = ["binder_smoke_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

@@ -137,6 +137,17 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(donnadionne): Check to see if retry policy is enabled, this will be
+// removed once retry functionality is fully integration-tested and enabled by
+// default.
+bool XdsRetryEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsApi::Route::HashPolicy
 //
@@ -215,6 +226,25 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
 }
 
 //
+// XdsApi::Route::RetryPolicy
+//
+std::string XdsApi::Route::RetryPolicy::RetryBackOff::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
+  contents.push_back(
+      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
+  return absl::StrJoin(contents, ",");
+}
+
+std::string XdsApi::Route::RetryPolicy::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
+  contents.push_back(retry_back_off.ToString());
+  return absl::StrJoin(contents, ",");
+}
+
+//
 // XdsApi::Route
 //
 
@@ -254,6 +284,10 @@ std::string XdsApi::Route::ToString() const {
   contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
+  }
+  if (retry_policy.has_value()) {
+    contents.push_back(
+        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -868,10 +902,13 @@ bool IsEds(absl::string_view type_url) {
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node)
+               const XdsBootstrap::Node* node,
+               const CertificateProviderStore::PluginDefinitionMap*
+                   certificate_provider_definition_map)
     : client_(client),
       tracer_(tracer),
       node_(node),
+      certificate_provider_definition_map_(certificate_provider_definition_map),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -903,11 +940,13 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
 namespace {
 
 struct EncodingContext {
-  XdsClient* client;
+  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;
   upb_symtab* symtab;
   upb_arena* arena;
   bool use_v3;
+  const CertificateProviderStore::PluginDefinitionMap*
+      certificate_provider_definition_map;
 };
 
 // Works for both std::string and absl::string_view.
@@ -1116,8 +1155,12 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -1527,6 +1570,100 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
+XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
+  XdsApi::Duration duration;
+  duration.seconds = google_protobuf_Duration_seconds(proto_duration);
+  duration.nanos = google_protobuf_Duration_nanos(proto_duration);
+  return duration;
+}
+
+grpc_error_handle RetryPolicyParse(
+    const EncodingContext& context,
+    const envoy_config_route_v3_RetryPolicy* retry_policy,
+    absl::optional<XdsApi::Route::RetryPolicy>* retry) {
+  std::vector<grpc_error_handle> errors;
+  XdsApi::Route::RetryPolicy retry_to_return;
+  auto retry_on = UpbStringToStdString(
+      envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
+  std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
+  for (const auto& code : codes) {
+    if (code == "cancelled") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_CANCELLED);
+    } else if (code == "deadline-exceeded") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_DEADLINE_EXCEEDED);
+    } else if (code == "internal") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_INTERNAL);
+    } else if (code == "resource-exhausted") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_RESOURCE_EXHAUSTED);
+    } else if (code == "unavailable") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+        gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
+                std::string(code).c_str());
+      }
+    }
+  }
+  // TODO(donnadionne): when we add support for per_try_timeout, we will need to
+  // return a policy if per_try_timeout is set even if retry_on specified no
+  // supported policies.
+  if (retry_to_return.retry_on.Empty()) return GRPC_ERROR_NONE;
+  const google_protobuf_UInt32Value* num_retries =
+      envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
+  if (num_retries != nullptr) {
+    uint32_t num_retries_value = google_protobuf_UInt32Value_value(num_retries);
+    if (num_retries_value == 0) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          "RouteAction RetryPolicy num_retries set to invalid value 0."));
+    } else {
+      retry_to_return.num_retries = num_retries_value;
+    }
+  } else {
+    retry_to_return.num_retries = 1;
+  }
+  const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
+      envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
+  if (backoff != nullptr) {
+    const google_protobuf_Duration* base_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
+    if (base_interval == nullptr) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          "RouteAction RetryPolicy RetryBackoff missing base interval."));
+    } else {
+      retry_to_return.retry_back_off.base_interval =
+          DurationParse(base_interval);
+    }
+    const google_protobuf_Duration* max_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
+    XdsApi::Duration max;
+    if (max_interval != nullptr) {
+      max = DurationParse(max_interval);
+    } else {
+      // if max interval is not set, it is 10x the base, if the value in nanos
+      // can yield another second, adjust the value in seconds accordingly.
+      max.seconds = retry_to_return.retry_back_off.base_interval.seconds * 10;
+      max.nanos = retry_to_return.retry_back_off.base_interval.nanos * 10;
+      if (max.nanos > 1000000000) {
+        max.seconds += max.nanos / 1000000000;
+        max.nanos = max.nanos % 1000000000;
+      }
+    }
+    retry_to_return.retry_back_off.max_interval = max;
+  } else {
+    retry_to_return.retry_back_off.base_interval.seconds = 0;
+    retry_to_return.retry_back_off.base_interval.nanos = 25000000;
+    retry_to_return.retry_back_off.max_interval.seconds = 0;
+    retry_to_return.retry_back_off.max_interval.nanos = 250000000;
+  }
+  if (errors.empty()) {
+    *retry = retry_to_return;
+    return GRPC_ERROR_NONE;
+  } else {
+    return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy",
+                                         &errors);
+  }
+}
+
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
                                    XdsApi::Route* route, bool* ignore_route) {
@@ -1620,10 +1757,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        XdsApi::Duration duration_in_route;
-        duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
-        duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
-        route->max_stream_duration = duration_in_route;
+        route->max_stream_duration = DurationParse(duration);
       }
     }
   }
@@ -1704,6 +1838,17 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
       route->hash_policies.emplace_back(std::move(policy));
     }
   }
+  // Get retry policy
+  if (XdsRetryEnabled()) {
+    const envoy_config_route_v3_RetryPolicy* retry_policy =
+        envoy_config_route_v3_RouteAction_retry_policy(route_action);
+    if (retry_policy != nullptr) {
+      absl::optional<XdsApi::Route::RetryPolicy> retry;
+      grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
+      if (error != GRPC_ERROR_NONE) return error;
+      route->retry_policy = retry;
+    }
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -1749,6 +1894,17 @@ grpc_error_handle RouteConfigParse(
           &vhost.typed_per_filter_config);
       if (error != GRPC_ERROR_NONE) return error;
     }
+    // Parse retry policy.
+    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
+    const envoy_config_route_v3_RetryPolicy* retry_policy =
+        envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
+    if (XdsRetryEnabled()) {
+      if (retry_policy != nullptr) {
+        grpc_error_handle error =
+            RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
+        if (error != GRPC_ERROR_NONE) return error;
+      }
+    }
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
@@ -1783,6 +1939,10 @@ grpc_error_handle RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
+      if (XdsRetryEnabled() && route.retry_policy == absl::nullopt &&
+          retry_policy != nullptr) {
+        route.retry_policy = virtual_host_retry_policy;
+      }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
@@ -1803,24 +1963,32 @@ grpc_error_handle RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-XdsApi::CommonTlsContext::CertificateProviderInstance
-CertificateProviderInstanceParse(
+grpc_error_handle CertificateProviderInstanceParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto) {
-  return {
+        certificate_provider_instance_proto,
+    XdsApi::CommonTlsContext::CertificateProviderInstance*
+        certificate_provider_instance) {
+  *certificate_provider_instance = {
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
               certificate_provider_instance_proto)),
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
               certificate_provider_instance_proto))};
+  if (context.certificate_provider_definition_map->find(
+          certificate_provider_instance->instance_name) ==
+      context.certificate_provider_definition_map->end()) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unrecognized certificate provider instance name: ",
+                     certificate_provider_instance->instance_name)
+            .c_str());
+  }
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle CommonTlsContextParse(
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
-grpc_error_handle CommonTlsContextParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -1898,19 +2066,21 @@ grpc_error_handle CommonTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
     if (validation_context_certificate_provider_instance != nullptr) {
-      common_tls_context->combined_validation_context
-          .validation_context_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              validation_context_certificate_provider_instance);
+      grpc_error_handle error = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance,
+          &common_tls_context->combined_validation_context
+               .validation_context_certificate_provider_instance);
+      if (error != GRPC_ERROR_NONE) return error;
     }
   }
   auto* tls_certificate_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_certificate_provider_instance != nullptr) {
-    common_tls_context->tls_certificate_certificate_provider_instance =
-        CertificateProviderInstanceParse(
-            tls_certificate_certificate_provider_instance);
+    grpc_error_handle error = CertificateProviderInstanceParse(
+        context, tls_certificate_certificate_provider_instance,
+        &common_tls_context->tls_certificate_certificate_provider_instance);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1930,10 +2100,8 @@ grpc_error_handle HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
-      http_connection_manager->http_max_stream_duration.seconds =
-          google_protobuf_Duration_seconds(duration);
-      http_connection_manager->http_max_stream_duration.nanos =
-          google_protobuf_Duration_nanos(duration);
+      http_connection_manager->http_max_stream_duration =
+          DurationParse(duration);
     }
   }
   // Parse filters.
@@ -1988,6 +2156,23 @@ grpc_error_handle HttpConnectionManagerParse(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
                             is_client ? "clients" : "servers")
                 .c_str());
+      }
+      if (i < num_filters - 1) {
+        // Filters before the last filter must not be terminal.
+        if (filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("terminal filter for config type ", filter_type,
+                           " must be the last filter in the chain")
+                  .c_str());
+        }
+      } else {
+        // The last filter must be terminal.
+        if (!filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("non-terminal filter for config type ", filter_type,
+                           " is the last filter in the chain")
+                  .c_str());
+        }
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
@@ -2079,51 +2264,54 @@ grpc_error_handle DownstreamTlsContextParse(
     XdsApi::DownstreamTlsContext* downstream_tls_context) {
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
-  if (name == "envoy.transport_sockets.tls") {
-    auto* typed_config =
-        envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-    if (typed_config != nullptr) {
-      const upb_strview encoded_downstream_tls_context =
-          google_protobuf_Any_value(typed_config);
-      auto* downstream_tls_context_proto =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
-              encoded_downstream_tls_context.data,
-              encoded_downstream_tls_context.size, context.arena);
-      if (downstream_tls_context_proto == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Can't decode downstream tls context.");
-      }
-      auto* common_tls_context =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
-              downstream_tls_context_proto);
-      if (common_tls_context != nullptr) {
-        grpc_error_handle error = CommonTlsContextParse(
-            common_tls_context, &downstream_tls_context->common_tls_context);
-        if (error != GRPC_ERROR_NONE) return error;
-      }
-      auto* require_client_certificate =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
-              downstream_tls_context_proto);
-      if (require_client_certificate != nullptr) {
-        downstream_tls_context->require_client_certificate =
-            google_protobuf_BoolValue_value(require_client_certificate);
-      }
-    }
-    if (downstream_tls_context->common_tls_context
-            .tls_certificate_certificate_provider_instance.instance_name
-            .empty()) {
+  if (name != "envoy.transport_sockets.tls") {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unrecognized transport socket: ", name).c_str());
+  }
+  auto* typed_config =
+      envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+  if (typed_config != nullptr) {
+    const upb_strview encoded_downstream_tls_context =
+        google_protobuf_Any_value(typed_config);
+    auto* downstream_tls_context_proto =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
+            encoded_downstream_tls_context.data,
+            encoded_downstream_tls_context.size, context.arena);
+    if (downstream_tls_context_proto == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "TLS configuration provided but no "
-          "tls_certificate_certificate_provider_instance found.");
+          "Can't decode downstream tls context.");
     }
-    if (downstream_tls_context->require_client_certificate &&
-        downstream_tls_context->common_tls_context.combined_validation_context
-            .validation_context_certificate_provider_instance.instance_name
-            .empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "TLS configuration requires client certificates but no certificate "
-          "provider instance specified for validation.");
+    auto* common_tls_context =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
+            downstream_tls_context_proto);
+    if (common_tls_context != nullptr) {
+      grpc_error_handle error =
+          CommonTlsContextParse(context, common_tls_context,
+                                &downstream_tls_context->common_tls_context);
+      if (error != GRPC_ERROR_NONE) return error;
     }
+    auto* require_client_certificate =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
+            downstream_tls_context_proto);
+    if (require_client_certificate != nullptr) {
+      downstream_tls_context->require_client_certificate =
+          google_protobuf_BoolValue_value(require_client_certificate);
+    }
+  }
+  if (downstream_tls_context->common_tls_context
+          .tls_certificate_certificate_provider_instance.instance_name
+          .empty()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "TLS configuration provided but no "
+        "tls_certificate_certificate_provider_instance found.");
+  }
+  if (downstream_tls_context->require_client_certificate &&
+      downstream_tls_context->common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance.instance_name
+          .empty()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "TLS configuration requires client certificates but no certificate "
+        "provider instance specified for validation.");
   }
   return GRPC_ERROR_NONE;
 }
@@ -3029,54 +3217,56 @@ grpc_error_handle CdsResponseParse(
       if (transport_socket != nullptr) {
         absl::string_view name = UpbStringToAbsl(
             envoy_config_core_v3_TransportSocket_name(transport_socket));
-        if (name == "envoy.transport_sockets.tls") {
-          auto* typed_config =
-              envoy_config_core_v3_TransportSocket_typed_config(
-                  transport_socket);
-          if (typed_config != nullptr) {
-            const upb_strview encoded_upstream_tls_context =
-                google_protobuf_Any_value(typed_config);
-            auto* upstream_tls_context =
-                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-                    encoded_upstream_tls_context.data,
-                    encoded_upstream_tls_context.size, context.arena);
-            if (upstream_tls_context == nullptr) {
-              errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                  absl::StrCat(cluster_name,
-                               ": Can't decode upstream tls context.")
-                      .c_str()));
-              resource_names_failed->insert(cluster_name);
-              continue;
-            }
-            auto* common_tls_context =
-                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
-                    upstream_tls_context);
-            if (common_tls_context != nullptr) {
-              grpc_error_handle error = CommonTlsContextParse(
-                  common_tls_context, &cds_update.common_tls_context);
-              if (error != GRPC_ERROR_NONE) {
-                errors.push_back(grpc_error_add_child(
-                    GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                        absl::StrCat(cluster_name, ": error in TLS context")
-                            .c_str()),
-                    error));
-                resource_names_failed->insert(cluster_name);
-                continue;
-              }
-            }
-          }
-          if (cds_update.common_tls_context.combined_validation_context
-                  .validation_context_certificate_provider_instance
-                  .instance_name.empty()) {
+        if (name != "envoy.transport_sockets.tls") {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Unrecognized transport socket: ", name).c_str()));
+          continue;
+        }
+        auto* typed_config =
+            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+        if (typed_config != nullptr) {
+          const upb_strview encoded_upstream_tls_context =
+              google_protobuf_Any_value(typed_config);
+          auto* upstream_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
+                  encoded_upstream_tls_context.data,
+                  encoded_upstream_tls_context.size, context.arena);
+          if (upstream_tls_context == nullptr) {
             errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
                 absl::StrCat(cluster_name,
-                             "TLS configuration provided but no "
-                             "validation_context_certificate_provider_instance "
-                             "found.")
+                             ": Can't decode upstream tls context.")
                     .c_str()));
             resource_names_failed->insert(cluster_name);
             continue;
           }
+          auto* common_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+                  upstream_tls_context);
+          if (common_tls_context != nullptr) {
+            grpc_error_handle error = CommonTlsContextParse(
+                context, common_tls_context, &cds_update.common_tls_context);
+            if (error != GRPC_ERROR_NONE) {
+              errors.push_back(grpc_error_add_child(
+                  GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                      absl::StrCat(cluster_name, ": error in TLS context")
+                          .c_str()),
+                  error));
+              resource_names_failed->insert(cluster_name);
+              continue;
+            }
+          }
+        }
+        if (cds_update.common_tls_context.combined_validation_context
+                .validation_context_certificate_provider_instance.instance_name
+                .empty()) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(cluster_name,
+                           "TLS configuration provided but no "
+                           "validation_context_certificate_provider_instance "
+                           "found.")
+                  .c_str()));
+          resource_names_failed->insert(cluster_name);
+          continue;
         }
       }
     }
@@ -3412,8 +3602,12 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const std::set<absl::string_view>& expected_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -3500,8 +3694,12 @@ grpc_slice SerializeLrsRequest(
 grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3571,8 +3769,9 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   false};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), false,   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3905,8 +4104,9 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   true};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each xDS-type config into PerXdsConfig
