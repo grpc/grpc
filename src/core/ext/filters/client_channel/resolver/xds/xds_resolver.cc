@@ -242,7 +242,6 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
-    bool retry_enabled_ = false;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -471,7 +470,6 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   std::vector<std::string> fields;
   // Set retry policy if any.
   if (route.retry_policy.has_value()) {
-    retry_enabled_ = true;
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
