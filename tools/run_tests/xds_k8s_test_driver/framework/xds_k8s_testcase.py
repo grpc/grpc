@@ -130,7 +130,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         super().setUp()
 
         if self._resource_suffix_randomize:
-            self.resource_suffix = self._random_resource_suffix()
+            self.resource_suffix = self.random_resource_suffix()
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
@@ -196,7 +196,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                                    force_namespace=self.force_cleanup)
 
     @staticmethod
-    def _random_resource_suffix() -> str:
+    def random_resource_suffix() -> str:
         # Date and time suffix for debugging. Seconds skipped, not as relevant
         # Format example: 20210626-1859
         datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
