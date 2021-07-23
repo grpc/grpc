@@ -23,7 +23,6 @@ from absl import logging
 
 from framework import xds_flags
 from framework import xds_k8s_flags
-from framework import xds_k8s_testcase
 import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
