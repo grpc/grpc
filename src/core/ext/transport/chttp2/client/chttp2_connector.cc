@@ -98,11 +98,6 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   if (!connecting_ && endpoint_ != nullptr) {
     grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_REF(error));
   }
-  // The RU is only valid if Connect has been called
-  if (slice_allocator_factory_ != nullptr) {
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory_);
-    slice_allocator_factory_ = nullptr;
-  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -121,10 +116,6 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
       }
       if (self->endpoint_ != nullptr) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
-      }
-      if (self->slice_allocator_factory_ != nullptr) {
-        grpc_slice_allocator_factory_destroy(self->slice_allocator_factory_);
-        self->slice_allocator_factory_ = nullptr;
       }
       self->result_->Reset();
       grpc_closure* notify = self->notify_;

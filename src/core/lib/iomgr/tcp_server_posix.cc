@@ -267,12 +267,12 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->external_connection = false;
     grpc_slice_allocator* allocator =
         grpc_slice_allocator_factory_create_slice_allocator(
-            sp->server->slice_allocator_factory, addr_str.c_str());
+            sp->server->slice_allocator_factory,
+            absl::StrCat("tcp_server_posix:", addr_str).c_str());
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg,
                              grpc_tcp_create(fdobj, sp->server->channel_args,
                                              addr_str.c_str(), allocator),
                              allocator, read_notifier_pollset, acceptor);
-    grpc_slice_allocator_destroy(allocator);
   }
 
   GPR_UNREACHABLE_CODE(return );
