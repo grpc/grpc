@@ -81,6 +81,7 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/debugging:symbolize",
+        "gtest",
     ],
     language = "C++",
     deps = [

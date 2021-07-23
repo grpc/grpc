@@ -62,6 +62,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
+  grpc_slice_allocator_destroy(slice_allocator);
   absl::string_view peer;
   absl::string_view::size_type last_colon;
   reconnect_server* server = static_cast<reconnect_server*>(arg);

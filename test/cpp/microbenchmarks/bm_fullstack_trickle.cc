@@ -83,13 +83,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
                  size_t resp_size, size_t kilobits_per_second,
                  grpc_passthru_endpoint_stats* stats,
-                 grpc_resource_user* client_resource_user,
-                 grpc_resource_user* server_resource_user)
+                 grpc_slice_allocator_factory* slice_allocator_factory)
       : EndpointPairFixture(
             service,
-            MakeEndpoints(kilobits_per_second, stats, client_resource_user,
-                          server_resource_user),
-            FixtureConfiguration(), client_resource_user, server_resource_user),
+            MakeEndpoints(kilobits_per_second, stats, slice_allocator_factory),
+            slice_allocator_factory, FixtureConfiguration()),
         stats_(stats) {
     if (absl::GetFlag(FLAGS_log)) {
       std::ostringstream fn;
@@ -223,13 +221,10 @@ class TrickledCHTTP2 : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(
       size_t kilobits, grpc_passthru_endpoint_stats* stats,
-      grpc_resource_user* client_resource_user,
-      grpc_resource_user* server_resource_user) {
+      grpc_slice_allocator_factory* slice_allocator_factory) {
     grpc_endpoint_pair p;
-    grpc_resource_user_ref(client_resource_user);
-    grpc_resource_user_ref(server_resource_user);
-    grpc_passthru_endpoint_create(&p.client, &p.server, client_resource_user,
-                                  server_resource_user, stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, slice_allocator_factory,
+                                  stats);
     double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
@@ -269,14 +264,13 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
 
 static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
+  grpc_slice_allocator_factory* alloc_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("bm_streaming_pingpong"));
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, true, state.range(0) /* req_size */,
       state.range(0) /* resp_size */, state.range(1) /* bw in kbit/s */,
-      grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+      grpc_passthru_endpoint_stats_create(), alloc_factory));
   {
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -368,14 +362,13 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
+  grpc_slice_allocator_factory* alloc_factory =
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_create("bm_streaming_pingpong"));
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */,
-      grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+      grpc_passthru_endpoint_stats_create(), alloc_factory));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
