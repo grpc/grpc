@@ -53,6 +53,10 @@ class StatusCodeSet {
     return status_code_mask_ & (1 << status);
   }
 
+  bool operator==(const StatusCodeSet& other) const {
+    return status_code_mask_ == other.status_code_mask_;
+  }
+
  private:
   int status_code_mask_ = 0;  // A bitfield of status codes in the set.
 };

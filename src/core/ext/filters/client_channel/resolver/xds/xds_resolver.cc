@@ -242,6 +242,7 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
+    bool retry_enabled_ = false;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -468,6 +469,43 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route::ClusterWeight* cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
+  // Set retry policy if any.
+  if (route.retry_policy.has_value()) {
+    retry_enabled_ = true;
+    std::vector<std::string> retry_parts;
+    retry_parts.push_back(absl::StrFormat(
+        "\"retryPolicy\": {\n"
+        "      \"maxAttempts\": %d,\n"
+        "      \"initialBackoff\": \"%d.%09ds\",\n"
+        "      \"maxBackoff\": \"%d.%09ds\",\n"
+        "      \"backoffMultiplier\": 2,\n",
+        route.retry_policy->num_retries + 1,
+        route.retry_policy->retry_back_off.base_interval.seconds,
+        route.retry_policy->retry_back_off.base_interval.nanos,
+        route.retry_policy->retry_back_off.max_interval.seconds,
+        route.retry_policy->retry_back_off.max_interval.nanos));
+    std::vector<std::string> code_parts;
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+      code_parts.push_back("        \"CANCELLED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_DEADLINE_EXCEEDED)) {
+      code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+      code_parts.push_back("        \"INTERNAL\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+      code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+      code_parts.push_back("        \"UNAVAILABLE\"");
+    }
+    retry_parts.push_back(
+        absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
+                        absl::StrJoin(code_parts, ",\n")));
+    retry_parts.push_back(absl::StrFormat("    }"));
+    fields.emplace_back(absl::StrJoin(retry_parts, ""));
+  }
   // Set timeout.
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
@@ -537,7 +575,18 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  return args;
+  // The max number of args to add is 1 so far; when more args need to be added
+  // we will increase the size of args_to_add accordingly;
+  absl::InlinedVector<grpc_arg, 1> args_to_add;
+  if (retry_enabled_) {
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1));
+  }
+  if (args_to_add.empty()) return args;
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, args_to_add.data(), args_to_add.size());
+  grpc_channel_args_destroy(args);
+  return new_args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
