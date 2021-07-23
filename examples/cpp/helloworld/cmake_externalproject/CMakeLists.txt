@@ -112,6 +112,7 @@ endif()
 ExternalProject_Add(grpc
   PREFIX grpc
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../.."
+  BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/grpc"
   CMAKE_CACHE_ARGS
         -DgRPC_INSTALL:BOOL=ON
         -DgRPC_BUILD_TESTS:BOOL=OFF
