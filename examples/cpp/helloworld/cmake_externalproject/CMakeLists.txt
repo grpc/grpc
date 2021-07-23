@@ -81,6 +81,7 @@ endif()
 ExternalProject_Add(s2a_core
   PREFIX s2a_core
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a_core"
+  BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/s2a_core"
   PATCH_COMMAND git submodule update --init
   CMAKE_CACHE_ARGS
   	-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
