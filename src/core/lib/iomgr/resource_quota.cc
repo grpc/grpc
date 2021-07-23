@@ -590,6 +590,10 @@ static void ru_destroy(void* ru, grpc_error_handle /*error*/) {
   }
   grpc_resource_quota_unref_internal(resource_user->resource_quota);
   gpr_mu_destroy(&resource_user->mu);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "RU '%s' (%p) destroyed", resource_user->name.c_str(),
+            resource_user);
+  }
   delete resource_user;
 }
 
@@ -814,6 +818,10 @@ grpc_resource_user* grpc_resource_user_create(
     resource_user->name = absl::StrCat(
         "anonymous_resource_user_", reinterpret_cast<intptr_t>(resource_user));
   }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "RU '%s' (%p) created", resource_user->name.c_str(),
+            resource_user);
+  }
   return resource_user;
 }
 
@@ -824,13 +832,22 @@ grpc_resource_quota* grpc_resource_user_quota(
 
 static void ru_ref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
-  GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&resource_user->refs, amount) != 0);
+  gpr_atm prior = gpr_atm_no_barrier_fetch_add(&resource_user->refs, amount);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "RU '%s' (%p) reffing: %" PRId64 " -> %" PRId64,
+            resource_user->name.c_str(), resource_user, prior, prior + amount);
+  }
+  GPR_ASSERT(prior != 0);
 }
 
 static void ru_unref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
   gpr_atm old = gpr_atm_full_fetch_add(&resource_user->refs, -amount);
   GPR_ASSERT(old >= amount);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "RU '%s' (%p) unreffing: %" PRId64 " -> %" PRId64,
+            resource_user->name.c_str(), resource_user, old, old - amount);
+  }
   if (old == amount) {
     resource_user->resource_quota->combiner->Run(
         &resource_user->destroy_closure, GRPC_ERROR_NONE);

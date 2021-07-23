@@ -584,11 +584,11 @@ static void finish_estimate(grpc_tcp* tcp) {
   tcp->bytes_read_this_round = 0;
 }
 
-static size_t get_target_read_size(grpc_tcp* /*tcp*/) {
+static size_t get_target_read_size(grpc_tcp* tcp) {
   // DO NOT SUBMIT(hork): See @roth's comments on adding "peek size" to the
   // slice_allocator.
-  /*
-  grpc_resource_quota* rq = grpc_resource_user_quota(tcp->resource_user);
+  grpc_resource_quota* rq =
+      grpc_resource_user_quota(tcp->slice_allocator->resource_user);
   double pressure = grpc_resource_quota_get_memory_pressure(rq);
   double target =
       tcp->target_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
@@ -603,9 +603,6 @@ static size_t get_target_read_size(grpc_tcp* /*tcp*/) {
     sz = rqmax / 16;
   }
   return sz;
-  */
-  // DO NOT SUBMIT(hork): the answer to everything might be too much
-  return 42;
 }
 
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
