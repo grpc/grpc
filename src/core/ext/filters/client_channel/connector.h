@@ -45,10 +45,38 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
     Args() = default;
     ~Args() { grpc_channel_args_destroy(channel_args); }
-    Args(const Args& other);
-    Args(Args&& other) noexcept;
-    Args& operator=(const Args& other);
-    Args& operator=(Args&& other) noexcept;
+
+    Args(const Args& other) : interested_parties(other.interested_parties),
+      deadline(other.deadline), channel_args(grpc_channel_args_copy(other.channel_args)) {}
+
+    Args(Args&& other) noexcept {
+      interested_parties = other.interested_parties;
+      deadline = other.deadline;
+      // TODO(roth): Use std::move() once channel args is converted to C++.
+      channel_args = other.channel_args;
+      other.channel_args = nullptr;
+    }
+
+    Args& operator=(const Args& other) {
+      if (&other == this) {
+        return *this;
+      }
+      interested_parties = other.interested_parties;
+      deadline = other.deadline;
+      grpc_channel_args_destroy(channel_args);
+      channel_args = grpc_channel_args_copy(other.channel_args);
+      return *this;
+    }
+
+    Args& operator=(Args&& other) noexcept {
+      interested_parties = other.interested_parties;
+      deadline = other.deadline;
+      // TODO(roth): Use std::move() once channel args is converted to C++.
+      grpc_channel_args_destroy(channel_args);
+      channel_args = other.channel_args;
+      other.channel_args = nullptr;
+      return *this;
+    }
   };
 
   struct Result {
