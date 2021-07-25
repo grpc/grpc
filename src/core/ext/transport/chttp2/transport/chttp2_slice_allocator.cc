@@ -17,71 +17,48 @@
 
 #include <functional>
 
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-SliceAllocator::SliceAllocator(grpc_resource_user* user)
-    : resource_user_(user) {
-  grpc_resource_user_ref(resource_user_);
-};
+Chttp2SliceAllocator::Chttp2SliceAllocator(grpc_resource_user* user)
+    : resource_user_(user) {}
 
-SliceAllocator::~SliceAllocator() {
+Chttp2SliceAllocator::~Chttp2SliceAllocator() {
   if (resource_user_ != nullptr) {
     grpc_resource_user_unref(resource_user_);
   }
-};
-
-SliceAllocator::SliceAllocator(SliceAllocator&& other) noexcept
-    : resource_user_(other.resource_user_) {
-  other.resource_user_ = nullptr;
 }
 
-SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
-  resource_user_ = other.resource_user_;
-  other.resource_user_ = nullptr;
-  return *this;
-}
-
-absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
-                                      SliceAllocator::AllocateCallback cb) {
+absl::Status Chttp2SliceAllocator::Allocate(
+    size_t size, SliceBuffer* dest, SliceAllocator::AllocateCallback cb) {
   // TODO(hork): merge the implementation from the uv-ee branch.
   (void)size;
   (void)dest;
   (void)cb;
   return absl::OkStatus();
-};
+}
 
-SliceAllocatorFactory::SliceAllocatorFactory(grpc_resource_quota* quota)
+Chttp2SliceAllocatorFactory::Chttp2SliceAllocatorFactory(
+    grpc_resource_quota* quota)
     : resource_quota_(quota) {
   grpc_resource_quota_ref_internal(resource_quota_);
-};
+}
 
-SliceAllocatorFactory::~SliceAllocatorFactory() {
+Chttp2SliceAllocatorFactory::~Chttp2SliceAllocatorFactory() {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref_internal(resource_quota_);
   }
 }
 
-SliceAllocatorFactory::SliceAllocatorFactory(
-    SliceAllocatorFactory&& other) noexcept
-    : resource_quota_(other.resource_quota_) {
-  other.resource_quota_ = nullptr;
-}
-
-SliceAllocatorFactory& SliceAllocatorFactory::operator=(
-    SliceAllocatorFactory&& other) noexcept {
-  resource_quota_ = other.resource_quota_;
-  other.resource_quota_ = nullptr;
-  return *this;
-}
-
-SliceAllocator SliceAllocatorFactory::CreateSliceAllocator(
-    absl::string_view peer_name) {
-  return SliceAllocator(
+std::unique_ptr<SliceAllocator>
+Chttp2SliceAllocatorFactory::CreateSliceAllocator(absl::string_view peer_name) {
+  return absl::make_unique<Chttp2SliceAllocator>(
       grpc_resource_user_create(resource_quota_, peer_name.data()));
 }
 
