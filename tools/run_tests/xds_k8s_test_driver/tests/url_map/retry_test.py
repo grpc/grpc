@@ -64,7 +64,7 @@ def _build_retry_route_rule(retryConditions, num_retries):
 
 @absltest.skipUnless('java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
                      'Retry is currently only implemented in Java.')
-class TestRetryUpTo3Attempts(xds_url_map_testcase.XdsUrlMapTestCase):
+class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def url_map_change(
@@ -101,7 +101,7 @@ class TestRetryUpTo3Attempts(xds_url_map_testcase.XdsUrlMapTestCase):
 
 @absltest.skipUnless('java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
                      'Retry is currently only implemented in Java.')
-class TestRetryUpTo4Attempts(xds_url_map_testcase.XdsUrlMapTestCase):
+class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def url_map_change(
