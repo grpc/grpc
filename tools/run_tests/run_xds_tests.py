@@ -2250,7 +2250,7 @@ def test_retry(gcp, original_backend_service, instance_group):
     try:
         test_runtime_secs = 10
         num_rpcs = test_runtime_secs * args.qps
-        # A list of tuples (testcase_name, test_config, expected_succeeded_rpcs_range).
+        # A list of tuples (testcase_name, test_config, expected_succeeded_rpcs).
         # test_config is a list of tuples (retry_policy, rpc_behavior).
         # Each test case will set the testcase_header with the testcase_name for routing
         # to the appropriate config for the case, defined above.
@@ -2296,8 +2296,7 @@ def test_retry(gcp, original_backend_service, instance_group):
 
         route_rules = []
         pri = 0
-        for (testcase_name, test_config,
-             expected_succeeded_rpcs_range) in test_cases:
+        for (testcase_name, test_config, expected_succeeded_rpcs) in test_cases:
             (retry_policy, rpc_behavior) = test_config
             route_rules.append(_route(pri, testcase_name, retry_policy))
             pri += 1
@@ -2308,8 +2307,7 @@ def test_retry(gcp, original_backend_service, instance_group):
                                       route_rules=route_rules)
 
         first_case = True
-        for (testcase_name, test_config,
-             expected_succeeded_rpcs_range) in test_cases:
+        for (testcase_name, test_config, expected_succeeded_rpcs) in test_cases:
             (retry_policy, rpc_behavior) = test_config
             logger.info('starting case %s', testcase_name)
 
@@ -2333,7 +2331,7 @@ def test_retry(gcp, original_backend_service, instance_group):
             # second timeout.
             attempt_count = 20
             if first_case:
-                attempt_count = 120
+                attempt_count = 60
                 first_case = False
             for i in range(attempt_count):
                 logger.info('%s: attempt %d', testcase_name, i)
@@ -2342,13 +2340,10 @@ def test_retry(gcp, original_backend_service, instance_group):
                 stats = get_client_stats(num_rpcs, test_runtime_secs + 5)
                 succeeded_rpcs = sum(stats.rpcs_by_peer.values())
                 success = True
-                (expected_range_from,
-                 expected_range_to) = expected_succeeded_rpcs_range
-                if succeeded_rpcs < expected_range_from or succeeded_rpcs > expected_range_to:
+                if succeeded_rpcs != expected_succeeded_rpcs:
                     logger.info(
-                        '%s: failed due to unexpected number of succeeded rpcs: got %d want %d ~ %d',
-                        testcase_name, succeeded_rpcs, expected_range_from,
-                        expected_range_to)
+                        '%s: failed due to unexpected number of succeeded rpcs: got %d want %d',
+                        testcase_name, succeeded_rpcs, expected_succeeded_rpcs)
                     success = False
                 if success:
                     logger.info('success')
@@ -2357,8 +2352,7 @@ def test_retry(gcp, original_backend_service, instance_group):
             else:
                 raise Exception(
                     '%s: timeout waiting for expected results: %s; got %s' %
-                    (testcase_name, expected_succeeded_rpcs_range,
-                     succeeded_rpcs))
+                    (testcase_name, expected_succeeded_rpcs, succeeded_rpcs))
     except Exception:
         passed = False
         raise
