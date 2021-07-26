@@ -19,6 +19,7 @@ from absl import flags
 from absl.testing import absltest
 import grpc
 
+from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
 from framework.test_app import client_app
 
