@@ -66,7 +66,7 @@ class FailPolicy : public LoadBalancingPolicy {
   class FailPicker : public SubchannelPicker {
    public:
     explicit FailPicker(grpc_error_handle error) : error_(error) {}
-    ~FailPicker() { GRPC_ERROR_UNREF(error_); }
+    ~FailPicker() override { GRPC_ERROR_UNREF(error_); }
 
     PickResult Pick(PickArgs /*args*/) override {
       PickResult result;
