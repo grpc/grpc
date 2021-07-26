@@ -1129,16 +1129,19 @@ void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
   buffer_.Queue(slice);
 }
 
-grpc_error_handle HPackParser::Parse() {
+grpc_error_handle HPackParser::Parse(const grpc_slice& last_slice) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   for (const auto& slice : queued_slices_) {
-    error = Parse(slice);
+    error = ParseOneSlice(slice);
     if (error != GRPC_ERROR_NONE) break;
   }
   for (const auto& slice : queued_slices_) {
     grpc_slice_unref_internal(slice);
   }
   queued_slices_.clear();
+  if (error == GRPC_ERROR_NONE) {
+    error = ParseOneSlice(last_slice);
+  }
   if (error == GRPC_ERROR_NONE && state_ != &HPackParser::parse_begin) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "end of header frame not aligned with a hpack record boundary");
@@ -1148,7 +1151,7 @@ grpc_error_handle HPackParser::Parse() {
 
 void HPackParser::FinishFrame() { sink_ = Sink(); }
 
-grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
+grpc_error_handle HPackParser::ParseOneSlice(const grpc_slice& slice) {
 /* max number of bytes to parse at a time... limits call stack depth on
  * compilers without TCO */
 #define MAX_PARSE_LENGTH 1024
@@ -1216,32 +1219,28 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
-  parser->QueueBufferToParse(slice);
-  if (!is_last) {
+  if (!is_last || !parser->is_boundary()) {
+    parser->QueueBufferToParse(slice);
     return GRPC_ERROR_NONE;
   }
-  if (parser->is_boundary()) {
-    grpc_error_handle error = parser->Parse();
-    if (error != GRPC_ERROR_NONE) {
-      return error;
-    }
+  grpc_error_handle error = parser->Parse(slice);
+  if (error != GRPC_ERROR_NONE) {
+    return error;
   }
   /* need to check for null stream: this can occur if we receive an invalid
       stream id on a header */
   if (s != nullptr) {
-    if (parser->is_boundary()) {
-      if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many trailer frames");
-      }
-      /* Process stream compression md element if it exists */
-      if (s->header_frames_received == 0) { /* Only acts on initial metadata */
-        parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
-      }
-      s->published_metadata[s->header_frames_received] =
-          GRPC_METADATA_PUBLISHED_FROM_WIRE;
-      maybe_complete_funcs[s->header_frames_received](t, s);
-      s->header_frames_received++;
+    if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many trailer frames");
     }
+    /* Process stream compression md element if it exists */
+    if (s->header_frames_received == 0) { /* Only acts on initial metadata */
+      parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
+    }
+    s->published_metadata[s->header_frames_received] =
+        GRPC_METADATA_PUBLISHED_FROM_WIRE;
+    maybe_complete_funcs[s->header_frames_received](t, s);
+    s->header_frames_received++;
     if (parser->is_eof()) {
       if (t->is_client && !s->write_closed) {
         /* server eof ==> complete closure; we may need to forcefully close

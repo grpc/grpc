@@ -715,6 +715,16 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
 )
 
+# A library that vends only port_platform, so that libraries that don't need
+# anything else from gpr can still be portable!
+grpc_cc_library(
+    name = "gpr_platform",
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/impl/codegen/port_platform.h",
+    ],
+)
+
 grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
@@ -750,6 +760,7 @@ grpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -759,7 +770,10 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/match.h"],
-    deps = ["overload"],
+    deps = [
+        "gpr_platform",
+        "overload",
+    ],
 )
 
 grpc_cc_library(
@@ -995,6 +1009,7 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
+        "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
@@ -3131,6 +3146,7 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/context.h",
         "src/cpp/ext/filters/census/grpc_plugin.h",
         "src/cpp/ext/filters/census/measures.h",
+        "src/cpp/ext/filters/census/open_census_call_tracer.h",
         "src/cpp/ext/filters/census/rpc_encoding.h",
         "src/cpp/ext/filters/census/server_filter.h",
     ],
