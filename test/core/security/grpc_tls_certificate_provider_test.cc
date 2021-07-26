@@ -597,7 +597,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  absl::Status status = provider.SetRootCertificate("");
+  absl::Status status = provider.SetsRootCertificate("");
   EXPECT_TRUE(status.ok());
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
@@ -616,7 +616,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.SetRootCertificate(root_cert_);
+  absl::Status status = provider.SetsRootCertificate(root_cert_);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -634,7 +634,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.SetRootCertificate(root_cert_2_);
+  absl::Status status = provider.SetsRootCertificate(root_cert_2_);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -656,7 +656,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  absl::Status status = provider.SetKeyCertificatePairs({});
+  absl::Status status = provider.SetsKeyCertificatePairs({});
   EXPECT_TRUE(status.ok());
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(
@@ -677,7 +677,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
       watcher_state_1->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
   CancelWatch(watcher_state_1);
-  absl::Status status = provider.SetKeyCertificatePairs(pem_key_cert_pair_list);
+  absl::Status status = provider.SetsKeyCertificatePairs(pem_key_cert_pair_list);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(
@@ -701,7 +701,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   pem_key_cert_pair_list =
       MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str());
-  absl::Status status = provider.SetKeyCertificatePairs(pem_key_cert_pair_list);
+  absl::Status status = provider.SetsKeyCertificatePairs(pem_key_cert_pair_list);
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(
@@ -725,7 +725,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   const char* kInvalidIdentityError = "Invalid Key-Cert pair list.";
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  absl::Status status = provider.SetKeyCertificatePairs(
+  absl::Status status = provider.SetsKeyCertificatePairs(
       MakeCertKeyPairs(private_key_.c_str(), cert_chain_2_.c_str()));
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), kInvalidIdentityError);

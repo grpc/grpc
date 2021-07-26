@@ -378,7 +378,7 @@ DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     : StaticDataCertificateProvider(std::move(root_certificate),
                                     std::move(pem_key_cert_pairs)) {}
 
-absl::Status DataWatcherCertificateProvider::SetRootCertificate(
+absl::Status DataWatcherCertificateProvider::SetsRootCertificate(
     const std::string& root_certificate) {
   grpc_core::MutexLock lock(&mu_);
   if (root_certificate_ == root_certificate) {
@@ -408,7 +408,7 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
   return absl::OkStatus();
 }
 
-absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
+absl::Status DataWatcherCertificateProvider::SetsKeyCertificatePairs(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
   if (pem_key_cert_pairs == pem_key_cert_pairs_) {
     return absl::InvalidArgumentError(
@@ -570,7 +570,7 @@ SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status =
-      data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
+      data_watcher->SetsRootCertificate(ConvertToCoreObject(root_certificate));
   return grpc_set_credentials_status_create(
       static_cast<grpc_status_code>(status.code()),
       std::string(status.message()));
@@ -582,7 +582,7 @@ SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
   GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
-  absl::Status status = data_watcher->SetKeyCertificatePairs(
+  absl::Status status = data_watcher->SetsKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
   return grpc_set_credentials_status_create(
       static_cast<grpc_status_code>(status.code()),

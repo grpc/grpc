@@ -148,10 +148,10 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   // Reloads the root_certificate and updates the distributor.
-  absl::Status SetRootCertificate(const std::string& root_certificate);
+  absl::Status SetsRootCertificate(const std::string& root_certificate);
 
   // Reloads the key-cert pair list and updates the distributor.
-  absl::Status SetKeyCertificatePairs(
+  absl::Status SetsKeyCertificatePairs(
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 

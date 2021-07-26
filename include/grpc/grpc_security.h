@@ -843,7 +843,7 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 /**
  * Creates a grpc_tls_certificate_provider that will load and refresh the
- * credential data from memory.. |root_certificate| and |pem_key_cert_pairs| can
+ * credential data from memory. |root_certificate| and |pem_key_cert_pairs| can
  * be nullptr, indicating the corresponding credential data is not needed during
  * initialization. This function will make a copy of |root_certificate| while
  * the ownership of |pem_key_cert_pairs| is transferred.
