@@ -33,7 +33,6 @@ from setuptools.command import build_py
 from setuptools.command import easy_install
 from setuptools.command import install
 from setuptools.command import test
-
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))

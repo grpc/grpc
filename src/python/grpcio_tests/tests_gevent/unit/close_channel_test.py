@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-import grpc
-import gevent
 import sys
+import unittest
+
+import gevent
 from gevent.pool import Group
+import grpc
+
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests_gevent.unit._test_server import start_test_server
 
 _UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'

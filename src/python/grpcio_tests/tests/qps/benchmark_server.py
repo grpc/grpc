@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
 
 
 class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):

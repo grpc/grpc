@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterable, Optional, Tuple, List
+from typing import Iterable, List, Optional, Tuple
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
