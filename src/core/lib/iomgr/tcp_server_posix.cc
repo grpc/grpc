@@ -75,6 +75,7 @@ static grpc_error_handle tcp_server_create(
                           (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
+        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
                                                     " must be an integer");
       }
@@ -83,6 +84,7 @@ static grpc_error_handle tcp_server_create(
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
+        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
       }
