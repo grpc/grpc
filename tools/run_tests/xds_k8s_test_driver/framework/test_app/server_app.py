@@ -19,6 +19,7 @@ modules.
 """
 import functools
 import logging
+import threading
 from typing import Iterator, Optional
 
 from framework.infrastructure import gcp
@@ -48,7 +49,8 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
                  server_id: Optional[str] = None,
                  xds_host: Optional[str] = None,
                  xds_port: Optional[int] = None,
-                 rpc_host: Optional[str] = None):
+                 rpc_host: Optional[str] = None,
+                 pod_name: Optional[str] = None):
         super().__init__(rpc_host=(rpc_host or ip))
         self.ip = ip
         self.rpc_port = rpc_port
@@ -56,6 +58,7 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
         self.secure_mode = secure_mode
         self.server_id = server_id
         self.xds_host, self.xds_port = xds_host, xds_port
+        self.pod_name = pod_name
 
     @property
     @functools.lru_cache(None)
@@ -131,6 +134,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     DEFAULT_MAINTENANCE_PORT = 8080
     DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
 
+    _lock = threading.Lock()
+    _server_port_forwarding_offset = 0
+
     def __init__(self,
                  k8s_namespace,
                  *,
@@ -184,7 +190,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
-        self.port_forwarder = None
+        self.port_forwarders = []
 
     def run(self,
             *,
@@ -192,11 +198,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             maintenance_port=None,
             secure_mode=False,
             server_id=None,
-            replica_count=1) -> XdsTestServer:
-        # TODO(sergiitk): multiple replicas
-        if replica_count != 1:
-            raise NotImplementedError("Multiple replicas not yet supported")
-
+            replica_count=1) -> Iterator[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security
@@ -267,32 +269,45 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
 
         # Wait for pods running
         pods = self.k8s_namespace.list_deployment_pods(self.deployment)
+
+        servers = []
         for pod in pods:
-            self._wait_pod_started(pod.metadata.name)
+            pod_name = pod.metadata.name
+            self._wait_pod_started(pod_name)
 
-        # TODO(sergiitk): This is why multiple replicas not yet supported
-        pod = pods[0]
-        pod_ip = pod.status.pod_ip
-        rpc_host = None
-        # Experimental, for local debugging.
-        if self.debug_use_port_forwarding:
-            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                        pod_ip, maintenance_port)
-            self.port_forwarder = self.k8s_namespace.port_forward_pod(
-                pod, remote_port=maintenance_port)
-            rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+            pod_ip = pod.status.pod_ip
+            rpc_host = None
+            # Experimental, for local debugging.
+            local_port = maintenance_port
+            if self.debug_use_port_forwarding:
+                with KubernetesServerRunner._lock:
+                    local_port = maintenance_port + KubernetesServerRunner._server_port_forwarding_offset
+                    KubernetesServerRunner._server_port_forwarding_offset += 1
+                logger.info(
+                    'LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
+                    pod_ip, maintenance_port, local_port)
+                self.port_forwarders.append(
+                    self.k8s_namespace.port_forward_pod(
+                        pod,
+                        remote_port=maintenance_port,
+                        local_port=local_port))
+                rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestServer(ip=pod_ip,
-                             rpc_port=test_port,
-                             maintenance_port=maintenance_port,
-                             secure_mode=secure_mode,
-                             server_id=server_id,
-                             rpc_host=rpc_host)
+            servers.append(
+                XdsTestServer(ip=pod_ip,
+                              rpc_port=test_port,
+                              maintenance_port=local_port,
+                              secure_mode=secure_mode,
+                              server_id=server_id,
+                              rpc_host=rpc_host,
+                              pod_name=pod_name))
+        return servers
 
     def cleanup(self, *, force=False, force_namespace=False):
-        if self.port_forwarder:
-            self.k8s_namespace.port_forward_stop(self.port_forwarder)
-            self.port_forwarder = None
+        if self.port_forwarders:
+            for port_forwarder in self.port_forwarders:
+                self.k8s_namespace.port_forward_stop(port_forwarder)
+            self.port_forwarders = []
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
             self.deployment = None

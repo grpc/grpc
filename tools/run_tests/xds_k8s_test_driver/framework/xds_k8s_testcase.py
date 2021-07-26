@@ -26,7 +26,6 @@ from google.protobuf import json_format
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.helpers import retryers
-import framework.helpers.datetime
 import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
@@ -130,7 +129,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         super().setUp()
 
         if self._resource_suffix_randomize:
-            self.resource_suffix = self._random_resource_suffix()
+            self.resource_suffix = framework.helpers.rand.random_resource_suffix(
+            )
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
@@ -194,19 +194,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
                                    force_namespace=self.force_cleanup)
-
-    @staticmethod
-    def _random_resource_suffix() -> str:
-        # Date and time suffix for debugging. Seconds skipped, not as relevant
-        # Format example: 20210626-1859
-        datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
-        # Use lowercase chars because some resource names won't allow uppercase.
-        # For len 5, total (26 + 10)^5 = 60,466,176 combinations.
-        # Approx. number of test runs needed to start at the same minute to
-        # produce a collision: math.sqrt(math.pi/2 * (26+10)**5) ≈ 9745.
-        # https://en.wikipedia.org/wiki/Birthday_attack#Mathematics
-        unique_hash: str = framework.helpers.rand.rand_string(5, lowercase=True)
-        return f'{datetime_suffix}-{unique_hash}'
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,

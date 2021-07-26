@@ -1,4 +1,4 @@
-# Copyright 2018 The gRPC Authors
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.11
+FROM i386/debian:stretch
 
-RUN apk add --update build-base linux-headers python3 python3-dev py3-pip
+RUN apt-get update && apt-get install -y python3 python3-pip
 
-RUN pip3 install --upgrade pip==19.3.1
+RUN pip3 install virtualenv==16.7.9
 
-RUN pip3 install virtualenv
-
-# bash is required for our test script invocation
-# ideally, we want to fix the invocation mechanism
-# so we can remove this, but it has to be here for
-# now:
-RUN apk add --update bash
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]
