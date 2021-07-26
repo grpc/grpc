@@ -1558,6 +1558,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     call_attempt_->recv_trailing_metadata_error_ = error;
     return;
   }
+  // Copy transport stats to be delivered up to the surface.
+  grpc_transport_move_stats(
+      &call_attempt_->collect_stats_,
+      pending->batch->payload->recv_trailing_metadata.collect_stats);
   // Return metadata.
   grpc_metadata_batch_move(
       &call_attempt_->recv_trailing_metadata_,
