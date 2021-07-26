@@ -13,8 +13,8 @@
 # limitations under the License.
 """gRPC Python's Admin interface."""
 
-import grpc_csds
 from grpc_channelz.v1 import channelz
+import grpc_csds
 
 
 def add_admin_servicers(server):

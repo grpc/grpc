@@ -13,6 +13,7 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
+import errno
 import logging
 import multiprocessing
 import os
@@ -23,7 +24,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import errno
 
 # cpu cost measurement
 measure_cpu_costs = False

@@ -26,18 +26,16 @@ import collections
 import copy
 import datetime
 import itertools
+import json
 import os
 import string
 import sys
-import uuid
-
 from typing import Any, Dict, Iterable, Mapping, Optional, Type
-
-import json
-import yaml
+import uuid
 
 import scenario_config
 import scenario_config_exporter
+import yaml
 
 CONFIGURATION_FILE_HEADER_COMMENT = """
 # Load test configurations generated from a template by loadtest_config.py.

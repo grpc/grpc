@@ -17,7 +17,10 @@ from typing import (Any, AsyncIterable, Callable, Iterable, Sequence, Tuple,
                     TypeVar, Union)
 
 from grpc._cython.cygrpc import EOF
-from ._metadata import Metadata, MetadataKey, MetadataValue
+
+from ._metadata import Metadata
+from ._metadata import MetadataKey
+from ._metadata import MetadataValue
 
 RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')

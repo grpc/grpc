@@ -3329,6 +3329,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: bitset_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/bitset.h
+  src:
+  - test/core/gprpp/bitset_test.cc
+  deps: []
+  uses_polling: false
 - name: bm_alarm
   gtest: true
   build: test
@@ -6476,6 +6486,19 @@ targets:
   - test/core/gpr/sync_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: table_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/table.h
+  src:
+  - test/core/gprpp/table_test.cc
+  deps:
+  - absl/types:optional
+  - absl/utility:utility
   uses_polling: false
 - name: tcp_client_posix_test
   gtest: true

@@ -13,9 +13,10 @@
 # limitations under the License.
 """Send multiple greeting messages to the backend."""
 
+import argparse
 import asyncio
 import logging
-import argparse
+
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(

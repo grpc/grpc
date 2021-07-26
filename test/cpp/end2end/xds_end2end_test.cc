@@ -1878,8 +1878,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    int server_sleep_us = 0;
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
+    StatusCode server_expected_error = StatusCode::OK;
 
     RpcOptions() {}
 
@@ -1919,8 +1921,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
 
+    RpcOptions& set_server_sleep_us(int rpc_server_sleep_us) {
+      server_sleep_us = rpc_server_sleep_us;
+      return *this;
+    }
+
     RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
       client_cancel_after_us = rpc_client_cancel_after_us;
+      return *this;
+    }
+
+    RpcOptions& set_server_expected_error(StatusCode code) {
+      server_expected_error = code;
       return *this;
     }
 
@@ -1938,6 +1950,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (server_fail) {
         request->mutable_param()->mutable_expected_error()->set_code(
             GRPC_STATUS_FAILED_PRECONDITION);
+      }
+      if (server_sleep_us != 0) {
+        request->mutable_param()->set_server_sleep_us(server_sleep_us);
       }
       if (client_cancel_after_us != 0) {
         request->mutable_param()->set_client_cancel_after_us(
@@ -2186,6 +2201,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (local_response) response = new EchoResponse;
     ClientContext context;
     EchoRequest request;
+    if (rpc_options.server_expected_error != StatusCode::OK) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(rpc_options.server_expected_error);
+    }
     rpc_options.SetupRpc(&context, &request);
     Status status;
     switch (rpc_options.service) {
@@ -3547,7 +3566,6 @@ TEST_P(LdsTest, NoApiListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3569,7 +3587,6 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3593,7 +3610,6 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3618,7 +3634,6 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3629,55 +3644,53 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
                                    "RDS does not specify ADS."));
 }
 
-// Tests that we ignore filters after the router filter.
-TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
+// Tests that we NACK non-terminal filters at the end of the list.
+TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForAllBackends();
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "non-terminal filter for config type grpc.testing"
+                  ".client_only_http_filter is the last filter in the chain"));
 }
 
-// Test that we fail RPCs if there is no router filter.
-TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
+// Test that we NACK terminal filters that are not at the end of the list.
+TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  http_connection_manager.clear_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  Status status = SendRpc();
-  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(), "no xDS HTTP router filter configured");
-  // Wait until xDS server sees ACK.
-  while (balancers_[0]->ads_service()->lds_response_state().state ==
-         AdsServiceImpl::ResponseState::SENT) {
-    CheckRpcSendFailure();
-  }
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "terminal filter for config type envoy.extensions.filters.http"
+          ".router.v3.Router must be the last filter in the chain"));
 }
 
 // Test that we NACK empty filter names.
@@ -3686,19 +3699,21 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("empty filter name at index 1"));
+              ::testing::HasSubstr("empty filter name at index 0"));
 }
 
 // Test that we NACK duplicate HTTP filter names.
@@ -3709,10 +3724,12 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
+  http_connection_manager.mutable_http_filters(0)
+      ->mutable_typed_config()
+      ->PackFrom(HTTPFault());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3728,13 +3745,14 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3751,7 +3769,9 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   filter->set_is_optional(true);
@@ -3775,12 +3795,14 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->set_name("unknown");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3797,7 +3819,10 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->set_name("unknown");
   filter->set_is_optional(true);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3820,15 +3845,16 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(listener);
   filter->mutable_typed_config()->set_type_url(
-      "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router");
+      "type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3838,7 +3864,7 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       response_state.error_message,
       ::testing::HasSubstr(
           "filter config for type "
-          "envoy.extensions.filters.http.router.v3.Router failed to parse"));
+          "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
 }
 
 // Test that we NACK HTTP filters unsupported on client-side.
@@ -3847,14 +3873,15 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -3872,7 +3899,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
@@ -3885,7 +3914,6 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForBackend(0);
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
@@ -5584,6 +5612,330 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we retried the correct number of times on all supported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
+          .set_expected_error_code(StatusCode::INTERNAL));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::RESOURCE_EXHAUSTED))
+          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
+          .set_expected_error_code(StatusCode::UNAVAILABLE));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Ensure we don't retry on an unsupported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::UNAUTHENTICATED))
+          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* retry_policy =
+      new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we retried the correct number of times on a supported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  // Set num retries to 3, but due to longer back off, we expect only 1 retry
+  // will take place.
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  // Set backoff to 1 second, 1/2 of rpc timeout of 2 second.
+  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_interval->set_nanos(0);
+  SetRouteConfiguration(0, new_route_config);
+  // No need to set max interval and just let it be the default of 10x of base.
+  // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  // Set num retries to 3, but due to longer back off, we expect only 2 retry
+  // will take place, while the 2nd one will obey the max backoff.
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  // Set backoff to 1 second.
+  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_interval->set_nanos(0);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  // Set max interval to be the same as base, so 2 retries will take 2 seconds
+  // and both retries will take place before the 2.5 seconds rpc timeout.
+  // Tested to ensure if max is not set, this test will be the same as
+  // XdsRetryPolicyLongBackOff and we will only see 1 retry in that case.
+  max_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  max_interval->set_nanos(0);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("5xx");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect no retry.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("deadline-exceeded");
+  // Setting num_retries to zero is not valid.
+  retry_policy->mutable_num_retries()->set_value(0);
+  SetRouteConfiguration(0, new_route_config);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction RetryPolicy num_retries set to invalid value 0."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("deadline-exceeded");
+  retry_policy->mutable_num_retries()->set_value(1);
+  // RetryBackoff is there but base interval is missing.
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(0);
+  max_interval->set_nanos(250000000);
+  SetRouteConfiguration(0, new_route_config);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction RetryPolicy RetryBackoff missing base interval."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyDisabled) {
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we don't retry on supported statuses.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
+          .set_expected_error_code(StatusCode::INTERNAL));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::RESOURCE_EXHAUSTED))
+          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
+          .set_expected_error_code(StatusCode::UNAVAILABLE));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Ensure we don't retry on an unsupported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::UNAUTHENTICATED))
+          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
@@ -8581,6 +8933,10 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
+  http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);

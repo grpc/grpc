@@ -13,10 +13,13 @@
 # limitations under the License.
 
 from concurrent import futures
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-import grpc
-import gevent
 from typing import Any, Tuple
+
+import gevent
+import grpc
+
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 LONG_UNARY_CALL_WITH_SLEEP_VALUE = 1
 
