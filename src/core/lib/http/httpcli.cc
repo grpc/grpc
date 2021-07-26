@@ -212,7 +212,7 @@ static void next_address(internal_request* req, grpc_error_handle error) {
       &req->connected, &req->ep,
       grpc_slice_allocator_factory_create_slice_allocator(
           req->slice_allocator_factory, grpc_sockaddr_to_uri(addr).c_str()),
-      req->context->pollset_set, {}, addr, req->deadline);
+      req->context->pollset_set, nullptr, addr, req->deadline);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {

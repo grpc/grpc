@@ -32,7 +32,6 @@ Chttp2SliceAllocator::Chttp2SliceAllocator(grpc_resource_user* user)
 Chttp2SliceAllocator::~Chttp2SliceAllocator() {
   if (resource_user_ != nullptr) {
     grpc_resource_user_unref(resource_user_);
-    resource_user_ = nullptr;
   }
 }
 
