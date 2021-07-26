@@ -140,7 +140,7 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
-// A provider class that loads and refreshes the credential data from memory
+// A provider class that loads and refreshes the credential data from memory.
 class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
  public:
   DataWatcherCertificateProvider(
