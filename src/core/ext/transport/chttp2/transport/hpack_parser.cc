@@ -1130,43 +1130,18 @@ void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& last_slice) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  for (const auto& slice : queued_slices_) {
-    error = ParseOneSlice(slice);
-    if (error != GRPC_ERROR_NONE) break;
-  }
-  for (const auto& slice : queued_slices_) {
-    grpc_slice_unref_internal(slice);
-  }
-  queued_slices_.clear();
-  if (error == GRPC_ERROR_NONE) {
-    error = ParseOneSlice(last_slice);
-  }
-  if (error == GRPC_ERROR_NONE && state_ != &HPackParser::parse_begin) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "end of header frame not aligned with a hpack record boundary");
-  }
-  return error;
+  return buffer_.Finalize(last_slice, [this](grpc_slice_refcount* refcount, uint8_t* begin, uint8_t* end) {
+    Parser p(Input(refcount, begin, end), std::move(sink_), &table_);
+    switch (priority_) {
+      case Priority::None: break;
+      case Priority::Included: if (!p.SkipPriority()) return p.TakeError(); break;
+    }
+    if (!p.ParseBody()) return p.TakeError();
+    return GRPC_ERROR_NONE;
+  });
 }
 
 void HPackParser::FinishFrame() { sink_ = Sink(); }
-
-grpc_error_handle HPackParser::ParseOneSlice(const grpc_slice& slice) {
-/* max number of bytes to parse at a time... limits call stack depth on
- * compilers without TCO */
-#define MAX_PARSE_LENGTH 1024
-  current_slice_refcount_ = slice.refcount;
-  const uint8_t* start = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  while (start != end && error == GRPC_ERROR_NONE) {
-    const uint8_t* target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
-    error = (this->*state_)(start, target);
-    start = target;
-  }
-  current_slice_refcount_ = nullptr;
-  return error;
-}
 
 }  // namespace grpc_core
 
