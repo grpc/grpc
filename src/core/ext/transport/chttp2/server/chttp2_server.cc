@@ -484,7 +484,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   }
   gpr_free(self->acceptor_);
   OrphanablePtr<ActiveConnection> connection;
-  if (free_resource_quota && self->resource_user_ != nullptr) {
+  if (free_resource_quota) {
     grpc_resource_user_free(self->resource_user_,
                             GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
   }

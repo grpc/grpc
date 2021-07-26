@@ -538,6 +538,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   t->destroying = 1;
+  grpc_resource_user_shutdown(t->resource_user);
   grpc_resource_user_unref(t->resource_user);
   close_transport_locked(
       t, grpc_error_set_int(

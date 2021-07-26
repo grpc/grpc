@@ -621,7 +621,6 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
         s_->on_accept_cb_arg,
         grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(), allocator),
         allocator, read_notifier_pollset, acceptor);
-    grpc_slice_allocator_destroy(allocator);
   }
 
  private:
