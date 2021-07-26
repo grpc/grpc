@@ -47,7 +47,9 @@ struct grpc_custom_tcp_connect {
 };
 
 static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
-  grpc_slice_allocator_destroy(connect->slice_allocator);
+  if (connect->slice_allocator != nullptr) {
+    grpc_slice_allocator_destroy(connect->slice_allocator);
+  }
   grpc_custom_socket* socket = connect->socket;
   delete connect;
   socket->refs--;
@@ -88,6 +90,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   if (error == GRPC_ERROR_NONE) {
     *connect->endpoint = custom_tcp_endpoint_create(
         socket, connect->slice_allocator, connect->addr_name.c_str());
+    connect->slice_allocator = nullptr;
   }
   done = (--connect->refs == 0);
   if (done) {

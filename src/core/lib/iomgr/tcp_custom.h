@@ -78,6 +78,7 @@ void grpc_custom_endpoint_init(grpc_socket_vtable* impl);
 
 void grpc_custom_close_server_callback(grpc_tcp_listener* listener);
 
+// Takes ownership of a resource_user ref from the caller.
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           grpc_slice_allocator* slice_allocator,
                                           const char* peer_string);
