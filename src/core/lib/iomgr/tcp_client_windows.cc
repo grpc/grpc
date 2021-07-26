@@ -229,6 +229,7 @@ failure:
                          GRPC_ERROR_STR_TARGET_ADDRESS,
                          grpc_slice_from_cpp_string(std::move(target_uri)));
   GRPC_ERROR_UNREF(error);
+  grpc_slice_allocator_destroy(slice_allocator);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {

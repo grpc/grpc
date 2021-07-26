@@ -170,7 +170,6 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
   grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
-
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts due to the normal operation mechanism. */
   if (s->active_ports == 0) {
