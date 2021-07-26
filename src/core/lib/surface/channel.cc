@@ -264,6 +264,7 @@ grpc_channel* grpc_channel_create(const char* target,
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
       grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+      grpc_resource_user_unref(resource_user);
     }
     grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;

@@ -607,7 +607,6 @@ grpc_error_handle Server::SetupTransport(
   grpc_channel* channel = grpc_channel_create(
       nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user, &error);
   if (channel == nullptr) {
-    grpc_resource_user_unref(resource_user);
     return error;
   }
   ChannelData* chand = static_cast<ChannelData*>(

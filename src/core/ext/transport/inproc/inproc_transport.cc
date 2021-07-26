@@ -1290,6 +1290,11 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
       server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_from_channel_args(server_args, true);
+  grpc_resource_user* resource_user =
+      grpc_resource_user_create(resource_quota, "inproc_channel");
+  grpc_resource_quota_unref(resource_quota);
 
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
@@ -1304,14 +1309,15 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   inproc_transports_create(&server_transport, server_args, &client_transport,
                            client_args);
 
+  grpc_resource_user_ref(resource_user);
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
   grpc_error_handle error = server->core_server->SetupTransport(
-      server_transport, nullptr, server_args, nullptr);
+      server_transport, nullptr, server_args, nullptr, resource_user);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, &error);
+                            client_transport, resource_user, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
@@ -1337,6 +1343,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       status = static_cast<grpc_status_code>(integer);
     }
     GRPC_ERROR_UNREF(error);
+    grpc_resource_user_unref(resource_user);
     grpc_transport_destroy(client_transport);
     grpc_transport_destroy(server_transport);
     channel = grpc_lame_client_channel_create(

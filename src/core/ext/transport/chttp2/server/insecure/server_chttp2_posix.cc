@@ -59,8 +59,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
       server_args, server_endpoint, false /* is_client */,
       allocator->resource_user);
   grpc_slice_allocator_factory_destroy(alloc_factory);
-  grpc_error_handle error =
-      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
+  grpc_resource_user_ref(allocator->resource_user);
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, server_args, nullptr, allocator->resource_user);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
