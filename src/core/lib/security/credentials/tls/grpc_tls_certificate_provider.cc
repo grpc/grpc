@@ -416,8 +416,8 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   }
   absl::Status status = IsKeyCertPairsListValid(pem_key_cert_pairs);
   if (!status.ok()) {
-    const char* error_message = status.message().data();
-    gpr_log(GPR_ERROR, "Reload cert error: %s", error_message);
+    std::string error_message = std::string(status.message());
+    gpr_log(GPR_ERROR, "Reload cert error: %s", error_message.c_str());
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Key-Cert pair list.");
     for (const auto& p : watcher_info_) {
