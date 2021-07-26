@@ -2839,1329 +2839,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: algorithm_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/algorithm_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: alloc_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/alloc_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: alpn_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/alpn_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_counter_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_counter_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_crypt_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/aes_gcm_test.cc
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  deps:
-  - grpc_test_util
-- name: alts_crypter_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_frame_protector_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-- name: alts_grpc_record_protocol_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_handshaker_client_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  deps:
-  - grpc_test_util
-- name: alts_iovec_record_protocol_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/alts_security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_tsi_handshaker_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_tsi_utils_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_zero_copy_grpc_protector_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
-  deps:
-  - grpc_test_util
-- name: arena_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/arena_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: auth_context_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/auth_context_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: avl_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/avl/avl_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: b64_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bad_server_response_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/bad_server_response_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-- name: bad_ssl_alpn_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: bad_ssl_cert_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: bin_decoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bin_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: buffer_list_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/buffer_list_test.cc
-  deps:
-  - grpc_test_util
-- name: channel_args_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_args_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: channel_create_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/channel_create_test.cc
-  deps:
-  - grpc_test_util
-- name: channel_stack_builder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_builder_test.cc
-  deps:
-  - grpc_test_util
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: check_gcp_environment_linux_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_linux_test.cc
-  deps:
-  - grpc_test_util
-- name: check_gcp_environment_windows_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_windows_test.cc
-  deps:
-  - grpc_test_util
-- name: client_ssl_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/handshake/client_ssl.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: combiner_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/combiner_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: completion_queue_threading_test
-  build: test
-  run: false
-  language: c
-  headers: []
-  src:
-  - test/core/surface/completion_queue_threading_test.cc
-  deps:
-  - grpc_test_util
-- name: compression_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/compression_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: concurrent_connectivity_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/concurrent_connectivity_test.cc
-  deps:
-  - grpc_test_util
-- name: connection_refused_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/connection_refused_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-- name: cpu_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/cpu_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: dns_resolver_connectivity_using_ares_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
-- name: dns_resolver_connectivity_using_native_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
-- name: dns_resolver_cooldown_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
-  deps:
-  - grpc_test_util
-- name: dns_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_test.cc
-  deps:
-  - grpc_test_util
-- name: dualstack_socket_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/dualstack_socket_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: endpoint_pair_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_pair_test.cc
-  - test/core/iomgr/endpoint_tests.cc
-  deps:
-  - grpc_test_util
-- name: env_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/env_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: error_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/iomgr/error_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: ev_epollex_linux_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/ev_epollex_linux_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fake_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/fake_resolver_test.cc
-  deps:
-  - grpc_test_util
-- name: fake_transport_security_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/fake_transport_security_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-- name: fd_conservation_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fd_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/fd_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fling_stream_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/fling/fling_stream_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fling_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/fling/fling_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: format_request_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/format_request_test.cc
-  deps:
-  - grpc_test_util
-- name: frame_handler_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/frame_handler_test.cc
-  deps:
-  - grpc_test_util
-- name: goaway_server_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/goaway_server_test.cc
-  deps:
-  - grpc_test_util
-- name: grpc_alts_credentials_options_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/grpc_alts_credentials_options_test.cc
-  deps:
-  - grpc_test_util
-- name: grpc_byte_buffer_reader_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/byte_buffer_reader_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: grpc_completion_queue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/completion_queue_test.cc
-  deps:
-  - grpc_test_util
-- name: grpc_ipv6_loopback_available_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
-  deps:
-  - grpc_test_util
-- name: handshake_server_with_readahead_handshaker_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/readahead_handshaker_server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_parser_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_table_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_table_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: httpcli_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/httpcli_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: httpscli_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/httpscli_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: inproc_callback_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/end2end/inproc_callback_test.cc
-  deps:
-  - end2end_tests
-  uses_polling: false
-- name: invalid_call_argument_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/invalid_call_argument_test.cc
-  deps:
-  - grpc_test_util
-- name: json_token_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/json_token_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: jwt_verifier_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/jwt_verifier_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: lame_client_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/surface/lame_client_test.cc
-  deps:
-  - grpc_test_util
-- name: load_file_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/load_file_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: manual_constructor_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/manual_constructor_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: message_compress_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/message_compress_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: metadata_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/metadata_test.cc
-  deps:
-  - grpc_test_util
-- name: minimal_stack_is_minimal_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: multiple_server_queues_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/multiple_server_queues_test.cc
-  deps:
-  - grpc_test_util
-- name: murmur_hash_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/murmur_hash_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: no_server_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/no_server_test.cc
-  deps:
-  - grpc_test_util
-- name: num_external_connectivity_watchers_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/num_external_connectivity_watchers_test.cc
-  deps:
-  - grpc_test_util
-- name: parse_address_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/address_utils/parse_address_test.cc
-  deps:
-  - grpc_test_util
-- name: parse_address_with_named_scope_id_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/address_utils/parse_address_with_named_scope_id_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: parser_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: percent_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/percent_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: public_headers_must_be_c89
-  build: test
-  language: c
-  headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
-  - src/core/lib/security/authorization/rbac_translator.h
-  src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
-  - src/core/lib/security/authorization/rbac_translator.cc
-  - test/core/surface/public_headers_must_be_c89.c
-  deps:
-  - grpc_test_util
-- name: resolve_address_using_ares_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_ares_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
-- name: resolve_address_using_native_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_native_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
-- name: resource_quota_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resource_quota_test.cc
-  deps:
-  - grpc_test_util
-- name: secure_channel_create_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/secure_channel_create_test.cc
-  deps:
-  - grpc_test_util
-- name: secure_endpoint_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/security/secure_endpoint_test.cc
-  deps:
-  - grpc_test_util
-- name: security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: sequential_connectivity_test
-  build: test
-  run: false
-  language: c
-  headers: []
-  src:
-  - test/core/surface/sequential_connectivity_test.cc
-  deps:
-  - grpc_test_util
-- name: server_ssl_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: server_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/server_test.cc
-  deps:
-  - grpc_test_util
-- name: slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: slice_string_helpers_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_string_helpers_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: sockaddr_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
-  deps:
-  - grpc_test_util
-- name: socket_utils_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/socket_utils_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: spinlock_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/spinlock_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: ssl_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/ssl_credentials_test.cc
-  deps:
-  - grpc_test_util
-- name: ssl_transport_security_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/ssl_transport_security_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: status_conversion_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/status_conversion_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_compression_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/stream_compression_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_map_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/stream_map_test.cc
-  deps:
-  - grpc_test_util
-- name: stream_owned_slice_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/stream_owned_slice_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: string_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/string_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: sync_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/sync_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: tcp_client_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/tcp_client_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: tcp_posix_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/iomgr/tcp_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-- name: tcp_server_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/tcp_server_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: test_core_gpr_time_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_security_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
-- name: test_core_slice_slice_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: time_averaged_stats_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/time_averaged_stats_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: timeout_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/timeout_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: timer_heap_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/timer_heap_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: timer_list_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: tls_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/tls_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: transport_security_common_api_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
-  deps:
-  - grpc_test_util
-- name: transport_security_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/tsi/transport_security_test.cc
-  deps:
-  - grpc_test_util
-- name: udp_server_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/udp_server_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: useful_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/useful_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: varint_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/varint_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: address_sorting_test
   gtest: true
   build: test
@@ -4229,6 +2906,35 @@ targets:
   - linux
   - posix
   - mac
+- name: algorithm_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/algorithm_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: alloc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/alloc_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/alpn_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
@@ -4248,6 +2954,17 @@ targets:
   platforms:
   - linux
   - posix
+- name: alts_counter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_counter_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_credentials_fuzzer
   build: fuzzer
   language: c++
@@ -4262,6 +2979,105 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
+- name: alts_crypt_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/aes_gcm_test.cc
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  deps:
+  - grpc_test_util
+- name: alts_crypter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_frame_protector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+- name: alts_grpc_record_protocol_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_handshaker_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  deps:
+  - grpc_test_util
+- name: alts_iovec_record_protocol_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/alts_security_connector_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_tsi_handshaker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_tsi_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_util_test
   gtest: true
   build: test
@@ -4272,6 +3088,27 @@ targets:
   deps:
   - grpc++_alts
   - grpc++_test_util
+- name: alts_zero_copy_grpc_protector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
+  deps:
+  - grpc_test_util
+- name: arena_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/arena_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: async_end2end_test
   gtest: true
   build: test
@@ -4286,6 +3123,16 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: auth_context_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/auth_context_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -4332,6 +3179,16 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: avl_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/avl/avl_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -4341,6 +3198,16 @@ targets:
   - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
+- name: b64_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/b64_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: backoff_test
   gtest: true
   build: test
@@ -4351,6 +3218,47 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: bad_server_response_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/bad_server_response_test.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: bad_ssl_alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/bad_ssl/bad_ssl_test.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: bad_ssl_cert_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/bad_ssl/bad_ssl_test.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: bad_streaming_id_bad_client_test
   gtest: true
   build: test
@@ -4391,6 +3299,26 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: bin_decoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bin_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: binder_smoke_test
   gtest: true
   build: test
@@ -4402,6 +3330,7 @@ targets:
   - grpc_test_util
   uses_polling: false
 - name: bm_alarm
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4415,6 +3344,7 @@ targets:
   - linux
   - posix
 - name: bm_arena
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4429,6 +3359,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_byte_buffer
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4443,6 +3374,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_call_create
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4457,6 +3389,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_callback_streaming_ping_pong
+  gtest: true
   build: test
   run: false
   language: c++
@@ -4480,6 +3413,7 @@ targets:
   - linux
   - posix
 - name: bm_callback_unary_ping_pong
+  gtest: true
   build: test
   run: false
   language: c++
@@ -4503,6 +3437,7 @@ targets:
   - linux
   - posix
 - name: bm_channel
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4517,6 +3452,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_chttp2_hpack
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4531,6 +3467,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_chttp2_transport
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4544,6 +3481,7 @@ targets:
   - linux
   - posix
 - name: bm_closure
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4557,6 +3495,7 @@ targets:
   - linux
   - posix
 - name: bm_cq
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4570,6 +3509,7 @@ targets:
   - linux
   - posix
 - name: bm_cq_multiple_threads
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4584,6 +3524,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_error
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4598,6 +3539,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_fullstack_streaming_ping_pong
+  gtest: true
   build: test
   language: c++
   headers:
@@ -4612,6 +3554,7 @@ targets:
   - linux
   - posix
 - name: bm_fullstack_streaming_pump
+  gtest: true
   build: test
   language: c++
   headers:
@@ -4626,6 +3569,7 @@ targets:
   - linux
   - posix
 - name: bm_fullstack_trickle
+  gtest: true
   build: test
   run: false
   language: c++
@@ -4642,6 +3586,7 @@ targets:
   - posix
   - mac
 - name: bm_fullstack_unary_ping_pong
+  gtest: true
   build: test
   language: c++
   headers:
@@ -4656,6 +3601,7 @@ targets:
   - linux
   - posix
 - name: bm_metadata
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4670,6 +3616,7 @@ targets:
   - posix
   uses_polling: false
 - name: bm_pollset
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4683,6 +3630,7 @@ targets:
   - linux
   - posix
 - name: bm_threadpool
+  gtest: true
   build: test
   run: false
   language: c++
@@ -4699,6 +3647,7 @@ targets:
   - mac
   uses_polling: false
 - name: bm_timer
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -4712,6 +3661,15 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: buffer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/buffer_list_test.cc
+  deps:
+  - grpc_test_util
 - name: byte_buffer_test
   gtest: true
   build: test
@@ -4803,6 +3761,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: channel_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_args_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -4814,6 +3782,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_create_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/channel_create_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_filter_test
   gtest: true
   build: test
@@ -4823,6 +3800,25 @@ targets:
   - test/cpp/common/channel_filter_test.cc
   deps:
   - grpc++
+  - grpc_test_util
+  uses_polling: false
+- name: channel_stack_builder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_builder_test.cc
+  deps:
+  - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
   - grpc_test_util
   uses_polling: false
 - name: channel_trace_test
@@ -4876,6 +3872,24 @@ targets:
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - grpc++
+  - grpc_test_util
+- name: check_gcp_environment_linux_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/check_gcp_environment_linux_test.cc
+  deps:
+  - grpc_test_util
+- name: check_gcp_environment_windows_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/check_gcp_environment_windows_test.cc
+  deps:
   - grpc_test_util
 - name: cli_call_test
   gtest: true
@@ -5004,6 +4018,29 @@ targets:
   - linux
   - posix
   - mac
+- name: client_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/handshake/client_ssl.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -5026,6 +4063,48 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: combiner_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/combiner_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: completion_queue_threading_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/completion_queue_threading_test.cc
+  deps:
+  - grpc_test_util
+- name: compression_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/compression_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: concurrent_connectivity_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/concurrent_connectivity_test.cc
+  deps:
+  - grpc_test_util
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test
@@ -5036,6 +4115,17 @@ targets:
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: connection_refused_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
@@ -5072,6 +4162,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: cpu_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/cpu_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -5095,6 +4195,46 @@ targets:
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - grpc++_test_util
+- name: dns_resolver_connectivity_using_ares_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=ares
+- name: dns_resolver_connectivity_using_native_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=native
+- name: dns_resolver_cooldown_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+- name: dns_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -5104,6 +4244,21 @@ targets:
   - test/core/gprpp/dual_ref_counted_test.cc
   deps:
   - grpc_test_util
+- name: dualstack_socket_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/dualstack_socket_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5145,6 +4300,27 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - grpc_test_util
+- name: endpoint_pair_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_pair_test.cc
+  - test/core/iomgr/endpoint_tests.cc
+  deps:
+  - grpc_test_util
+- name: env_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/env_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test
@@ -5157,6 +4333,18 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/iomgr/error_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: error_utils_test
   gtest: true
   build: test
@@ -5166,6 +4354,19 @@ targets:
   - test/core/transport/error_utils_test.cc
   deps:
   - grpc_test_util
+- name: ev_epollex_linux_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/ev_epollex_linux_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -5201,6 +4402,52 @@ targets:
   - test/cpp/end2end/exception_test.cc
   deps:
   - grpc++_test_util
+- name: fake_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/fake_resolver_test.cc
+  deps:
+  - grpc_test_util
+- name: fake_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/fake_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+- name: fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: fd_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/fd_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -5238,6 +4485,81 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: fling_stream_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/fling/fling_stream_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: fling_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/fling/fling_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: format_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/format_request_test.cc
+  deps:
+  - grpc_test_util
+- name: frame_handler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/frame_handler_test.cc
+  deps:
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5275,6 +4597,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: goaway_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/goaway_server_test.cc
+  deps:
+  - grpc_test_util
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
   build: test
@@ -5284,6 +4617,15 @@ targets:
   src:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
+  deps:
+  - grpc_test_util
+- name: grpc_alts_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_alts_credentials_options_test.cc
   deps:
   - grpc_test_util
 - name: grpc_authorization_engine_test
@@ -5320,6 +4662,16 @@ targets:
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
   - grpc_test_util
+- name: grpc_byte_buffer_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/byte_buffer_reader_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -5345,6 +4697,15 @@ targets:
   - absl/flags:flag
   - grpc++
   - grpc++_test_config
+- name: grpc_completion_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/completion_queue_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -5361,6 +4722,15 @@ targets:
   - src/compiler/csharp_plugin.cc
   deps:
   - grpc_plugin_support
+- name: grpc_ipv6_loopback_available_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_node_plugin
   build: protoc
   language: c++
@@ -5498,6 +4868,21 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - end2end_tests
+- name: handshake_server_with_readahead_handshaker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -5542,6 +4927,36 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: host_port_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c++
@@ -5557,7 +4972,28 @@ targets:
   - test/core/transport/chttp2/hpack_parser_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 512
+- name: hpack_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_table_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_table_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: http2_client
+  gtest: true
   build: test
   run: false
   language: c++
@@ -5598,6 +5034,42 @@ targets:
   corpus_dirs:
   - test/core/http/response_corpus
   maxlen: 2048
+- name: httpcli_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/httpcli_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: httpscli_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/httpscli_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -5636,6 +5108,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: inproc_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/inproc_callback_test.cc
+  deps:
+  - end2end_tests
+  uses_polling: false
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -5646,6 +5128,7 @@ targets:
   deps:
   - grpc_test_util
 - name: interop_client
+  gtest: true
   build: test
   run: false
   language: c++
@@ -5665,6 +5148,7 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
+  gtest: true
   build: test
   run: false
   language: c++
@@ -5681,6 +5165,7 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_test
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -5693,6 +5178,17 @@ targets:
   - linux
   - posix
   - mac
+- name: invalid_call_argument_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/invalid_call_argument_test.cc
+  deps:
+  - grpc_test_util
 - name: json_fuzzer_test
   build: fuzzer
   language: c++
@@ -5717,6 +5213,37 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: json_token_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/json_token_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: jwt_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/jwt_verifier_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: lame_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/surface/lame_client_test.cc
+  deps:
+  - grpc_test_util
 - name: large_metadata_bad_client_test
   gtest: true
   build: test
@@ -5767,6 +5294,16 @@ targets:
   - test/core/security/linux_system_roots_test.cc
   deps:
   - grpc_test_util
+- name: load_file_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/load_file_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: log_test
   gtest: true
   build: test
@@ -5774,6 +5311,16 @@ targets:
   headers: []
   src:
   - test/core/gpr/log_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: manual_constructor_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/manual_constructor_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -5812,6 +5359,35 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: message_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/message_compress_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/metadata_test.cc
+  deps:
+  - grpc_test_util
+- name: minimal_stack_is_minimal_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: mock_stream_test
   gtest: true
   build: test
@@ -5839,6 +5415,51 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpmcqueue_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/mpmcqueue_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: multiple_server_queues_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/multiple_server_queues_test.cc
+  deps:
+  - grpc_test_util
+- name: murmur_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/murmur_hash_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: nanopb_fuzzer_response_test
   build: fuzzer
   language: c++
@@ -5867,6 +5488,17 @@ targets:
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
   maxlen: 128
+- name: no_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/no_server_test.cc
+  deps:
+  - grpc_test_util
 - name: nonblocking_test
   gtest: true
   build: test
@@ -5880,6 +5512,7 @@ targets:
   deps:
   - grpc++_test_util
 - name: noop-benchmark
+  gtest: true
   build: test
   language: c++
   headers: []
@@ -5890,6 +5523,15 @@ targets:
   - grpc_test_util
   benchmark: true
   defaults: benchmark
+- name: num_external_connectivity_watchers_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/num_external_connectivity_watchers_test.cc
+  deps:
+  - grpc_test_util
 - name: orphanable_test
   gtest: true
   build: test
@@ -5922,6 +5564,44 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
+- name: parse_address_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/address_utils/parse_address_test.cc
+  deps:
+  - grpc_test_util
+- name: parse_address_with_named_scope_id_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/address_utils/parse_address_with_named_scope_id_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
@@ -5950,6 +5630,16 @@ targets:
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
   maxlen: 32
+- name: percent_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/percent_encoding_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: pid_controller_test
   gtest: true
   build: test
@@ -6002,7 +5692,27 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: public_headers_must_be_c89
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  src:
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/surface/public_headers_must_be_c89.c
+  deps:
+  - grpc_test_util
 - name: qps_json_driver
+  gtest: true
   build: test
   run: false
   language: c++
@@ -6048,6 +5758,7 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: qps_worker
+  gtest: true
   build: test
   run: false
   language: c++
@@ -6148,6 +5859,67 @@ targets:
   - linux
   - posix
   - mac
+- name: resolve_address_using_ares_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=ares
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: resolve_address_using_ares_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=ares
+- name: resolve_address_using_native_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=native
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: resolve_address_using_native_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  deps:
+  - grpc_test_util
+  args:
+  - --resolver=native
+- name: resource_quota_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resource_quota_test.cc
+  deps:
+  - grpc_test_util
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -6167,6 +5939,45 @@ targets:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
   - grpc++_test_util
+- name: secure_channel_create_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/secure_channel_create_test.cc
+  deps:
+  - grpc_test_util
+- name: secure_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/security/secure_endpoint_test.cc
+  deps:
+  - grpc_test_util
+- name: security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/security_connector_test.cc
+  deps:
+  - grpc_test_util
+- name: sequential_connectivity_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/sequential_connectivity_test.cc
+  deps:
+  - grpc_test_util
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -6308,6 +6119,30 @@ targets:
   - linux
   - posix
   - mac
+- name: server_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: server_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/server_test.cc
+  deps:
+  - grpc_test_util
 - name: service_config_end2end_test
   gtest: true
   build: test
@@ -6368,6 +6203,35 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: slice_string_helpers_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_string_helpers_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: sockaddr_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: sockaddr_utils_test
   gtest: true
   build: test
@@ -6375,6 +6239,38 @@ targets:
   headers: []
   src:
   - test/core/address_utils/sockaddr_utils_test.cc
+  deps:
+  - grpc_test_util
+- name: socket_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/socket_utils_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: spinlock_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/spinlock_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
 - name: ssl_server_fuzzer
@@ -6391,6 +6287,21 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: ssl_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/ssl_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: stack_tracer_test
   gtest: true
   build: test
@@ -6431,6 +6342,16 @@ targets:
   headers: []
   src:
   - test/core/debug/stats_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: status_conversion_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/status_conversion_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -6479,6 +6400,35 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_compression_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/stream_compression_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: stream_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_map_test.cc
+  deps:
+  - grpc_test_util
+- name: stream_owned_slice_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/stream_owned_slice_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -6505,6 +6455,95 @@ targets:
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
+  - grpc_test_util
+  uses_polling: false
+- name: string_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/string_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: sync_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/sync_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: tcp_client_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/tcp_client_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: tcp_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/iomgr/tcp_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+- name: tcp_server_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/tcp_server_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: test_core_gpr_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/time_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: test_core_security_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/credentials_test.cc
+  deps:
+  - grpc_test_util
+- name: test_core_slice_slice_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_test.cc
+  deps:
   - grpc_test_util
   uses_polling: false
 - name: test_cpp_client_credentials_test
@@ -6547,6 +6586,16 @@ targets:
   deps:
   - grpc++_test_util
   uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: thread_manager_test
   gtest: true
   build: test
@@ -6574,6 +6623,26 @@ targets:
   - linux
   - posix
   - mac
+- name: threadpool_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/threadpool_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: time_averaged_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/time_averaged_stats_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: time_jump_test
   gtest: true
   build: test
@@ -6599,6 +6668,36 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: timeout_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/timeout_encoding_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: timer_heap_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/timer_heap_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/timer_list_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
@@ -6618,6 +6717,16 @@ targets:
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
+- name: tls_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/tls_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: too_many_pings_test
   gtest: true
   build: test
@@ -6630,6 +6739,37 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: transport_security_common_api_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
+  deps:
+  - grpc_test_util
+- name: transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/transport_security_test.cc
+  deps:
+  - grpc_test_util
+- name: udp_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/udp_server_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -6666,6 +6806,26 @@ targets:
   - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
+- name: useful_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/useful_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: varint_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/varint_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -6848,6 +7008,7 @@ targets:
   - posix
   - mac
 - name: xds_interop_client
+  gtest: true
   build: test
   run: false
   language: c++
@@ -6871,6 +7032,7 @@ targets:
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
+  gtest: true
   build: test
   run: false
   language: c++

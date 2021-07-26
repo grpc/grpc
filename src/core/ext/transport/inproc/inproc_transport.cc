@@ -1294,7 +1294,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       grpc_resource_quota_from_channel_args(server_args, true);
   grpc_resource_user* resource_user =
       grpc_resource_user_create(resource_quota, "inproc_channel");
-  grpc_resource_quota_unref(resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
 
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;

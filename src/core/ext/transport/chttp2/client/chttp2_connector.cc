@@ -81,7 +81,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
       grpc_slice_allocator_create(
           resource_quota, grpc_sockaddr_to_string(&addr, false).c_str()),
       args.interested_parties, args.channel_args, &addr, args.deadline);
-  grpc_resource_quota_unref(resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -182,7 +182,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                               .c_str());
       self->result_->transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, true, ru);
-      grpc_resource_quota_unref(resource_quota);
+      grpc_resource_quota_unref_internal(resource_quota);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
