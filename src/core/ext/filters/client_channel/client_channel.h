@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -135,7 +136,8 @@ class ClientChannel {
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
-      ConfigSelector::CallDispatchController* call_dispatch_controller);
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      bool is_transparent_retry);
 
  private:
   class CallData;
@@ -385,7 +387,8 @@ class ClientChannel::LoadBalancedCall
   LoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
-      ConfigSelector::CallDispatchController* call_dispatch_controller);
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      bool is_transparent_retry);
   ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -439,10 +442,10 @@ class ClientChannel::LoadBalancedCall
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
-  static void RecvTrailingMetadataReadyForLoadBalancingPolicy(
-      void* arg, grpc_error_handle error);
-  void InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-      grpc_transport_stream_op_batch* batch);
+  static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
+  static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+  static void RecvMessageReady(void* arg, grpc_error_handle error);
+  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
@@ -460,7 +463,6 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -469,6 +471,10 @@ class ClientChannel::LoadBalancedCall
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
   ConfigSelector::CallDispatchController* call_dispatch_controller_;
+
+  CallTracer::CallAttemptTracer* call_attempt_tracer_;
+
+  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
@@ -494,8 +500,25 @@ class ClientChannel::LoadBalancedCall
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
-  // For intercepting recv_trailing_metadata_ready for the LB policy.
+  // For intercepting send_initial_metadata on_complete.
+  gpr_atm* peer_string_ = nullptr;
+  grpc_closure send_initial_metadata_on_complete_;
+  grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
+
+  // For intercepting recv_initial_metadata_ready.
+  grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  uint32_t* recv_initial_metadata_flags_ = nullptr;
+  grpc_closure recv_initial_metadata_ready_;
+  grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
+
+  // For intercepting recv_message_ready.
+  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
+  grpc_closure recv_message_ready_;
+  grpc_closure* original_recv_message_ready_ = nullptr;
+
+  // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_transport_stream_stats* transport_stream_stats_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 

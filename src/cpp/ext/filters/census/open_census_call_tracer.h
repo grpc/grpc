@@ -33,20 +33,23 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override {}
-    void RecordOnDoneSendInitialMetadata() override {}
+    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /* send_trailing_metadata */) override {}
     void RecordSendMessage(
         const grpc_core::ByteStream& /* send_message */) override {}
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t /* flags */,
-        gpr_atm* /* peer_string */) override {}
+        grpc_metadata_batch* /* recv_initial_metadata */,
+        uint32_t /* flags */) override {}
     void RecordReceivedMessage(
         const grpc_core::ByteStream& /* recv_message */) override {}
     void RecordReceivedTrailingMetadata(
-        grpc_metadata_batch* /* recv_trailing_metadata */) override {}
+        absl::Status /* status */,
+        grpc_metadata_batch* /* recv_trailing_metadata */,
+        const grpc_transport_stream_stats& /* transport_stream_stats */)
+        override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}
-    void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
+    void RecordEnd(const gpr_timespec& /* latency */) override {}
 
     CensusContext* context() { return &context_; }
 
