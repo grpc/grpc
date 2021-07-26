@@ -1335,6 +1335,9 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   grpc_metadata_batch_move(
       &call_attempt->recv_initial_metadata_,
       pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
+  // Propagate trailing_metadata_available.
+  *pending->batch->payload->recv_initial_metadata.trailing_metadata_available =
+      call_attempt->trailing_metadata_available_;
   // Update bookkeeping.
   // Note: Need to do this before invoking the callback, since invoking
   // the callback will result in yielding the call combiner.
@@ -1741,6 +1744,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   if (pending == nullptr) {
     GRPC_ERROR_UNREF(error);
     return;
+  }
+  // Propagate payload.
+  if (batch_.send_message) {
+    pending->batch->payload->send_message.stream_write_closed =
+        batch_.payload->send_message.stream_write_closed;
   }
   // Add closure.
   closures->Add(pending->batch->on_complete, error,
