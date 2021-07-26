@@ -46,11 +46,8 @@ namespace testing {
 
 constexpr const char* kCertName = "cert_name";
 constexpr const char* kRootError = "Unable to get latest root certificates.";
-constexpr const char* kEmptyRootError = "Empty root certificate.";
 constexpr const char* kIdentityError =
     "Unable to get latest identity certificates.";
-constexpr const char* kEmptyIdentityError = "Empty identity certificates.";
-constexpr const char* kEmptyIdentityError = "Invalid Key-cert pair list.";
 
 class GrpcTlsCertificateProviderTest : public ::testing::Test {
  protected:
@@ -573,7 +570,6 @@ TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   CancelWatch(watcher_state_3);
 }
 
-// TODO(itsemmanuel): Add check for invalid certs.
 TEST_F(GrpcTlsCertificateProviderTest,
        DataWatcherCertificateProviderCreationWithInvalidIdentityCerts) {
   DataWatcherCertificateProvider provider(
@@ -581,29 +577,36 @@ TEST_F(GrpcTlsCertificateProviderTest,
                                    (cert_chain_ + cert_chain_2_).c_str()));
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_1);
 }
 
-// TODO(itsemmanuel): Refactor
-// TEST_F(GrpcTlsCertificateProviderTest,
-//       DataWatcherCertificateProviderReloadEmptyRootCertificate) {
-//  DataWatcherCertificateProvider provider(root_cert_, {});
-//  WatcherState* watcher_state_1 =
-//      MakeWatcher(provider.distributor(), kCertName, kCertName);
-//  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-//              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
-//  CancelWatch(watcher_state_1);
-//  absl::Status status = provider.SetRootCertificate("");
-//  WatcherState* watcher_state_2 =
-//      MakeWatcher(provider.distributor(), kCertName, kCertName);
-//  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-//              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
-//  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-//  EXPECT_EQ(status.message(), "Root Certificate string is empty.");
-//  CancelWatch(watcher_state_2);
-//}
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadEmptyRootCertificate) {
+  DataWatcherCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  CancelWatch(watcher_state_1);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  absl::Status status = provider.SetRootCertificate("");
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo(kRootError, "")));
+  CancelWatch(watcher_state_2);
+}
 
 TEST_F(GrpcTlsCertificateProviderTest,
        DataWatcherCertificateProviderReloadUnchangedRootCertificate) {
@@ -640,28 +643,28 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_2);
 }
 
-// TODO(itsemmanuel): Refactor
-// TEST_F(GrpcTlsCertificateProviderTest,
-//       DataWatcherCertificateProviderReloadEmptyKeyCertificatePair) {
-//  PemKeyCertPairList pem_key_cert_pair_list =
-//      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
-//  DataWatcherCertificateProvider provider("", pem_key_cert_pair_list);
-//  WatcherState* watcher_state_1 =
-//      MakeWatcher(provider.distributor(), kCertName, kCertName);
-//  EXPECT_THAT(
-//      watcher_state_1->GetCredentialQueue(),
-//      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
-//  CancelWatch(watcher_state_1);
-//  absl::Status status = provider.SetKeyCertificatePairs({});
-//  WatcherState* watcher_state_2 =
-//      MakeWatcher(provider.distributor(), kCertName, kCertName);
-//  EXPECT_THAT(
-//      watcher_state_2->GetCredentialQueue(),
-//      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
-//  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-//  EXPECT_EQ(status.message(), "Empty Key-Cert pair list.");
-//  CancelWatch(watcher_state_2);
-//}
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadEmptyKeyCertificatePair) {
+  PemKeyCertPairList pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  DataWatcherCertificateProvider provider(root_cert_, pem_key_cert_pair_list);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  absl::Status status = provider.SetKeyCertificatePairs({});
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
+  CancelWatch(watcher_state_2);
+}
 
 TEST_F(GrpcTlsCertificateProviderTest,
        DataWatcherCertificateProviderReloadUnchangedKeyCertificatePair) {
@@ -705,6 +708,32 @@ TEST_F(GrpcTlsCertificateProviderTest,
       watcher_state_2->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
   EXPECT_TRUE(status.ok());
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadInvalidKeyCertificatePair) {
+  PemKeyCertPairList pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  DataWatcherCertificateProvider provider(root_cert_, pem_key_cert_pair_list);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  const char* kInvalidIdentityError = "Invalid Key-Cert pair list.";
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  absl::Status status = provider.SetKeyCertificatePairs(
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_2_.c_str()));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), kInvalidIdentityError);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo("", kInvalidIdentityError)));
   CancelWatch(watcher_state_2);
 }
 

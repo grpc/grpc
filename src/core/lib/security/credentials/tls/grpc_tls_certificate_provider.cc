@@ -34,8 +34,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (root_certificate.empty()) {
     root_certificate_ = "";
-    grpc_core::MutexLock lock(&mu_);
-    ReportRootCertStatus("Empty root certificate.", false, true);
   } else {
     root_certificate_ = std::move(root_certificate);
   }
@@ -43,11 +41,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
     pem_key_cert_pairs_ = {};
-    grpc_core::MutexLock lock(&mu_);
-    const char* error_message = pem_key_cert_pairs.empty()
-                                    ? "Empty identity certificates."
-                                    : "Invalid Key-cert pair list.";
-    ReportIdentityCertStatus(error_message, false, true);
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
@@ -97,58 +90,6 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
-}
-
-void StaticDataCertificateProvider::ReportRootCertStatus(
-    const char* error, bool report_credentials, bool report_errors) {
-  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unable to get latest root certificates.");
-  if (report_errors || report_credentials) {
-    for (const auto& p : watcher_info_) {
-      const std::string& cert_name = p.first;
-      const WatcherInfo& info = p.second;
-      absl::optional<std::string> root_to_report;
-      if (info.root_being_watched) {
-        root_to_report = root_certificate_;
-      }
-      if (root_to_report.has_value() && report_credentials) {
-        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
-                                      absl::nullopt);
-      }
-      if (info.root_being_watched && root_certificate_.empty() &&
-          report_errors) {
-        distributor_->SetErrorForCert(
-            cert_name, GRPC_ERROR_REF(root_cert_error), absl::nullopt);
-      }
-    }
-  }
-  GRPC_ERROR_UNREF(root_cert_error);
-}
-
-void StaticDataCertificateProvider::ReportIdentityCertStatus(
-    const char* error, bool report_credentials, bool report_errors) {
-  grpc_error_handle identity_cert_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(error);
-  if (report_errors || report_credentials) {
-    for (const auto& p : watcher_info_) {
-      const std::string& cert_name = p.first;
-      const WatcherInfo& info = p.second;
-      absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
-      if (info.identity_being_watched) {
-        identity_to_report = pem_key_cert_pairs_;
-      }
-      if (identity_to_report.has_value() && report_credentials) {
-        distributor_->SetKeyMaterials(cert_name, absl::nullopt,
-                                      std::move(identity_to_report));
-      }
-      if (info.identity_being_watched && pem_key_cert_pairs_.empty() &&
-          report_errors) {
-        distributor_->SetErrorForCert(cert_name, absl::nullopt,
-                                      GRPC_ERROR_REF(identity_cert_error));
-      }
-    }
-  }
-  GRPC_ERROR_UNREF(identity_cert_error);
 }
 
 namespace {
@@ -445,7 +386,25 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
   }
   root_certificate_ = root_certificate;
   ExecCtx exec_ctx;
-  ReportRootCertStatus("Unable to get latest root certificates.", true, true);
+  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest root certificates.");
+  for (const auto& p : watcher_info_) {
+    const std::string& cert_name = p.first;
+    const WatcherInfo& info = p.second;
+    absl::optional<std::string> root_to_report;
+    if (info.root_being_watched) {
+      root_to_report = root_certificate_;
+    }
+    if (root_to_report.has_value() && !root_to_report.value().empty()) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                    absl::nullopt);
+    }
+    if (info.root_being_watched && root_certificate_.empty()) {
+      distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(root_cert_error),
+                                    absl::nullopt);
+    }
+  }
+  GRPC_ERROR_UNREF(root_cert_error);
   return absl::OkStatus();
 }
 
@@ -457,14 +416,43 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   }
   absl::Status status = IsKeyCertPairsListValid(pem_key_cert_pairs);
   if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Error: %s", status.message().data());
+    const char* error_message = status.message().data();
+    gpr_log(GPR_ERROR, "Reload cert error: %s", error_message);
+    grpc_error_handle identity_cert_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Key-Cert pair list.");
+    for (const auto& p : watcher_info_) {
+      const std::string& cert_name = p.first;
+      const WatcherInfo& info = p.second;
+      if (info.identity_being_watched) {
+        distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                      GRPC_ERROR_REF(identity_cert_error));
+      }
+    }
+    GRPC_ERROR_UNREF(identity_cert_error);
     return status;
   }
   grpc_core::MutexLock lock(&mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   ExecCtx exec_ctx;
-  ReportIdentityCertStatus("Unable to get latest identity certificates.", true,
-                           true);
+  grpc_error_handle identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest identity certificates.");
+  for (const auto& p : watcher_info_) {
+    const std::string& cert_name = p.first;
+    const WatcherInfo& info = p.second;
+    absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
+    if (info.identity_being_watched) {
+      identity_to_report = pem_key_cert_pairs_;
+    }
+    if (identity_to_report.has_value() && !identity_to_report.value().empty()) {
+      distributor_->SetKeyMaterials(cert_name, absl::nullopt,
+                                    std::move(identity_to_report));
+    }
+    if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
+      distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                    GRPC_ERROR_REF(identity_cert_error));
+    }
+  }
+  GRPC_ERROR_UNREF(identity_cert_error);
   return absl::OkStatus();
 }
 
@@ -524,7 +512,7 @@ absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
       return matched_or.status();
     }
     if (!*matched_or) {
-      return absl::InvalidArgumentError("Invalid Key-Cert pair.");
+      return absl::InvalidArgumentError("Invalid Key-Cert pair list.");
     }
   }
   return absl::OkStatus();

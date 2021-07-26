@@ -75,14 +75,6 @@ class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
   }
 
  protected:
-  // Reports status (credentials and errors) related to obtaining the new
-  // root cert to the distributor.
-  void ReportRootCertStatus(const char* error, bool report_credentials,
-                                bool report_errors);
-  // Reports status (credentials and errors) related to obtaining the new
-  // identity certs to the distributor.
-  void ReportIdentityCertStatus(const char* error, bool report_credentials,
-                                bool report_errors);
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
