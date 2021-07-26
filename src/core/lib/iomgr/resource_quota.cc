@@ -834,7 +834,7 @@ static void ru_ref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
   gpr_atm prior = gpr_atm_no_barrier_fetch_add(&resource_user->refs, amount);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "RU '%s' (%p) reffing: %" PRId64 " -> %" PRId64,
+    gpr_log(GPR_INFO, "RU '%s' (%p) reffing: %ld -> %ld",
             resource_user->name.c_str(), resource_user, prior, prior + amount);
   }
   GPR_ASSERT(prior != 0);
@@ -845,7 +845,7 @@ static void ru_unref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   gpr_atm old = gpr_atm_full_fetch_add(&resource_user->refs, -amount);
   GPR_ASSERT(old >= amount);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "RU '%s' (%p) unreffing: %" PRId64 " -> %" PRId64,
+    gpr_log(GPR_INFO, "RU '%s' (%p) unreffing: %ld -> %ld",
             resource_user->name.c_str(), resource_user, old, old - amount);
   }
   if (old == amount) {
