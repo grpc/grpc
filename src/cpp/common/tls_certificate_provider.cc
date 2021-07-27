@@ -65,9 +65,8 @@ grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
   grpc_core::MutexLock lock(&mu_);
   grpc_tls_status status =
       grpc_set_data_watcher_root_certificate(c_provider_, root_certificate);
-  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status.status),
-                           status.error_message);
-  return grpc_status;
+  return grpc::Status(static_cast<grpc::StatusCode>(status.status),
+                           status.error_message);;
 }
 
 grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
@@ -80,9 +79,8 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   grpc_core::MutexLock lock(&mu_);
   grpc_tls_status status =
       grpc_set_data_watcher_key_certificate_pairs(c_provider_, pairs_core);
-  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status.status),
+  return grpc::Status(static_cast<grpc::StatusCode>(status.status),
                            status.error_message);
-  return grpc_status;
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
