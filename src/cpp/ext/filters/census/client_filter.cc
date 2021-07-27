@@ -163,7 +163,8 @@ OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args) {
   path_ = grpc_slice_ref_internal(args->path);
   method_ = GetMethod(&path_);
   qualified_method_ = absl::StrCat("Sent.", method_);
-  context_ = reinterpret_cast<CensusContext*>(args->context);
+  context_ = reinterpret_cast<CensusContext*>(
+      args->context[GRPC_CONTEXT_TRACING].value);
   time_at_last_attempt_end_ = absl::Now();
 }
 
