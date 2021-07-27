@@ -491,7 +491,7 @@ class HPackParser::Input {
 
   absl::optional<uint8_t> Next() {
     if (end_of_stream()) {
-      return {};
+      return UnexpectedEOF(absl::optional<uint8_t>());
     }
     return *begin_++;
   }
@@ -825,8 +825,8 @@ class HPackParser::String {
 // Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input input, HPackParser::Sink sink, grpc_chttp2_hptbl* table)
-      : input_(input), sink_(std::move(sink)), table_(table) {}
+  Parser(Input input, HPackParser::Sink* sink, grpc_chttp2_hptbl* table)
+      : input_(input), sink_(sink), table_(table) {}
 
   bool SkipPriority() {
     for (int i = 0; i < 5; i++) {
@@ -886,7 +886,7 @@ class HPackParser::Parser {
         return false;
       };
     }
-    grpc_error_handle err = sink_(md);
+    grpc_error_handle err = (*sink_)(md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_.SetError(err);
       return false;
@@ -1087,7 +1087,7 @@ class HPackParser::Parser {
   }
 
   Input input_;
-  HPackParser::Sink sink_;
+  HPackParser::Sink* sink_;
   grpc_chttp2_hptbl* const table_;
   uint8_t dynamic_table_updates_allowed_ = 2;
 };
@@ -1153,7 +1153,7 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& last_slice) {
   return buffer_.Finalize(
       last_slice, [this](grpc_slice_refcount* refcount, const uint8_t* begin,
                          const uint8_t* end) {
-        Parser p(Input(refcount, begin, end), std::move(sink_), &table_);
+        Parser p(Input(refcount, begin, end), &sink_, &table_);
         switch (priority_) {
           case Priority::None:
             break;
