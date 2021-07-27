@@ -699,7 +699,7 @@ class HPackParser::String {
     if (input->remaining() < length) {
       return input->UnexpectedEOF(absl::optional<std::vector<uint8_t>>());
     }
-    const uint8_t *p = input->cur_ptr();
+    const uint8_t* p = input->cur_ptr();
     input->Advance(length);
     for (uint32_t i = 0; i < length; i++) {
       nibble(p[i] >> 4);
@@ -758,7 +758,7 @@ class HPackParser::String {
       if (bits > 63) return {};
       uint32_t buffer = bits << 18;
       ++cur;
-      
+
       bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
       buffer |= bits << 12;
