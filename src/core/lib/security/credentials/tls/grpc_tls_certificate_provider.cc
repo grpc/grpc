@@ -559,12 +559,12 @@ grpc_tls_certificate_provider_data_watcher_create(
       ConvertToCoreObject(pem_key_cert_pairs));
 }
 
-SetCredentialsStatus* grpc_set_credentials_status_create(
+grpc_tls_status grpc_set_credentials_status_create(
     grpc_status_code status_code, const std::string& error_message) {
-  return new SetCredentialsStatus{status_code, strdup(error_message.c_str())};
+  return grpc_tls_status{status_code, strdup(error_message.c_str())};
 }
 
-SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
+grpc_tls_status grpc_set_data_watcher_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_certificate) {
   GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
@@ -576,7 +576,7 @@ SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
       std::string(status.message()));
 }
 
-SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
+grpc_tls_status grpc_set_data_watcher_key_certificate_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
@@ -587,11 +587,6 @@ SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
   return grpc_set_credentials_status_create(
       static_cast<grpc_status_code>(status.code()),
       std::string(status.message()));
-}
-
-void grpc_set_credentials_status_release(SetCredentialsStatus* status) {
-  free(const_cast<char*>(status->error_message));
-  delete status;
 }
 
 grpc_tls_certificate_provider*

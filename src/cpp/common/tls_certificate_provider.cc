@@ -63,11 +63,10 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
     const char* root_certificate) {
   grpc_core::MutexLock lock(&mu_);
-  SetCredentialsStatus* status =
+  grpc_tls_status status =
       grpc_set_data_watcher_root_certificate(c_provider_, root_certificate);
-  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status->status),
-                           status->error_message);
-  grpc_set_credentials_status_release(status);
+  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status.status),
+                           status.error_message);
   return grpc_status;
 }
 
@@ -79,11 +78,10 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
                                      pair.certificate_chain.c_str());
   }
   grpc_core::MutexLock lock(&mu_);
-  SetCredentialsStatus* status =
+  grpc_tls_status status =
       grpc_set_data_watcher_key_certificate_pairs(c_provider_, pairs_core);
-  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status->status),
-                           status->error_message);
-  grpc_set_credentials_status_release(status);
+  grpc::Status grpc_status(static_cast<grpc::StatusCode>(status.status),
+                           status.error_message);
   return grpc_status;
 }
 

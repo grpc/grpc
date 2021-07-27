@@ -768,10 +768,10 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /* A struct that stores the status of a credentials setter in a provider. */
-typedef struct SetCredentialsStatus {
+typedef struct grpc_tls_status {
   grpc_status_code status;
   const char* error_message;
-} SetCredentialsStatus;
+} grpc_tls_status;
 
 /**
  * A struct that stores the credential data presented to the peer in handshake
@@ -864,27 +864,14 @@ grpc_tls_certificate_provider_data_watcher_create(
 GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
-/* Given |provider| is expected to be a pointer to a
- * |DataWatcherCertificateProvider|, this function sets its root certificate
- * to |root_certificate|
- */
-GRPCAPI SetCredentialsStatus* grpc_set_data_watcher_root_certificate(
+/* Sets |root_certificate| to the grpc_tls_certificate_provider. */
+GRPCAPI grpc_tls_status grpc_set_data_watcher_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_certificate);
 
-/* Given |provider| is expected to be a pointer to a
- * |DataWatcherCertificateProvider|, this function sets its key-cert pair list
- * to |pem_key_cert_pairs|
- */
-GRPCAPI SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
+/* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider. */
+GRPCAPI grpc_tls_status grpc_set_data_watcher_key_certificate_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
-
-/**
- * Releases a |SetCredentialsStatus| object. The creator of the
- * |SetCredentialsStatus| object is responsible for its release. It is used for
- * experimental purpose for now and subject to change.
- */
-GRPCAPI void grpc_set_credentials_status_release(SetCredentialsStatus* status);
 
 /**
  * Creates an grpc_tls_credentials_options.
