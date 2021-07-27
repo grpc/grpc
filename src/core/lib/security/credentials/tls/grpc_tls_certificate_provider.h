@@ -52,12 +52,6 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
-// A struct that stores the status of a credentials setter in a provider.
-struct SetCredentialsStatus {
-  grpc_status_code status;
-  const char* error_message;
-};
-
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
