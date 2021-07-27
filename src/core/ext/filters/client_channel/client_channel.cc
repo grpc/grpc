@@ -1943,6 +1943,19 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
     calld->InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         batch);
   }
+  // If we already have a dynamic call, pass the batch down to it.
+  // Note that once we have done so, we do not need to acquire the channel's
+  // resolution mutex, which is more efficient (especially for streaming calls).
+  if (calld->dynamic_call_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on dynamic_call=%p",
+              chand, calld, calld->dynamic_call_.get());
+    }
+    calld->dynamic_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a dynamic call.
+  //
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1969,35 +1982,16 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
       gpr_log(GPR_INFO, "chand=%p calld=%p: recording cancel_error=%s", chand,
               calld, grpc_error_std_string(calld->cancel_error_).c_str());
     }
-    // If we do not have a dynamic call (i.e., name resolution has not
-    // yet completed), fail all pending batches.  Otherwise, send the
-    // cancellation down to the dynamic call.
-    if (calld->dynamic_call_ == nullptr) {
-      calld->PendingBatchesFail(elem, GRPC_ERROR_REF(calld->cancel_error_),
-                                NoYieldCallCombiner);
-      // Note: This will release the call combiner.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->cancel_error_), calld->call_combiner_);
-    } else {
-      // Note: This will release the call combiner.
-      calld->dynamic_call_->StartTransportStreamOpBatch(batch);
-    }
+    // Fail all pending batches.
+    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(calld->cancel_error_),
+                              NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch, GRPC_ERROR_REF(calld->cancel_error_), calld->call_combiner_);
     return;
   }
   // Add the batch to the pending list.
   calld->PendingBatchesAdd(elem, batch);
-  // Check if we've already created a dynamic call.
-  // Note that once we have done so, we do not need to acquire the channel's
-  // resolution mutex, which is more efficient (especially for streaming calls).
-  if (calld->dynamic_call_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on dynamic_call=%p",
-              chand, calld, calld->dynamic_call_.get());
-    }
-    calld->PendingBatchesResume(elem);
-    return;
-  }
-  // We do not yet have a dynamic call.
   // For batches containing a send_initial_metadata op, acquire the
   // channel's resolution mutex to apply the service config to the call,
   // after which we will create a dynamic call.
@@ -2782,6 +2776,21 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &recv_trailing_metadata_ready_;
   }
+  // If we've already gotten a subchannel call, pass the batch down to it.
+  // Note that once we have picked a subchannel, we do not need to acquire
+  // the channel's data plane mutex, which is more efficient (especially for
+  // streaming calls).
+  if (subchannel_call_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
+              chand_, this, subchannel_call_.get());
+    }
+    subchannel_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a subchannel call.
+  //
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2806,36 +2815,15 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: recording cancel_error=%s",
               chand_, this, grpc_error_std_string(cancel_error_).c_str());
     }
-    // If we do not have a subchannel call (i.e., a pick has not yet
-    // been started), fail all pending batches.  Otherwise, send the
-    // cancellation down to the subchannel call.
-    if (subchannel_call_ == nullptr) {
-      PendingBatchesFail(GRPC_ERROR_REF(cancel_error_), NoYieldCallCombiner);
-      // Note: This will release the call combiner.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
-    } else {
-      // Note: This will release the call combiner.
-      subchannel_call_->StartTransportStreamOpBatch(batch);
-    }
+    // Fail all pending batches.
+    PendingBatchesFail(GRPC_ERROR_REF(cancel_error_), NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
     return;
   }
   // Add the batch to the pending list.
   PendingBatchesAdd(batch);
-  // Check if we've already gotten a subchannel call.
-  // Note that once we have picked a subchannel, we do not need to acquire
-  // the channel's data plane mutex, which is more efficient (especially for
-  // streaming calls).
-  if (subchannel_call_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
-              chand_, this, subchannel_call_.get());
-    }
-    PendingBatchesResume();
-    return;
-  }
-  // We do not yet have a subchannel call.
   // For batches containing a send_initial_metadata op, acquire the
   // channel's data plane mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {

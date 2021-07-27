@@ -139,6 +139,8 @@ extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_conf
 extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
 extern void retry_lb_drop(grpc_end2end_test_config config);
 extern void retry_lb_drop_pre_init(void);
+extern void retry_lb_fail(grpc_end2end_test_config config);
+extern void retry_lb_fail_pre_init(void);
 extern void retry_non_retriable_status(grpc_end2end_test_config config);
 extern void retry_non_retriable_status_pre_init(void);
 extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
@@ -260,6 +262,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_exceeds_buffer_size_in_initial_batch_pre_init();
   retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
   retry_lb_drop_pre_init();
+  retry_lb_fail_pre_init();
   retry_non_retriable_status_pre_init();
   retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
   retry_per_attempt_recv_timeout_pre_init();
@@ -356,6 +359,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_exceeds_buffer_size_in_initial_batch(config);
     retry_exceeds_buffer_size_in_subsequent_batch(config);
     retry_lb_drop(config);
+    retry_lb_fail(config);
     retry_non_retriable_status(config);
     retry_non_retriable_status_before_recv_trailing_metadata_started(config);
     retry_per_attempt_recv_timeout(config);
@@ -609,6 +613,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_lb_drop", argv[i])) {
       retry_lb_drop(config);
+      continue;
+    }
+    if (0 == strcmp("retry_lb_fail", argv[i])) {
+      retry_lb_fail(config);
       continue;
     }
     if (0 == strcmp("retry_non_retriable_status", argv[i])) {
