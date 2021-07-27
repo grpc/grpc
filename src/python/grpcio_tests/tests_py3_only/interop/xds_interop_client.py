@@ -327,7 +327,7 @@ class _XdsUpdateClientConfigureServicer(
             context: grpc.ServicerContext
     ) -> messages_pb2.ClientConfigureResponse:
         logger.info("Received Configure RPC: %s", request)
-        method_strs = (_METHOD_ENUM_TO_STR[t] for t in request.types)
+        method_strs = [_METHOD_ENUM_TO_STR[t] for t in request.types]
         for method in _SUPPORTED_METHODS:
             method_enum = _METHOD_STR_TO_ENUM[method]
             channel_config = self._per_method_configs[method]
