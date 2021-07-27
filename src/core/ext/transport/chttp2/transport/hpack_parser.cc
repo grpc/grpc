@@ -34,12 +34,12 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/gprpp/match.h"
 
 #if __cplusplus > 201103L
 #define GRPC_HPACK_CONSTEXPR_FN constexpr
@@ -469,8 +469,8 @@ static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 // via a simple stream interface.
 class HPackParser::Input {
  public:
-  Input(grpc_slice_refcount* current_slice_refcount, uint8_t* begin,
-        uint8_t* end)
+  Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
+        const uint8_t* end)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end) {}
@@ -479,7 +479,7 @@ class HPackParser::Input {
 
   bool end_of_stream() const { return begin_ == end_; }
   size_t remaining() const { return end_ - begin_; }
-   uint8_t* cur_ptr() const { return begin_; }
+  const uint8_t* cur_ptr() const { return begin_; }
   void Advance(size_t n) { begin_ += n; }
 
   absl::optional<uint8_t> peek() const {
@@ -557,6 +557,12 @@ class HPackParser::Input {
     return StringPrefix{strlen, huff};
   }
 
+  grpc_error_handle TakeError() {
+    grpc_error_handle out = error_;
+    error_ = GRPC_ERROR_NONE;
+    return out;
+  }
+
   GPR_ATTRIBUTE_NOINLINE void SetError(grpc_error_handle error) {
     if (error_ != GRPC_ERROR_NONE) {
       GRPC_ERROR_UNREF(error);
@@ -569,7 +575,7 @@ class HPackParser::Input {
   template <typename F, typename T>
   GPR_ATTRIBUTE_NOINLINE T MaybeSetErrorAndReturn(F error_factory,
                                                   T return_value) {
-    if (error_ != GRPC_ERROR_NONE) return;
+    if (error_ != GRPC_ERROR_NONE) return return_value;
     error_ = error_factory();
     begin_ = end_;
     return return_value;
@@ -582,7 +588,7 @@ class HPackParser::Input {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Unexpected end of headers");
         },
-        result);
+        std::move(result));
   }
 
  private:
@@ -600,10 +606,9 @@ class HPackParser::Input {
         absl::optional<uint32_t>());
   }
 
-
   grpc_slice_refcount* current_slice_refcount_;
-   uint8_t* begin_;
-   uint8_t* const end_;
+  const uint8_t* begin_;
+  const uint8_t* const end_;
   grpc_error_handle error_ = GRPC_ERROR_NONE;
 };
 
@@ -630,7 +635,8 @@ class HPackParser::String {
   static absl::optional<String> Parse(Input* input) {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
-    if (pfx->huff) { auto v = ParseHuff(input, pfx->length);
+    if (pfx->huff) {
+      auto v = ParseHuff(input, pfx->length);
       if (!v.has_value()) return {};
       return String(std::move(*v));
     }
@@ -659,16 +665,16 @@ class HPackParser::String {
  private:
   void AppendBytes(const uint8_t* data, size_t length);
   explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
-  explicit String(absl::Span<uint8_t> v) : value_(std::move(v)) {}
-  String(grpc_slice_refcount* r, uint8_t* begin, uint8_t* end)
+  explicit String(absl::Span<const uint8_t> v) : value_(std::move(v)) {}
+  String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
       : value_(MakeSlice(r, begin, end)) {}
 
-  static grpc_slice MakeSlice(grpc_slice_refcount* r, uint8_t* begin,
-                              uint8_t* end) {
+  static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
+                              const uint8_t* end) {
     grpc_slice out;
     out.refcount = r;
     r->Ref();
-    out.data.refcounted.bytes = begin;
+    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
     out.data.refcounted.length = end - begin;
     return out;
   }
@@ -711,7 +717,7 @@ class HPackParser::String {
     if (refcount != nullptr) {
       return String(refcount, p, p + length);
     } else {
-      return String(absl::Span<uint8_t>(p, length));
+      return String(absl::Span<const uint8_t>(p, length));
     }
   }
 
@@ -722,7 +728,7 @@ class HPackParser::String {
           return Unbase64Loop(GRPC_SLICE_START_PTR(slice),
                               GRPC_SLICE_END_PTR(slice));
         },
-        [](absl::Span<uint8_t> span) {
+        [](absl::Span<const uint8_t> span) {
           return Unbase64Loop(span.begin(), span.end());
         },
         [](const std::vector<uint8_t>& vec) {
@@ -812,7 +818,8 @@ class HPackParser::String {
     GPR_UNREACHABLE_CODE(return out;);
   }
 
-  absl::variant<grpc_slice, absl::Span<uint8_t>, std::vector<uint8_t>> value_;
+  absl::variant<grpc_slice, absl::Span<const uint8_t>, std::vector<uint8_t>>
+      value_;
 };
 
 // Parser parses one frame + continuations worth of headers.
@@ -836,6 +843,8 @@ class HPackParser::Parser {
     }
     return true;
   }
+
+  grpc_error_handle TakeError() { return input_.TakeError(); }
 
  private:
   void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
@@ -961,7 +970,8 @@ class HPackParser::Parser {
           // illegal value.
           return input_.MaybeSetErrorAndReturn(
               [] {
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal hpack op code");
+                return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "Illegal hpack op code");
               },
               false);
         }
@@ -1001,11 +1011,13 @@ class HPackParser::Parser {
     if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
       return InvalidHPackIndexError(index, elem);
     }
-      GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
+    GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
     auto value = ParseValueString(GRPC_MDKEY(elem));
     if (GPR_UNLIKELY(!value.has_value())) return GRPC_MDNULL;
-    return grpc_mdelem_from_slices(static_cast<const ManagedMemorySlice&>(
-          grpc_slice_ref_internal(GRPC_MDKEY(elem))), value->Take<TakeValueType>());
+    return grpc_mdelem_from_slices(
+        static_cast<const ManagedMemorySlice&>(
+            grpc_slice_ref_internal(GRPC_MDKEY(elem))),
+        value->Take<TakeValueType>());
   }
 
   template <typename TakeValueType>
@@ -1061,13 +1073,17 @@ class HPackParser::Parser {
 
   template <typename R>
   R InvalidHPackIndexError(uint32_t index, R result) {
-    return input_.MaybeSetErrorAndReturn([this, index] {
-  return grpc_error_set_int(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid HPACK index received"),
-          GRPC_ERROR_INT_INDEX, static_cast<intptr_t>(index)),
-      GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(this->table_->num_ents));
-    }, result);
+    return input_.MaybeSetErrorAndReturn(
+        [this, index] {
+          return grpc_error_set_int(
+              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "Invalid HPACK index received"),
+                                 GRPC_ERROR_INT_INDEX,
+                                 static_cast<intptr_t>(index)),
+              GRPC_ERROR_INT_SIZE,
+              static_cast<intptr_t>(this->table_->num_ents));
+        },
+        result);
   }
 
   Input input_;
@@ -1077,19 +1093,22 @@ class HPackParser::Parser {
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
-  auto s = Match(value_,
-    [](const grpc_slice& slice) {
-      GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-      return static_cast<const UnmanagedMemorySlice&>(slice);
-    },
-    [](absl::Span<uint8_t> span) {
-      return UnmanagedMemorySlice(reinterpret_cast<char*>(span.begin()), span.size());
-    },
-    [](const std::vector<uint8_t>& v) {
-      return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()), v.size());
-    }
-    );
-  value_ = absl::Span<uint8_t>();
+  auto s = Match(
+      value_,
+      [](const grpc_slice& slice) {
+        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
+        return static_cast<const UnmanagedMemorySlice&>(slice);
+      },
+      [](absl::Span<const uint8_t> span) {
+        return UnmanagedMemorySlice(
+            reinterpret_cast<char*>(const_cast<uint8_t*>(span.begin())),
+            span.size());
+      },
+      [](const std::vector<uint8_t>& v) {
+        return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+                                    v.size());
+      });
+  value_ = absl::Span<const uint8_t>();
   return s;
 }
 
@@ -1101,13 +1120,16 @@ ManagedMemorySlice HPackParser::String::Take(Intern) {
         grpc_slice_unref_internal(slice);
         return s;
       },
-      [](absl::Span<uint8_t> span) {
-        return ManagedMemorySlice(reinterpret_cast<char*>(span.data()), span.size());
+      [](absl::Span<const uint8_t> span) {
+        return ManagedMemorySlice(
+            reinterpret_cast<char*>(const_cast<uint8_t*>(span.data())),
+            span.size());
       },
       [](const std::vector<uint8_t>& v) {
-        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()), v.size());
+        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+                                  v.size());
       });
-  value_ = absl::Span<uint8_t>();
+  value_ = absl::Span<const uint8_t>();
   return s;
 }
 
@@ -1115,9 +1137,7 @@ ManagedMemorySlice HPackParser::String::Take(Intern) {
 
 HPackParser::HPackParser() = default;
 
-HPackParser::~HPackParser() {
-  grpc_chttp2_hptbl_destroy(&table_);
-}
+HPackParser::~HPackParser() { grpc_chttp2_hptbl_destroy(&table_); }
 
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);
@@ -1130,15 +1150,20 @@ void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& last_slice) {
-  return buffer_.Finalize(last_slice, [this](grpc_slice_refcount* refcount, uint8_t* begin, uint8_t* end) {
-    Parser p(Input(refcount, begin, end), std::move(sink_), &table_);
-    switch (priority_) {
-      case Priority::None: break;
-      case Priority::Included: if (!p.SkipPriority()) return p.TakeError(); break;
-    }
-    if (!p.ParseBody()) return p.TakeError();
-    return GRPC_ERROR_NONE;
-  });
+  return buffer_.Finalize(
+      last_slice, [this](grpc_slice_refcount* refcount, const uint8_t* begin,
+                         const uint8_t* end) {
+        Parser p(Input(refcount, begin, end), std::move(sink_), &table_);
+        switch (priority_) {
+          case Priority::None:
+            break;
+          case Priority::Included:
+            if (!p.SkipPriority()) return p.TakeError();
+            break;
+        }
+        if (!p.ParseBody()) return p.TakeError();
+        return GRPC_ERROR_NONE;
+      });
 }
 
 void HPackParser::FinishFrame() { sink_ = Sink(); }
