@@ -532,6 +532,11 @@ static void release_call(void* call, grpc_error_handle /*error*/) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
   grpc_core::Arena* arena = c->arena;
+  for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+    if (c->context[i].destroy) {
+      c->context[i].destroy(c->context[i].value);
+    }
+  }
   c->~grpc_call();
   grpc_channel_update_call_size_estimate(channel, arena->Destroy());
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
@@ -553,11 +558,6 @@ static void destroy_call(void* call, grpc_error_handle /*error*/) {
   }
   for (ii = 0; ii < c->send_extra_metadata_count; ii++) {
     GRPC_MDELEM_UNREF(c->send_extra_metadata[ii].md);
-  }
-  for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-    if (c->context[i].destroy) {
-      c->context[i].destroy(c->context[i].value);
-    }
   }
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
