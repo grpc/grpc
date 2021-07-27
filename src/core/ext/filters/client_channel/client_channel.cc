@@ -2751,8 +2751,6 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     if (batch->recv_initial_metadata) {
       recv_initial_metadata_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata;
-      recv_initial_metadata_flags_ =
-          batch->payload->recv_initial_metadata.recv_flags;
       original_recv_initial_metadata_ready_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
       GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
@@ -2871,7 +2869,7 @@ void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
   self->call_attempt_tracer_->RecordReceivedInitialMetadata(
-      self->recv_initial_metadata_, *self->recv_initial_metadata_flags_);
+      self->recv_initial_metadata_, 0 /* ignored_for_clients */);
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                GRPC_ERROR_REF(error));
 }

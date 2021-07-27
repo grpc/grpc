@@ -30,8 +30,9 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent)
+    explicit OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent)
         : parent_(parent),
+          start_time_(absl::Now()),
           elapsed_time_(0),
           recv_message_count_(0),
           sent_message_count_(0) {
@@ -85,7 +86,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   };
 
   explicit OpenCensusCallTracer(const grpc_call_element_args* args);
-  ~OpenCensusCallTracer();
+  ~OpenCensusCallTracer() override;
 
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
@@ -101,8 +102,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Retry delay
-  grpc_millis retry_delay_ ABSL_GUARDED_BY(&mu_) = 0;
-  grpc_millis time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_) = 0;
+  absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
+  absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint32_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 

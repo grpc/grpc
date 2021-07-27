@@ -77,8 +77,8 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
   GenerateClientContext(
       parent_->qualified_method_, &context_,
       (parent_->context_ == nullptr) ? nullptr : parent_->context_);
-  size_t tracing_len = TraceContextSerialize(parent_->context_->Context(),
-                                             tracing_buf_, kMaxTraceContextLen);
+  size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
+                                             kMaxTraceContextLen);
   if (tracing_len > 0) {
     GRPC_LOG_IF_ERROR(
         "census grpc_filter",
@@ -150,7 +150,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   context_.EndSpan();
   grpc_core::MutexLock lock(&parent_->mu_);
   if (--parent_->num_active_rpcs_ == 0) {
-    parent_->time_at_last_attempt_end_ = grpc_core::ExecCtx::Get()->Now();
+    parent_->time_at_last_attempt_end_ = absl::Now();
   }
   delete this;
 }
@@ -164,7 +164,7 @@ OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args) {
   method_ = GetMethod(&path_);
   qualified_method_ = absl::StrCat("Sent.", method_);
   context_ = reinterpret_cast<CensusContext*>(args->context);
-  time_at_last_attempt_end_ = grpc_core::ExecCtx::Get()->Now();
+  time_at_last_attempt_end_ = absl::Now();
 }
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
@@ -174,8 +174,7 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
   ::opencensus::stats::Record(
       {{RpcClientRetriesPerCall(), retries_},
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
-       {RpcClientRetryDelayPerCall(),
-        ToDoubleMilliseconds(absl::Milliseconds(retry_delay_))}},
+       {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
       tags);
   grpc_slice_unref_internal(path_);
 }
@@ -193,11 +192,7 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
       ++retries_;
     }
     if (num_active_rpcs_ == 0) {
-      grpc_millis current_time = grpc_core::ExecCtx::Get()->Now();
-      // Monotonic clock
-      GPR_DEBUG_ASSERT(current_time >= time_at_last_attempt_end_);
-      retry_delay_ +=
-          grpc_core::ExecCtx::Get()->Now() - time_at_last_attempt_end_;
+      retry_delay_ += absl::Now() - time_at_last_attempt_end_;
     }
     ++num_active_rpcs_;
   }

@@ -507,7 +507,6 @@ class ClientChannel::LoadBalancedCall
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-  uint32_t* recv_initial_metadata_flags_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
 
