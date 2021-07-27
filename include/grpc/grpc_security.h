@@ -881,7 +881,7 @@ GRPCAPI SetCredentialsStatus* grpc_set_data_watcher_key_certificate_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
 
-//TODO(itsemmanuel): add comments.
+// TODO(itsemmanuel): add comments.
 GRPCAPI void grpc_set_credentials_status_release(SetCredentialsStatus* status);
 
 /**
