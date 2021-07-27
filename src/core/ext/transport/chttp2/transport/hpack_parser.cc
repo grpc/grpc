@@ -696,11 +696,14 @@ class HPackParser::String {
       }
       state = next;
     };
+    if (input->remaining() < length) {
+      return input->UnexpectedEOF(absl::optional<std::vector<uint8_t>>());
+    }
+    const uint8_t *p = input->cur_ptr();
+    input->Advance(length);
     for (uint32_t i = 0; i < length; i++) {
-      auto cur = input->Next();
-      if (!cur.has_value()) return {};
-      nibble(*cur >> 4);
-      nibble(*cur & 0xf);
+      nibble(p[i] >> 4);
+      nibble(p[i] & 0xf);
     }
     return output;
   }
@@ -754,21 +757,22 @@ class HPackParser::String {
       uint32_t bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
       uint32_t buffer = bits << 18;
-
       ++cur;
+      
       bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
       buffer |= bits << 12;
-
       ++cur;
+
       bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
       buffer |= bits << 6;
-
       ++cur;
+
       bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
       buffer |= bits;
+      ++cur;
 
       out.insert(out.end(),
                  {static_cast<uint8_t>(bits >> 16),
@@ -784,6 +788,7 @@ class HPackParser::String {
         if (bits > 63) return {};
         uint32_t buffer = bits << 18;
 
+        ++cur;
         bits = kBase64InverseTable.table[*cur];
         if (bits > 63) return {};
         buffer |= bits << 12;
