@@ -417,14 +417,12 @@ absl::Status DataWatcherCertificateProvider::SetsKeyCertificatePairs(
   absl::Status status = IsKeyCertPairsListValid(pem_key_cert_pairs);
   if (!status.ok()) {
     std::string error_message = std::string(status.message());
-    gpr_log(GPR_ERROR, "Reload cert error: %s", error_message.c_str());
+    gpr_log(GPR_ERROR, "Key-Cert pair list error: %s", error_message.c_str());
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Key-Cert pair list.");
     for (const auto& p : watcher_info_) {
-      const std::string& cert_name = p.first;
-      const WatcherInfo& info = p.second;
-      if (info.identity_being_watched) {
-        distributor_->SetErrorForCert(cert_name, absl::nullopt,
+      if (p.second.identity_being_watched) {
+        distributor_->SetErrorForCert(/*cert_name*/ p.first, absl::nullopt,
                                       GRPC_ERROR_REF(identity_cert_error));
       }
     }
