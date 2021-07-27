@@ -26,8 +26,8 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 
 """
 
-from collections import defaultdict
 import base64
+from collections import defaultdict
 import json
 
 content_header = """Draft Release Notes For {version}
@@ -98,10 +98,14 @@ def get_pr_data(pr_num):
     """Get the PR data from github. Return 'error' on exception"""
 
     try:
-        from urllib2 import Request, urlopen, HTTPError
+        from urllib2 import HTTPError
+        from urllib2 import Request
+        from urllib2 import urlopen
     except ImportError:
         import urllib
-        from urllib.request import Request, urlopen, HTTPError
+        from urllib.request import HTTPError
+        from urllib.request import Request
+        from urllib.request import urlopen
     url = API_URL + pr_num
     req = Request(url)
     req.add_header('Authorization', 'token %s' % TOKEN)

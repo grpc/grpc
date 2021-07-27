@@ -23,13 +23,13 @@ import tempfile
 import threading
 import unittest
 
-from six import moves
-
 from grpc.beta import implementations
 from grpc.beta import interfaces
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 from grpc_tools import protoc
+from six import moves
+
 from tests.unit.framework.common import test_constants
 
 _RELATIVE_PROTO_PATH = 'relative_proto_path'

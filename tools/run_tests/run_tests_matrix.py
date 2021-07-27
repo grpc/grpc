@@ -21,9 +21,9 @@ import multiprocessing
 import os
 import sys
 
+from python_utils.filter_pull_request_tests import filter_tests
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)

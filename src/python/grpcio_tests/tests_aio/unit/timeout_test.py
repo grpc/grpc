@@ -14,17 +14,17 @@
 """Tests behavior of the timeout mechanism on client side."""
 
 import asyncio
+import datetime
 import logging
 import platform
 import random
 import unittest
-import datetime
 
 import grpc
 from grpc.experimental import aio
 
-from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit import _common
+from tests_aio.unit._test_base import AioTestBase
 
 _SLEEP_TIME_UNIT_S = datetime.timedelta(seconds=1).total_seconds()
 

@@ -17,9 +17,9 @@ import logging
 import unittest
 
 import grpc
-
-from grpc.experimental import aio
 from grpc.aio._call import AioRpcError
+from grpc.experimental import aio
+
 from tests_aio.unit._test_base import AioTestBase
 
 _TEST_INITIAL_METADATA = aio.Metadata(

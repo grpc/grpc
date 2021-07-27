@@ -317,7 +317,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             replica_count=replica_count,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
-            **kwargs)
+            **kwargs)[0]
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
@@ -397,7 +397,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
             secure_mode=True,
-            **kwargs)
+            **kwargs)[0]
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 

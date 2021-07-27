@@ -14,14 +14,13 @@
 """Internal utilities for gRPC Python."""
 
 import collections
+import logging
 import threading
 import time
-import logging
-
-import six
 
 import grpc
 from grpc import _common
+import six
 
 _LOGGER = logging.getLogger(__name__)
 

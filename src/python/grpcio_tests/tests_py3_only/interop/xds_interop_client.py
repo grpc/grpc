@@ -14,26 +14,23 @@
 
 import argparse
 import collections
+from concurrent import futures
 import datetime
 import logging
 import signal
+import sys
 import threading
 import time
-import sys
-
-from typing import DefaultDict, Dict, List, Mapping, Set, Sequence, Tuple
-import collections
-
-from concurrent import futures
+from typing import DefaultDict, Dict, List, Mapping, Sequence, Set, Tuple
 
 import grpc
-from grpc_channelz.v1 import channelz
 import grpc_admin
+from grpc_channelz.v1 import channelz
 
+from src.proto.grpc.testing import empty_pb2
+from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import empty_pb2
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()

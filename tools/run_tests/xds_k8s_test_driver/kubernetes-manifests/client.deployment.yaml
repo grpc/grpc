@@ -37,6 +37,8 @@ spec:
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
           - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH
             value: "true"
+          - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY
+            value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf

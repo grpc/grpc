@@ -14,8 +14,8 @@
 """Tests of channel arguments on client/server side."""
 
 from concurrent import futures
-import unittest
 import logging
+import unittest
 
 import grpc
 

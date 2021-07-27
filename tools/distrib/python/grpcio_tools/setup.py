@@ -18,19 +18,18 @@ from distutils import util
 import errno
 import os
 import os.path
-import pkg_resources
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
+import pkg_resources
 import setuptools
 from setuptools.command import build_ext
-
-import subprocess
-from subprocess import PIPE
 
 # TODO(atash) add flag to disable Cython use
 
@@ -42,6 +41,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
 import protoc_lib_deps
+
 import grpc_version
 
 _EXT_INIT_SYMBOL = None
