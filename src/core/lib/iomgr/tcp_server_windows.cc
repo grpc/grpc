@@ -332,7 +332,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   transfered_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                        &transfered_bytes, FALSE, &flags);
-  grpc_slice_allocator* allocator;
+  grpc_slice_allocator* allocator = nullptr;
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
