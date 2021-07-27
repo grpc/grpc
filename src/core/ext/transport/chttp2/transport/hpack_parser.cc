@@ -665,7 +665,7 @@ class HPackParser::String {
  private:
   void AppendBytes(const uint8_t* data, size_t length);
   explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
-  explicit String(absl::Span<const uint8_t> v) : value_(std::move(v)) {}
+  explicit String(absl::Span<const uint8_t> v) : value_(v) {}
   String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
       : value_(MakeSlice(r, begin, end)) {}
 
