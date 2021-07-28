@@ -30,12 +30,11 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    explicit OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent)
+    explicit OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
+                                         bool arena_allocated)
         : parent_(parent),
-          start_time_(absl::Now()),
-          elapsed_time_(0),
-          recv_message_count_(0),
-          sent_message_count_(0) {
+          arena_allocated_(arena_allocated),
+          start_time_(absl::Now()) {
       memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
       memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
     }
@@ -67,6 +66,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     // Maximum size of tags that are sent on the wire.
     static constexpr uint32_t kMaxTagsLen = 2048;
     OpenCensusCallTracer* parent_;
+    const bool arena_allocated_;
     CensusContext context_;
     // Metadata elements for tracing and census stats data.
     grpc_linked_mdelem stats_bin_;
@@ -74,10 +74,10 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     // Start time (for measuring latency).
     absl::Time start_time_;
     // Server elapsed time in nanoseconds.
-    uint64_t elapsed_time_;
+    uint64_t elapsed_time_ = 0;
     // Number of messages in this RPC.
-    uint64_t recv_message_count_;
-    uint64_t sent_message_count_;
+    uint64_t recv_message_count_ = 0;
+    uint64_t sent_message_count_ = 0;
     // End status code
     absl::StatusCode status_code_;
     // Buffer needed for grpc_slice to reference when adding trace context
@@ -93,10 +93,11 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
 
  private:
   // Client method.
+  grpc_slice path_;
   absl::string_view method_;
   std::string qualified_method_;
-  grpc_slice path_;
   CensusContext* context_;
+  grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
   // Retries per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

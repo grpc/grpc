@@ -117,8 +117,8 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats& transport_stream_stats) {
   FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time_);
-  const uint64_t request_size = transport_stream_stats.incoming.data_bytes;
-  const uint64_t response_size = transport_stream_stats.outgoing.data_bytes;
+  const uint64_t request_size = transport_stream_stats.outgoing.data_bytes;
+  const uint64_t response_size = transport_stream_stats.incoming.data_bytes;
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
@@ -153,21 +153,25 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   if (--parent_->num_active_rpcs_ == 0) {
     parent_->time_at_last_attempt_end_ = absl::Now();
   }
-  delete this;
+  if (arena_allocated_) {
+    this->~OpenCensusCallAttemptTracer();
+  } else {
+    delete this;
+  }
 }
 
 //
 // OpenCensusCallTracer
 //
 
-OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args) {
-  path_ = grpc_slice_ref_internal(args->path);
-  method_ = GetMethod(&path_);
-  qualified_method_ = absl::StrCat("Sent.", method_);
-  context_ = reinterpret_cast<CensusContext*>(
-      args->context[GRPC_CONTEXT_TRACING].value);
-  time_at_last_attempt_end_ = absl::Now();
-}
+OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
+    : path_(grpc_slice_ref_internal(args->path)),
+      method_(GetMethod(&path_)),
+      qualified_method_(absl::StrCat("Sent.", method_)),
+      context_(reinterpret_cast<CensusContext*>(
+          args->context[GRPC_CONTEXT_TRACING].value)),
+      arena_(args->arena),
+      time_at_last_attempt_end_(absl::Now()) {}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
@@ -186,8 +190,12 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   // TODO(yashykt): Should this go on the arena? Pros - Avoids an extra
   // allocation on the call. Cons - There can be potentially a large number of
   // retries which might unnecessarily increase the size of the arena.
+  bool is_first_attempt = true;
   {
     grpc_core::MutexLock lock(&mu_);
+    if (transparent_retries_ != 0 || retries_ != 0) {
+      is_first_attempt = false;
+    }
     if (is_transparent_retry) {
       ++transparent_retries_;
     } else {
@@ -198,7 +206,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     }
     ++num_active_rpcs_;
   }
-  return new OpenCensusCallAttemptTracer(this);
+  if (is_first_attempt) {
+    return arena_->New<OpenCensusCallAttemptTracer>(this,
+                                                    true /* arena_allocated */);
+  }
+  return new OpenCensusCallAttemptTracer(this, false /* arena_allocated */);
 }
 
 }  // namespace grpc

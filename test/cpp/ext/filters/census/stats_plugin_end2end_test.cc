@@ -156,6 +156,7 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
       ::grpc::Status status = stub_->Echo(&context, request, &response);
     }
   }
+  absl::SleepFor(absl::Milliseconds(500));
   TestUtils::Flush();
 
   // Client side views can be tagged with custom tags.
@@ -242,6 +243,7 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
+  absl::SleepFor(absl::Milliseconds(500));
   TestUtils::Flush();
 
   EXPECT_THAT(client_received_bytes_per_rpc_view.GetData().distribution_data(),
@@ -289,6 +291,7 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   // entire time spent making the RPC.
   const double max_time = absl::ToDoubleMilliseconds(absl::Now() - start_time);
 
+  absl::SleepFor(absl::Milliseconds(500));
   TestUtils::Flush();
 
   EXPECT_THAT(
@@ -347,6 +350,7 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
+    absl::SleepFor(absl::Milliseconds(500));
     TestUtils::Flush();
 
     EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
@@ -380,6 +384,7 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
+    absl::SleepFor(absl::Milliseconds(500));
     TestUtils::Flush();
 
     EXPECT_THAT(
@@ -428,6 +433,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
+    absl::SleepFor(absl::Milliseconds(500));
     TestUtils::Flush();
     EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(
@@ -477,6 +483,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
       ::grpc::Status status = stub_->Echo(&context, request, &response);
       EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
     }
+    absl::SleepFor(absl::Milliseconds(500));
     TestUtils::Flush();
     EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(

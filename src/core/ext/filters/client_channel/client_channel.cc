@@ -2880,7 +2880,7 @@ void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
 void ClientChannel::LoadBalancedCall::RecvMessageReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (*self->recv_message_ != nullptr) {
     self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
