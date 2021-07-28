@@ -178,7 +178,7 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
       opencensus::tags::GetCurrentTagMap().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(method_));
   ::opencensus::stats::Record(
-      {{RpcClientRetriesPerCall(), retries_},
+      {{RpcClientRetriesPerCall(), retries_ - 1},  // exclude first attempt
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
        {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
       tags);
@@ -187,9 +187,9 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
 
 OpenCensusCallTracer::OpenCensusCallAttemptTracer*
 OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
-  // TODO(yashykt): Should this go on the arena? Pros - Avoids an extra
-  // allocation on the call. Cons - There can be potentially a large number of
-  // retries which might unnecessarily increase the size of the arena.
+  // We allocate the first attempt on the arena and all subsequent attempts on
+  // the heap, so that in the common case we don't require a heap allocation,
+  // nor do we unnecessarily grow the arena.
   bool is_first_attempt = true;
   {
     grpc_core::MutexLock lock(&mu_);

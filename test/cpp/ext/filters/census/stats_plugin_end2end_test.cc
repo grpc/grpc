@@ -422,6 +422,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
   View client_retries_cumulative_view(ClientRetriesCumulative());
   View client_transparent_retries_cumulative_view(
       ClientTransparentRetriesCumulative());
+  View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
   EchoRequest request;
   request.set_message("foo");
   EchoResponse response;
@@ -435,14 +436,21 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
     }
     absl::SleepFor(absl::Milliseconds(500));
     TestUtils::Flush();
-    EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
-                ::testing::UnorderedElementsAre(
-                    ::testing::Pair(::testing::ElementsAre(client_method_name_),
-                                    ::testing::Eq(i + 1))));
+    EXPECT_THAT(
+        client_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
     EXPECT_THAT(
         client_transparent_retries_cumulative_view.GetData().int_data(),
         ::testing::UnorderedElementsAre(::testing::Pair(
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    // There is some delay between the start of the overall call and the start
+    // of the first attempt. Expect the bound to be 100ms.
+    EXPECT_THAT(client_retry_delay_per_call_view.GetData().distribution_data(),
+                ::testing::UnorderedElementsAre(::testing::Pair(
+                    ::testing::ElementsAre(client_method_name_),
+                    ::testing::AllOf(::testing::Property(
+                        &Distribution::mean, ::testing::Le(100))))));
   }
 }
 
@@ -488,7 +496,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
     EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(
                     ::testing::Pair(::testing::ElementsAre(client_method_name_),
-                                    ::testing::Eq((i + 1) * 3))));
+                                    ::testing::Eq((i + 1) * 2))));
     EXPECT_THAT(
         client_transparent_retries_cumulative_view.GetData().int_data(),
         ::testing::UnorderedElementsAre(::testing::Pair(

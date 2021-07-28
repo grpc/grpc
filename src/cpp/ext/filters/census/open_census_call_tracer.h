@@ -99,8 +99,9 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   CensusContext* context_;
   grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
-  // Retries per call
+  // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
+  // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Retry delay
   absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
