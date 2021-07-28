@@ -1186,6 +1186,18 @@ HPackParser::HPackParser() = default;
 
 HPackParser::~HPackParser() { grpc_chttp2_hptbl_destroy(&table_); }
 
+HPackParser::~HPackParser() {
+  grpc_chttp2_hptbl_destroy(&table_);
+  GRPC_ERROR_UNREF(last_error_);
+  grpc_slice_unref_internal(key_.data_.referenced);
+  grpc_slice_unref_internal(value_.data_.referenced);
+  gpr_free(key_.data_.copied.str);
+  gpr_free(value_.data_.copied.str);
+  for (const auto& slice : queued_slices_) {
+    grpc_slice_unref_internal(slice);
+  }
+}
+
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);
   boundary_ = boundary;

@@ -14,14 +14,15 @@
 
 from __future__ import division
 
-import datetime
 from concurrent import futures
-import unittest
-import time
+import datetime
 import threading
-import six
+import time
+import unittest
 
 import grpc
+import six
+
 from tests.unit.framework.common import test_constants
 
 _WAIT_FOR_BLOCKING = datetime.timedelta(seconds=1)

@@ -69,6 +69,27 @@ rbe_autoconfig(
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "build_bazel_rules_android",
+    sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
+    strip_prefix = "rules_android-0.1.1",
+    urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
+)
+
+android_sdk_repository(
+    name = "androidsdk",
+    # version 31.0.0 won't work https://stackoverflow.com/a/68036845
+    build_tools_version = "30.0.3",
+)
+
+android_ndk_repository(
+    name = "androidndk",
+    # Note that Bazel does not support NDK 22 yet, and Bazel 3.7.1 only
+    # supports up to API level 29 for NDK 21
+    # https://github.com/bazelbuild/bazel/issues/13421
+)
 
 # Create msan toolchain configuration for remote execution.
 rbe_autoconfig(

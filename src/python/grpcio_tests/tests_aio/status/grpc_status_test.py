@@ -17,12 +17,14 @@ import logging
 import traceback
 import unittest
 
-import grpc
 from google.protobuf import any_pb2
-from google.rpc import code_pb2, error_details_pb2, status_pb2
+from google.rpc import code_pb2
+from google.rpc import error_details_pb2
+from google.rpc import status_pb2
+import grpc
 from grpc.experimental import aio
-
 from grpc_status import rpc_status
+
 from tests_aio.unit._test_base import AioTestBase
 
 _STATUS_OK = '/test/StatusOK'

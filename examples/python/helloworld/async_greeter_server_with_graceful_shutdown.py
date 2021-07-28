@@ -13,10 +13,10 @@
 # limitations under the License.
 """The graceful shutdown example for the asyncio Greeter server."""
 
-import logging
 import asyncio
-import grpc
+import logging
 
+import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 

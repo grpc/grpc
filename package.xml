@@ -245,6 +245,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.cc" role="src" />
@@ -742,7 +744,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_config_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/slice_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />

@@ -13,16 +13,16 @@
 # limitations under the License.
 """Tests xDS server and channel credentials."""
 
-import unittest
-
-import logging
 from concurrent import futures
 import contextlib
+import logging
+import unittest
 
 import grpc
 import grpc.experimental
-from tests.unit import test_common
+
 from tests.unit import resources
+from tests.unit import test_common
 
 
 class _GenericHandler(grpc.GenericRpcHandler):

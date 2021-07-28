@@ -17,16 +17,18 @@
 from __future__ import print_function
 
 import argparse
-from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from six.moves.socketserver import ThreadingMixIn
 import hashlib
 import os
+import platform
+import random
 import socket
 import sys
-import time
-import random
 import threading
-import platform
+import time
+
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer
+from six.moves.socketserver import ThreadingMixIn
 
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers

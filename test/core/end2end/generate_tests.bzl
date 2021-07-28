@@ -292,6 +292,7 @@ END2END_TESTS = {
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
     "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
     "retry_non_retriable_status": _test_options(needs_client_channel = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
@@ -301,6 +302,12 @@ END2END_TESTS = {
     ),
     "retry_per_attempt_recv_timeout": _test_options(
         needs_client_channel = True,
+    ),
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
+        needs_client_channel = True,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
     ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),

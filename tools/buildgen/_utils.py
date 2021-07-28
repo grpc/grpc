@@ -14,11 +14,11 @@
 # limitations under the License.
 """Utility functions for build file generation scripts."""
 
+import importlib.util
 import os
 import sys
 import types
-import importlib.util
-from typing import Any, Union, Mapping, List
+from typing import Any, List, Mapping, Union
 
 
 def import_python_module(path: str) -> types.ModuleType:

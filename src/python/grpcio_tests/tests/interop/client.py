@@ -19,8 +19,8 @@ import os
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
 
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
 from tests.interop import resources
 

@@ -87,6 +87,8 @@ class HPackParser {
   class Input;
   class String;
 
+  grpc_error_handle ParseOneSlice(const grpc_slice& slice);
+
   Sink sink_;
 
   ParseBuffer buffer_;
