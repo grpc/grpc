@@ -636,9 +636,13 @@ class HPackParser::String {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
     if (pfx->huff) {
-      auto v = ParseHuff(input, pfx->length);
-      if (!v.has_value()) return {};
-      return String(std::move(*v));
+      std::vector<uint8_t> output;
+      auto v = ParseHuff(input, pfx->length, [&output](uint8_t c) {
+        output.push_back(c);
+        return true;
+      });
+      if (!v) return {};
+      return String(std::move(output));
     }
     return ParseUncompressed(input, pfx->length);
   }
@@ -656,9 +660,32 @@ class HPackParser::String {
       if (!base64.has_value()) return {};
       return Unbase64(input, std::move(*base64));
     } else {
-      auto base64 = ParseHuff(input, pfx->length);
-      if (!base64.has_value()) return {};
-      return Unbase64(input, String(std::move(*base64)));
+      std::vector<uint8_t> decompressed;
+      enum class State { kUnsure, kBinary, kBase64 };
+      State state = State::kUnsure;
+      auto decompressed_ok =
+          ParseHuff(input, pfx->length, [&state, &decompressed](uint8_t c) {
+            if (state == State::kUnsure) {
+              if (c == 0) {
+                state = State::kBinary;
+                return true;
+              } else {
+                state = State::kBase64;
+              }
+            }
+            decompressed.push_back(c);
+            return true;
+          });
+      if (!decompressed_ok) return {};
+      switch (state) {
+        case State::kUnsure:
+          return String(absl::Span<const uint8_t>());
+        case State::kBinary:
+          return String(std::move(decompressed));
+        case State::kBase64:
+          return Unbase64(input, String(std::move(decompressed)));
+      }
+      GPR_UNREACHABLE_CODE(abort(););
     }
   }
 
@@ -679,33 +706,32 @@ class HPackParser::String {
     return out;
   }
 
-  static absl::optional<std::vector<uint8_t>> ParseHuff(Input* input,
-                                                        uint32_t length) {
+  template <typename Out>
+  static bool ParseHuff(Input* input, uint32_t length, Out output) {
     GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
-    std::vector<uint8_t> output;
     int16_t state = 0;
     auto nibble = [&output, &state](uint8_t nibble) {
       int16_t emit = emit_sub_tbl[16 * emit_tbl[state] + nibble];
       int16_t next = next_sub_tbl[16 * next_tbl[state] + nibble];
       if (emit != -1) {
         if (emit >= 0 && emit < 256) {
-          output.push_back(static_cast<uint8_t>(emit));
+          if (!output(static_cast<uint8_t>(emit))) return false;
         } else {
           assert(emit == 256);
         }
       }
       state = next;
+      return true;
     };
     if (input->remaining() < length) {
-      return input->UnexpectedEOF(absl::optional<std::vector<uint8_t>>());
+      return input->UnexpectedEOF(false);
     }
     const uint8_t* p = input->cur_ptr();
     input->Advance(length);
     for (uint32_t i = 0; i < length; i++) {
-      nibble(p[i] >> 4);
-      nibble(p[i] & 0xf);
+      if (!nibble(p[i] >> 4) || !nibble(p[i] & 0xf)) return false;
     }
-    return output;
+    return true;
   }
 
   static absl::optional<String> ParseUncompressed(Input* input,
@@ -774,9 +800,9 @@ class HPackParser::String {
       buffer |= bits;
       ++cur;
 
-      out.insert(out.end(),
-                 {static_cast<uint8_t>(bits >> 16),
-                  static_cast<uint8_t>(bits >> 8), static_cast<uint8_t>(bits)});
+      out.insert(out.end(), {static_cast<uint8_t>(buffer >> 16),
+                             static_cast<uint8_t>(buffer >> 8),
+                             static_cast<uint8_t>(buffer)});
     }
     switch (end - cur) {
       case 0:
@@ -794,7 +820,7 @@ class HPackParser::String {
         buffer |= bits << 12;
 
         if (buffer & 0xffff) return {};
-        out.push_back(static_cast<uint8_t>(bits >> 16));
+        out.push_back(static_cast<uint8_t>(buffer >> 16));
         return out;
       }
       case 3: {
@@ -814,8 +840,8 @@ class HPackParser::String {
 
         ++cur;
         if (buffer & 0xff) return {};
-        out.push_back(static_cast<uint8_t>(bits >> 16));
-        out.push_back(static_cast<uint8_t>(bits >> 8));
+        out.push_back(static_cast<uint8_t>(buffer >> 16));
+        out.push_back(static_cast<uint8_t>(buffer >> 8));
         return out;
       }
     }
