@@ -1262,6 +1262,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/fake_transport_security.h )
   s.files += %w( src/core/tsi/local_transport_security.cc )
   s.files += %w( src/core/tsi/local_transport_security.h )
+  s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.cc )
+  s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session_cache.cc )

@@ -919,6 +919,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
@@ -1482,6 +1483,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -6629,6 +6631,18 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: tls_key_export_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/tls_key_export_test.cc
+  deps:
+  - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
   build: test
