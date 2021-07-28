@@ -449,6 +449,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
             // Remove the connection from the connections_ map since OnClose()
             // will not be invoked when a config fetcher is set.
             cleanup_connection = true;
+            free_resource_quota = true;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
