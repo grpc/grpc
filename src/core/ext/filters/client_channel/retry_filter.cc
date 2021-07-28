@@ -897,6 +897,7 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     PendingBatch* pending = &calld_->pending_batches_[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch == nullptr) continue;
+    bool has_send_ops = false;
     // Skip any batch that either (a) has already been started on this
     // call attempt or (b) we can't start yet because we're still
     // replaying send ops that need to be completed first.
@@ -907,56 +908,72 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     // starting a recv op due to it being in the same batch with a send
     // op.  If/when we revamp the callback protocol in
     // transport_stream_op_batch, we may be able to fix this.
-    if (batch->send_initial_metadata && started_send_initial_metadata_) {
-      continue;
+    if (batch->send_initial_metadata) {
+      if (started_send_initial_metadata_) continue;
+      has_send_ops = true;
     }
-    if (batch->send_message &&
-        completed_send_message_count_ < started_send_message_count_) {
-      continue;
+    if (batch->send_message) {
+      if (completed_send_message_count_ < started_send_message_count_) {
+        continue;
+      }
+      has_send_ops = true;
     }
     // Note that we only start send_trailing_metadata if we have no more
     // send_message ops to start, since we can't send down any more
     // send_message ops after send_trailing_metadata.
-    if (batch->send_trailing_metadata &&
-        (started_send_message_count_ + batch->send_message <
-             calld_->send_messages_.size() ||
-         started_send_trailing_metadata_)) {
-      continue;
-    }
-    if (batch->recv_initial_metadata && started_recv_initial_metadata_) {
-      continue;
-    }
-    if (batch->recv_message &&
-        completed_recv_message_count_ < started_recv_message_count_) {
-      continue;
-    }
-    if (batch->recv_trailing_metadata && started_recv_trailing_metadata_) {
-      seen_recv_trailing_metadata_from_surface_ = true;
-      // If we previously completed a recv_trailing_metadata op
-      // initiated by AddBatchForInternalRecvTrailingMetadata(), use the
-      // result of that instead of trying to re-start this op.
-      if (GPR_UNLIKELY(recv_trailing_metadata_internal_batch_ != nullptr)) {
-        // If the batch completed, then trigger the completion callback
-        // directly, so that we return the previously returned results to
-        // the application.  Otherwise, just unref the internally started
-        // batch, since we'll propagate the completion when it completes.
-        if (completed_recv_trailing_metadata_) {
-          closures->Add(
-              &recv_trailing_metadata_ready_, recv_trailing_metadata_error_,
-              "re-executing recv_trailing_metadata_ready to propagate "
-              "internally triggered result");
-          // Ref will be released by callback.
-          recv_trailing_metadata_internal_batch_.release();
-        } else {
-          recv_trailing_metadata_internal_batch_.reset(
-              DEBUG_LOCATION,
-              "internally started recv_trailing_metadata batch pending and "
-              "recv_trailing_metadata started from surface");
-          GRPC_ERROR_UNREF(recv_trailing_metadata_error_);
-        }
-        recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    if (batch->send_trailing_metadata) {
+      if (started_send_message_count_ + batch->send_message <
+              calld_->send_messages_.size() ||
+          started_send_trailing_metadata_) {
+        continue;
       }
-      continue;
+      has_send_ops = true;
+    }
+    int num_callbacks = has_send_ops;  // All send ops share one callback.
+    if (batch->recv_initial_metadata) {
+      if (started_recv_initial_metadata_) continue;
+      ++num_callbacks;
+    }
+    if (batch->recv_message) {
+      if (completed_recv_message_count_ < started_recv_message_count_) {
+        continue;
+      }
+      ++num_callbacks;
+    }
+    if (batch->recv_trailing_metadata) {
+      if (started_recv_trailing_metadata_) {
+        seen_recv_trailing_metadata_from_surface_ = true;
+        // If we previously completed a recv_trailing_metadata op
+        // initiated by AddBatchForInternalRecvTrailingMetadata(), use the
+        // result of that instead of trying to re-start this op.
+        if (GPR_UNLIKELY(recv_trailing_metadata_internal_batch_ != nullptr)) {
+          // If the batch completed, then trigger the completion callback
+          // directly, so that we return the previously returned results to
+          // the application.  Otherwise, just unref the internally started
+          // batch, since we'll propagate the completion when it completes.
+          if (completed_recv_trailing_metadata_) {
+            closures->Add(
+                &recv_trailing_metadata_ready_, recv_trailing_metadata_error_,
+                "re-executing recv_trailing_metadata_ready to propagate "
+                "internally triggered result");
+            // Ref will be released by callback.
+            recv_trailing_metadata_internal_batch_.release();
+          } else {
+            recv_trailing_metadata_internal_batch_.reset(
+                DEBUG_LOCATION,
+                "internally started recv_trailing_metadata batch pending and "
+                "recv_trailing_metadata started from surface");
+            GRPC_ERROR_UNREF(recv_trailing_metadata_error_);
+          }
+          recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+        }
+        // We don't want the fact that we've already started this op internally
+        // to prevent us from adding a batch that may contain other ops.
+        // Instead, we'll just skip adding this op below.
+        if (num_callbacks == 0) continue;
+      } else {
+        ++num_callbacks;
+      }
     }
     // If we're already committed and these send ops aren't cached, just send
     // the batch as-is.
@@ -969,12 +986,6 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       continue;
     }
     // Create batch with the right number of callbacks.
-    const bool has_send_ops = batch->send_initial_metadata ||
-                              batch->send_message ||
-                              batch->send_trailing_metadata;
-    const int num_callbacks = has_send_ops + batch->recv_initial_metadata +
-                              batch->recv_message +
-                              batch->recv_trailing_metadata;
     BatchData* batch_data =
         CreateBatch(num_callbacks, has_send_ops /* set_on_complete */);
     // Cache send ops if needed.
@@ -1002,7 +1013,7 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       batch_data->AddRetriableRecvMessageOp();
     }
     // recv_trailing_metadata.
-    if (batch->recv_trailing_metadata) {
+    if (batch->recv_trailing_metadata && !started_recv_trailing_metadata_) {
       batch_data->AddRetriableRecvTrailingMetadataOp();
     }
     AddClosureForBatch(batch_data->batch(),
@@ -1626,30 +1637,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches_); ++i) {
     PendingBatch* pending = &calld->pending_batches_[i];
     if (pending->batch == nullptr) continue;
-    // Check for send ops.
     if (call_attempt_->PendingBatchContainsUnstartedSendOps(pending)) {
       closures->Add(pending->batch->on_complete, GRPC_ERROR_REF(error),
                     "failing on_complete for pending batch");
       pending->batch->on_complete = nullptr;
-    }
-    calld->MaybeClearPendingBatch(pending);
-    // Check for recv_initial_metadata and recv_message ops.
-    // Note that we fail these only if they haven't been started, which
-    // can happen if they are in the same batch with
-    // recv_trailing_metadata while there is a pending internally
-    // started recv_trailing_metadata batch.  If they *have* been
-    // started, then they will be handled via their own callbacks.
-    // Don't need to check for recv_trailing_metadata, since we've just
-    // completed that op.
-    if (pending->batch->recv_initial_metadata &&
-        !call_attempt_->started_recv_initial_metadata_) {
-      MaybeAddClosureForRecvInitialMetadataCallback(GRPC_ERROR_REF(error),
-                                                    closures);
-    }
-    if (pending->batch->recv_message &&
-        call_attempt_->started_recv_message_count_ ==
-            call_attempt_->completed_recv_message_count_) {
-      MaybeAddClosureForRecvMessageCallback(GRPC_ERROR_REF(error), closures);
+      calld->MaybeClearPendingBatch(pending);
     }
   }
   GRPC_ERROR_UNREF(error);
