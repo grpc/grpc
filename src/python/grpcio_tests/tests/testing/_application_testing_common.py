@@ -18,7 +18,7 @@ from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 
 # TODO(https://github.com/grpc/grpc/issues/11657): Eliminate this entirely.
-# TODO(https://github.com/google/protobuf/issues/3452): Eliminate this if/else.
+# TODO(https://github.com/protocolbuffers/protobuf/issues/3452): Eliminate this if/else.
 if services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None:
     FIRST_SERVICE = 'Fix protobuf issue 3452!'
     FIRST_SERVICE_UNUN = 'Fix protobuf issue 3452!'
