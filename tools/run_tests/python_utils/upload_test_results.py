@@ -17,10 +17,11 @@
 from __future__ import print_function
 
 import os
-import six
 import sys
 import time
 import uuid
+
+import six
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))

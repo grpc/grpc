@@ -18,7 +18,6 @@ import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-from tests.unit.framework.common import test_constants
 import grpc_testing
 
 from tests.testing import _application_common
@@ -26,6 +25,7 @@ from tests.testing import _application_testing_common
 from tests.testing import _client_application
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
+from tests.unit.framework.common import test_constants
 
 
 # TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.

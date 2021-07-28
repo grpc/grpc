@@ -14,15 +14,16 @@
 """Generate XML and HTML test reports."""
 
 try:
+    from mako import exceptions
     from mako.runtime import Context
     from mako.template import Template
-    from mako import exceptions
 except (ImportError):
     pass  # Mako not installed but it is ok.
 import datetime
 import os
 import string
 import xml.etree.cElementTree as ET
+
 import six
 
 

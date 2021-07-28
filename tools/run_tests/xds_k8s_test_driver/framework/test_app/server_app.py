@@ -20,7 +20,7 @@ modules.
 import functools
 import logging
 import threading
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
@@ -198,7 +198,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             maintenance_port=None,
             secure_mode=False,
             server_id=None,
-            replica_count=1) -> Iterator[XdsTestServer]:
+            replica_count=1) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security

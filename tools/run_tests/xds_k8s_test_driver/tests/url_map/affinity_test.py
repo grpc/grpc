@@ -16,11 +16,13 @@ import time
 from typing import Tuple
 
 from absl import flags
+from absl.testing import absltest
 
+from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.infrastructure import traffic_director
 from framework.rpc import grpc_channelz
 from framework.test_app import client_app
-from framework.infrastructure import traffic_director
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -51,6 +53,9 @@ _TEST_METADATA = (
 _ChannelzChannelState = grpc_channelz.ChannelState
 
 
+@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
+                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
+                     'Affinity is currently only implemented in C++ and Java.')
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod

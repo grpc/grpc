@@ -126,6 +126,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "table_test",
+    srcs = ["table_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:table",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",

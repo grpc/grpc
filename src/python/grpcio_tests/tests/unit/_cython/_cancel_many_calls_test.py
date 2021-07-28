@@ -18,8 +18,9 @@ import unittest
 
 from grpc._cython import cygrpc
 from grpc.framework.foundation import logging_pool
-from tests.unit.framework.common import test_constants
+
 from tests.unit._cython import test_utilities
+from tests.unit.framework.common import test_constants
 
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = ()

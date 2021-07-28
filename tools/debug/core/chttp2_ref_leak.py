@@ -17,8 +17,8 @@
 # to stdout
 
 import collections
-import sys
 import re
+import sys
 
 
 def new_obj():

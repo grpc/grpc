@@ -68,6 +68,7 @@ INSTALL_REQUIRES = (
 
 try:
     import status_commands as _status_commands
+
     # we are in the build environment, otherwise the above import fails
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webapp2
 from fetch_data import fetch
+import webapp2
 
 
 class DailyCron(webapp2.RequestHandler):
