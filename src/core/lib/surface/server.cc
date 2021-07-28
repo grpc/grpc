@@ -602,10 +602,14 @@ grpc_error_handle Server::SetupTransport(
     const grpc_channel_args* args,
     const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
     grpc_resource_user* resource_user) {
+  // DO NOT SUBMIT(hork)
+  if (resource_user != nullptr) {
+    grpc_resource_user_unref(resource_user);
+  }
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel = grpc_channel_create(
-      nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user, &error);
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, nullptr, &error);
   if (channel == nullptr) {
     return error;
   }

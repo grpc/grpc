@@ -243,6 +243,8 @@ grpc_channel* grpc_channel_create(const char* target,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
+  // DO NOT SUBMIT
+  resource_user = nullptr;
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);

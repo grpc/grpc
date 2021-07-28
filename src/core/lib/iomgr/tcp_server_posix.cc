@@ -125,6 +125,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
+  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
   grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
   gpr_free(s);
@@ -170,7 +171,6 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
 
 static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
-  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
   GPR_ASSERT(!s->shutdown);
   s->shutdown = true;
   /* shutdown all fd's */

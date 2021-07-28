@@ -271,6 +271,7 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
+    grpc_resource_quota_unref(resource_quota);
     return;
   }
   std::string name =
@@ -289,6 +290,7 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
+    grpc_resource_quota_unref(resource_quota);
     return;
   }
   std::string name =
