@@ -622,6 +622,12 @@ class HPackParser::String {
   ManagedMemorySlice Take(Intern);
 
  public:
+  ~String() {
+    if (auto* p = absl::get_if<grpc_slice>(&value_)) {
+      grpc_slice_unref_internal(*p);
+    }
+  }
+
   template <typename T>
   auto Take() -> decltype(this->Take(T())) {
     return Take(T());
@@ -629,8 +635,14 @@ class HPackParser::String {
 
   String(const String&) = delete;
   String& operator=(const String&) = delete;
-  String(String&&) = default;
-  String& operator=(String&&) = default;
+  String(String&& other) : value_(std::move(other.value_)) {
+    other.value_ = absl::Span<const uint8_t>();
+  }
+  String& operator=(String&& other) {
+    value_ = std::move(other.value_);
+    other.value_ = absl::Span<const uint8_t>();
+    return *this;
+  }
 
   static absl::optional<String> Parse(Input* input) {
     auto pfx = input->ParseStringPrefix();
@@ -1030,9 +1042,12 @@ class HPackParser::Parser {
   grpc_mdelem ParseLiteralKey() {
     auto key = String::Parse(&input_);
     if (!key.has_value()) return GRPC_MDNULL;
-    grpc_slice key_slice = key->Take<String::Intern>();
+    auto key_slice = key->Take<String::Intern>();
     auto value = ParseValueString(key_slice);
-    if (GPR_UNLIKELY(!value.has_value())) return GRPC_MDNULL;
+    if (GPR_UNLIKELY(!value.has_value())) {
+      grpc_slice_unref_internal(key_slice);
+      return GRPC_MDNULL;
+    }
     return grpc_mdelem_from_slices(key_slice, value->Take<TakeValueType>());
   }
 
@@ -1058,7 +1073,8 @@ class HPackParser::Parser {
     return ParseIdxKey<TakeValueType>(*index);
   }
 
-  absl::optional<String> ParseValueString(const grpc_slice& key) {
+  template <typename SliceType>
+  absl::optional<String> ParseValueString(const SliceType& key) {
     if (grpc_is_refcounted_slice_binary_header(key)) {
       return String::ParseBinary(&input_);
     } else {
