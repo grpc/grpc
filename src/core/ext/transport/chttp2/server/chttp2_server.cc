@@ -414,12 +414,10 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         grpc_resource_user_ref(self->resource_user_);
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, self->resource_user_);
-        grpc_resource_user_ref(self->resource_user_);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
-                grpc_chttp2_transport_get_socket_node(transport),
-                self->resource_user_);
+                grpc_chttp2_transport_get_socket_node(transport), nullptr);
         if (channel_init_err == GRPC_ERROR_NONE) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
