@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOCATION_&lt;CONFIG&gt; &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MACHO_COMPATIBILITY_VERSION" href="MACHO_COMPATIBILITY_VERSION.html" />
+    <link rel="prev" title="LOCATION" href="LOCATION.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="MACHO_COMPATIBILITY_VERSION.html" title="MACHO_COMPATIBILITY_VERSION"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LOCATION.html" title="LOCATION"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LOCATION_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="location-config">
+<span id="prop_tgt:LOCATION_<CONFIG>"></span><h1>LOCATION_&lt;CONFIG&gt;<a class="headerlink" href="#location-config" title="Permalink to this headline">¶</a></h1>
+<p>Read-only property providing a target location on disk.</p>
+<p>A read-only property that indicates where a target’s main file is
+located on disk for the configuration <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code>.  The property is
+defined only for library and executable targets.  An imported target
+may provide a set of configurations different from that of the
+importing project.  By default CMake looks for an exact-match but
+otherwise uses an arbitrary available configuration.  Use the
+<span class="target" id="index-0-prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"></span><a class="reference internal" href="MAP_IMPORTED_CONFIG_CONFIG.html#prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;" title="MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</span></code></a> property to map imported
+configurations explicitly.</p>
+<p>Do not set properties that affect the location of a target after
+reading this property.  These include properties whose names match
+<code class="docutils literal notranslate"><span class="pre">(RUNTIME|LIBRARY|ARCHIVE)_OUTPUT_(NAME|DIRECTORY)(_&lt;CONFIG&gt;)?</span></code>,
+<code class="docutils literal notranslate"><span class="pre">(IMPLIB_)?(PREFIX|SUFFIX)</span></code>, or  <span class="target" id="index-0-prop_tgt:LINKER_LANGUAGE"></span><a class="reference internal" href="LINKER_LANGUAGE.html#prop_tgt:LINKER_LANGUAGE" title="LINKER_LANGUAGE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINKER_LANGUAGE</span></code></a>.
+Failure to follow this rule is not diagnosed and leaves
+the location of the target undefined.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LOCATION.html"
+                        title="previous chapter">LOCATION</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MACHO_COMPATIBILITY_VERSION.html"
+                        title="next chapter">MACHO_COMPATIBILITY_VERSION</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/LOCATION_CONFIG.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="MACHO_COMPATIBILITY_VERSION.html" title="MACHO_COMPATIBILITY_VERSION"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LOCATION.html" title="LOCATION"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LOCATION_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

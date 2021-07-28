@@ -1,0 +1,312 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CMAKE-QT" "7" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cmake-qt \- CMake Qt Features Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH INTRODUCTION
+.sp
+CMake can find and use Qt 4 and Qt 5 libraries.  The Qt 4 libraries are found
+by the \fBFindQt4\fP find\-module shipped with CMake, whereas the
+Qt 5 libraries are found using “Config\-file Packages” shipped with Qt 5. See
+\fBcmake\-packages(7)\fP for more information about CMake packages, and
+see \fI\%the Qt cmake manual\fP
+for your Qt version.
+.sp
+Qt 4 and Qt 5 may be used together in the same
+\fBCMake buildsystem\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+cmake_minimum_required(VERSION 3.8.0 FATAL_ERROR)
+
+project(Qt4And5)
+
+set(CMAKE_AUTOMOC ON)
+
+find_package(Qt5 COMPONENTS Widgets DBus REQUIRED)
+add_executable(publisher publisher.cpp)
+target_link_libraries(publisher Qt5::Widgets Qt5::DBus)
+
+find_package(Qt4 REQUIRED)
+add_executable(subscriber subscriber.cpp)
+target_link_libraries(subscriber Qt4::QtGui Qt4::QtDBus)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A CMake target may not link to both Qt 4 and Qt 5.  A diagnostic is issued if
+this is attempted or results from transitive target dependency evaluation.
+.SH QT BUILD TOOLS
+.sp
+Qt relies on some bundled tools for code generation, such as \fBmoc\fP for
+meta\-object code generation, \fBuic\fP for widget layout and population,
+and \fBrcc\fP for virtual file system content generation.  These tools may be
+automatically invoked by \fBcmake(1)\fP if the appropriate conditions
+are met.  The automatic tool invocation may be used with both Qt 4 and Qt 5.
+.SS AUTOMOC
+.sp
+The \fBAUTOMOC\fP target property controls whether \fBcmake(1)\fP
+inspects the C++ files in the target to determine if they require \fBmoc\fP to
+be run, and to create rules to execute \fBmoc\fP at the appropriate time.
+.sp
+If a macro from \fBAUTOMOC_MACRO_NAMES\fP is found in a header file,
+\fBmoc\fP will be run on the file.  The result will be put into a file named
+according to \fBmoc_<basename>.cpp\fP\&.
+If the macro is found in a C++ implementation
+file, the moc output will be put into a file named according to
+\fB<basename>.moc\fP, following the Qt conventions.  The \fB<basename>.moc\fP must
+be included by the user in the C++ implementation file with a preprocessor
+\fB#include\fP\&.
+.sp
+Included \fBmoc_*.cpp\fP and \fB*.moc\fP files will be generated in the
+\fB<AUTOGEN_BUILD_DIR>/include\fP directory which is
+automatically added to the target’s \fBINCLUDE_DIRECTORIES\fP\&.
+.INDENT 0.0
+.IP \(bu 2
+This differs from CMake 3.7 and below; see their documentation for details.
+.IP \(bu 2
+For \fBmulti configuration generators\fP,
+the include directory is \fB<AUTOGEN_BUILD_DIR>/include_<CONFIG>\fP\&.
+.IP \(bu 2
+See \fBAUTOGEN_BUILD_DIR\fP\&.
+.UNINDENT
+.sp
+Not included \fBmoc_<basename>.cpp\fP files will be generated in custom
+folders to avoid name collisions and included in a separate
+\fB<AUTOGEN_BUILD_DIR>/mocs_compilation.cpp\fP file which is compiled
+into the target.
+.INDENT 0.0
+.IP \(bu 2
+See \fBAUTOGEN_BUILD_DIR\fP\&.
+.UNINDENT
+.sp
+The \fBmoc\fP command line will consume the \fBCOMPILE_DEFINITIONS\fP and
+\fBINCLUDE_DIRECTORIES\fP target properties from the target it is being
+invoked for, and for the appropriate build configuration.
+.sp
+The \fBAUTOMOC\fP target property may be pre\-set for all
+following targets by setting the \fBCMAKE_AUTOMOC\fP variable.  The
+\fBAUTOMOC_MOC_OPTIONS\fP target property may be populated to set
+options to pass to \fBmoc\fP\&. The \fBCMAKE_AUTOMOC_MOC_OPTIONS\fP
+variable may be populated to pre\-set the options for all following targets.
+.sp
+Additional macro names to search for can be added to
+\fBAUTOMOC_MACRO_NAMES\fP\&.
+.sp
+Additional \fBmoc\fP dependency file names can be extracted from source code
+by using \fBAUTOMOC_DEPEND_FILTERS\fP\&.
+.sp
+Source C++ files can be excluded from \fBAUTOMOC\fP processing by
+enabling \fBSKIP_AUTOMOC\fP or the broader \fBSKIP_AUTOGEN\fP\&.
+.SS AUTOUIC
+.sp
+The \fBAUTOUIC\fP target property controls whether \fBcmake(1)\fP
+inspects the C++ files in the target to determine if they require \fBuic\fP to
+be run, and to create rules to execute \fBuic\fP at the appropriate time.
+.sp
+If a preprocessor \fB#include\fP directive is found which matches
+\fB<path>ui_<basename>.h\fP, and a \fB<basename>.ui\fP file exists,
+then \fBuic\fP will be executed to generate the appropriate file.
+The \fB<basename>.ui\fP file is searched for in the following places
+.INDENT 0.0
+.IP 1. 3
+\fB<source_dir>/<basename>.ui\fP
+.IP 2. 3
+\fB<source_dir>/<path><basename>.ui\fP
+.IP 3. 3
+\fB<AUTOUIC_SEARCH_PATHS>/<basename>.ui\fP
+.IP 4. 3
+\fB<AUTOUIC_SEARCH_PATHS>/<path><basename>.ui\fP
+.UNINDENT
+.sp
+where \fB<source_dir>\fP is the directory of the C++ file and
+\fBAUTOUIC_SEARCH_PATHS\fP is a list of additional search paths.
+.sp
+The generated generated \fBui_*.h\fP files are placed in the
+\fB<AUTOGEN_BUILD_DIR>/include\fP directory which is
+automatically added to the target’s \fBINCLUDE_DIRECTORIES\fP\&.
+.INDENT 0.0
+.IP \(bu 2
+This differs from CMake 3.7 and below; see their documentation for details.
+.IP \(bu 2
+For \fBmulti configuration generators\fP,
+the include directory is \fB<AUTOGEN_BUILD_DIR>/include_<CONFIG>\fP\&.
+.IP \(bu 2
+See \fBAUTOGEN_BUILD_DIR\fP\&.
+.UNINDENT
+.sp
+The \fBAUTOUIC\fP target property may be pre\-set for all following
+targets by setting the \fBCMAKE_AUTOUIC\fP variable.  The
+\fBAUTOUIC_OPTIONS\fP target property may be populated to set options
+to pass to \fBuic\fP\&.  The \fBCMAKE_AUTOUIC_OPTIONS\fP variable may be
+populated to pre\-set the options for all following targets.  The
+\fBAUTOUIC_OPTIONS\fP source file property may be set on the
+\fB<basename>.ui\fP file to set particular options for the file.  This
+overrides options from the \fBAUTOUIC_OPTIONS\fP target property.
+.sp
+A target may populate the \fBINTERFACE_AUTOUIC_OPTIONS\fP target
+property with options that should be used when invoking \fBuic\fP\&.  This must be
+consistent with the \fBAUTOUIC_OPTIONS\fP target property content of the
+depender target.  The \fBCMAKE_DEBUG_TARGET_PROPERTIES\fP variable may
+be used to track the origin target of such
+\fBINTERFACE_AUTOUIC_OPTIONS\fP\&.  This means that a library which
+provides an alternative translation system for Qt may specify options which
+should be used when running \fBuic\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(KI18n klocalizedstring.cpp)
+target_link_libraries(KI18n Qt5::Core)
+
+# KI18n uses the tr2i18n() function instead of tr().  That function is
+# declared in the klocalizedstring.h header.
+set(autouic_options
+  \-tr tr2i18n
+  \-include klocalizedstring.h
+)
+
+set_property(TARGET KI18n APPEND PROPERTY
+  INTERFACE_AUTOUIC_OPTIONS ${autouic_options}
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A consuming project linking to the target exported from upstream automatically
+uses appropriate options when \fBuic\fP is run by \fBAUTOUIC\fP, as a
+result of linking with the \fBIMPORTED\fP target:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+set(CMAKE_AUTOUIC ON)
+# Uses a libwidget.ui file:
+add_library(LibWidget libwidget.cpp)
+target_link_libraries(LibWidget
+  KF5::KI18n
+  Qt5::Widgets
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Source files can be excluded from \fBAUTOUIC\fP processing by
+enabling \fBSKIP_AUTOUIC\fP or the broader \fBSKIP_AUTOGEN\fP\&.
+.SS AUTORCC
+.sp
+The \fBAUTORCC\fP target property controls whether \fBcmake(1)\fP
+creates rules to execute \fBrcc\fP at the appropriate time on source files
+which have the suffix \fB\&.qrc\fP\&.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_executable(myexe main.cpp resource_file.qrc)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The \fBAUTORCC\fP target property may be pre\-set for all following targets
+by setting the \fBCMAKE_AUTORCC\fP variable.  The
+\fBAUTORCC_OPTIONS\fP target property may be populated to set options
+to pass to \fBrcc\fP\&.  The \fBCMAKE_AUTORCC_OPTIONS\fP variable may be
+populated to pre\-set the options for all following targets.  The
+\fBAUTORCC_OPTIONS\fP source file property may be set on the
+\fB<name>.qrc\fP file to set particular options for the file.  This
+overrides options from the \fBAUTORCC_OPTIONS\fP target property.
+.sp
+Source files can be excluded from \fBAUTORCC\fP processing by
+enabling \fBSKIP_AUTORCC\fP or the broader \fBSKIP_AUTOGEN\fP\&.
+.SH THE <ORIGIN>_AUTOGEN TARGET
+.sp
+The \fBmoc\fP and \fBuic\fP tools are executed as part of a synthesized
+\fB<ORIGIN>_autogen\fP \fBcustom target\fP generated by
+CMake.  By default that \fB<ORIGIN>_autogen\fP target inherits the dependencies
+of the \fB<ORIGIN>\fP target (see \fBAUTOGEN_ORIGIN_DEPENDS\fP).
+Target dependencies may be added to the \fB<ORIGIN>_autogen\fP target by adding
+them to the \fBAUTOGEN_TARGET_DEPENDS\fP target property.
+.SH VISUAL STUDIO GENERATORS
+.sp
+When using the \fBVisual Studio generators\fP, CMake
+generates a \fBPRE_BUILD\fP \fBcustom command\fP
+instead of the \fB<ORIGIN>_autogen\fP \fBcustom target\fP
+(for \fBAUTOMOC\fP and \fBAUTOUIC\fP).
+This isn’t always possible though and
+an \fB<ORIGIN>_autogen\fP \fBcustom target\fP is used,
+when either
+.INDENT 0.0
+.IP \(bu 2
+the \fB<ORIGIN>\fP target depends on \fBGENERATED\fP files which aren’t
+excluded from \fBAUTOMOC\fP and \fBAUTOUIC\fP by
+\fBSKIP_AUTOMOC\fP, \fBSKIP_AUTOUIC\fP, \fBSKIP_AUTOGEN\fP
+or \fBCMP0071\fP
+.IP \(bu 2
+\fBAUTOGEN_TARGET_DEPENDS\fP lists a source file
+.IP \(bu 2
+\fBCMAKE_GLOBAL_AUTOGEN_TARGET\fP is enabled
+.UNINDENT
+.SH QTMAIN.LIB ON WINDOWS
+.sp
+The Qt 4 and 5 \fBIMPORTED\fP targets for the QtGui libraries specify
+that the qtmain.lib static library shipped with Qt will be linked by all
+dependent executables which have the \fBWIN32_EXECUTABLE\fP enabled.
+.sp
+To disable this behavior, enable the \fBQt5_NO_LINK_QTMAIN\fP target property for
+Qt 5 based targets or \fBQT4_NO_LINK_QTMAIN\fP target property for Qt 4 based
+targets.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_executable(myexe WIN32 main.cpp)
+target_link_libraries(myexe Qt4::QtGui)
+
+add_executable(myexe_no_qtmain WIN32 main_no_qtmain.cpp)
+set_property(TARGET main_no_qtmain PROPERTY QT4_NO_LINK_QTMAIN ON)
+target_link_libraries(main_no_qtmain Qt4::QtGui)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

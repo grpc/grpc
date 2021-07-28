@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>variable_watch &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="while" href="while.html" />
+    <link rel="prev" title="unset" href="unset.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="while.html" title="while"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="unset.html" title="unset"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">variable_watch</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="variable-watch">
+<span id="command:variable_watch"></span><h1>variable_watch<a class="headerlink" href="#variable-watch" title="Permalink to this headline">¶</a></h1>
+<p>Watch the CMake variable for change.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">variable_watch(</span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;command&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If the specified <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> changes and no <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> is given,
+a message will be printed to inform about the change.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> is given, this command will be executed instead.
+The command will receive the following arguments:
+<code class="docutils literal notranslate"><span class="pre">COMMAND(&lt;variable&gt;</span> <span class="pre">&lt;access&gt;</span> <span class="pre">&lt;value&gt;</span> <span class="pre">&lt;current_list_file&gt;</span> <span class="pre">&lt;stack&gt;)</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code></dt><dd><p>Name of the variable being accessed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;access&gt;</span></code></dt><dd><p>One of <code class="docutils literal notranslate"><span class="pre">READ_ACCESS</span></code>, <code class="docutils literal notranslate"><span class="pre">UNKNOWN_READ_ACCESS</span></code>, <code class="docutils literal notranslate"><span class="pre">MODIFIED_ACCESS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">UNKNOWN_MODIFIED_ACCESS</span></code>, or <code class="docutils literal notranslate"><span class="pre">REMOVED_ACCESS</span></code>.  The <code class="docutils literal notranslate"><span class="pre">UNKNOWN_</span></code>
+values are only used when the variable has never been set.  Once set,
+they are never used again during the same CMake run, even if the
+variable is later unset.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code></dt><dd><p>The value of the variable.  On a modification, this is the new
+(modified) value of the variable.  On removal, the value is empty.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;current_list_file&gt;</span></code></dt><dd><p>Full path to the file doing the access.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;stack&gt;</span></code></dt><dd><p>List of absolute paths of all files currently on the stack of file
+inclusion, with the bottom-most file first and the currently
+processed file (that is, <code class="docutils literal notranslate"><span class="pre">current_list_file</span></code>) last.</p>
+</dd>
+</dl>
+<p>Note that for some accesses such as <span class="target" id="index-0-command:list"></span><a class="reference internal" href="list.html#command:list" title="list"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">list(APPEND)</span></code></a>, the watcher
+is executed twice, first with a read access and then with a write one.
+Also note that an <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if(DEFINED)</span></code></a> query on the variable does not
+register as an access and the watcher is not executed.</p>
+<p>Only non-cache variables can be watched using this command.  Access to
+cache variables is never watched.  However, the existence of a cache
+variable <code class="docutils literal notranslate"><span class="pre">var</span></code> causes accesses to the non-cache variable <code class="docutils literal notranslate"><span class="pre">var</span></code> to
+not use the <code class="docutils literal notranslate"><span class="pre">UNKNOWN_</span></code> prefix, even if a non-cache variable <code class="docutils literal notranslate"><span class="pre">var</span></code>
+has never existed.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="unset.html"
+                        title="previous chapter">unset</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="while.html"
+                        title="next chapter">while</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/variable_watch.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="while.html" title="while"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="unset.html" title="unset"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">variable_watch</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

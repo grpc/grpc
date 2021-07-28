@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WINDOWS_EXPORT_ALL_SYMBOLS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XCODE_ATTRIBUTE_&lt;an-attribute&gt;" href="XCODE_ATTRIBUTE_an-attribute.html" />
+    <link rel="prev" title="WIN32_EXECUTABLE" href="WIN32_EXECUTABLE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="XCODE_ATTRIBUTE_an-attribute.html" title="XCODE_ATTRIBUTE_&lt;an-attribute&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="WIN32_EXECUTABLE.html" title="WIN32_EXECUTABLE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WINDOWS_EXPORT_ALL_SYMBOLS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="windows-export-all-symbols">
+<span id="prop_tgt:WINDOWS_EXPORT_ALL_SYMBOLS"></span><h1>WINDOWS_EXPORT_ALL_SYMBOLS<a class="headerlink" href="#windows-export-all-symbols" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.4.</span></p>
+</div>
+<p>This property is implemented only for MS-compatible tools on Windows.</p>
+<p>Enable this boolean property to automatically create a module definition
+(<code class="docutils literal notranslate"><span class="pre">.def</span></code>) file with all global symbols found in the input <code class="docutils literal notranslate"><span class="pre">.obj</span></code> files
+for a <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> library (or executable with <span class="target" id="index-0-prop_tgt:ENABLE_EXPORTS"></span><a class="reference internal" href="ENABLE_EXPORTS.html#prop_tgt:ENABLE_EXPORTS" title="ENABLE_EXPORTS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ENABLE_EXPORTS</span></code></a>)
+on Windows.  The module definition file will be passed to the linker
+causing all symbols to be exported from the <code class="docutils literal notranslate"><span class="pre">.dll</span></code>.
+For global <em>data</em> symbols, <code class="docutils literal notranslate"><span class="pre">__declspec(dllimport)</span></code> must still be used when
+compiling against the code in the <code class="docutils literal notranslate"><span class="pre">.dll</span></code>.  All other function symbols will
+be automatically exported and imported by callers.  This simplifies porting
+projects to Windows by reducing the need for explicit <code class="docutils literal notranslate"><span class="pre">dllexport</span></code> markup,
+even in <code class="docutils literal notranslate"><span class="pre">C++</span></code> classes.</p>
+<p>When this property is enabled, zero or more <code class="docutils literal notranslate"><span class="pre">.def</span></code> files may also be
+specified as source files of the target.  The exports named by these files
+will be merged with those detected from the object files to generate a
+single module definition file to be passed to the linker.  This can be
+used to export symbols from a <code class="docutils literal notranslate"><span class="pre">.dll</span></code> that are not in any of its object
+files but are added by the linker from dependencies (e.g. <code class="docutils literal notranslate"><span class="pre">msvcrt.lib</span></code>).</p>
+<p>This property is initialized by the value of
+the <span class="target" id="index-0-variable:CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS"></span><a class="reference internal" href="../variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html#variable:CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS" title="CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS</span></code></a> variable if it is set
+when a target is created.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="WIN32_EXECUTABLE.html"
+                        title="previous chapter">WIN32_EXECUTABLE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="XCODE_ATTRIBUTE_an-attribute.html"
+                        title="next chapter">XCODE_ATTRIBUTE_&lt;an-attribute&gt;</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/WINDOWS_EXPORT_ALL_SYMBOLS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="XCODE_ATTRIBUTE_an-attribute.html" title="XCODE_ATTRIBUTE_&lt;an-attribute&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="WIN32_EXECUTABLE.html" title="WIN32_EXECUTABLE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WINDOWS_EXPORT_ALL_SYMBOLS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

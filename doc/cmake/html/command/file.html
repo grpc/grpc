@@ -1,0 +1,999 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>file &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="find_file" href="find_file.html" />
+    <link rel="prev" title="execute_process" href="execute_process.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="find_file.html" title="find_file"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="execute_process.html" title="execute_process"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">file</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="file">
+<span id="command:file"></span><h1>file<a class="headerlink" href="#file" title="Permalink to this headline">¶</a></h1>
+<p>File manipulation command.</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<pre class="literal-block"><a class="reference internal" href="#reading">Reading</a>
+  file(<a class="reference internal" href="#read">READ</a> &lt;filename&gt; &lt;out-var&gt; [...])
+  file(<a class="reference internal" href="#strings">STRINGS</a> &lt;filename&gt; &lt;out-var&gt; [...])
+  file(<a class="reference internal" href="#hash">&lt;HASH&gt;</a> &lt;filename&gt; &lt;out-var&gt;)
+  file(<a class="reference internal" href="#timestamp">TIMESTAMP</a> &lt;filename&gt; &lt;out-var&gt; [...])
+  file(<a class="reference internal" href="#get-runtime-dependencies">GET_RUNTIME_DEPENDENCIES</a> [...])
+
+<a class="reference internal" href="#writing">Writing</a>
+  file({<a class="reference internal" href="#write">WRITE</a> | <a class="reference internal" href="#append">APPEND</a>} &lt;filename&gt; &lt;content&gt;...)
+  file({<a class="reference internal" href="#touch">TOUCH</a> | <a class="reference internal" href="#touch-nocreate">TOUCH_NOCREATE</a>} [&lt;file&gt;...])
+  file(<a class="reference internal" href="#generate">GENERATE</a> OUTPUT &lt;output-file&gt; [...])
+  file(<a class="reference internal" href="#configure">CONFIGURE</a> OUTPUT &lt;output-file&gt; CONTENT &lt;content&gt; [...])
+
+<a class="reference internal" href="#filesystem">Filesystem</a>
+  file({<a class="reference internal" href="#glob">GLOB</a> | <a class="reference internal" href="#glob-recurse">GLOB_RECURSE</a>} &lt;out-var&gt; [...] [&lt;globbing-expr&gt;...])
+  file(<a class="reference internal" href="#rename">RENAME</a> &lt;oldname&gt; &lt;newname&gt;)
+  file({<a class="reference internal" href="#remove">REMOVE</a> | <a class="reference internal" href="#remove-recurse">REMOVE_RECURSE</a> } [&lt;files&gt;...])
+  file(<a class="reference internal" href="#make-directory">MAKE_DIRECTORY</a> [&lt;dir&gt;...])
+  file({<a class="reference internal" href="#copy">COPY</a> | <a class="reference internal" href="#install">INSTALL</a>} &lt;file&gt;... DESTINATION &lt;dir&gt; [...])
+  file(<a class="reference internal" href="#size">SIZE</a> &lt;filename&gt; &lt;out-var&gt;)
+  file(<a class="reference internal" href="#read-symlink">READ_SYMLINK</a> &lt;linkname&gt; &lt;out-var&gt;)
+  file(<a class="reference internal" href="#create-link">CREATE_LINK</a> &lt;original&gt; &lt;linkname&gt; [...])
+  file(<a class="reference internal" href="#chmod">CHMOD</a> &lt;files&gt;... &lt;directories&gt;... PERMISSIONS &lt;permissions&gt;... [...])
+  file(<a class="reference internal" href="#chmod-recurse">CHMOD_RECURSE</a> &lt;files&gt;... &lt;directories&gt;... PERMISSIONS &lt;permissions&gt;... [...])
+
+<a class="reference internal" href="#path-conversion">Path Conversion</a>
+  file(<a class="reference internal" href="#real-path">REAL_PATH</a> &lt;path&gt; &lt;out-var&gt; [BASE_DIRECTORY &lt;dir&gt;])
+  file(<a class="reference internal" href="#relative-path">RELATIVE_PATH</a> &lt;out-var&gt; &lt;directory&gt; &lt;file&gt;)
+  file({<a class="reference internal" href="#to-cmake-path">TO_CMAKE_PATH</a> | <a class="reference internal" href="#to-native-path">TO_NATIVE_PATH</a>} &lt;path&gt; &lt;out-var&gt;)
+
+<a class="reference internal" href="#transfer">Transfer</a>
+  file(<a class="reference internal" href="#download">DOWNLOAD</a> &lt;url&gt; [&lt;file&gt;] [...])
+  file(<a class="reference internal" href="#upload">UPLOAD</a> &lt;file&gt; &lt;url&gt; [...])
+
+<a class="reference internal" href="#locking">Locking</a>
+  file(<a class="reference internal" href="#lock">LOCK</a> &lt;path&gt; [...])
+
+<a class="reference internal" href="#archiving">Archiving</a>
+  file(<a class="reference internal" href="#archive-create">ARCHIVE_CREATE</a> OUTPUT &lt;archive&gt; PATHS &lt;paths&gt;... [...])
+  file(<a class="reference internal" href="#archive-extract">ARCHIVE_EXTRACT</a> INPUT &lt;archive&gt; [...])</pre>
+</div>
+<div class="section" id="reading">
+<h2>Reading<a class="headerlink" href="#reading" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="read"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">READ</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">OFFSET</span><span class="w"> </span><span class="nv">&lt;offset&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">LIMIT</span><span class="w"> </span><span class="nv">&lt;max-in&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">HEX</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Read content from a file called <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> and store it in a
+<code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  Optionally start from the given <code class="docutils literal notranslate"><span class="pre">&lt;offset&gt;</span></code> and
+read at most <code class="docutils literal notranslate"><span class="pre">&lt;max-in&gt;</span></code> bytes.  The <code class="docutils literal notranslate"><span class="pre">HEX</span></code> option causes data to
+be converted to a hexadecimal representation (useful for binary data). If the
+<code class="docutils literal notranslate"><span class="pre">HEX</span></code> option is specified, letters in the output (<code class="docutils literal notranslate"><span class="pre">a</span></code> through <code class="docutils literal notranslate"><span class="pre">f</span></code>) are in
+lowercase.</p>
+<div class="highlight-cmake notranslate" id="strings"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">STRINGS</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;options&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Parse a list of ASCII strings from <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> and store it in
+<code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  Binary data in the file are ignored.  Carriage return
+(<code class="docutils literal notranslate"><span class="pre">\r</span></code>, CR) characters are ignored.  The options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">LENGTH_MAXIMUM</span> <span class="pre">&lt;max-len&gt;</span></code></dt><dd><p>Consider only strings of at most a given length.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LENGTH_MINIMUM</span> <span class="pre">&lt;min-len&gt;</span></code></dt><dd><p>Consider only strings of at least a given length.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIMIT_COUNT</span> <span class="pre">&lt;max-num&gt;</span></code></dt><dd><p>Limit the number of distinct strings to be extracted.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIMIT_INPUT</span> <span class="pre">&lt;max-in&gt;</span></code></dt><dd><p>Limit the number of input bytes to read from the file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIMIT_OUTPUT</span> <span class="pre">&lt;max-out&gt;</span></code></dt><dd><p>Limit the number of total bytes to store in the <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NEWLINE_CONSUME</span></code></dt><dd><p>Treat newline characters (<code class="docutils literal notranslate"><span class="pre">\n</span></code>, LF) as part of string content
+instead of terminating at them.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NO_HEX_CONVERSION</span></code></dt><dd><p>Intel Hex and Motorola S-record files are automatically converted to
+binary while reading unless this option is given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REGEX</span> <span class="pre">&lt;regex&gt;</span></code></dt><dd><p>Consider only strings that match the given regular expression.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ENCODING</span> <span class="pre">&lt;encoding-type&gt;</span></code></dt><dd><p>Consider strings of a given encoding.  Currently supported encodings are:
+UTF-8, UTF-16LE, UTF-16BE, UTF-32LE, UTF-32BE.  If the ENCODING option
+is not provided and the file has a Byte Order Mark, the ENCODING option
+will be defaulted to respect the Byte Order Mark.</p>
+</dd>
+</dl>
+<p>For example, the code</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">STRINGS</span><span class="w"> </span><span class="nb">myfile.txt</span><span class="w"> </span><span class="nb">myfile</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>stores a list in the variable <code class="docutils literal notranslate"><span class="pre">myfile</span></code> in which each item is a line
+from the input file.</p>
+<div class="highlight-cmake notranslate" id="hash"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="nv">&lt;HASH&gt;</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compute a cryptographic hash of the content of <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> and
+store it in a <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  The supported <code class="docutils literal notranslate"><span class="pre">&lt;HASH&gt;</span></code> algorithm names
+are those listed by the <a class="reference internal" href="string.html#supported-hash-algorithms"><span class="std std-ref">string(&lt;HASH&gt;)</span></a>
+command.</p>
+<div class="highlight-cmake notranslate" id="timestamp"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">TIMESTAMP</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;format&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">UTC</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compute a string representation of the modification time of <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code>
+and store it in <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  Should the command be unable to obtain a
+timestamp variable will be set to the empty string (“”).</p>
+<p>See the <span class="target" id="index-0-command:string"></span><a class="reference internal" href="string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string(TIMESTAMP)</span></code></a> command for documentation of
+the <code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">UTC</span></code> options.</p>
+<div class="highlight-cmake notranslate" id="get-runtime-dependencies"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GET_RUNTIME_DEPENDENCIES</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">RESOLVED_DEPENDENCIES_VAR</span><span class="w"> </span><span class="nv">&lt;deps_var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">UNRESOLVED_DEPENDENCIES_VAR</span><span class="w"> </span><span class="nv">&lt;unresolved_deps_var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">CONFLICTING_DEPENDENCIES_PREFIX</span><span class="w"> </span><span class="nv">&lt;conflicting_deps_prefix&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">EXECUTABLES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;executable_files&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">LIBRARIES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;library_files&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">MODULES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;module_files&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">DIRECTORIES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;directories&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">BUNDLE_EXECUTABLE</span><span class="w"> </span><span class="nv">&lt;bundle_executable_file&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">PRE_INCLUDE_REGEXES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;regexes&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">PRE_EXCLUDE_REGEXES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;regexes&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">POST_INCLUDE_REGEXES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;regexes&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">POST_EXCLUDE_REGEXES</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;regexes&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Recursively get the list of libraries depended on by the given files.</p>
+<p>Please note that this sub-command is not intended to be used in project mode.
+Instead, use it in an <span class="target" id="index-0-command:install"></span><a class="reference internal" href="install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(CODE)</span></code></a> or <span class="target" id="index-1-command:install"></span><a class="reference internal" href="install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(SCRIPT)</span></code></a>
+block. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">CODE</span><span class="w"> </span><span class="p">[[</span><span class="w"></span>
+<span class="w">  </span><span class="nf">file(</span><span class="no">GET_RUNTIME_DEPENDENCIES</span><span class="w"></span>
+<span class="w">    </span><span class="c"># ...</span>
+<span class="w">    </span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="p">]]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The arguments are as follows:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">RESOLVED_DEPENDENCIES_VAR</span> <span class="pre">&lt;deps_var&gt;</span></code></dt><dd><p>Name of the variable in which to store the list of resolved dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UNRESOLVED_DEPENDENCIES_VAR</span> <span class="pre">&lt;unresolved_deps_var&gt;</span></code></dt><dd><p>Name of the variable in which to store the list of unresolved dependencies.
+If this variable is not specified, and there are any unresolved dependencies,
+an error is issued.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CONFLICTING_DEPENDENCIES_PREFIX</span> <span class="pre">&lt;conflicting_deps_prefix&gt;</span></code></dt><dd><p>Variable prefix in which to store conflicting dependency information.
+Dependencies are conflicting if two files with the same name are found in
+two different directories. The list of filenames that conflict are stored in
+<code class="docutils literal notranslate"><span class="pre">&lt;conflicting_deps_prefix&gt;_FILENAMES</span></code>. For each filename, the list of paths
+that were found for that filename are stored in
+<code class="docutils literal notranslate"><span class="pre">&lt;conflicting_deps_prefix&gt;_&lt;filename&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXECUTABLES</span> <span class="pre">&lt;executable_files&gt;</span></code></dt><dd><p>List of executable files to read for dependencies. These are executables that
+are typically created with <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>, but they do not have to
+be created by CMake. On Apple platforms, the paths to these files determine
+the value of <code class="docutils literal notranslate"><span class="pre">&#64;executable_path</span></code> when recursively resolving the libraries.
+Specifying any kind of library (<code class="docutils literal notranslate"><span class="pre">STATIC</span></code>, <code class="docutils literal notranslate"><span class="pre">MODULE</span></code>, or <code class="docutils literal notranslate"><span class="pre">SHARED</span></code>) here
+will result in undefined behavior.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBRARIES</span> <span class="pre">&lt;library_files&gt;</span></code></dt><dd><p>List of library files to read for dependencies. These are libraries that are
+typically created with <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library(SHARED)</span></code></a>, but they do not have
+to be created by CMake. Specifying <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> libraries, <code class="docutils literal notranslate"><span class="pre">MODULE</span></code>
+libraries, or executables here will result in undefined behavior.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MODULES</span> <span class="pre">&lt;module_files&gt;</span></code></dt><dd><p>List of loadable module files to read for dependencies. These are modules
+that are typically created with <span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library(MODULE)</span></code></a>, but they do
+not have to be created by CMake. They are typically used by calling
+<code class="docutils literal notranslate"><span class="pre">dlopen()</span></code> at runtime rather than linked at link time with <code class="docutils literal notranslate"><span class="pre">ld</span> <span class="pre">-l</span></code>.
+Specifying <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> libraries, <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> libraries, or executables here
+will result in undefined behavior.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DIRECTORIES</span> <span class="pre">&lt;directories&gt;</span></code></dt><dd><p>List of additional directories to search for dependencies. On Linux
+platforms, these directories are searched if the dependency is not found in
+any of the other usual paths. If it is found in such a directory, a warning
+is issued, because it means that the file is incomplete (it does not list all
+of the directories that contain its dependencies). On Windows platforms,
+these directories are searched if the dependency is not found in any of the
+other search paths, but no warning is issued, because searching other paths
+is a normal part of Windows dependency resolution. On Apple platforms, this
+argument has no effect.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUNDLE_EXECUTABLE</span> <span class="pre">&lt;bundle_executable_file&gt;</span></code></dt><dd><p>Executable to treat as the “bundle executable” when resolving libraries. On
+Apple platforms, this argument determines the value of <code class="docutils literal notranslate"><span class="pre">&#64;executable_path</span></code>
+when recursively resolving libraries for <code class="docutils literal notranslate"><span class="pre">LIBRARIES</span></code> and <code class="docutils literal notranslate"><span class="pre">MODULES</span></code> files.
+It has no effect on <code class="docutils literal notranslate"><span class="pre">EXECUTABLES</span></code> files. On other platforms, it has no
+effect. This is typically (but not always) one of the executables in the
+<code class="docutils literal notranslate"><span class="pre">EXECUTABLES</span></code> argument which designates the “main” executable of the
+package.</p>
+</dd>
+</dl>
+<p>The following arguments specify filters for including or excluding libraries to
+be resolved. See below for a full description of how they work.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PRE_INCLUDE_REGEXES</span> <span class="pre">&lt;regexes&gt;</span></code></dt><dd><p>List of pre-include regexes through which to filter the names of
+not-yet-resolved dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PRE_EXCLUDE_REGEXES</span> <span class="pre">&lt;regexes&gt;</span></code></dt><dd><p>List of pre-exclude regexes through which to filter the names of
+not-yet-resolved dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">POST_INCLUDE_REGEXES</span> <span class="pre">&lt;regexes&gt;</span></code></dt><dd><p>List of post-include regexes through which to filter the names of resolved
+dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">POST_EXCLUDE_REGEXES</span> <span class="pre">&lt;regexes&gt;</span></code></dt><dd><p>List of post-exclude regexes through which to filter the names of resolved
+dependencies.</p>
+</dd>
+</dl>
+<p>These arguments can be used to exclude unwanted system libraries when
+resolving the dependencies, or to include libraries from a specific
+directory. The filtering works as follows:</p>
+<ol class="arabic simple">
+<li><p>If the not-yet-resolved dependency matches any of the
+<code class="docutils literal notranslate"><span class="pre">PRE_INCLUDE_REGEXES</span></code>, steps 2 and 3 are skipped, and the dependency
+resolution proceeds to step 4.</p></li>
+<li><p>If the not-yet-resolved dependency matches any of the
+<code class="docutils literal notranslate"><span class="pre">PRE_EXCLUDE_REGEXES</span></code>, dependency resolution stops for that dependency.</p></li>
+<li><p>Otherwise, dependency resolution proceeds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file(GET_RUNTIME_DEPENDENCIES)</span></code> searches for the dependency according to
+the linking rules of the platform (see below).</p></li>
+<li><p>If the dependency is found, and its full path matches one of the
+<code class="docutils literal notranslate"><span class="pre">POST_INCLUDE_REGEXES</span></code>, the full path is added to the resolved
+dependencies, and <code class="docutils literal notranslate"><span class="pre">file(GET_RUNTIME_DEPENDENCIES)</span></code> recursively resolves
+that library’s own dependencies. Otherwise, resolution proceeds to step 6.</p></li>
+<li><p>If the dependency is found, but its full path matches one of the
+<code class="docutils literal notranslate"><span class="pre">POST_EXCLUDE_REGEXES</span></code>, it is not added to the resolved dependencies, and
+dependency resolution stops for that dependency.</p></li>
+<li><p>If the dependency is found, and its full path does not match either
+<code class="docutils literal notranslate"><span class="pre">POST_INCLUDE_REGEXES</span></code> or <code class="docutils literal notranslate"><span class="pre">POST_EXCLUDE_REGEXES</span></code>, the full path is added
+to the resolved dependencies, and <code class="docutils literal notranslate"><span class="pre">file(GET_RUNTIME_DEPENDENCIES)</span></code>
+recursively resolves that library’s own dependencies.</p></li>
+</ol>
+<p>Different platforms have different rules for how dependencies are resolved.
+These specifics are described here.</p>
+<p>On Linux platforms, library resolution works as follows:</p>
+<ol class="arabic simple">
+<li><p>If the depending file does not have any <code class="docutils literal notranslate"><span class="pre">RUNPATH</span></code> entries, and the library
+exists in one of the depending file’s <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> entries, or its parents’, in
+that order, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the depending file has any <code class="docutils literal notranslate"><span class="pre">RUNPATH</span></code> entries, and the
+library exists in one of those entries, the dependency is resolved to that
+file.</p></li>
+<li><p>Otherwise, if the library exists in one of the directories listed by
+<code class="docutils literal notranslate"><span class="pre">ldconfig</span></code>, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the library exists in one of the <code class="docutils literal notranslate"><span class="pre">DIRECTORIES</span></code> entries, the
+dependency is resolved to that file. In this case, a warning is issued,
+because finding a file in one of the <code class="docutils literal notranslate"><span class="pre">DIRECTORIES</span></code> means that the
+depending file is not complete (it does not list all the directories from
+which it pulls dependencies).</p></li>
+<li><p>Otherwise, the dependency is unresolved.</p></li>
+</ol>
+<p>On Windows platforms, library resolution works as follows:</p>
+<ol class="arabic">
+<li><p>The dependent DLL name is converted to lowercase. Windows DLL names are
+case-insensitive, and some linkers mangle the case of the DLL dependency
+names. However, this makes it more difficult for <code class="docutils literal notranslate"><span class="pre">PRE_INCLUDE_REGEXES</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PRE_EXCLUDE_REGEXES</span></code>, <code class="docutils literal notranslate"><span class="pre">POST_INCLUDE_REGEXES</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">POST_EXCLUDE_REGEXES</span></code> to properly filter DLL names - every regex would
+have to check for both uppercase and lowercase letters. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GET_RUNTIME_DEPENDENCIES</span><span class="w"></span>
+<span class="w">  </span><span class="c"># ...</span>
+<span class="w">  </span><span class="no">PRE_INCLUDE_REGEXES</span><span class="w"> </span><span class="s">&quot;^[Mm][Yy][Ll][Ii][Bb][Rr][Aa][Rr][Yy]\\.[Dd][Ll][Ll]$&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Converting the DLL name to lowercase allows the regexes to only match
+lowercase names, thus simplifying the regex. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GET_RUNTIME_DEPENDENCIES</span><span class="w"></span>
+<span class="w">  </span><span class="c"># ...</span>
+<span class="w">  </span><span class="no">PRE_INCLUDE_REGEXES</span><span class="w"> </span><span class="s">&quot;^mylibrary\\.dll$&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This regex will match <code class="docutils literal notranslate"><span class="pre">mylibrary.dll</span></code> regardless of how it is cased,
+either on disk or in the depending file. (For example, it will match
+<code class="docutils literal notranslate"><span class="pre">mylibrary.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">MyLibrary.dll</span></code>, and <code class="docutils literal notranslate"><span class="pre">MYLIBRARY.DLL</span></code>.)</p>
+<p>Please note that the directory portion of any resolved DLLs retains its
+casing and is not converted to lowercase. Only the filename portion is
+converted.</p>
+</li>
+<li><p>(<strong>Not yet implemented</strong>) If the depending file is a Windows Store app, and
+the dependency is listed as a dependency in the application’s package
+manifest, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the library exists in the same directory as the depending
+file, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the library exists in either the operating system’s
+<code class="docutils literal notranslate"><span class="pre">system32</span></code> directory or the <code class="docutils literal notranslate"><span class="pre">Windows</span></code> directory, in that order, the
+dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the library exists in one of the directories specified by
+<code class="docutils literal notranslate"><span class="pre">DIRECTORIES</span></code>, in the order they are listed, the dependency is resolved to
+that file. In this case, a warning is not issued, because searching other
+directories is a normal part of Windows library resolution.</p></li>
+<li><p>Otherwise, the dependency is unresolved.</p></li>
+</ol>
+<p>On Apple platforms, library resolution works as follows:</p>
+<ol class="arabic simple">
+<li><p>If the dependency starts with <code class="docutils literal notranslate"><span class="pre">&#64;executable_path/</span></code>, and an <code class="docutils literal notranslate"><span class="pre">EXECUTABLES</span></code>
+argument is in the process of being resolved, and replacing
+<code class="docutils literal notranslate"><span class="pre">&#64;executable_path/</span></code> with the directory of the executable yields an
+existing file, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the dependency starts with <code class="docutils literal notranslate"><span class="pre">&#64;executable_path/</span></code>, and there is
+a <code class="docutils literal notranslate"><span class="pre">BUNDLE_EXECUTABLE</span></code> argument, and replacing <code class="docutils literal notranslate"><span class="pre">&#64;executable_path/</span></code> with
+the directory of the bundle executable yields an existing file, the
+dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the dependency starts with <code class="docutils literal notranslate"><span class="pre">&#64;loader_path/</span></code>, and replacing
+<code class="docutils literal notranslate"><span class="pre">&#64;loader_path/</span></code> with the directory of the depending file yields an
+existing file, the dependency is resolved to that file.</p></li>
+<li><p>Otherwise, if the dependency starts with <code class="docutils literal notranslate"><span class="pre">&#64;rpath/</span></code>, and replacing
+<code class="docutils literal notranslate"><span class="pre">&#64;rpath/</span></code> with one of the <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> entries of the depending file yields
+an existing file, the dependency is resolved to that file. Note that
+<code class="docutils literal notranslate"><span class="pre">RPATH</span></code> entries that start with <code class="docutils literal notranslate"><span class="pre">&#64;executable_path/</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;loader_path/</span></code>
+also have these items replaced with the appropriate path.</p></li>
+<li><p>Otherwise, if the dependency is an absolute file that exists, the dependency
+is resolved to that file.</p></li>
+<li><p>Otherwise, the dependency is unresolved.</p></li>
+</ol>
+<p>This function accepts several variables that determine which tool is used for
+dependency resolution:</p>
+<dl class="cmake variable">
+<dt id="variable:CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM">
+<code class="sig-name descname">CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM</code><a class="headerlink" href="#variable:CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines which operating system and executable format the files are built
+for. This could be one of several values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">linux+elf</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">windows+pe</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">macos+macho</span></code></p></li>
+</ul>
+<p>If this variable is not specified, it is determined automatically by system
+introspection.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CMAKE_GET_RUNTIME_DEPENDENCIES_TOOL">
+<code class="sig-name descname">CMAKE_GET_RUNTIME_DEPENDENCIES_TOOL</code><a class="headerlink" href="#variable:CMAKE_GET_RUNTIME_DEPENDENCIES_TOOL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the tool to use for dependency resolution. It could be one of
+several values, depending on the value of
+<span class="target" id="index-0-variable:CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM"></span><a class="reference internal" href="#variable:CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM" title="CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM</span></code></a>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 48%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">CMAKE_GET_RUNTIME_DEPENDENCIES_TOOL</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">linux+elf</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">objdump</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">windows+pe</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dumpbin</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">windows+pe</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">objdump</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">macos+macho</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">otool</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>If this variable is not specified, it is determined automatically by system
+introspection.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND">
+<code class="sig-name descname">CMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND</code><a class="headerlink" href="#variable:CMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the path to the tool to use for dependency resolution. This is the
+actual path to <code class="docutils literal notranslate"><span class="pre">objdump</span></code>, <code class="docutils literal notranslate"><span class="pre">dumpbin</span></code>, or <code class="docutils literal notranslate"><span class="pre">otool</span></code>.</p>
+<p>If this variable is not specified, it is determined by the value of
+<code class="docutils literal notranslate"><span class="pre">CMAKE_OBJDUMP</span></code> if set, else by system introspection.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="writing">
+<h2>Writing<a class="headerlink" href="#writing" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="append"><span id="write"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">WRITE</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;content&gt;...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">APPEND</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;content&gt;...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Write <code class="docutils literal notranslate"><span class="pre">&lt;content&gt;</span></code> into a file called <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code>.  If the file does
+not exist, it will be created.  If the file already exists, <code class="docutils literal notranslate"><span class="pre">WRITE</span></code>
+mode will overwrite it and <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> mode will append to the end.
+Any directories in the path specified by <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> that do not
+exist will be created.</p>
+<p>If the file is a build input, use the <span class="target" id="index-0-command:configure_file"></span><a class="reference internal" href="configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> command
+to update the file only when its content changes.</p>
+<div class="highlight-cmake notranslate" id="touch-nocreate"><span id="touch"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">TOUCH</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;files&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">TOUCH_NOCREATE</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;files&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Create a file with no content if it does not yet exist. If the file already
+exists, its access and/or modification will be updated to the time when the
+function call is executed.</p>
+<p>Use TOUCH_NOCREATE to touch a file if it exists but not create it. If a file
+does not exist it will be silently ignored.</p>
+<p>With TOUCH and TOUCH_NOCREATE the contents of an existing file will not be
+modified.</p>
+<div class="highlight-cmake notranslate" id="generate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GENERATE</span><span class="w"> </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output-file</span><span class="w"></span>
+<span class="w">     </span><span class="o">&lt;</span><span class="no">INPUT</span><span class="w"> </span><span class="nb">input-file</span><span class="p">|</span><span class="no">CONTENT</span><span class="w"> </span><span class="nb">content</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">CONDITION</span><span class="w"> </span><span class="nb">expression</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">target</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generate an output file for each build configuration supported by the current
+<span class="target" id="index-0-manual:cmake-generators(7)"></span><a class="reference internal" href="../manual/cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">Generator</span></code></a>.  Evaluate
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>
+from the input content to produce the output content.  The options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CONDITION</span> <span class="pre">&lt;condition&gt;</span></code></dt><dd><p>Generate the output file for a particular configuration only if
+the condition is true.  The condition must be either <code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>
+after evaluating generator expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CONTENT</span> <span class="pre">&lt;content&gt;</span></code></dt><dd><p>Use the content given explicitly as input.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INPUT</span> <span class="pre">&lt;input-file&gt;</span></code></dt><dd><p>Use the content from a given file as input.
+A relative path is treated with respect to the value of
+<span class="target" id="index-0-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>.  See policy <span class="target" id="index-0-policy:CMP0070"></span><a class="reference internal" href="../policy/CMP0070.html#policy:CMP0070" title="CMP0070"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0070</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT</span> <span class="pre">&lt;output-file&gt;</span></code></dt><dd><p>Specify the output file name to generate.  Use generator expressions
+such as <code class="docutils literal notranslate"><span class="pre">$&lt;CONFIG&gt;</span></code> to specify a configuration-specific output file
+name.  Multiple configurations may generate the same output file only
+if the generated content is identical.  Otherwise, the <code class="docutils literal notranslate"><span class="pre">&lt;output-file&gt;</span></code>
+must evaluate to an unique name for each configuration.
+A relative path (after evaluating generator expressions) is treated
+with respect to the value of <span class="target" id="index-0-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a>.
+See policy <span class="target" id="index-1-policy:CMP0070"></span><a class="reference internal" href="../policy/CMP0070.html#policy:CMP0070" title="CMP0070"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0070</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TARGET</span> <span class="pre">&lt;target&gt;</span></code></dt><dd><p>Specify which target to use when evaluating generator expressions that
+require a target for evaluation (e.g. <code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_FEATURES:...&gt;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PROPERTY:prop&gt;</span></code>).</p>
+</dd>
+</dl>
+<p>Exactly one <code class="docutils literal notranslate"><span class="pre">CONTENT</span></code> or <code class="docutils literal notranslate"><span class="pre">INPUT</span></code> option must be given.  A specific
+<code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code> file may be named by at most one invocation of <code class="docutils literal notranslate"><span class="pre">file(GENERATE)</span></code>.
+Generated files are modified and their timestamp updated on subsequent cmake
+runs only if their content is changed.</p>
+<p>Note also that <code class="docutils literal notranslate"><span class="pre">file(GENERATE)</span></code> does not create the output file until the
+generation phase. The output file will not yet have been written when the
+<code class="docutils literal notranslate"><span class="pre">file(GENERATE)</span></code> command returns, it is written only after processing all
+of a project’s <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files.</p>
+<div class="highlight-cmake notranslate" id="configure"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">CONFIGURE</span><span class="w"> </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output-file</span><span class="w"></span>
+<span class="w">     </span><span class="no">CONTENT</span><span class="w"> </span><span class="nb">content</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">ESCAPE_QUOTES</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">@ONLY</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">NEWLINE_STYLE</span><span class="w"> </span><span class="p">[</span><span class="no">UNIX</span><span class="p">|</span><span class="no">DOS</span><span class="p">|</span><span class="no">WIN32</span><span class="p">|</span><span class="no">LF</span><span class="p">|</span><span class="no">CRLF</span><span class="p">]</span><span class="w"> </span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generate an output file using the input given by <code class="docutils literal notranslate"><span class="pre">CONTENT</span></code> and substitute
+variable values referenced as <code class="docutils literal notranslate"><span class="pre">&#64;VAR&#64;</span></code> or <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> contained therein. The
+substitution rules behave the same as the <span class="target" id="index-1-command:configure_file"></span><a class="reference internal" href="configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> command.
+In order to match <span class="target" id="index-2-command:configure_file"></span><a class="reference internal" href="configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a>’s behavior, generator expressions
+are not supported for both <code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code> and <code class="docutils literal notranslate"><span class="pre">CONTENT</span></code>.</p>
+<p>The arguments are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT</span> <span class="pre">&lt;output-file&gt;</span></code></dt><dd><p>Specify the output file name to generate. A relative path is treated with
+respect to the value of <span class="target" id="index-1-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">&lt;output-file&gt;</span></code> does not support generator expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CONTENT</span> <span class="pre">&lt;content&gt;</span></code></dt><dd><p>Use the content given explicitly as input.
+<code class="docutils literal notranslate"><span class="pre">&lt;content&gt;</span></code> does not support generator expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ESCAPE_QUOTES</span></code></dt><dd><p>Escape any substituted quotes with backslashes (C-style).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&#64;ONLY</span></code></dt><dd><p>Restrict variable replacement to references of the form <code class="docutils literal notranslate"><span class="pre">&#64;VAR&#64;</span></code>.
+This is useful for configuring scripts that use <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> syntax.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NEWLINE_STYLE</span> <span class="pre">&lt;style&gt;</span></code></dt><dd><p>Specify the newline style for the output file.  Specify
+<code class="docutils literal notranslate"><span class="pre">UNIX</span></code> or <code class="docutils literal notranslate"><span class="pre">LF</span></code> for <code class="docutils literal notranslate"><span class="pre">\n</span></code> newlines, or specify
+<code class="docutils literal notranslate"><span class="pre">DOS</span></code>, <code class="docutils literal notranslate"><span class="pre">WIN32</span></code>, or <code class="docutils literal notranslate"><span class="pre">CRLF</span></code> for <code class="docutils literal notranslate"><span class="pre">\r\n</span></code> newlines.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="filesystem">
+<h2>Filesystem<a class="headerlink" href="#filesystem" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="glob-recurse"><span id="glob"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GLOB</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">LIST_DIRECTORIES</span><span class="w"> </span><span class="nb">true</span><span class="p">|</span><span class="nb">false</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">RELATIVE</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">CONFIGURE_DEPENDS</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="nv">&lt;globbing-expressions&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">GLOB_RECURSE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">FOLLOW_SYMLINKS</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">LIST_DIRECTORIES</span><span class="w"> </span><span class="nb">true</span><span class="p">|</span><span class="nb">false</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">RELATIVE</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">CONFIGURE_DEPENDS</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="nv">&lt;globbing-expressions&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generate a list of files that match the <code class="docutils literal notranslate"><span class="pre">&lt;globbing-expressions&gt;</span></code> and
+store it into the <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  Globbing expressions are similar to
+regular expressions, but much simpler.  If <code class="docutils literal notranslate"><span class="pre">RELATIVE</span></code> flag is
+specified, the results will be returned as relative paths to the given
+path.  The results will be ordered lexicographically.</p>
+<p>On Windows and macOS, globbing is case-insensitive even if the underlying
+filesystem is case-sensitive (both filenames and globbing expressions are
+converted to lowercase before matching).  On other platforms, globbing is
+case-sensitive.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">CONFIGURE_DEPENDS</span></code> flag is specified, CMake will add logic
+to the main build system check target to rerun the flagged <code class="docutils literal notranslate"><span class="pre">GLOB</span></code> commands
+at build time. If any of the outputs change, CMake will regenerate the build
+system.</p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">GLOB</span></code> lists directories - directories are omitted in result if
+<code class="docutils literal notranslate"><span class="pre">LIST_DIRECTORIES</span></code> is set to false.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We do not recommend using GLOB to collect a list of source files from
+your source tree.  If no CMakeLists.txt file changes when a source is
+added or removed then the generated build system cannot know when to
+ask CMake to regenerate.
+The <code class="docutils literal notranslate"><span class="pre">CONFIGURE_DEPENDS</span></code> flag may not work reliably on all generators, or if
+a new generator is added in the future that cannot support it, projects using
+it will be stuck. Even if <code class="docutils literal notranslate"><span class="pre">CONFIGURE_DEPENDS</span></code> works reliably, there is
+still a cost to perform the check on every rebuild.</p>
+</div>
+<p>Examples of globbing expressions include:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>*.cxx      - match all files with extension cxx
+*.vt?      - match all files with extension vta,...,vtz
+f[3-5].txt - match files f3.txt, f4.txt, f5.txt
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">GLOB_RECURSE</span></code> mode will traverse all the subdirectories of the
+matched directory and match the files.  Subdirectories that are symlinks
+are only traversed if <code class="docutils literal notranslate"><span class="pre">FOLLOW_SYMLINKS</span></code> is given or policy
+<span class="target" id="index-0-policy:CMP0009"></span><a class="reference internal" href="../policy/CMP0009.html#policy:CMP0009" title="CMP0009"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0009</span></code></a> is not set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">GLOB_RECURSE</span></code> omits directories from result list - setting
+<code class="docutils literal notranslate"><span class="pre">LIST_DIRECTORIES</span></code> to true adds directories to result list.
+If <code class="docutils literal notranslate"><span class="pre">FOLLOW_SYMLINKS</span></code> is given or policy <span class="target" id="index-1-policy:CMP0009"></span><a class="reference internal" href="../policy/CMP0009.html#policy:CMP0009" title="CMP0009"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0009</span></code></a> is not set to
+<code class="docutils literal notranslate"><span class="pre">NEW</span></code> then <code class="docutils literal notranslate"><span class="pre">LIST_DIRECTORIES</span></code> treats symlinks as directories.</p>
+<p>Examples of recursive globbing include:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/dir/*.py  - match all python files in /dir and subdirectories
+</pre></div>
+</div>
+<div class="highlight-cmake notranslate" id="rename"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">RENAME</span><span class="w"> </span><span class="nv">&lt;oldname&gt;</span><span class="w"> </span><span class="nv">&lt;newname&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Move a file or directory within a filesystem from <code class="docutils literal notranslate"><span class="pre">&lt;oldname&gt;</span></code> to
+<code class="docutils literal notranslate"><span class="pre">&lt;newname&gt;</span></code>, replacing the destination atomically.</p>
+<div class="highlight-cmake notranslate" id="remove-recurse"><span id="remove"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">REMOVE</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;files&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">REMOVE_RECURSE</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;files&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Remove the given files.  The <code class="docutils literal notranslate"><span class="pre">REMOVE_RECURSE</span></code> mode will remove the given
+files and directories, also non-empty directories. No error is emitted if a
+given file does not exist.  Relative input paths are evaluated with respect
+to the current source directory.  Empty input paths are ignored with a warning.</p>
+<div class="highlight-cmake notranslate" id="make-directory"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">MAKE_DIRECTORY</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;directories&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Create the given directories and their parents as needed.</p>
+<div class="highlight-cmake notranslate" id="install"><span id="copy"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="o">&lt;</span><span class="no">COPY</span><span class="p">|</span><span class="no">INSTALL</span><span class="o">&gt;</span><span class="w"> </span><span class="nv">&lt;files&gt;...</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">FILE_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">DIRECTORY_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">NO_SOURCE_PERMISSIONS</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">USE_SOURCE_PERMISSIONS</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">FOLLOW_SYMLINK_CHAIN</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">FILES_MATCHING</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[[</span><span class="no">PATTERN</span><span class="w"> </span><span class="nv">&lt;pattern&gt;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">REGEX</span><span class="w"> </span><span class="nv">&lt;regex&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">      </span><span class="p">[</span><span class="no">EXCLUDE</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]]</span><span class="w"> </span><span class="p">[...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">COPY</span></code> signature copies files, directories, and symlinks to a
+destination folder.  Relative input paths are evaluated with respect
+to the current source directory, and a relative destination is
+evaluated with respect to the current build directory.  Copying
+preserves input file timestamps, and optimizes out a file if it exists
+at the destination with the same timestamp.  Copying preserves input
+permissions unless explicit permissions or <code class="docutils literal notranslate"><span class="pre">NO_SOURCE_PERMISSIONS</span></code>
+are given (default is <code class="docutils literal notranslate"><span class="pre">USE_SOURCE_PERMISSIONS</span></code>).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">FOLLOW_SYMLINK_CHAIN</span></code> is specified, <code class="docutils literal notranslate"><span class="pre">COPY</span></code> will recursively resolve
+the symlinks at the paths given until a real file is found, and install
+a corresponding symlink in the destination for each symlink encountered. For
+each symlink that is installed, the resolution is stripped of the directory,
+leaving only the filename, meaning that the new symlink points to a file in
+the same directory as the symlink. This feature is useful on some Unix systems,
+where libraries are installed as a chain of symlinks with version numbers, with
+less specific versions pointing to more specific versions.
+<code class="docutils literal notranslate"><span class="pre">FOLLOW_SYMLINK_CHAIN</span></code> will install all of these symlinks and the library
+itself into the destination directory. For example, if you have the following
+directory structure:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/opt/foo/lib/libfoo.so.1.2.3</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/opt/foo/lib/libfoo.so.1.2</span> <span class="pre">-&gt;</span> <span class="pre">libfoo.so.1.2.3</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/opt/foo/lib/libfoo.so.1</span> <span class="pre">-&gt;</span> <span class="pre">libfoo.so.1.2</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/opt/foo/lib/libfoo.so</span> <span class="pre">-&gt;</span> <span class="pre">libfoo.so.1</span></code></p></li>
+</ul>
+<p>and you do:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">COPY</span><span class="w"> </span><span class="na">/opt/foo/lib/libfoo.so</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">lib</span><span class="w"> </span><span class="no">FOLLOW_SYMLINK_CHAIN</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This will install all of the symlinks and <code class="docutils literal notranslate"><span class="pre">libfoo.so.1.2.3</span></code> itself into
+<code class="docutils literal notranslate"><span class="pre">lib</span></code>.</p>
+<p>See the <span class="target" id="index-2-command:install"></span><a class="reference internal" href="install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(DIRECTORY)</span></code></a> command for documentation of
+permissions, <code class="docutils literal notranslate"><span class="pre">FILES_MATCHING</span></code>, <code class="docutils literal notranslate"><span class="pre">PATTERN</span></code>, <code class="docutils literal notranslate"><span class="pre">REGEX</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">EXCLUDE</span></code> options.  Copying directories preserves the structure
+of their content even if options are used to select a subset of
+files.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">INSTALL</span></code> signature differs slightly from <code class="docutils literal notranslate"><span class="pre">COPY</span></code>: it prints
+status messages (subject to the <span class="target" id="index-0-variable:CMAKE_INSTALL_MESSAGE"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_MESSAGE.html#variable:CMAKE_INSTALL_MESSAGE" title="CMAKE_INSTALL_MESSAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_MESSAGE</span></code></a> variable),
+and <code class="docutils literal notranslate"><span class="pre">NO_SOURCE_PERMISSIONS</span></code> is default.
+Installation scripts generated by the <span class="target" id="index-3-command:install"></span><a class="reference internal" href="install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command
+use this signature (with some undocumented options for internal use).</p>
+<div class="highlight-cmake notranslate" id="size"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">SIZE</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Determine the file size of the <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> and put the result in
+<code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> variable. Requires that <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> is a valid path
+pointing to a file and is readable.</p>
+<div class="highlight-cmake notranslate" id="read-symlink"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">READ_SYMLINK</span><span class="w"> </span><span class="nv">&lt;linkname&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This subcommand queries the symlink <code class="docutils literal notranslate"><span class="pre">&lt;linkname&gt;</span></code> and stores the path it
+points to in the result <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  If <code class="docutils literal notranslate"><span class="pre">&lt;linkname&gt;</span></code> does not exist or
+is not a symlink, CMake issues a fatal error.</p>
+<p>Note that this command returns the raw symlink path and does not resolve
+a relative path.  The following is an example of how to ensure that an
+absolute path is obtained:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">linkname</span><span class="w"> </span><span class="s">&quot;/path/to/foo.sym&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">READ_SYMLINK</span><span class="w"> </span><span class="s">&quot;${linkname}&quot;</span><span class="w"> </span><span class="nb">result</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">NOT</span><span class="w"> </span><span class="no">IS_ABSOLUTE</span><span class="w"> </span><span class="s">&quot;${result}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">get_filename_component(</span><span class="nb">dir</span><span class="w"> </span><span class="s">&quot;${linkname}&quot;</span><span class="w"> </span><span class="no">DIRECTORY</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="nb">result</span><span class="w"> </span><span class="s">&quot;${dir}/${result}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-cmake notranslate" id="create-link"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">CREATE_LINK</span><span class="w"> </span><span class="nv">&lt;original&gt;</span><span class="w"> </span><span class="nv">&lt;linkname&gt;</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">RESULT</span><span class="w"> </span><span class="nv">&lt;result&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">COPY_ON_ERROR</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">SYMBOLIC</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Create a link <code class="docutils literal notranslate"><span class="pre">&lt;linkname&gt;</span></code> that points to <code class="docutils literal notranslate"><span class="pre">&lt;original&gt;</span></code>.
+It will be a hard link by default, but providing the <code class="docutils literal notranslate"><span class="pre">SYMBOLIC</span></code> option
+results in a symbolic link instead.  Hard links require that <code class="docutils literal notranslate"><span class="pre">original</span></code>
+exists and is a file, not a directory.  If <code class="docutils literal notranslate"><span class="pre">&lt;linkname&gt;</span></code> already exists,
+it will be overwritten.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;result&gt;</span></code> variable, if specified, receives the status of the operation.
+It is set to <code class="docutils literal notranslate"><span class="pre">0</span></code> upon success or an error message otherwise.  If <code class="docutils literal notranslate"><span class="pre">RESULT</span></code>
+is not specified and the operation fails, a fatal error is emitted.</p>
+<p>Specifying <code class="docutils literal notranslate"><span class="pre">COPY_ON_ERROR</span></code> enables copying the file as a fallback if
+creating the link fails.  It can be useful for handling situations such as
+<code class="docutils literal notranslate"><span class="pre">&lt;original&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;linkname&gt;</span></code> being on different drives or mount points,
+which would make them unable to support a hard link.</p>
+<div class="highlight-cmake notranslate" id="chmod"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">CHMOD</span><span class="w"> </span><span class="nv">&lt;files&gt;...</span><span class="w"> </span><span class="nv">&lt;directories&gt;...</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="no">PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="no">FILE_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="no">DIRECTORY_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Set the permissions for the <code class="docutils literal notranslate"><span class="pre">&lt;files&gt;...</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;directories&gt;...</span></code> specified.
+Valid permissions are  <code class="docutils literal notranslate"><span class="pre">OWNER_READ</span></code>, <code class="docutils literal notranslate"><span class="pre">OWNER_WRITE</span></code>, <code class="docutils literal notranslate"><span class="pre">OWNER_EXECUTE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GROUP_READ</span></code>, <code class="docutils literal notranslate"><span class="pre">GROUP_WRITE</span></code>, <code class="docutils literal notranslate"><span class="pre">GROUP_EXECUTE</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_READ</span></code>,
+<code class="docutils literal notranslate"><span class="pre">WORLD_WRITE</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_EXECUTE</span></code>.</p>
+<p>Valid combination of keywords are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code></dt><dd><p>All items are changed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILE_PERMISSIONS</span></code></dt><dd><p>Only files are changed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DIRECTORY_PERMISSIONS</span></code></dt><dd><p>Only directories are changed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code> and <code class="docutils literal notranslate"><span class="pre">FILE_PERMISSIONS</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">FILE_PERMISSIONS</span></code> overrides <code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code> for files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code> and <code class="docutils literal notranslate"><span class="pre">DIRECTORY_PERMISSIONS</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">DIRECTORY_PERMISSIONS</span></code> overrides <code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code> for directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILE_PERMISSIONS</span></code> and <code class="docutils literal notranslate"><span class="pre">DIRECTORY_PERMISSIONS</span></code></dt><dd><p>Use <code class="docutils literal notranslate"><span class="pre">FILE_PERMISSIONS</span></code> for files and <code class="docutils literal notranslate"><span class="pre">DIRECTORY_PERMISSIONS</span></code> for
+directories.</p>
+</dd>
+</dl>
+<div class="highlight-cmake notranslate" id="chmod-recurse"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">CHMOD_RECURSE</span><span class="w"> </span><span class="nv">&lt;files&gt;...</span><span class="w"> </span><span class="nv">&lt;directories&gt;...</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">FILE_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">DIRECTORY_PERMISSIONS</span><span class="w"> </span><span class="nv">&lt;permissions&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Same as <a class="reference internal" href="#chmod">CHMOD</a>, but change the permissions of files and directories present in
+the <code class="docutils literal notranslate"><span class="pre">&lt;directories&gt;...</span></code> recursively.</p>
+</div>
+<div class="section" id="path-conversion">
+<h2>Path Conversion<a class="headerlink" href="#path-conversion" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="real-path"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">REAL_PATH</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">BASE_DIRECTORY</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compute the absolute path to an existing file or directory with symlinks
+resolved.</p>
+<p>If the provided <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> is a relative path, it is evaluated relative to the
+given base directory <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code>. If no base directory is provided, the default
+base directory will be <span class="target" id="index-1-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>.</p>
+<div class="highlight-cmake notranslate" id="relative-path"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">RELATIVE_PATH</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="nv">&lt;directory&gt;</span><span class="w"> </span><span class="nv">&lt;file&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compute the relative path from a <code class="docutils literal notranslate"><span class="pre">&lt;directory&gt;</span></code> to a <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> and
+store it in the <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate" id="to-native-path"><span id="to-cmake-path"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">TO_CMAKE_PATH</span><span class="w"> </span><span class="s">&quot;&lt;path&gt;&quot;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">TO_NATIVE_PATH</span><span class="w"> </span><span class="s">&quot;&lt;path&gt;&quot;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">TO_CMAKE_PATH</span></code> mode converts a native <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> into a cmake-style
+path with forward-slashes (<code class="docutils literal notranslate"><span class="pre">/</span></code>).  The input can be a single path or a
+system search path like <code class="docutils literal notranslate"><span class="pre">$ENV{PATH}</span></code>.  A search path will be converted
+to a cmake-style list separated by <code class="docutils literal notranslate"><span class="pre">;</span></code> characters.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">TO_NATIVE_PATH</span></code> mode converts a cmake-style <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> into a native
+path with platform-specific slashes (<code class="docutils literal notranslate"><span class="pre">\</span></code> on Windows and <code class="docutils literal notranslate"><span class="pre">/</span></code> elsewhere).</p>
+<p>Always use double quotes around the <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> to be sure it is treated
+as a single argument to this command.</p>
+</div>
+<div class="section" id="transfer">
+<h2>Transfer<a class="headerlink" href="#transfer" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="upload"><span id="download"></span><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">DOWNLOAD</span><span class="w"> </span><span class="nv">&lt;url&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;file&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;options&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">file(</span><span class="no">UPLOAD</span><span class="w">   </span><span class="nv">&lt;file&gt;</span><span class="w"> </span><span class="nv">&lt;url&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;options&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">DOWNLOAD</span></code> subcommand downloads the given <code class="docutils literal notranslate"><span class="pre">&lt;url&gt;</span></code> to a local <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> is not specified for <code class="docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code>, the file is not saved.
+This can be useful if you want to know if a file can be downloaded (for example,
+to check that it exists) without actually saving it anywhere. The <code class="docutils literal notranslate"><span class="pre">UPLOAD</span></code>
+mode uploads a local <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> to a given <code class="docutils literal notranslate"><span class="pre">&lt;url&gt;</span></code>.</p>
+<p>Options to both <code class="docutils literal notranslate"><span class="pre">DOWNLOAD</span></code> and <code class="docutils literal notranslate"><span class="pre">UPLOAD</span></code> are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">INACTIVITY_TIMEOUT</span> <span class="pre">&lt;seconds&gt;</span></code></dt><dd><p>Terminate the operation after a period of inactivity.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG</span> <span class="pre">&lt;variable&gt;</span></code></dt><dd><p>Store a human-readable log of the operation in a variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHOW_PROGRESS</span></code></dt><dd><p>Print progress information as status messages until the operation is
+complete.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STATUS</span> <span class="pre">&lt;variable&gt;</span></code></dt><dd><p>Store the resulting status of the operation in a variable.
+The status is a <code class="docutils literal notranslate"><span class="pre">;</span></code> separated list of length 2.
+The first element is the numeric return value for the operation,
+and the second element is a string value for the error.
+A <code class="docutils literal notranslate"><span class="pre">0</span></code> numeric error means no error in the operation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIMEOUT</span> <span class="pre">&lt;seconds&gt;</span></code></dt><dd><p>Terminate the operation after a given total time has elapsed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USERPWD</span> <span class="pre">&lt;username&gt;:&lt;password&gt;</span></code></dt><dd><p>Set username and password for operation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HTTPHEADER</span> <span class="pre">&lt;HTTP-header&gt;</span></code></dt><dd><p>HTTP header for operation. Suboption can be repeated several times.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NETRC</span> <span class="pre">&lt;level&gt;</span></code></dt><dd><p>Specify whether the .netrc file is to be used for operation.  If this
+option is not specified, the value of the <code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC</span></code> variable
+will be used instead.
+Valid levels are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IGNORED</span></code></dt><dd><p>The .netrc file is ignored.
+This is the default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPTIONAL</span></code></dt><dd><p>The .netrc file is optional, and information in the URL is preferred.
+The file will be scanned to find which ever information is not specified
+in the URL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code></dt><dd><p>The .netrc file is required, and information in the URL is ignored.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NETRC_FILE</span> <span class="pre">&lt;file&gt;</span></code></dt><dd><p>Specify an alternative .netrc file to the one in your home directory,
+if the <code class="docutils literal notranslate"><span class="pre">NETRC</span></code> level is <code class="docutils literal notranslate"><span class="pre">OPTIONAL</span></code> or <code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code>. If this option
+is not specified, the value of the <code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC_FILE</span></code> variable will
+be used instead.</p>
+</dd>
+</dl>
+<p>If neither <code class="docutils literal notranslate"><span class="pre">NETRC</span></code> option is given CMake will check variables
+<code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC</span></code> and <code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC_FILE</span></code>, respectively.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TLS_VERIFY</span> <span class="pre">&lt;ON|OFF&gt;</span></code></dt><dd><p>Specify whether to verify the server certificate for <code class="docutils literal notranslate"><span class="pre">https://</span></code> URLs.
+The default is to <em>not</em> verify.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TLS_CAINFO</span> <span class="pre">&lt;file&gt;</span></code></dt><dd><p>Specify a custom Certificate Authority file for <code class="docutils literal notranslate"><span class="pre">https://</span></code> URLs.</p>
+</dd>
+</dl>
+<p>For <code class="docutils literal notranslate"><span class="pre">https://</span></code> URLs CMake must be built with OpenSSL support.  <code class="docutils literal notranslate"><span class="pre">TLS/SSL</span></code>
+certificates are not checked by default.  Set <code class="docutils literal notranslate"><span class="pre">TLS_VERIFY</span></code> to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to
+check certificates. If neither <code class="docutils literal notranslate"><span class="pre">TLS</span></code> option is given CMake will check
+variables <code class="docutils literal notranslate"><span class="pre">CMAKE_TLS_VERIFY</span></code> and <code class="docutils literal notranslate"><span class="pre">CMAKE_TLS_CAINFO</span></code>, respectively.</p>
+<p>Additional options to <code class="docutils literal notranslate"><span class="pre">DOWNLOAD</span></code> are:</p>
+<p><code class="docutils literal notranslate"><span class="pre">EXPECTED_HASH</span> <span class="pre">ALGO=&lt;value&gt;</span></code></p>
+<blockquote>
+<div><p>Verify that the downloaded content hash matches the expected value, where
+<code class="docutils literal notranslate"><span class="pre">ALGO</span></code> is one of the algorithms supported by <code class="docutils literal notranslate"><span class="pre">file(&lt;HASH&gt;)</span></code>.
+If it does not match, the operation fails with an error. It is an error to
+specify this if <code class="docutils literal notranslate"><span class="pre">DOWNLOAD</span></code> is not given a <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">EXPECTED_MD5</span> <span class="pre">&lt;value&gt;</span></code></dt><dd><p>Historical short-hand for <code class="docutils literal notranslate"><span class="pre">EXPECTED_HASH</span> <span class="pre">MD5=&lt;value&gt;</span></code>. It is an error to
+specify this if <code class="docutils literal notranslate"><span class="pre">DOWNLOAD</span></code> is not given a <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="locking">
+<h2>Locking<a class="headerlink" href="#locking" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="lock"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">LOCK</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">DIRECTORY</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">RELEASE</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">GUARD</span><span class="w"> </span><span class="o">&lt;</span><span class="no">FUNCTION</span><span class="p">|</span><span class="no">FILE</span><span class="p">|</span><span class="no">PROCESS</span><span class="o">&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">RESULT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="no">TIMEOUT</span><span class="w"> </span><span class="nv">&lt;seconds&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Lock a file specified by <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> if no <code class="docutils literal notranslate"><span class="pre">DIRECTORY</span></code> option present and file
+<code class="docutils literal notranslate"><span class="pre">&lt;path&gt;/cmake.lock</span></code> otherwise. File will be locked for scope defined by
+<code class="docutils literal notranslate"><span class="pre">GUARD</span></code> option (default value is <code class="docutils literal notranslate"><span class="pre">PROCESS</span></code>). <code class="docutils literal notranslate"><span class="pre">RELEASE</span></code> option can be used
+to unlock file explicitly. If option <code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code> is not specified CMake will
+wait until lock succeed or until fatal error occurs. If <code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code> is set to
+<code class="docutils literal notranslate"><span class="pre">0</span></code> lock will be tried once and result will be reported immediately. If
+<code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code> is not <code class="docutils literal notranslate"><span class="pre">0</span></code> CMake will try to lock file for the period specified
+by <code class="docutils literal notranslate"><span class="pre">&lt;seconds&gt;</span></code> value. Any errors will be interpreted as fatal if there is no
+<code class="docutils literal notranslate"><span class="pre">RESULT_VARIABLE</span></code> option. Otherwise result will be stored in <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>
+and will be <code class="docutils literal notranslate"><span class="pre">0</span></code> on success or error message on failure.</p>
+<p>Note that lock is advisory - there is no guarantee that other processes will
+respect this lock, i.e. lock synchronize two or more CMake instances sharing
+some modifiable resources. Similar logic applied to <code class="docutils literal notranslate"><span class="pre">DIRECTORY</span></code> option -
+locking parent directory doesn’t prevent other <code class="docutils literal notranslate"><span class="pre">LOCK</span></code> commands to lock any
+child directory or file.</p>
+<p>Trying to lock file twice is not allowed.  Any intermediate directories and
+file itself will be created if they not exist.  <code class="docutils literal notranslate"><span class="pre">GUARD</span></code> and <code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code>
+options ignored on <code class="docutils literal notranslate"><span class="pre">RELEASE</span></code> operation.</p>
+</div>
+<div class="section" id="archiving">
+<h2>Archiving<a class="headerlink" href="#archiving" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="archive-create"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">ARCHIVE_CREATE</span><span class="w"> </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nv">&lt;archive&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="no">PATHS</span><span class="w"> </span><span class="nv">&lt;paths&gt;...</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">FORMAT</span><span class="w"> </span><span class="nv">&lt;format&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">COMPRESSION</span><span class="w"> </span><span class="nv">&lt;compression&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">COMPRESSION_LEVEL</span><span class="w"> </span><span class="nv">&lt;compression-level&gt;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">MTIME</span><span class="w"> </span><span class="nv">&lt;mtime&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">VERBOSE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Creates the specified <code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;</span></code> file with the files and directories
+listed in <code class="docutils literal notranslate"><span class="pre">&lt;paths&gt;</span></code>.  Note that <code class="docutils literal notranslate"><span class="pre">&lt;paths&gt;</span></code> must list actual files or
+directories, wildcards are not supported.</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">FORMAT</span></code> option to specify the archive format.  Supported values
+for <code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code> are <code class="docutils literal notranslate"><span class="pre">7zip</span></code>, <code class="docutils literal notranslate"><span class="pre">gnutar</span></code>, <code class="docutils literal notranslate"><span class="pre">pax</span></code>, <code class="docutils literal notranslate"><span class="pre">paxr</span></code>, <code class="docutils literal notranslate"><span class="pre">raw</span></code> and
+<code class="docutils literal notranslate"><span class="pre">zip</span></code>.  If <code class="docutils literal notranslate"><span class="pre">FORMAT</span></code> is not given, the default format is <code class="docutils literal notranslate"><span class="pre">paxr</span></code>.</p>
+<p>Some archive formats allow the type of compression to be specified.
+The <code class="docutils literal notranslate"><span class="pre">7zip</span></code> and <code class="docutils literal notranslate"><span class="pre">zip</span></code> archive formats already imply a specific type of
+compression.  The other formats use no compression by default, but can be
+directed to do so with the <code class="docutils literal notranslate"><span class="pre">COMPRESSION</span></code> option.  Valid values for
+<code class="docutils literal notranslate"><span class="pre">&lt;compression&gt;</span></code> are <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">BZip2</span></code>, <code class="docutils literal notranslate"><span class="pre">GZip</span></code>, <code class="docutils literal notranslate"><span class="pre">XZ</span></code>, and <code class="docutils literal notranslate"><span class="pre">Zstd</span></code>.</p>
+<p>The compression level can be specified with the <code class="docutils literal notranslate"><span class="pre">COMPRESSION_LEVEL</span></code> option.
+The <code class="docutils literal notranslate"><span class="pre">&lt;compression-level&gt;</span></code> should be between 0-9, with the default being 0.
+The <code class="docutils literal notranslate"><span class="pre">COMPRESSION</span></code> option must be present when <code class="docutils literal notranslate"><span class="pre">COMPRESSION_LEVEL</span></code> is given.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">FORMAT</span></code> set to <code class="docutils literal notranslate"><span class="pre">raw</span></code> only one file will be compressed with the
+compression type specified by <code class="docutils literal notranslate"><span class="pre">COMPRESSION</span></code>.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">VERBOSE</span></code> option enables verbose output for the archive operation.</p>
+<p>To specify the modification time recorded in tarball entries, use
+the <code class="docutils literal notranslate"><span class="pre">MTIME</span></code> option.</p>
+<div class="highlight-cmake notranslate" id="archive-extract"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">ARCHIVE_EXTRACT</span><span class="w"> </span><span class="no">INPUT</span><span class="w"> </span><span class="nv">&lt;archive&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">PATTERNS</span><span class="w"> </span><span class="nv">&lt;patterns&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">LIST_ONLY</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">VERBOSE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Extracts or lists the content of the specified <code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;</span></code>.</p>
+<p>The directory where the content of the archive will be extracted to can
+be specified using the <code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> option.  If the directory does not
+exist, it will be created.  If <code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> is not given, the current
+binary directory will be used.</p>
+<p>If required, you may select which files and directories to list or extract
+from the archive using the specified <code class="docutils literal notranslate"><span class="pre">&lt;patterns&gt;</span></code>.  Wildcards are supported.
+If the <code class="docutils literal notranslate"><span class="pre">PATTERNS</span></code> option is not given, the entire archive will be listed or
+extracted.</p>
+<p><code class="docutils literal notranslate"><span class="pre">LIST_ONLY</span></code> will list the files in the archive rather than extract them.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">VERBOSE</span></code>, the command will produce verbose output.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">file</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#reading">Reading</a></li>
+<li><a class="reference internal" href="#writing">Writing</a></li>
+<li><a class="reference internal" href="#filesystem">Filesystem</a></li>
+<li><a class="reference internal" href="#path-conversion">Path Conversion</a></li>
+<li><a class="reference internal" href="#transfer">Transfer</a></li>
+<li><a class="reference internal" href="#locking">Locking</a></li>
+<li><a class="reference internal" href="#archiving">Archiving</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="execute_process.html"
+                        title="previous chapter">execute_process</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="find_file.html"
+                        title="next chapter">find_file</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/file.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="find_file.html" title="find_file"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="execute_process.html" title="execute_process"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">file</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>get_cmake_property &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="get_directory_property" href="get_directory_property.html" />
+    <link rel="prev" title="function" href="function.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="get_directory_property.html" title="get_directory_property"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="function.html" title="function"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_cmake_property</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="get-cmake-property">
+<span id="command:get_cmake_property"></span><h1>get_cmake_property<a class="headerlink" href="#get-cmake-property" title="Permalink to this headline">¶</a></h1>
+<p>Get a global property of the CMake instance.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_cmake_property(</span><span class="nv">&lt;var&gt;</span><span class="w"> </span><span class="nv">&lt;property&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Gets a global property from the CMake instance.  The value of
+the <code class="docutils literal notranslate"><span class="pre">&lt;property&gt;</span></code> is stored in the variable <code class="docutils literal notranslate"><span class="pre">&lt;var&gt;</span></code>.
+If the property is not found, <code class="docutils literal notranslate"><span class="pre">&lt;var&gt;</span></code> will be set to <code class="docutils literal notranslate"><span class="pre">NOTFOUND</span></code>.
+See the <span class="target" id="index-0-manual:cmake-properties(7)"></span><a class="reference internal" href="../manual/cmake-properties.7.html#manual:cmake-properties(7)" title="cmake-properties(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-properties(7)</span></code></a> manual for available properties.</p>
+<p>See also the <span class="target" id="index-0-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> command <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> option.</p>
+<p>In addition to global properties, this command (for historical reasons)
+also supports the <span class="target" id="index-0-prop_dir:VARIABLES"></span><a class="reference internal" href="../prop_dir/VARIABLES.html#prop_dir:VARIABLES" title="VARIABLES"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">VARIABLES</span></code></a> and <span class="target" id="index-0-prop_dir:MACROS"></span><a class="reference internal" href="../prop_dir/MACROS.html#prop_dir:MACROS" title="MACROS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">MACROS</span></code></a> directory
+properties.  It also supports a special <code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> global property that
+lists the components given to the <span class="target" id="index-0-command:install"></span><a class="reference internal" href="install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="function.html"
+                        title="previous chapter">function</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="get_directory_property.html"
+                        title="next chapter">get_directory_property</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/get_cmake_property.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="get_directory_property.html" title="get_directory_property"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="function.html" title="function"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_cmake_property</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SelectLibraryConfigurations &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SquishTestScript" href="SquishTestScript.html" />
+    <link rel="prev" title="ProcessorCount" href="ProcessorCount.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="SquishTestScript.html" title="SquishTestScript"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ProcessorCount.html" title="ProcessorCount"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">SelectLibraryConfigurations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="selectlibraryconfigurations">
+<span id="module:SelectLibraryConfigurations"></span><h1>SelectLibraryConfigurations<a class="headerlink" href="#selectlibraryconfigurations" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">select_library_configurations(</span><span class="nb">basename</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This macro takes a library base name as an argument, and will choose
+good values for the variables</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>basename_LIBRARY
+basename_LIBRARIES
+basename_LIBRARY_DEBUG
+basename_LIBRARY_RELEASE
+</pre></div>
+</div>
+<p>depending on what has been found and set.</p>
+<p>If only <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_RELEASE</span></code> is defined, <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY</span></code> will
+be set to the release value, and <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_DEBUG</span></code> will be set
+to <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_DEBUG-NOTFOUND</span></code>.  If only <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_DEBUG</span></code>
+is defined, then <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY</span></code> will take the debug value, and
+<code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_RELEASE</span></code> will be set to <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY_RELEASE-NOTFOUND</span></code>.</p>
+<p>If the generator supports configuration types, then <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY</span></code>
+and <code class="docutils literal notranslate"><span class="pre">basename_LIBRARIES</span></code> will be set with debug and optimized flags
+specifying the library to be used for the given configuration.  If no
+build type has been set or the generator in use does not support
+configuration types, then <code class="docutils literal notranslate"><span class="pre">basename_LIBRARY</span></code> and <code class="docutils literal notranslate"><span class="pre">basename_LIBRARIES</span></code>
+will take only the release value, or the debug value if the release one
+is not set.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ProcessorCount.html"
+                        title="previous chapter">ProcessorCount</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="SquishTestScript.html"
+                        title="next chapter">SquishTestScript</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/SelectLibraryConfigurations.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="SquishTestScript.html" title="SquishTestScript"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ProcessorCount.html" title="ProcessorCount"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">SelectLibraryConfigurations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

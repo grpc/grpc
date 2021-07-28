@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>message &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="option" href="option.html" />
+    <link rel="prev" title="math" href="math.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="option.html" title="option"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="math.html" title="math"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">message</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="message">
+<span id="command:message"></span><h1>message<a class="headerlink" href="#message" title="Permalink to this headline">¶</a></h1>
+<p>Log a message.</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<pre class="literal-block"><a class="reference internal" href="#general-messages">General messages</a>
+  message([&lt;mode&gt;] &quot;message text&quot; ...)
+
+<a class="reference internal" href="#reporting-checks">Reporting checks</a>
+  message(&lt;checkState&gt; &quot;message text&quot; ...)</pre>
+</div>
+<div class="section" id="general-messages">
+<h2>General messages<a class="headerlink" href="#general-messages" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">message(</span><span class="p">[</span><span class="nv">&lt;mode&gt;</span><span class="p">]</span><span class="w"> </span><span class="s">&quot;message text&quot;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Record the specified message text in the log.  If more than one message
+string is given, they are concatenated into a single message with no
+separator between the strings.</p>
+<p>The optional <code class="docutils literal notranslate"><span class="pre">&lt;mode&gt;</span></code> keyword determines the type of message, which
+influences the way the message is handled:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">FATAL_ERROR</span></code></dt><dd><p>CMake Error, stop processing and generation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SEND_ERROR</span></code></dt><dd><p>CMake Error, continue processing, but skip generation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WARNING</span></code></dt><dd><p>CMake Warning, continue processing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AUTHOR_WARNING</span></code></dt><dd><p>CMake Warning (dev), continue processing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPRECATION</span></code></dt><dd><p>CMake Deprecation Error or Warning if variable
+<span class="target" id="index-0-variable:CMAKE_ERROR_DEPRECATED"></span><a class="reference internal" href="../variable/CMAKE_ERROR_DEPRECATED.html#variable:CMAKE_ERROR_DEPRECATED" title="CMAKE_ERROR_DEPRECATED"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ERROR_DEPRECATED</span></code></a> or <span class="target" id="index-0-variable:CMAKE_WARN_DEPRECATED"></span><a class="reference internal" href="../variable/CMAKE_WARN_DEPRECATED.html#variable:CMAKE_WARN_DEPRECATED" title="CMAKE_WARN_DEPRECATED"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_WARN_DEPRECATED</span></code></a>
+is enabled, respectively, else no message.</p>
+</dd>
+<dt>(none) or <code class="docutils literal notranslate"><span class="pre">NOTICE</span></code></dt><dd><p>Important message printed to stderr to attract user’s attention.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STATUS</span></code></dt><dd><p>The main interesting messages that project users might be interested in.
+Ideally these should be concise, no more than a single line, but still
+informative.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VERBOSE</span></code></dt><dd><p>Detailed informational messages intended for project users.  These messages
+should provide additional details that won’t be of interest in most cases,
+but which may be useful to those building the project when they want deeper
+insight into what’s happening.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEBUG</span></code></dt><dd><p>Detailed informational messages intended for developers working on the
+project itself as opposed to users who just want to build it.  These messages
+will not typically be of interest to other users building the project and
+will often be closely related to internal implementation details.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TRACE</span></code></dt><dd><p>Fine-grained messages with very low-level implementation details.  Messages
+using this log level would normally only be temporary and would expect to be
+removed before releasing the project, packaging up the files, etc.</p>
+</dd>
+</dl>
+<p>The CMake command-line tool displays <code class="docutils literal notranslate"><span class="pre">STATUS</span></code> to <code class="docutils literal notranslate"><span class="pre">TRACE</span></code> messages on stdout
+with the message preceded by two hyphens and a space.  All other message types
+are sent to stderr and are not prefixed with hyphens.  The
+<span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">GUI</span></code></a> displays all messages in its log area.
+The <span class="target" id="index-0-manual:ccmake(1)"></span><a class="reference internal" href="../manual/ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">curses</span> <span class="pre">interface</span></code></a> shows <code class="docutils literal notranslate"><span class="pre">STATUS</span></code> to <code class="docutils literal notranslate"><span class="pre">TRACE</span></code>
+messages one at a time on a status line and other messages in an
+interactive pop-up box.  The <code class="docutils literal notranslate"><span class="pre">--log-level</span></code> command-line option to each of
+these tools can be used to control which messages will be shown.
+To make a log level persist between CMake runs, the
+<span class="target" id="index-0-variable:CMAKE_MESSAGE_LOG_LEVEL"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_LOG_LEVEL.html#variable:CMAKE_MESSAGE_LOG_LEVEL" title="CMAKE_MESSAGE_LOG_LEVEL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_LOG_LEVEL</span></code></a> variable can be set instead.
+Note that the command line option takes precedence over the cache variable.</p>
+<p>Messages of log levels <code class="docutils literal notranslate"><span class="pre">NOTICE</span></code> and below will have each line preceded
+by the content of the <span class="target" id="index-0-variable:CMAKE_MESSAGE_INDENT"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_INDENT.html#variable:CMAKE_MESSAGE_INDENT" title="CMAKE_MESSAGE_INDENT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_INDENT</span></code></a> variable (converted to
+a single string by concatenating its list items).  For <code class="docutils literal notranslate"><span class="pre">STATUS</span></code> to <code class="docutils literal notranslate"><span class="pre">TRACE</span></code>
+messages, this indenting content will be inserted after the hyphens.</p>
+<p>Messages of log levels <code class="docutils literal notranslate"><span class="pre">NOTICE</span></code> and below can also have each line preceded
+with context of the form <code class="docutils literal notranslate"><span class="pre">[some.context.example]</span></code>.  The content between the
+square brackets is obtained by converting the <span class="target" id="index-0-variable:CMAKE_MESSAGE_CONTEXT"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_CONTEXT.html#variable:CMAKE_MESSAGE_CONTEXT" title="CMAKE_MESSAGE_CONTEXT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_CONTEXT</span></code></a>
+list variable to a dot-separated string.  The message context will always
+appear before any indenting content but after any automatically added leading
+hyphens. By default, message context is not shown, it has to be explicitly
+enabled by giving the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> <code class="docutils literal notranslate"><span class="pre">--log-context</span></code>
+command-line option or by setting the <span class="target" id="index-0-variable:CMAKE_MESSAGE_CONTEXT_SHOW"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_CONTEXT_SHOW.html#variable:CMAKE_MESSAGE_CONTEXT_SHOW" title="CMAKE_MESSAGE_CONTEXT_SHOW"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_CONTEXT_SHOW</span></code></a>
+variable to true.  See the <span class="target" id="index-1-variable:CMAKE_MESSAGE_CONTEXT"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_CONTEXT.html#variable:CMAKE_MESSAGE_CONTEXT" title="CMAKE_MESSAGE_CONTEXT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_CONTEXT</span></code></a> documentation for
+usage examples.</p>
+<p>CMake Warning and Error message text displays using a simple markup
+language.  Non-indented text is formatted in line-wrapped paragraphs
+delimited by newlines.  Indented text is considered pre-formatted.</p>
+</div>
+<div class="section" id="reporting-checks">
+<h2>Reporting checks<a class="headerlink" href="#reporting-checks" title="Permalink to this headline">¶</a></h2>
+<p>A common pattern in CMake output is a message indicating the start of some
+sort of check, followed by another message reporting the result of that check.
+For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;Looking for someheader.h&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="c">#... do the checks, set checkSuccess with the result</span>
+<span class="nf">if(</span><span class="nb">checkSuccess</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;Looking for someheader.h - found&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">else()</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;Looking for someheader.h - not found&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This can be more robustly and conveniently expressed using the <code class="docutils literal notranslate"><span class="pre">CHECK_...</span></code>
+keyword form of the <code class="docutils literal notranslate"><span class="pre">message()</span></code> command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">message(</span><span class="nv">&lt;checkState&gt;</span><span class="w"> </span><span class="s">&quot;message&quot;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;checkState&gt;</span></code> must be one of the following:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CHECK_START</span></code></dt><dd><p>Record a concise message about the check about to be performed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CHECK_PASS</span></code></dt><dd><p>Record a successful result for a check.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CHECK_FAIL</span></code></dt><dd><p>Record an unsuccessful result for a check.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>When recording a check result, the command repeats the message from the most
+recently started check for which no result has yet been reported, then some
+separator characters and then the message text provided after the
+<code class="docutils literal notranslate"><span class="pre">CHECK_PASS</span></code> or <code class="docutils literal notranslate"><span class="pre">CHECK_FAIL</span></code> keyword.  Check messages are always reported
+at <code class="docutils literal notranslate"><span class="pre">STATUS</span></code> log level.</p>
+<p>Checks may be nested and every <code class="docutils literal notranslate"><span class="pre">CHECK_START</span></code> should have exactly one
+matching <code class="docutils literal notranslate"><span class="pre">CHECK_PASS</span></code> or <code class="docutils literal notranslate"><span class="pre">CHECK_FAIL</span></code>.
+The <span class="target" id="index-1-variable:CMAKE_MESSAGE_INDENT"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_INDENT.html#variable:CMAKE_MESSAGE_INDENT" title="CMAKE_MESSAGE_INDENT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_INDENT</span></code></a> variable can also be used to add
+indenting to nested checks if desired.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">message(</span><span class="no">CHECK_START</span><span class="w"> </span><span class="s">&quot;Finding my things&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="no">CMAKE_MESSAGE_INDENT</span><span class="w"> </span><span class="s">&quot;  &quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">unset(</span><span class="nb">missingComponents</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">message(</span><span class="no">CHECK_START</span><span class="w"> </span><span class="s">&quot;Finding partA&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># ... do check, assume we find A</span>
+<span class="nf">message(</span><span class="no">CHECK_PASS</span><span class="w"> </span><span class="s">&quot;found&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">message(</span><span class="no">CHECK_START</span><span class="w"> </span><span class="s">&quot;Finding partB&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># ... do check, assume we don&#39;t find B</span>
+<span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">missingComponents</span><span class="w"> </span><span class="no">B</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">message(</span><span class="no">CHECK_FAIL</span><span class="w"> </span><span class="s">&quot;not found&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">list(</span><span class="no">POP_BACK</span><span class="w"> </span><span class="no">CMAKE_MESSAGE_INDENT</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="nb">missingComponents</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">CHECK_FAIL</span><span class="w"> </span><span class="s">&quot;missing components: ${missingComponents}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">else()</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">CHECK_PASS</span><span class="w"> </span><span class="s">&quot;all components found&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Output from the above would appear something like the following:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-- Finding my things
+--   Finding partA
+--   Finding partA - found
+--   Finding partB
+--   Finding partB - not found
+-- Finding my things - missing components: B
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">message</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#general-messages">General messages</a></li>
+<li><a class="reference internal" href="#reporting-checks">Reporting checks</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="math.html"
+                        title="previous chapter">math</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="option.html"
+                        title="next chapter">option</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/message.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="option.html" title="option"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="math.html" title="math"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">message</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

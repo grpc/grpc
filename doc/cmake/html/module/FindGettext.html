@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindGettext &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindGIF" href="FindGIF.html" />
+    <link rel="prev" title="FindGDAL" href="FindGDAL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindGIF.html" title="FindGIF"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindGDAL.html" title="FindGDAL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGettext</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findgettext">
+<span id="module:FindGettext"></span><h1>FindGettext<a class="headerlink" href="#findgettext" title="Permalink to this headline">¶</a></h1>
+<p>Find GNU gettext tools</p>
+<p>This module looks for the GNU gettext tools.  This module defines the
+following values:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GETTEXT_MSGMERGE_EXECUTABLE: the full path to the msgmerge tool.
+GETTEXT_MSGFMT_EXECUTABLE: the full path to the msgfmt tool.
+GETTEXT_FOUND: True if gettext has been found.
+GETTEXT_VERSION_STRING: the version of gettext found (since CMake 2.8.8)
+</pre></div>
+</div>
+<p>Additionally it provides the following macros:</p>
+<p>GETTEXT_CREATE_TRANSLATIONS ( outputFile [ALL] file1 …  fileN )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>This will create a target &quot;translations&quot; which will convert the
+given input po files into the binary output mo file. If the
+ALL option is used, the translations will also be created when
+building the default target.
+</pre></div>
+</div>
+<p>GETTEXT_PROCESS_POT_FILE( &lt;potfile&gt; [ALL] [INSTALL_DESTINATION &lt;destdir&gt;]
+LANGUAGES &lt;lang1&gt; &lt;lang2&gt; …  )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Process the given pot file to mo files.
+If INSTALL_DESTINATION is given then automatically install rules will
+be created, the language subdirectory will be taken into account
+(by default use share/locale/).
+If ALL is specified, the pot file is processed when building the all traget.
+It creates a custom target &quot;potfile&quot;.
+</pre></div>
+</div>
+<p>GETTEXT_PROCESS_PO_FILES( &lt;lang&gt; [ALL] [INSTALL_DESTINATION &lt;dir&gt;]
+PO_FILES &lt;po1&gt; &lt;po2&gt; …  )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Process the given po files to mo files for the given language.
+If INSTALL_DESTINATION is given then automatically install rules will
+be created, the language subdirectory will be taken into account
+(by default use share/locale/).
+If ALL is specified, the po files are processed when building the all traget.
+It creates a custom target &quot;pofiles&quot;.
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you wish to use the Gettext library (libintl), use <span class="target" id="index-0-module:FindIntl"></span><a class="reference internal" href="FindIntl.html#module:FindIntl" title="FindIntl"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindIntl</span></code></a>.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindGDAL.html"
+                        title="previous chapter">FindGDAL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindGIF.html"
+                        title="next chapter">FindGIF</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindGettext.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindGIF.html" title="FindGIF"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindGDAL.html" title="FindGDAL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGettext</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

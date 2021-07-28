@@ -1,0 +1,10 @@
+CMAKE_INTERPROCEDURAL_OPTIMIZATION_<CONFIG>
+-------------------------------------------
+
+.. versionadded:: 3.9
+
+Default value for :prop_tgt:`INTERPROCEDURAL_OPTIMIZATION_<CONFIG>` of targets.
+
+This variable is used to initialize the :prop_tgt:`INTERPROCEDURAL_OPTIMIZATION_<CONFIG>`
+property on all the targets.  See that target property for additional
+information.

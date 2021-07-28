@@ -1,0 +1,621 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CMAKE-LANGUAGE" "7" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cmake-language \- CMake Language Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH ORGANIZATION
+.sp
+CMake input files are written in the “CMake Language” in source files
+named \fBCMakeLists.txt\fP or ending in a \fB\&.cmake\fP file name extension.
+.sp
+CMake Language source files in a project are organized into:
+.INDENT 0.0
+.IP \(bu 2
+\fI\%Directories\fP (\fBCMakeLists.txt\fP),
+.IP \(bu 2
+\fI\%Scripts\fP (\fB<script>.cmake\fP), and
+.IP \(bu 2
+\fI\%Modules\fP (\fB<module>.cmake\fP).
+.UNINDENT
+.SS Directories
+.sp
+When CMake processes a project source tree, the entry point is
+a source file called \fBCMakeLists.txt\fP in the top\-level source
+directory.  This file may contain the entire build specification
+or use the \fBadd_subdirectory()\fP command to add subdirectories
+to the build.  Each subdirectory added by the command must also
+contain a \fBCMakeLists.txt\fP file as the entry point to that
+directory.  For each source directory whose \fBCMakeLists.txt\fP file
+is processed CMake generates a corresponding directory in the build
+tree to act as the default working and output directory.
+.SS Scripts
+.sp
+An individual \fB<script>.cmake\fP source file may be processed
+in \fIscript mode\fP by using the \fBcmake(1)\fP command\-line tool
+with the \fB\-P\fP option.  Script mode simply runs the commands in
+the given CMake Language source file and does not generate a
+build system.  It does not allow CMake commands that define build
+targets or actions.
+.SS Modules
+.sp
+CMake Language code in either \fI\%Directories\fP or \fI\%Scripts\fP may
+use the \fBinclude()\fP command to load a \fB<module>.cmake\fP
+source file in the scope of the including context.
+See the \fBcmake\-modules(7)\fP manual page for documentation
+of modules included with the CMake distribution.
+Project source trees may also provide their own modules and
+specify their location(s) in the \fBCMAKE_MODULE_PATH\fP
+variable.
+.SH SYNTAX
+.SS Encoding
+.sp
+A CMake Language source file may be written in 7\-bit ASCII text for
+maximum portability across all supported platforms.  Newlines may be
+encoded as either \fB\en\fP or \fB\er\en\fP but will be converted to \fB\en\fP
+as input files are read.
+.sp
+Note that the implementation is 8\-bit clean so source files may
+be encoded as UTF\-8 on platforms with system APIs supporting this
+encoding.  In addition, CMake 3.2 and above support source files
+encoded in UTF\-8 on Windows (using UTF\-16 to call system APIs).
+Furthermore, CMake 3.0 and above allow a leading UTF\-8
+\fI\%Byte\-Order Mark\fP in source files.
+.SS Source Files
+.sp
+A CMake Language source file consists of zero or more
+\fI\%Command Invocations\fP separated by newlines and optionally
+spaces and \fI\%Comments\fP:
+.sp
+.nf
+\fBfile        \fP ::=  \fI\%file_element\fP*
+\fBfile_element\fP ::=  \fI\%command_invocation\fP \fI\%line_ending\fP |
+                  (\fI\%bracket_comment\fP|\fI\%space\fP)* \fI\%line_ending\fP
+\fBline_ending \fP ::=  \fI\%line_comment\fP? \fI\%newline\fP
+\fBspace       \fP ::=  <match \(aq[ \et]+\(aq>
+\fBnewline     \fP ::=  <match \(aq\en\(aq>
+
+.fi
+.sp
+Note that any source file line not inside \fI\%Command Arguments\fP or
+a \fI\%Bracket Comment\fP can end in a \fI\%Line Comment\fP\&.
+.SS Command Invocations
+.sp
+A \fIcommand invocation\fP is a name followed by paren\-enclosed arguments
+separated by whitespace:
+.sp
+.nf
+\fBcommand_invocation \fP ::=  \fI\%space\fP* \fI\%identifier\fP \fI\%space\fP* \(aq(\(aq \fI\%arguments\fP \(aq)\(aq
+\fBidentifier         \fP ::=  <match \(aq[A\-Za\-z_][A\-Za\-z0\-9_]*\(aq>
+\fBarguments          \fP ::=  \fI\%argument\fP? \fI\%separated_arguments\fP*
+\fBseparated_arguments\fP ::=  \fI\%separation\fP+ \fI\%argument\fP? |
+                         \fI\%separation\fP* \(aq(\(aq \fI\%arguments\fP \(aq)\(aq
+\fBseparation         \fP ::=  \fI\%space\fP | \fI\%line_ending\fP
+
+.fi
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_executable(hello world.c)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Command names are case\-insensitive.
+Nested unquoted parentheses in the arguments must balance.
+Each \fB(\fP or \fB)\fP is given to the command invocation as
+a literal \fI\%Unquoted Argument\fP\&.  This may be used in calls
+to the \fBif()\fP command to enclose conditions.
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+if(FALSE AND (FALSE OR TRUE)) # evaluates to FALSE
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+CMake versions prior to 3.0 require command name identifiers
+to be at least 2 characters.
+.sp
+CMake versions prior to 2.8.12 silently accept an \fI\%Unquoted Argument\fP
+or a \fI\%Quoted Argument\fP immediately following a \fI\%Quoted Argument\fP and
+not separated by any whitespace.  For compatibility, CMake 2.8.12 and
+higher accept such code but produce a warning.
+.UNINDENT
+.UNINDENT
+.SS Command Arguments
+.sp
+There are three types of arguments within \fI\%Command Invocations\fP:
+.sp
+.nf
+\fBargument\fP ::=  \fI\%bracket_argument\fP | \fI\%quoted_argument\fP | \fI\%unquoted_argument\fP
+
+.fi
+.SS Bracket Argument
+.sp
+A \fIbracket argument\fP, inspired by \fI\%Lua\fP long bracket syntax,
+encloses content between opening and closing “brackets” of the
+same length:
+.sp
+.nf
+\fBbracket_argument\fP ::=  \fI\%bracket_open\fP \fI\%bracket_content\fP \fI\%bracket_close\fP
+\fBbracket_open    \fP ::=  \(aq[\(aq \(aq=\(aq* \(aq[\(aq
+\fBbracket_content \fP ::=  <any text not containing a \fI\%bracket_close\fP with
+                       the same number of \(aq=\(aq as the \fI\%bracket_open\fP>
+\fBbracket_close   \fP ::=  \(aq]\(aq \(aq=\(aq* \(aq]\(aq
+
+.fi
+.sp
+An opening bracket is written \fB[\fP followed by zero or more \fB=\fP followed
+by \fB[\fP\&.  The corresponding closing bracket is written \fB]\fP followed
+by the same number of \fB=\fP followed by \fB]\fP\&.
+Brackets do not nest.  A unique length may always be chosen
+for the opening and closing brackets to contain closing brackets
+of other lengths.
+.sp
+Bracket argument content consists of all text between the opening
+and closing brackets, except that one newline immediately following
+the opening bracket, if any, is ignored.  No evaluation of the
+enclosed content, such as \fI\%Escape Sequences\fP or \fI\%Variable References\fP,
+is performed.  A bracket argument is always given to the command
+invocation as exactly one argument.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+message([=[
+This is the first line in a bracket argument with bracket length 1.
+No \e\-escape sequences or ${variable} references are evaluated.
+This is always one argument even though it contains a ; character.
+The text does not end on a closing bracket of length 0 like ]].
+It does end in a closing bracket of length 1.
+]=])
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+CMake versions prior to 3.0 do not support bracket arguments.
+They interpret the opening bracket as the start of an
+\fI\%Unquoted Argument\fP\&.
+.UNINDENT
+.UNINDENT
+.SS Quoted Argument
+.sp
+A \fIquoted argument\fP encloses content between opening and closing
+double\-quote characters:
+.sp
+.nf
+\fBquoted_argument    \fP ::=  \(aq"\(aq \fI\%quoted_element\fP* \(aq"\(aq
+\fBquoted_element     \fP ::=  <any character except \(aq\e\(aq or \(aq"\(aq> |
+                         \fI\%escape_sequence\fP |
+                         \fI\%quoted_continuation\fP
+\fBquoted_continuation\fP ::=  \(aq\e\(aq \fI\%newline\fP
+
+.fi
+.sp
+Quoted argument content consists of all text between opening and
+closing quotes.  Both \fI\%Escape Sequences\fP and \fI\%Variable References\fP
+are evaluated.  A quoted argument is always given to the command
+invocation as exactly one argument.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+message("This is a quoted argument containing multiple lines.
+This is always one argument even though it contains a ; character.
+Both \e\e\-escape sequences and ${variable} references are evaluated.
+The text does not end on an escaped double\-quote like \e".
+It does end in an unescaped double quote.
+")
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The final \fB\e\fP on any line ending in an odd number of backslashes
+is treated as a line continuation and ignored along with the
+immediately following newline character.  For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+message("\e
+This is the first line of a quoted argument. \e
+In fact it is the only line but since it is long \e
+the source code uses line continuation.\e
+")
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+CMake versions prior to 3.0 do not support continuation with \fB\e\fP\&.
+They report errors in quoted arguments containing lines ending in
+an odd number of \fB\e\fP characters.
+.UNINDENT
+.UNINDENT
+.SS Unquoted Argument
+.sp
+An \fIunquoted argument\fP is not enclosed by any quoting syntax.
+It may not contain any whitespace, \fB(\fP, \fB)\fP, \fB#\fP, \fB"\fP, or \fB\e\fP
+except when escaped by a backslash:
+.sp
+.nf
+\fBunquoted_argument\fP ::=  \fI\%unquoted_element\fP+ | \fI\%unquoted_legacy\fP
+\fBunquoted_element \fP ::=  <any character except whitespace or one of \(aq()#"\e\(aq> |
+                       \fI\%escape_sequence\fP
+\fBunquoted_legacy  \fP ::=  <see note in text>
+
+.fi
+.sp
+Unquoted argument content consists of all text in a contiguous block
+of allowed or escaped characters.  Both \fI\%Escape Sequences\fP and
+\fI\%Variable References\fP are evaluated.  The resulting value is divided
+in the same way \fI\%Lists\fP divide into elements.  Each non\-empty element
+is given to the command invocation as an argument.  Therefore an
+unquoted argument may be given to a command invocation as zero or
+more arguments.
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+foreach(arg
+    NoSpace
+    Escaped\e Space
+    This;Divides;Into;Five;Arguments
+    Escaped\e;Semicolon
+    )
+  message("${arg}")
+endforeach()
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+To support legacy CMake code, unquoted arguments may also contain
+double\-quoted strings (\fB"..."\fP, possibly enclosing horizontal
+whitespace), and make\-style variable references (\fB$(MAKEVAR)\fP).
+.sp
+Unescaped double\-quotes must balance, may not appear at the
+beginning of an unquoted argument, and are treated as part of the
+content.  For example, the unquoted arguments \fB\-Da="b c"\fP,
+\fB\-Da=$(v)\fP, and \fBa" "b"c"d\fP are each interpreted literally.
+They may instead be written as quoted arguments \fB"\-Da=\e"b c\e""\fP,
+\fB"\-Da=$(v)"\fP, and \fB"a\e" \e"b\e"c\e"d"\fP, respectively.
+.sp
+Make\-style references are treated literally as part of the content
+and do not undergo variable expansion.  They are treated as part
+of a single argument (rather than as separate \fB$\fP, \fB(\fP,
+\fBMAKEVAR\fP, and \fB)\fP arguments).
+.sp
+The above “unquoted_legacy” production represents such arguments.
+We do not recommend using legacy unquoted arguments in new code.
+Instead use a \fI\%Quoted Argument\fP or a \fI\%Bracket Argument\fP to
+represent the content.
+.UNINDENT
+.UNINDENT
+.SS Escape Sequences
+.sp
+An \fIescape sequence\fP is a \fB\e\fP followed by one character:
+.sp
+.nf
+\fBescape_sequence \fP ::=  \fI\%escape_identity\fP | \fI\%escape_encoded\fP | \fI\%escape_semicolon\fP
+\fBescape_identity \fP ::=  \(aq\e\(aq <match \(aq[^A\-Za\-z0\-9;]\(aq>
+\fBescape_encoded  \fP ::=  \(aq\et\(aq | \(aq\er\(aq | \(aq\en\(aq
+\fBescape_semicolon\fP ::=  \(aq\e;\(aq
+
+.fi
+.sp
+A \fB\e\fP followed by a non\-alphanumeric character simply encodes the literal
+character without interpreting it as syntax.  A \fB\et\fP, \fB\er\fP, or \fB\en\fP
+encodes a tab, carriage return, or newline character, respectively. A \fB\e;\fP
+outside of any \fI\%Variable References\fP  encodes itself but may be used in an
+\fI\%Unquoted Argument\fP to encode the \fB;\fP without dividing the argument
+value on it.  A \fB\e;\fP inside \fI\%Variable References\fP encodes the literal
+\fB;\fP character.  (See also policy \fBCMP0053\fP documentation for
+historical considerations.)
+.SS Variable References
+.sp
+A \fIvariable reference\fP has the form \fB${<variable>}\fP and is
+evaluated inside a \fI\%Quoted Argument\fP or an \fI\%Unquoted Argument\fP\&.
+A variable reference is replaced by the value of the variable,
+or by the empty string if the variable is not set.
+Variable references can nest and are evaluated from the
+inside out, e.g. \fB${outer_${inner_variable}_variable}\fP\&.
+.sp
+Literal variable references may consist of alphanumeric characters,
+the characters \fB/_.+\-\fP, and \fI\%Escape Sequences\fP\&.  Nested references
+may be used to evaluate variables of any name.  See also policy
+\fBCMP0053\fP documentation for historical considerations and reasons why
+the \fB$\fP is also technically permitted but is discouraged.
+.sp
+The \fI\%Variables\fP section documents the scope of variable names
+and how their values are set.
+.sp
+An \fIenvironment variable reference\fP has the form \fB$ENV{<variable>}\fP\&.
+See the \fI\%Environment Variables\fP section for more information.
+.sp
+A \fIcache variable reference\fP has the form \fB$CACHE{<variable>}\fP\&.
+See \fBCACHE\fP for more information.
+.sp
+The \fBif()\fP command has a special condition syntax that
+allows for variable references in the short form \fB<variable>\fP
+instead of \fB${<variable>}\fP\&.
+However, environment and cache variables always need to be
+referenced as \fB$ENV{<variable>}\fP or \fB$CACHE{<variable>}\fP\&.
+.SS Comments
+.sp
+A comment starts with a \fB#\fP character that is not inside a
+\fI\%Bracket Argument\fP, \fI\%Quoted Argument\fP, or escaped with \fB\e\fP
+as part of an \fI\%Unquoted Argument\fP\&.  There are two types of
+comments: a \fI\%Bracket Comment\fP and a \fI\%Line Comment\fP\&.
+.SS Bracket Comment
+.sp
+A \fB#\fP immediately followed by a \fI\%bracket_open\fP forms a
+\fIbracket comment\fP consisting of the entire bracket enclosure:
+.sp
+.nf
+\fBbracket_comment\fP ::=  \(aq#\(aq \fI\%bracket_argument\fP
+
+.fi
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+#[[This is a bracket comment.
+It runs until the close bracket.]]
+message("First Argument\en" #[[Bracket Comment]] "Second Argument")
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+CMake versions prior to 3.0 do not support bracket comments.
+They interpret the opening \fB#\fP as the start of a \fI\%Line Comment\fP\&.
+.UNINDENT
+.UNINDENT
+.SS Line Comment
+.sp
+A \fB#\fP not immediately followed by a \fI\%bracket_open\fP forms a
+\fIline comment\fP that runs until the end of the line:
+.sp
+.nf
+\fBline_comment\fP ::=  \(aq#\(aq <any text not starting in a \fI\%bracket_open\fP
+                       and not containing a \fI\%newline\fP>
+
+.fi
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# This is a line comment.
+message("First Argument\en" # This is a line comment :)
+        "Second Argument") # This is a line comment.
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH CONTROL STRUCTURES
+.SS Conditional Blocks
+.sp
+The \fBif()\fP/\fBelseif()\fP/\fBelse()\fP/\fBendif()\fP
+commands delimit code blocks to be executed conditionally.
+.SS Loops
+.sp
+The \fBforeach()\fP/\fBendforeach()\fP and
+\fBwhile()\fP/\fBendwhile()\fP commands delimit code
+blocks to be executed in a loop.  Inside such blocks the
+\fBbreak()\fP command may be used to terminate the loop
+early whereas the \fBcontinue()\fP command may be used
+to start with the next iteration immediately.
+.SS Command Definitions
+.sp
+The \fBmacro()\fP/\fBendmacro()\fP, and
+\fBfunction()\fP/\fBendfunction()\fP commands delimit
+code blocks to be recorded for later invocation as commands.
+.SH VARIABLES
+.sp
+Variables are the basic unit of storage in the CMake Language.
+Their values are always of string type, though some commands may
+interpret the strings as values of other types.
+The \fBset()\fP and \fBunset()\fP commands explicitly
+set or unset a variable, but other commands have semantics
+that modify variables as well.
+Variable names are case\-sensitive and may consist of almost
+any text, but we recommend sticking to names consisting only
+of alphanumeric characters plus \fB_\fP and \fB\-\fP\&.
+.sp
+Variables have dynamic scope.  Each variable “set” or “unset”
+creates a binding in the current scope:
+.INDENT 0.0
+.TP
+.B Function Scope
+\fI\%Command Definitions\fP created by the \fBfunction()\fP command
+create commands that, when invoked, process the recorded commands
+in a new variable binding scope.  A variable “set” or “unset”
+binds in this scope and is visible for the current function and
+any nested calls within it, but not after the function returns.
+.TP
+.B Directory Scope
+Each of the \fI\%Directories\fP in a source tree has its own variable
+bindings.  Before processing the \fBCMakeLists.txt\fP file for a
+directory, CMake copies all variable bindings currently defined
+in the parent directory, if any, to initialize the new directory
+scope.  CMake \fI\%Scripts\fP, when processed with \fBcmake \-P\fP, bind
+variables in one “directory” scope.
+.sp
+A variable “set” or “unset” not inside a function call binds
+to the current directory scope.
+.TP
+.B Persistent Cache
+CMake stores a separate set of “cache” variables, or “cache entries”,
+whose values persist across multiple runs within a project build
+tree.  Cache entries have an isolated binding scope modified only
+by explicit request, such as by the \fBCACHE\fP option of the
+\fBset()\fP and \fBunset()\fP commands.
+.UNINDENT
+.sp
+When evaluating \fI\%Variable References\fP, CMake first searches the
+function call stack, if any, for a binding and then falls back
+to the binding in the current directory scope, if any.  If a
+“set” binding is found, its value is used.  If an “unset” binding
+is found, or no binding is found, CMake then searches for a
+cache entry.  If a cache entry is found, its value is used.
+Otherwise, the variable reference evaluates to an empty string.
+The \fB$CACHE{VAR}\fP syntax can be used to do direct cache entry
+lookups.
+.sp
+The \fBcmake\-variables(7)\fP manual documents the many variables
+that are provided by CMake or have meaning to CMake when set
+by project code.
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+CMake reserves identifiers that:
+.INDENT 0.0
+.IP \(bu 2
+begin with \fBCMAKE_\fP (upper\-, lower\-, or mixed\-case), or
+.IP \(bu 2
+begin with \fB_CMAKE_\fP (upper\-, lower\-, or mixed\-case), or
+.IP \(bu 2
+begin with \fB_\fP followed by the name of any \fBCMake Command\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH ENVIRONMENT VARIABLES
+.sp
+Environment Variables are like ordinary \fI\%Variables\fP, with the
+following differences:
+.INDENT 0.0
+.TP
+.B Scope
+Environment variables have global scope in a CMake process.
+They are never cached.
+.TP
+.B References
+\fI\%Variable References\fP have the form \fB$ENV{<variable>}\fP\&.
+.TP
+.B Initialization
+Initial values of the CMake environment variables are those of
+the calling process.
+Values can be changed using the \fBset()\fP and \fBunset()\fP
+commands.
+These commands only affect the running CMake process,
+not the system environment at large.
+Changed values are not written back to the calling process,
+and they are not seen by subsequent build or test processes.
+.UNINDENT
+.sp
+The \fBcmake\-env\-variables(7)\fP manual documents environment
+variables that have special meaning to CMake.
+.SH LISTS
+.sp
+Although all values in CMake are stored as strings, a string
+may be treated as a list in certain contexts, such as during
+evaluation of an \fI\%Unquoted Argument\fP\&.  In such contexts, a string
+is divided into list elements by splitting on \fB;\fP characters not
+following an unequal number of \fB[\fP and \fB]\fP characters and not
+immediately preceded by a \fB\e\fP\&.  The sequence \fB\e;\fP does not
+divide a value but is replaced by \fB;\fP in the resulting element.
+.sp
+A list of elements is represented as a string by concatenating
+the elements separated by \fB;\fP\&.  For example, the \fBset()\fP
+command stores multiple values into the destination variable
+as a list:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+set(srcs a.c b.c c.c) # sets "srcs" to "a.c;b.c;c.c"
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Lists are meant for simple use cases such as a list of source
+files and should not be used for complex data processing tasks.
+Most commands that construct lists do not escape \fB;\fP characters
+in list elements, thus flattening nested lists:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+set(x a "b;c") # sets "x" to "a;b;c", not "a;b\e;c"
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindICU &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindImageMagick" href="FindImageMagick.html" />
+    <link rel="prev" title="FindIcotool" href="FindIcotool.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindImageMagick.html" title="FindImageMagick"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindIcotool.html" title="FindIcotool"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindICU</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findicu">
+<span id="module:FindICU"></span><h1>FindICU<a class="headerlink" href="#findicu" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.7.</span></p>
+</div>
+<p>Find the International Components for Unicode (ICU) libraries and
+programs.</p>
+<p>This module supports multiple components.
+Components can include any of: <code class="docutils literal notranslate"><span class="pre">data</span></code>, <code class="docutils literal notranslate"><span class="pre">i18n</span></code>, <code class="docutils literal notranslate"><span class="pre">io</span></code>, <code class="docutils literal notranslate"><span class="pre">le</span></code>,
+<code class="docutils literal notranslate"><span class="pre">lx</span></code>, <code class="docutils literal notranslate"><span class="pre">test</span></code>, <code class="docutils literal notranslate"><span class="pre">tu</span></code> and <code class="docutils literal notranslate"><span class="pre">uc</span></code>.</p>
+<p>Note that on Windows <code class="docutils literal notranslate"><span class="pre">data</span></code> is named <code class="docutils literal notranslate"><span class="pre">dt</span></code> and <code class="docutils literal notranslate"><span class="pre">i18n</span></code> is named
+<code class="docutils literal notranslate"><span class="pre">in</span></code>; any of the names may be used, and the appropriate
+platform-specific library name will be automatically selected.</p>
+<p>This module reports information about the ICU installation in
+several variables.  General variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_VERSION - ICU release version
+ICU_FOUND - true if the main programs and libraries were found
+ICU_LIBRARIES - component libraries to be linked
+ICU_INCLUDE_DIRS - the directories containing the ICU headers
+</pre></div>
+</div>
+<p>Imported targets:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU::&lt;C&gt;
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">&lt;C&gt;</span></code> is the name of an ICU component, for example
+<code class="docutils literal notranslate"><span class="pre">ICU::i18n</span></code>.</p>
+<p>ICU programs are reported in:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_GENCNVAL_EXECUTABLE - path to gencnval executable
+ICU_ICUINFO_EXECUTABLE - path to icuinfo executable
+ICU_GENBRK_EXECUTABLE - path to genbrk executable
+ICU_ICU-CONFIG_EXECUTABLE - path to icu-config executable
+ICU_GENRB_EXECUTABLE - path to genrb executable
+ICU_GENDICT_EXECUTABLE - path to gendict executable
+ICU_DERB_EXECUTABLE - path to derb executable
+ICU_PKGDATA_EXECUTABLE - path to pkgdata executable
+ICU_UCONV_EXECUTABLE - path to uconv executable
+ICU_GENCFU_EXECUTABLE - path to gencfu executable
+ICU_MAKECONV_EXECUTABLE - path to makeconv executable
+ICU_GENNORM2_EXECUTABLE - path to gennorm2 executable
+ICU_GENCCODE_EXECUTABLE - path to genccode executable
+ICU_GENSPREP_EXECUTABLE - path to gensprep executable
+ICU_ICUPKG_EXECUTABLE - path to icupkg executable
+ICU_GENCMN_EXECUTABLE - path to gencmn executable
+</pre></div>
+</div>
+<p>ICU component libraries are reported in:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_&lt;C&gt;_FOUND - ON if component was found
+ICU_&lt;C&gt;_LIBRARIES - libraries for component
+</pre></div>
+</div>
+<p>ICU datafiles are reported in:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_MAKEFILE_INC - Makefile.inc
+ICU_PKGDATA_INC - pkgdata.inc
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">&lt;C&gt;</span></code> is the uppercased name of the component.</p>
+<p>This module reads hints about search results from:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_ROOT - the root of the ICU installation
+</pre></div>
+</div>
+<p>The environment variable <code class="docutils literal notranslate"><span class="pre">ICU_ROOT</span></code> may also be used; the
+ICU_ROOT variable takes precedence.</p>
+<p>The following cache variables may also be set:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_&lt;P&gt;_EXECUTABLE - the path to executable &lt;P&gt;
+ICU_INCLUDE_DIR - the directory containing the ICU headers
+ICU_&lt;C&gt;_LIBRARY - the library for component &lt;C&gt;
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In most cases none of the above variables will require setting,
+unless multiple ICU versions are available and a specific version
+is required.</p>
+</div>
+<p>Other variables one may set to control this module are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ICU_DEBUG - Set to ON to enable debug output from FindICU.
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindIcotool.html"
+                        title="previous chapter">FindIcotool</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindImageMagick.html"
+                        title="next chapter">FindImageMagick</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindICU.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindImageMagick.html" title="FindImageMagick"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindIcotool.html" title="FindIcotool"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindICU</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Studio 11 2012 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Visual Studio 12 2013" href="Visual%20Studio%2012%202013.html" />
+    <link rel="prev" title="Visual Studio 10 2010" href="Visual%20Studio%2010%202010.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Visual%20Studio%2012%202013.html" title="Visual Studio 12 2013"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Visual%20Studio%2010%202010.html" title="Visual Studio 10 2010"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" accesskey="U">cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visual Studio 11 2012</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="visual-studio-11-2012">
+<span id="generator:Visual Studio 11 2012"></span><h1>Visual Studio 11 2012<a class="headerlink" href="#visual-studio-11-2012" title="Permalink to this headline">¶</a></h1>
+<p>Generates Visual Studio 11 (VS 2012) project files.</p>
+<p>For compatibility with CMake versions prior to 3.0, one may specify this
+generator using the name “Visual Studio 11” without the year component.</p>
+<div class="section" id="project-types">
+<h2>Project Types<a class="headerlink" href="#project-types" title="Permalink to this headline">¶</a></h2>
+<p>Only Visual C++ and C# projects may be generated.  Other types of
+projects (JavaScript, Database, Website, etc.) are not supported.</p>
+</div>
+<div class="section" id="platform-selection">
+<h2>Platform Selection<a class="headerlink" href="#platform-selection" title="Permalink to this headline">¶</a></h2>
+<p>The default target platform name (architecture) is <code class="docutils literal notranslate"><span class="pre">Win32</span></code>.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a> variable may be set, perhaps
+via the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-A</span></code> option, to specify a target platform
+name (architecture).  For example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012&quot;</span> <span class="pre">-A</span> <span class="pre">Win32</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012&quot;</span> <span class="pre">-A</span> <span class="pre">x64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012&quot;</span> <span class="pre">-A</span> <span class="pre">ARM</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012&quot;</span> <span class="pre">-A</span> <span class="pre">&lt;WinCE-SDK&gt;</span></code>
+(Specify a target platform matching a Windows CE SDK name.)</p></li>
+</ul>
+<p>For compatibility with CMake versions prior to 3.1, one may specify
+a target platform name optionally at the end of the generator name.
+This is supported only for:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012</span> <span class="pre">Win64</span></code></dt><dd><p>Specify target platform <code class="docutils literal notranslate"><span class="pre">x64</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012</span> <span class="pre">ARM</span></code></dt><dd><p>Specify target platform <code class="docutils literal notranslate"><span class="pre">ARM</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">11</span> <span class="pre">2012</span> <span class="pre">&lt;WinCE-SDK&gt;</span></code></dt><dd><p>Specify target platform matching a Windows CE SDK name.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="toolset-selection">
+<h2>Toolset Selection<a class="headerlink" href="#toolset-selection" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">v110</span></code> toolset that comes with Visual Studio 11 2012 is selected by
+default.  The <span class="target" id="index-0-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> option may be set, perhaps
+via the <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-T</span></code> option, to specify another toolset.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Visual Studio 11 2012</a><ul>
+<li><a class="reference internal" href="#project-types">Project Types</a></li>
+<li><a class="reference internal" href="#platform-selection">Platform Selection</a></li>
+<li><a class="reference internal" href="#toolset-selection">Toolset Selection</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Visual%20Studio%2010%202010.html"
+                        title="previous chapter">Visual Studio 10 2010</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Visual%20Studio%2012%202013.html"
+                        title="next chapter">Visual Studio 12 2013</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generator/Visual Studio 11 2012.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Visual%20Studio%2012%202013.html" title="Visual Studio 12 2013"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Visual%20Studio%2010%202010.html" title="Visual Studio 10 2010"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" >cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visual Studio 11 2012</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FIXTURES_REQUIRED &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FIXTURES_SETUP" href="FIXTURES_SETUP.html" />
+    <link rel="prev" title="FIXTURES_CLEANUP" href="FIXTURES_CLEANUP.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FIXTURES_SETUP.html" title="FIXTURES_SETUP"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FIXTURES_CLEANUP.html" title="FIXTURES_CLEANUP"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FIXTURES_REQUIRED</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="fixtures-required">
+<span id="prop_test:FIXTURES_REQUIRED"></span><h1>FIXTURES_REQUIRED<a class="headerlink" href="#fixtures-required" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.7.</span></p>
+</div>
+<p>Specifies a list of fixtures the test requires. Fixture names are case
+sensitive and they are not required to have any similarity to test names.</p>
+<p>Fixtures are a way to attach setup and cleanup tasks to a set of tests. If a
+test requires a given fixture, then all tests marked as setup tasks for that
+fixture will be executed first (once for the whole set of tests, not once per
+test requiring the fixture). After all tests requiring a particular fixture
+have completed, CTest will ensure all tests marked as cleanup tasks for that
+fixture are then executed. Tests are marked as setup tasks with the
+<span class="target" id="index-0-prop_test:FIXTURES_SETUP"></span><a class="reference internal" href="FIXTURES_SETUP.html#prop_test:FIXTURES_SETUP" title="FIXTURES_SETUP"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">FIXTURES_SETUP</span></code></a> property and as cleanup tasks with the
+<span class="target" id="index-0-prop_test:FIXTURES_CLEANUP"></span><a class="reference internal" href="FIXTURES_CLEANUP.html#prop_test:FIXTURES_CLEANUP" title="FIXTURES_CLEANUP"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">FIXTURES_CLEANUP</span></code></a> property. If any of a fixture’s setup tests fail,
+all tests listing that fixture in their <code class="docutils literal notranslate"><span class="pre">FIXTURES_REQUIRED</span></code> property will not
+be executed. The cleanup tests for the fixture will always be executed, even if
+some setup tests fail.</p>
+<p>When CTest is asked to execute only a subset of tests (e.g. by the use of
+regular expressions or when run with the <code class="docutils literal notranslate"><span class="pre">--rerun-failed</span></code> command line
+option), it will automatically add any setup or cleanup tests for fixtures
+required by any of the tests that are in the execution set. This behavior can
+be overridden with the <code class="docutils literal notranslate"><span class="pre">-FS</span></code>, <code class="docutils literal notranslate"><span class="pre">-FC</span></code> and <code class="docutils literal notranslate"><span class="pre">-FA</span></code> command line options to
+<span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> if desired.</p>
+<p>Since setup and cleanup tasks are also tests, they can have an ordering
+specified by the <span class="target" id="index-0-prop_test:DEPENDS"></span><a class="reference internal" href="DEPENDS.html#prop_test:DEPENDS" title="DEPENDS"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">DEPENDS</span></code></a> test property just like any other tests.
+This can be exploited to implement setup or cleanup using multiple tests for a
+single fixture to modularise setup or cleanup logic.</p>
+<p>The concept of a fixture is different to that of a resource specified by
+<span class="target" id="index-0-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a>, but they may be used together. A fixture defines a
+set of tests which share setup and cleanup requirements, whereas a resource
+lock has the effect of ensuring a particular set of tests do not run in
+parallel. Some situations may need both, such as setting up a database,
+serialising test access to that database and deleting the database again at the
+end. For such cases, tests would populate both <code class="docutils literal notranslate"><span class="pre">FIXTURES_REQUIRED</span></code> and
+<span class="target" id="index-1-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a> to combine the two behaviours. Names used for
+<span class="target" id="index-2-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a> have no relationship with names of fixtures, so note
+that a resource lock does not imply a fixture and vice versa.</p>
+<p>Consider the following example which represents a database test scenario
+similar to that mentioned above:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">testsDone</span><span class="w">   </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">emailResults</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">fooOnly</span><span class="w">     </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">testFoo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">dbOnly</span><span class="w">      </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">testDb</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">dbWithFoo</span><span class="w">   </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">testDbWithFoo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">createDB</span><span class="w">    </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">initDB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">setupUsers</span><span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">userCreation</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">cleanupDB</span><span class="w">   </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">deleteDB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">cleanupFoo</span><span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">removeFoos</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_tests_properties(</span><span class="nb">setupUsers</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">createDB</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_tests_properties(</span><span class="nb">createDB</span><span class="w">   </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_SETUP</span><span class="w">    </span><span class="no">DB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">setupUsers</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_SETUP</span><span class="w">    </span><span class="no">DB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">cleanupDB</span><span class="w">  </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_CLEANUP</span><span class="w">  </span><span class="no">DB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">cleanupFoo</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_CLEANUP</span><span class="w">  </span><span class="nb">Foo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">testsDone</span><span class="w">  </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_CLEANUP</span><span class="w">  </span><span class="s">&quot;DB;Foo&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_tests_properties(</span><span class="nb">fooOnly</span><span class="w">    </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_REQUIRED</span><span class="w"> </span><span class="nb">Foo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">dbOnly</span><span class="w">     </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_REQUIRED</span><span class="w"> </span><span class="no">DB</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">dbWithFoo</span><span class="w">  </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">FIXTURES_REQUIRED</span><span class="w"> </span><span class="s">&quot;DB;Foo&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_tests_properties(</span><span class="nb">dbOnly</span><span class="w"> </span><span class="nb">dbWithFoo</span><span class="w"> </span><span class="nb">createDB</span><span class="w"> </span><span class="nb">setupUsers</span><span class="w"> </span><span class="nb">cleanupDB</span><span class="w"></span>
+<span class="w">                     </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">RESOURCE_LOCK</span><span class="w"> </span><span class="nb">DbAccess</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Key points from this example:</p>
+<ul class="simple">
+<li><p>Two fixtures are defined: <code class="docutils literal notranslate"><span class="pre">DB</span></code> and <code class="docutils literal notranslate"><span class="pre">Foo</span></code>. Tests can require a single
+fixture as <code class="docutils literal notranslate"><span class="pre">fooOnly</span></code> and <code class="docutils literal notranslate"><span class="pre">dbOnly</span></code> do, or they can depend on multiple
+fixtures like <code class="docutils literal notranslate"><span class="pre">dbWithFoo</span></code> does.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> relationship is set up to ensure <code class="docutils literal notranslate"><span class="pre">setupUsers</span></code> happens after
+<code class="docutils literal notranslate"><span class="pre">createDB</span></code>, both of which are setup tests for the <code class="docutils literal notranslate"><span class="pre">DB</span></code> fixture and will
+therefore be executed before the <code class="docutils literal notranslate"><span class="pre">dbOnly</span></code> and <code class="docutils literal notranslate"><span class="pre">dbWithFoo</span></code> tests
+automatically.</p></li>
+<li><p>No explicit <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> relationships were needed to make the setup tests run
+before or the cleanup tests run after the regular tests.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Foo</span></code> fixture has no setup tests defined, only a single cleanup test.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">testsDone</span></code> is a cleanup test for both the <code class="docutils literal notranslate"><span class="pre">DB</span></code> and <code class="docutils literal notranslate"><span class="pre">Foo</span></code> fixtures.
+Therefore, it will only execute once regular tests for both fixtures have
+finished (i.e. after <code class="docutils literal notranslate"><span class="pre">fooOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">dbOnly</span></code> and <code class="docutils literal notranslate"><span class="pre">dbWithFoo</span></code>). No
+<code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> relationship was specified for <code class="docutils literal notranslate"><span class="pre">testsDone</span></code>, so it is free to
+run before, after or concurrently with other cleanup tests for either
+fixture.</p></li>
+<li><p>The setup and cleanup tests never list the fixtures they are for in their own
+<code class="docutils literal notranslate"><span class="pre">FIXTURES_REQUIRED</span></code> property, as that would result in a dependency on
+themselves and be considered an error.</p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FIXTURES_CLEANUP.html"
+                        title="previous chapter">FIXTURES_CLEANUP</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FIXTURES_SETUP.html"
+                        title="next chapter">FIXTURES_SETUP</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_test/FIXTURES_REQUIRED.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FIXTURES_SETUP.html" title="FIXTURES_SETUP"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FIXTURES_CLEANUP.html" title="FIXTURES_CLEANUP"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FIXTURES_REQUIRED</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

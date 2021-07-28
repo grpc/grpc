@@ -1,0 +1,19 @@
+CMP0064
+-------
+
+.. versionadded:: 3.4
+
+Recognize ``TEST`` as a operator for the :command:`if` command.
+
+The ``TEST`` operator was added to the :command:`if` command to determine if a
+given test name was created by the :command:`add_test` command.
+
+The ``OLD`` behavior for this policy is to ignore the ``TEST`` operator.
+The ``NEW`` behavior is to interpret the ``TEST`` operator.
+
+This policy was introduced in CMake version 3.4.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy()` command to set it to ``OLD`` or ``NEW``
+explicitly.
+
+.. include:: DEPRECATED.txt

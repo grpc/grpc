@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPACK_INCLUDE_TOPLEVEL_DIRECTORY" href="CPACK_INCLUDE_TOPLEVEL_DIRECTORY.html" />
+    <link rel="prev" title="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY" href="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CPACK_INCLUDE_TOPLEVEL_DIRECTORY.html" title="CPACK_INCLUDE_TOPLEVEL_DIRECTORY"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY.html" title="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-error-on-absolute-install-destination">
+<span id="variable:CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION"></span><h1>CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION<a class="headerlink" href="#cpack-error-on-absolute-install-destination" title="Permalink to this headline">¶</a></h1>
+<p>Ask CPack to error out as soon as a file with absolute <code class="docutils literal notranslate"><span class="pre">INSTALL</span> <span class="pre">DESTINATION</span></code>
+is encountered.</p>
+<p>The fatal error is emitted before the installation of the offending
+file takes place.  Some CPack generators, like <code class="docutils literal notranslate"><span class="pre">NSIS</span></code>, enforce this
+internally.  This variable triggers the definition
+of <span class="target" id="index-0-variable:CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION"></span><a class="reference internal" href="CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION.html#variable:CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION" title="CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION</span></code></a> when CPack
+runs.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY.html"
+                        title="previous chapter">CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CPACK_INCLUDE_TOPLEVEL_DIRECTORY.html"
+                        title="next chapter">CPACK_INCLUDE_TOPLEVEL_DIRECTORY</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CPACK_INCLUDE_TOPLEVEL_DIRECTORY.html" title="CPACK_INCLUDE_TOPLEVEL_DIRECTORY"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY.html" title="CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

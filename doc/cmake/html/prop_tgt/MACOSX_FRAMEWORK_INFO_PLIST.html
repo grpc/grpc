@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MACOSX_FRAMEWORK_INFO_PLIST &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MACOSX_RPATH" href="MACOSX_RPATH.html" />
+    <link rel="prev" title="MACOSX_BUNDLE_INFO_PLIST" href="MACOSX_BUNDLE_INFO_PLIST.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="MACOSX_RPATH.html" title="MACOSX_RPATH"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MACOSX_BUNDLE_INFO_PLIST.html" title="MACOSX_BUNDLE_INFO_PLIST"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACOSX_FRAMEWORK_INFO_PLIST</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="macosx-framework-info-plist">
+<span id="prop_tgt:MACOSX_FRAMEWORK_INFO_PLIST"></span><h1>MACOSX_FRAMEWORK_INFO_PLIST<a class="headerlink" href="#macosx-framework-info-plist" title="Permalink to this headline">¶</a></h1>
+<p>Specify a custom <code class="docutils literal notranslate"><span class="pre">Info.plist</span></code> template for a macOS and iOS Framework.</p>
+<p>A library target with <span class="target" id="index-0-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a> enabled will be built as a
+framework on macOS.  By default its <code class="docutils literal notranslate"><span class="pre">Info.plist</span></code> file is created by
+configuring a template called <code class="docutils literal notranslate"><span class="pre">MacOSXFrameworkInfo.plist.in</span></code> located in the
+<span class="target" id="index-0-variable:CMAKE_MODULE_PATH"></span><a class="reference internal" href="../variable/CMAKE_MODULE_PATH.html#variable:CMAKE_MODULE_PATH" title="CMAKE_MODULE_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code></a>.  This property specifies an alternative template
+file name which may be a full path.</p>
+<p>The following target properties may be set to specify content to be
+configured into the file:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">MACOSX_FRAMEWORK_BUNDLE_VERSION</span></code></dt><dd><p>Sets <code class="docutils literal notranslate"><span class="pre">CFBundleVersion</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MACOSX_FRAMEWORK_ICON_FILE</span></code></dt><dd><p>Sets <code class="docutils literal notranslate"><span class="pre">CFBundleIconFile</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MACOSX_FRAMEWORK_IDENTIFIER</span></code></dt><dd><p>Sets <code class="docutils literal notranslate"><span class="pre">CFBundleIdentifier</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MACOSX_FRAMEWORK_SHORT_VERSION_STRING</span></code></dt><dd><p>Sets <code class="docutils literal notranslate"><span class="pre">CFBundleShortVersionString</span></code>.</p>
+</dd>
+</dl>
+<p>CMake variables of the same name may be set to affect all targets in a
+directory that do not have each specific property set.  If a custom
+<code class="docutils literal notranslate"><span class="pre">Info.plist</span></code> is specified by this property it may of course hard-code
+all the settings instead of using the target properties.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MACOSX_BUNDLE_INFO_PLIST.html"
+                        title="previous chapter">MACOSX_BUNDLE_INFO_PLIST</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MACOSX_RPATH.html"
+                        title="next chapter">MACOSX_RPATH</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/MACOSX_FRAMEWORK_INFO_PLIST.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="MACOSX_RPATH.html" title="MACOSX_RPATH"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MACOSX_BUNDLE_INFO_PLIST.html" title="MACOSX_BUNDLE_INFO_PLIST"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACOSX_FRAMEWORK_INFO_PLIST</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

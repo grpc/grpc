@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-env-variables(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_PREFIX_PATH" href="../envvar/CMAKE_PREFIX_PATH.html" />
+    <link rel="prev" title="cmake-developer(7)" href="cmake-developer.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../envvar/CMAKE_PREFIX_PATH.html" title="CMAKE_PREFIX_PATH"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake-developer.7.html" title="cmake-developer(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-env-variables(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-env-variables(7)"></span><div class="section" id="cmake-env-variables-7">
+<h1><a class="toc-backref" href="#id1">cmake-env-variables(7)</a><a class="headerlink" href="#cmake-env-variables-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-env-variables-7" id="id1">cmake-env-variables(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#environment-variables-that-change-behavior" id="id2">Environment Variables that Change Behavior</a></p></li>
+<li><p><a class="reference internal" href="#environment-variables-that-control-the-build" id="id3">Environment Variables that Control the Build</a></p></li>
+<li><p><a class="reference internal" href="#environment-variables-for-languages" id="id4">Environment Variables for Languages</a></p></li>
+<li><p><a class="reference internal" href="#environment-variables-for-ctest" id="id5">Environment Variables for CTest</a></p></li>
+<li><p><a class="reference internal" href="#environment-variables-for-the-cmake-curses-interface" id="id6">Environment Variables for the CMake curses interface</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>This page lists environment variables that have special
+meaning to CMake.</p>
+<p>For general information on environment variables, see the
+<a class="reference internal" href="cmake-language.7.html#cmake-language-environment-variables"><span class="std std-ref">Environment Variables</span></a>
+section in the cmake-language manual.</p>
+<div class="section" id="environment-variables-that-change-behavior">
+<h2><a class="toc-backref" href="#id2">Environment Variables that Change Behavior</a><a class="headerlink" href="#environment-variables-that-change-behavior" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_PREFIX_PATH.html">CMAKE_PREFIX_PATH</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="environment-variables-that-control-the-build">
+<h2><a class="toc-backref" href="#id3">Environment Variables that Control the Build</a><a class="headerlink" href="#environment-variables-that-control-the-build" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_APPLE_SILICON_PROCESSOR.html">CMAKE_APPLE_SILICON_PROCESSOR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_BUILD_PARALLEL_LEVEL.html">CMAKE_BUILD_PARALLEL_LEVEL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_CONFIG_TYPE.html">CMAKE_CONFIG_TYPE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_EXPORT_COMPILE_COMMANDS.html">CMAKE_EXPORT_COMPILE_COMMANDS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_GENERATOR.html">CMAKE_GENERATOR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_GENERATOR_INSTANCE.html">CMAKE_GENERATOR_INSTANCE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_GENERATOR_PLATFORM.html">CMAKE_GENERATOR_PLATFORM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_GENERATOR_TOOLSET.html">CMAKE_GENERATOR_TOOLSET</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_LANG_COMPILER_LAUNCHER.html">CMAKE_&lt;LANG&gt;_COMPILER_LAUNCHER</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_MSVCIDE_RUN_PATH.html">CMAKE_MSVCIDE_RUN_PATH</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_NO_VERBOSE.html">CMAKE_NO_VERBOSE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_OSX_ARCHITECTURES.html">CMAKE_OSX_ARCHITECTURES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/DESTDIR.html">DESTDIR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/LDFLAGS.html">LDFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/MACOSX_DEPLOYMENT_TARGET.html">MACOSX_DEPLOYMENT_TARGET</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/PackageName_ROOT.html">&lt;PackageName&gt;_ROOT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/VERBOSE.html">VERBOSE</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="environment-variables-for-languages">
+<h2><a class="toc-backref" href="#id4">Environment Variables for Languages</a><a class="headerlink" href="#environment-variables-for-languages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/ASM_DIALECT.html">ASM&lt;DIALECT&gt;</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/ASM_DIALECTFLAGS.html">ASM&lt;DIALECT&gt;FLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CC.html">CC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CFLAGS.html">CFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CSFLAGS.html">CSFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CUDACXX.html">CUDACXX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CUDAFLAGS.html">CUDAFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CUDAHOSTCXX.html">CUDAHOSTCXX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CXX.html">CXX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CXXFLAGS.html">CXXFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/FC.html">FC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/FFLAGS.html">FFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/ISPC.html">ISPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/ISPCFLAGS.html">ISPCFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/OBJC.html">OBJC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/OBJCXX.html">OBJCXX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/RC.html">RC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/RCFLAGS.html">RCFLAGS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/SWIFTC.html">SWIFTC</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="environment-variables-for-ctest">
+<h2><a class="toc-backref" href="#id5">Environment Variables for CTest</a><a class="headerlink" href="#environment-variables-for-ctest" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CMAKE_CONFIG_TYPE.html">CMAKE_CONFIG_TYPE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CTEST_INTERACTIVE_DEBUG_MODE.html">CTEST_INTERACTIVE_DEBUG_MODE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CTEST_OUTPUT_ON_FAILURE.html">CTEST_OUTPUT_ON_FAILURE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CTEST_PARALLEL_LEVEL.html">CTEST_PARALLEL_LEVEL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CTEST_PROGRESS_OUTPUT.html">CTEST_PROGRESS_OUTPUT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CTEST_USE_LAUNCHERS_DEFAULT.html">CTEST_USE_LAUNCHERS_DEFAULT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/DASHBOARD_TEST_FROM_CTEST.html">DASHBOARD_TEST_FROM_CTEST</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="environment-variables-for-the-cmake-curses-interface">
+<h2><a class="toc-backref" href="#id6">Environment Variables for the CMake curses interface</a><a class="headerlink" href="#environment-variables-for-the-cmake-curses-interface" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../envvar/CCMAKE_COLORS.html">CCMAKE_COLORS</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-env-variables(7)</a><ul>
+<li><a class="reference internal" href="#environment-variables-that-change-behavior">Environment Variables that Change Behavior</a></li>
+<li><a class="reference internal" href="#environment-variables-that-control-the-build">Environment Variables that Control the Build</a></li>
+<li><a class="reference internal" href="#environment-variables-for-languages">Environment Variables for Languages</a></li>
+<li><a class="reference internal" href="#environment-variables-for-ctest">Environment Variables for CTest</a></li>
+<li><a class="reference internal" href="#environment-variables-for-the-cmake-curses-interface">Environment Variables for the CMake curses interface</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake-developer.7.html"
+                        title="previous chapter">cmake-developer(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../envvar/CMAKE_PREFIX_PATH.html"
+                        title="next chapter">CMAKE_PREFIX_PATH</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-env-variables.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../envvar/CMAKE_PREFIX_PATH.html" title="CMAKE_PREFIX_PATH"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake-developer.7.html" title="cmake-developer(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-env-variables(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0083 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0082" href="CMP0082.html" />
+    <link rel="prev" title="CMP0084" href="CMP0084.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0082.html" title="CMP0082"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0084.html" title="CMP0084"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0083</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0083">
+<span id="policy:CMP0083"></span><h1>CMP0083<a class="headerlink" href="#cmp0083" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.14.</span></p>
+</div>
+<p>To control generation of Position Independent Executable (<code class="docutils literal notranslate"><span class="pre">PIE</span></code>) or not, some
+flags are required at link time.</p>
+<p>CMake 3.13 and lower did not add these link flags when
+<span class="target" id="index-0-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> is set.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior for this policy is to not manage <code class="docutils literal notranslate"><span class="pre">PIE</span></code> link flags. The
+<code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior is to add link flags if <span class="target" id="index-1-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a>
+is set:</p>
+<ul class="simple">
+<li><p>Set to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code>: flags to produce a position independent executable are
+passed to the linker step. For example <code class="docutils literal notranslate"><span class="pre">-pie</span></code> for <code class="docutils literal notranslate"><span class="pre">GCC</span></code>.</p></li>
+<li><p>Set to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>: flags not to produce a position independent executable are
+passed to the linker step. For example <code class="docutils literal notranslate"><span class="pre">-no-pie</span></code> for <code class="docutils literal notranslate"><span class="pre">GCC</span></code>.</p></li>
+<li><p>Not set: no flags are passed to the linker step.</p></li>
+</ul>
+<p>Since a given linker may not support <code class="docutils literal notranslate"><span class="pre">PIE</span></code> flags in all environments in
+which it is used, it is the project’s responsibility to use the
+<span class="target" id="index-0-module:CheckPIESupported"></span><a class="reference internal" href="../module/CheckPIESupported.html#module:CheckPIESupported" title="CheckPIESupported"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckPIESupported</span></code></a> module to check for support to ensure that the
+<span class="target" id="index-2-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> target property for executables will be
+honored at link time.</p>
+<p>This policy was introduced in CMake version 3.14. Use the
+<span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="../command/cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command to set it to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> or <code class="docutils literal notranslate"><span class="pre">NEW</span></code> explicitly.
+Unlike most policies, CMake version 3.19.6 does not warn when this policy is
+not set and simply uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Android platform has a special handling of <code class="docutils literal notranslate"><span class="pre">PIE</span></code> so it is not required
+to use the <span class="target" id="index-1-module:CheckPIESupported"></span><a class="reference internal" href="../module/CheckPIESupported.html#module:CheckPIESupported" title="CheckPIESupported"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckPIESupported</span></code></a> module to ensure flags are passed to
+the linker.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Behave like CMake 3.13 and do not apply any <code class="docutils literal notranslate"><span class="pre">PIE</span></code> flags at link stage.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.13</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">add_executable(</span><span class="nb">foo</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use the <span class="target" id="index-2-module:CheckPIESupported"></span><a class="reference internal" href="../module/CheckPIESupported.html#module:CheckPIESupported" title="CheckPIESupported"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckPIESupported</span></code></a> module to detect whether <code class="docutils literal notranslate"><span class="pre">PIE</span></code> is
+supported by the current linker and environment.  Apply <code class="docutils literal notranslate"><span class="pre">PIE</span></code> flags only
+if the linker supports them.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.14</span><span class="nf">)</span><span class="w"> </span><span class="c"># CMP0083 NEW</span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">include(</span><span class="nb">CheckPIESupported</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_pie_supported()</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">add_executable(</span><span class="nb">foo</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMP0083</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0084.html"
+                        title="previous chapter">CMP0084</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0082.html"
+                        title="next chapter">CMP0082</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0083.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0082.html" title="CMP0082"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0084.html" title="CMP0084"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0083</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

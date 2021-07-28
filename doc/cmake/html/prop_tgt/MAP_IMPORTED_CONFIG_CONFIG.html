@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAP_IMPORTED_CONFIG_&lt;CONFIG&gt; &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MSVC_RUNTIME_LIBRARY" href="MSVC_RUNTIME_LIBRARY.html" />
+    <link rel="prev" title="MANUALLY_ADDED_DEPENDENCIES" href="MANUALLY_ADDED_DEPENDENCIES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="MSVC_RUNTIME_LIBRARY.html" title="MSVC_RUNTIME_LIBRARY"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MANUALLY_ADDED_DEPENDENCIES.html" title="MANUALLY_ADDED_DEPENDENCIES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="map-imported-config-config">
+<span id="prop_tgt:MAP_IMPORTED_CONFIG_<CONFIG>"></span><h1>MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;<a class="headerlink" href="#map-imported-config-config" title="Permalink to this headline">¶</a></h1>
+<p>Map from project configuration to
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">imported target</span></a>’s configuration.</p>
+<p>Set this to the list of configurations of an imported target that may
+be used for the current project’s <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code> configuration.  Targets
+imported from another project may not provide the same set of
+configuration names available in the current project.  Setting this
+property tells CMake what imported configurations are suitable for use
+when building the <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code> configuration.  The first configuration in
+the list found to be provided by the imported target (i.e. via
+<span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;"></span><a class="reference internal" href="IMPORTED_LOCATION_CONFIG.html#prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION_&lt;CONFIG&gt;</span></code></a> for the mapped-to <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code>)
+is selected.  As a special case, an empty list element refers to the
+configuration-less imported target location
+(i.e. <span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION"></span><a class="reference internal" href="IMPORTED_LOCATION.html#prop_tgt:IMPORTED_LOCATION" title="IMPORTED_LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION</span></code></a>).</p>
+<p>If this property is set and no matching configurations are available,
+then the imported target is considered to be not found.  This property
+is ignored for non-imported targets.</p>
+<p>This property is initialized by the value of the
+<span class="target" id="index-0-variable:CMAKE_MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"></span><a class="reference internal" href="../variable/CMAKE_MAP_IMPORTED_CONFIG_CONFIG.html#variable:CMAKE_MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;" title="CMAKE_MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</span></code></a> variable if it is set when a
+target is created.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>For example creating imported C++ library <code class="docutils literal notranslate"><span class="pre">foo</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">foo</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="no">IMPORTED</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">foo_debug</span></code> path for <code class="docutils literal notranslate"><span class="pre">Debug</span></code> build type:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="w"></span>
+<span class="w">  </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">IMPORTED_CONFIGURATIONS</span><span class="w"> </span><span class="no">DEBUG</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_target_properties(</span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG</span><span class="w"> </span><span class="s">&quot;CXX&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">IMPORTED_LOCATION_DEBUG</span><span class="w"> </span><span class="s">&quot;${foo_debug}&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">foo_release</span></code> path for <code class="docutils literal notranslate"><span class="pre">Release</span></code> build type:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="w"></span>
+<span class="w">  </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">IMPORTED_CONFIGURATIONS</span><span class="w"> </span><span class="no">RELEASE</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_target_properties(</span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE</span><span class="w"> </span><span class="s">&quot;CXX&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">IMPORTED_LOCATION_RELEASE</span><span class="w"> </span><span class="s">&quot;${foo_release}&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">Release</span></code> version of library for <code class="docutils literal notranslate"><span class="pre">MinSizeRel</span></code> and <code class="docutils literal notranslate"><span class="pre">RelWithDebInfo</span></code>
+build types:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_target_properties(</span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">MAP_IMPORTED_CONFIG_MINSIZEREL</span><span class="w"> </span><span class="nb">Release</span><span class="w"></span>
+<span class="w">  </span><span class="no">MAP_IMPORTED_CONFIG_RELWITHDEBINFO</span><span class="w"> </span><span class="nb">Release</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MANUALLY_ADDED_DEPENDENCIES.html"
+                        title="previous chapter">MANUALLY_ADDED_DEPENDENCIES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MSVC_RUNTIME_LIBRARY.html"
+                        title="next chapter">MSVC_RUNTIME_LIBRARY</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/MAP_IMPORTED_CONFIG_CONFIG.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="MSVC_RUNTIME_LIBRARY.html" title="MSVC_RUNTIME_LIBRARY"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MANUALLY_ADDED_DEPENDENCIES.html" title="MANUALLY_ADDED_DEPENDENCIES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

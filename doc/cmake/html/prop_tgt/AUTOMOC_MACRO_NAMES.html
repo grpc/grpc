@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUTOMOC_MACRO_NAMES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="AUTOMOC_MOC_OPTIONS" href="AUTOMOC_MOC_OPTIONS.html" />
+    <link rel="prev" title="AUTOMOC_EXECUTABLE" href="AUTOMOC_EXECUTABLE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="AUTOMOC_MOC_OPTIONS.html" title="AUTOMOC_MOC_OPTIONS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AUTOMOC_EXECUTABLE.html" title="AUTOMOC_EXECUTABLE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOMOC_MACRO_NAMES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="automoc-macro-names">
+<span id="prop_tgt:AUTOMOC_MACRO_NAMES"></span><h1>AUTOMOC_MACRO_NAMES<a class="headerlink" href="#automoc-macro-names" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.10.</span></p>
+</div>
+<p>A <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> list of macro names used by
+<span class="target" id="index-0-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> to determine if a C++ file needs to be processed by <code class="docutils literal notranslate"><span class="pre">moc</span></code>.</p>
+<p>This property is only used if the <span class="target" id="index-1-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> property is <code class="docutils literal notranslate"><span class="pre">ON</span></code>
+for this target.</p>
+<p>When running <span class="target" id="index-2-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a>, CMake searches for the strings listed in
+<span class="target" id="index-0-prop_tgt:AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="#prop_tgt:AUTOMOC_MACRO_NAMES" title="AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_MACRO_NAMES</span></code></a> in C++ source and header files.
+If any of the strings is found</p>
+<ul class="simple">
+<li><p>as the first non space string on a new line or</p></li>
+<li><p>as the first non space string after a <code class="docutils literal notranslate"><span class="pre">{</span></code> on a new line,</p></li>
+</ul>
+<p>then the file will be processed by <code class="docutils literal notranslate"><span class="pre">moc</span></code>.</p>
+<p>By default <span class="target" id="index-1-prop_tgt:AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="#prop_tgt:AUTOMOC_MACRO_NAMES" title="AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_MACRO_NAMES</span></code></a> is initialized from
+<span class="target" id="index-0-variable:CMAKE_AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_MACRO_NAMES.html#variable:CMAKE_AUTOMOC_MACRO_NAMES" title="CMAKE_AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_MACRO_NAMES</span></code></a>.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-qt(7)"></span><a class="reference internal" href="../manual/cmake-qt.7.html#manual:cmake-qt(7)" title="cmake-qt(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-qt(7)</span></code></a> manual for more information on using CMake
+with Qt.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>In this case the <code class="docutils literal notranslate"><span class="pre">Q_OBJECT</span></code> macro is hidden inside another macro
+called <code class="docutils literal notranslate"><span class="pre">CUSTOM_MACRO</span></code>.  To let CMake know that source files that contain
+<code class="docutils literal notranslate"><span class="pre">CUSTOM_MACRO</span></code> need to be <code class="docutils literal notranslate"><span class="pre">moc</span></code> processed, we call:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set_property(TARGET tgt APPEND PROPERTY AUTOMOC_MACRO_NAMES &quot;CUSTOM_MACRO&quot;)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">AUTOMOC_MACRO_NAMES</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AUTOMOC_EXECUTABLE.html"
+                        title="previous chapter">AUTOMOC_EXECUTABLE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="AUTOMOC_MOC_OPTIONS.html"
+                        title="next chapter">AUTOMOC_MOC_OPTIONS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/AUTOMOC_MACRO_NAMES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="AUTOMOC_MOC_OPTIONS.html" title="AUTOMOC_MOC_OPTIONS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AUTOMOC_EXECUTABLE.html" title="AUTOMOC_EXECUTABLE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOMOC_MACRO_NAMES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

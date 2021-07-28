@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>source_group &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="target_compile_definitions" href="target_compile_definitions.html" />
+    <link rel="prev" title="set_tests_properties" href="set_tests_properties.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="target_compile_definitions.html" title="target_compile_definitions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="set_tests_properties.html" title="set_tests_properties"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">source_group</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="source-group">
+<span id="command:source_group"></span><h1>source_group<a class="headerlink" href="#source-group" title="Permalink to this headline">¶</a></h1>
+<p>Define a grouping for source files in IDE project generation.
+There are two different signatures to create source groups.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">source_group(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">FILES</span><span class="w"> </span><span class="nv">&lt;src&gt;...</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">REGULAR_EXPRESSION</span><span class="w"> </span><span class="nv">&lt;regex&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">source_group(</span><span class="no">TREE</span><span class="w"> </span><span class="nv">&lt;root&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">PREFIX</span><span class="w"> </span><span class="nv">&lt;prefix&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">FILES</span><span class="w"> </span><span class="nv">&lt;src&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Defines a group into which sources will be placed in project files.
+This is intended to set up file tabs in Visual Studio.
+The options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TREE</span></code></dt><dd><p>CMake will automatically detect, from <code class="docutils literal notranslate"><span class="pre">&lt;src&gt;</span></code> files paths, source groups
+it needs to create, to keep structure of source groups analogically to the
+actual files and directories structure in the project. Paths of <code class="docutils literal notranslate"><span class="pre">&lt;src&gt;</span></code>
+files will be cut to be relative to <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PREFIX</span></code></dt><dd><p>Source group and files located directly in <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;</span></code> path, will be placed
+in <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> source groups.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILES</span></code></dt><dd><p>Any source file specified explicitly will be placed in group
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>.  Relative paths are interpreted with respect to the
+current source directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REGULAR_EXPRESSION</span></code></dt><dd><p>Any source file whose name matches the regular expression will
+be placed in group <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>.</p>
+</dd>
+</dl>
+<p>If a source file matches multiple groups, the <em>last</em> group that
+explicitly lists the file with <code class="docutils literal notranslate"><span class="pre">FILES</span></code> will be favored, if any.
+If no group explicitly lists the file, the <em>last</em> group whose
+regular expression matches the file will be favored.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> of the group and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> argument may contain forward
+slashes or backslashes to specify subgroups.  Backslashes need to be escaped
+appropriately:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">source_group(</span><span class="na">base/subdir</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">source_group(</span><span class="nb">outer</span><span class="p">\\</span><span class="nb">inner</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">source_group(</span><span class="no">TREE</span><span class="w"> </span><span class="nv">&lt;root&gt;</span><span class="w"> </span><span class="no">PREFIX</span><span class="w"> </span><span class="nb">sources</span><span class="p">\\</span><span class="nb">inc</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For backwards compatibility, the short-hand signature</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">source_group(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="nv">&lt;regex&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>is equivalent to</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">source_group(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="no">REGULAR_EXPRESSION</span><span class="w"> </span><span class="nv">&lt;regex&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="set_tests_properties.html"
+                        title="previous chapter">set_tests_properties</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="target_compile_definitions.html"
+                        title="next chapter">target_compile_definitions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/source_group.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="target_compile_definitions.html" title="target_compile_definitions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="set_tests_properties.html" title="set_tests_properties"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">source_group</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ninja &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ninja Multi-Config" href="Ninja%20Multi-Config.html" />
+    <link rel="prev" title="Watcom WMake" href="Watcom%20WMake.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Ninja%20Multi-Config.html" title="Ninja Multi-Config"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Watcom%20WMake.html" title="Watcom WMake"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" accesskey="U">cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Ninja</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ninja">
+<span id="generator:Ninja"></span><h1>Ninja<a class="headerlink" href="#ninja" title="Permalink to this headline">¶</a></h1>
+<p>Generates <code class="docutils literal notranslate"><span class="pre">build.ninja</span></code> files.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">build.ninja</span></code> file is generated into the build tree.  Use the ninja
+program to build the project through the <code class="docutils literal notranslate"><span class="pre">all</span></code> target and install the
+project through the <code class="docutils literal notranslate"><span class="pre">install</span></code> (or <code class="docutils literal notranslate"><span class="pre">install/strip</span></code>) target.</p>
+<p>For each subdirectory <code class="docutils literal notranslate"><span class="pre">sub/dir</span></code> of the project, additional targets
+are generated:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">sub/dir/all</span></code></dt><dd><p>Depends on all targets required by the subdirectory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sub/dir/install</span></code></dt><dd><p>Runs the install step in the subdirectory, if any.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sub/dir/install/strip</span></code></dt><dd><p>Runs the install step in the subdirectory followed by a <code class="docutils literal notranslate"><span class="pre">CMAKE_STRIP</span></code> command,
+if any.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">CMAKE_STRIP</span></code> variable will contain the platform’s <code class="docutils literal notranslate"><span class="pre">strip</span></code> utility, which
+removes symbols information from generated binaries.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sub/dir/test</span></code></dt><dd><p>Runs the test step in the subdirectory, if any.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sub/dir/package</span></code></dt><dd><p>Runs the package step in the subdirectory, if any.</p>
+</dd>
+</dl>
+<div class="section" id="fortran-support">
+<h2>Fortran Support<a class="headerlink" href="#fortran-support" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Ninja</span></code> generator conditionally supports Fortran when the <code class="docutils literal notranslate"><span class="pre">ninja</span></code>
+tool is at least version 1.10 (which has the required features).</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p>The <span class="target" id="index-0-generator:Ninja Multi-Config"></span><a class="reference internal" href="Ninja%20Multi-Config.html#generator:Ninja Multi-Config" title="Ninja Multi-Config"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span> <span class="pre">Multi-Config</span></code></a> generator is similar to the <code class="docutils literal notranslate"><span class="pre">Ninja</span></code>
+generator, but generates multiple configurations at once.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Ninja</a><ul>
+<li><a class="reference internal" href="#fortran-support">Fortran Support</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Watcom%20WMake.html"
+                        title="previous chapter">Watcom WMake</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Ninja%20Multi-Config.html"
+                        title="next chapter">Ninja Multi-Config</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generator/Ninja.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Ninja%20Multi-Config.html" title="Ninja Multi-Config"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Watcom%20WMake.html" title="Watcom WMake"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" >cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Ninja</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

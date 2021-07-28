@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTestCoverageCollectGCOV &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CTestScriptMode" href="CTestScriptMode.html" />
+    <link rel="prev" title="CTest" href="CTest.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CTestScriptMode.html" title="CTestScriptMode"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CTest.html" title="CTest"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTestCoverageCollectGCOV</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctestcoveragecollectgcov">
+<span id="module:CTestCoverageCollectGCOV"></span><h1>CTestCoverageCollectGCOV<a class="headerlink" href="#ctestcoveragecollectgcov" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.2.</span></p>
+</div>
+<p>This module provides the <code class="docutils literal notranslate"><span class="pre">ctest_coverage_collect_gcov</span></code> function.</p>
+<p>This function runs gcov on all .gcda files found in the binary tree
+and packages the resulting .gcov files into a tar file.
+This tarball also contains the following:</p>
+<ul class="simple">
+<li><p><em>data.json</em> defines the source and build directories for use by CDash.</p></li>
+<li><p><em>Labels.json</em> indicates any <span class="target" id="index-0-prop_sf:LABELS"></span><a class="reference internal" href="../prop_sf/LABELS.html#prop_sf:LABELS" title="LABELS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">LABELS</span></code></a> that have been set on the
+source files.</p></li>
+<li><p>The <em>uncovered</em> directory holds any uncovered files found by
+<span class="target" id="index-0-variable:CTEST_EXTRA_COVERAGE_GLOB"></span><a class="reference internal" href="../variable/CTEST_EXTRA_COVERAGE_GLOB.html#variable:CTEST_EXTRA_COVERAGE_GLOB" title="CTEST_EXTRA_COVERAGE_GLOB"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_EXTRA_COVERAGE_GLOB</span></code></a>.</p></li>
+</ul>
+<p>After generating this tar file, it can be sent to CDash for display with the
+<span class="target" id="index-0-command:ctest_submit"></span><a class="reference internal" href="../command/ctest_submit.html#command:ctest_submit" title="ctest_submit"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_submit(CDASH_UPLOAD)</span></code></a> command.</p>
+<dl class="cmake command">
+<dt id="command:ctest_coverage_collect_gcov">
+<code class="sig-name descname">ctest_coverage_collect_gcov</code><a class="headerlink" href="#command:ctest_coverage_collect_gcov" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest_coverage_collect_gcov(TARBALL &lt;tarfile&gt;
+  [SOURCE &lt;source_dir&gt;][BUILD &lt;build_dir&gt;]
+  [GCOV_COMMAND &lt;gcov_command&gt;]
+  [GCOV_OPTIONS &lt;options&gt;...]
+  )
+</pre></div>
+</div>
+<p>Run gcov and package a tar file for CDash.  The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">TARBALL</span> <span class="pre">&lt;tarfile&gt;</span></code></dt><dd><p>Specify the location of the <code class="docutils literal notranslate"><span class="pre">.tar</span></code> file to be created for later
+upload to CDash.  Relative paths will be interpreted with respect
+to the top-level build directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TARBALL_COMPRESSION</span> <span class="pre">&lt;option&gt;</span></code> Specify a compression algorithm for the</dt><dd><p><code class="docutils literal notranslate"><span class="pre">TARBALL</span></code> data file.  Using this option reduces the size of the data file
+before it is submitted to CDash.  <code class="docutils literal notranslate"><span class="pre">&lt;option&gt;</span></code> must be one of <code class="docutils literal notranslate"><span class="pre">GZIP</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BZIP2</span></code>, <code class="docutils literal notranslate"><span class="pre">XZ</span></code>, <code class="docutils literal notranslate"><span class="pre">ZSTD</span></code>, <code class="docutils literal notranslate"><span class="pre">FROM_EXT</span></code>, or an expression that CMake
+evaluates as <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>. The default value is <code class="docutils literal notranslate"><span class="pre">BZIP2</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">FROM_EXT</span></code> is specified, the resulting file will be compressed based on
+the file extension of the <code class="docutils literal notranslate"><span class="pre">&lt;tarfile&gt;</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> will use <code class="docutils literal notranslate"><span class="pre">GZIP</span></code>
+compression). File extensions that will produce compressed output include
+<code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code>, <code class="docutils literal notranslate"><span class="pre">.tgz</span></code>, <code class="docutils literal notranslate"><span class="pre">.tar.bzip2</span></code>, <code class="docutils literal notranslate"><span class="pre">.tbz</span></code>, <code class="docutils literal notranslate"><span class="pre">.tar.xz</span></code>, and <code class="docutils literal notranslate"><span class="pre">.txz</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SOURCE</span> <span class="pre">&lt;source_dir&gt;</span></code></dt><dd><p>Specify the top-level source directory for the build.
+Default is the value of <span class="target" id="index-0-variable:CTEST_SOURCE_DIRECTORY"></span><a class="reference internal" href="../variable/CTEST_SOURCE_DIRECTORY.html#variable:CTEST_SOURCE_DIRECTORY" title="CTEST_SOURCE_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_SOURCE_DIRECTORY</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD</span> <span class="pre">&lt;build_dir&gt;</span></code></dt><dd><p>Specify the top-level build directory for the build.
+Default is the value of <span class="target" id="index-0-variable:CTEST_BINARY_DIRECTORY"></span><a class="reference internal" href="../variable/CTEST_BINARY_DIRECTORY.html#variable:CTEST_BINARY_DIRECTORY" title="CTEST_BINARY_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_BINARY_DIRECTORY</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GCOV_COMMAND</span> <span class="pre">&lt;gcov_command&gt;</span></code></dt><dd><p>Specify the full path to the <code class="docutils literal notranslate"><span class="pre">gcov</span></code> command on the machine.
+Default is the value of <span class="target" id="index-0-variable:CTEST_COVERAGE_COMMAND"></span><a class="reference internal" href="../variable/CTEST_COVERAGE_COMMAND.html#variable:CTEST_COVERAGE_COMMAND" title="CTEST_COVERAGE_COMMAND"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_COVERAGE_COMMAND</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GCOV_OPTIONS</span> <span class="pre">&lt;options&gt;...</span></code></dt><dd><p>Specify options to be passed to gcov.  The <code class="docutils literal notranslate"><span class="pre">gcov</span></code> command
+is run as <code class="docutils literal notranslate"><span class="pre">gcov</span> <span class="pre">&lt;options&gt;...</span> <span class="pre">-o</span> <span class="pre">&lt;gcov-dir&gt;</span> <span class="pre">&lt;file&gt;.gcda</span></code>.
+If not specified, the default option is just <code class="docutils literal notranslate"><span class="pre">-b</span> <span class="pre">-x</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GLOB</span></code></dt><dd><p>Recursively search for .gcda files in build_dir rather than
+determining search locations by reading TargetDirectories.txt.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DELETE</span></code></dt><dd><p>Delete coverage files after they’ve been packaged into the .tar.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QUIET</span></code></dt><dd><p>Suppress non-error messages that otherwise would have been
+printed out by this function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CTest.html"
+                        title="previous chapter">CTest</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CTestScriptMode.html"
+                        title="next chapter">CTestScriptMode</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CTestCoverageCollectGCOV.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CTestScriptMode.html" title="CTestScriptMode"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CTest.html" title="CTest"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTestCoverageCollectGCOV</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

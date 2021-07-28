@@ -1,0 +1,401 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPackIFW &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPackIFWConfigureFile" href="CPackIFWConfigureFile.html" />
+    <link rel="prev" title="CPackComponent" href="CPackComponent.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CPackIFWConfigureFile.html" title="CPackIFWConfigureFile"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CPackComponent.html" title="CPackComponent"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPackIFW</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpackifw">
+<span id="module:CPackIFW"></span><h1>CPackIFW<a class="headerlink" href="#cpackifw" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.1.</span></p>
+</div>
+<p>This module looks for the location of the command-line utilities supplied with the
+<a class="reference external" href="http://doc.qt.io/qtinstallerframework/index.html">Qt Installer Framework</a>
+(QtIFW).</p>
+<p>The module also defines several commands to control the behavior of the
+<span class="target" id="index-0-cpack_gen:CPack IFW Generator"></span><a class="reference internal" href="../cpack_gen/ifw.html#cpack_gen:CPack IFW Generator" title="CPack IFW Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">IFW</span> <span class="pre">Generator</span></code></a>.</p>
+<div class="section" id="commands">
+<h2>Commands<a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h2>
+<p>The module defines the following commands:</p>
+<dl class="cmake command">
+<dt id="command:cpack_ifw_configure_component">
+<code class="sig-name descname">cpack_ifw_configure_component</code><a class="headerlink" href="#command:cpack_ifw_configure_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the arguments specific to the CPack IFW generator.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_ifw_configure_component(&lt;compname&gt; [COMMON] [ESSENTIAL] [VIRTUAL]
+                    [FORCED_INSTALLATION] [REQUIRES_ADMIN_RIGHTS]
+                    [NAME &lt;name&gt;]
+                    [DISPLAY_NAME &lt;display_name&gt;] # Note: Internationalization supported
+                    [DESCRIPTION &lt;description&gt;] # Note: Internationalization supported
+                    [UPDATE_TEXT &lt;update_text&gt;]
+                    [VERSION &lt;version&gt;]
+                    [RELEASE_DATE &lt;release_date&gt;]
+                    [SCRIPT &lt;script&gt;]
+                    [PRIORITY|SORTING_PRIORITY &lt;sorting_priority&gt;] # Note: PRIORITY is deprecated
+                    [DEPENDS|DEPENDENCIES &lt;com_id&gt; ...]
+                    [AUTO_DEPEND_ON &lt;comp_id&gt; ...]
+                    [LICENSES &lt;display_name&gt; &lt;file_path&gt; ...]
+                    [DEFAULT &lt;value&gt;]
+                    [USER_INTERFACES &lt;file_path&gt; &lt;file_path&gt; ...]
+                    [TRANSLATIONS &lt;file_path&gt; &lt;file_path&gt; ...]
+                    [REPLACES &lt;comp_id&gt; ...]
+                    [CHECKABLE &lt;value&gt;])
+</pre></div>
+</div>
+<p>This command should be called after <span class="target" id="index-0-command:cpack_add_component"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> command.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">COMMON</span></code></dt><dd><p>if set, then the component will be packaged and installed as part
+of a group to which it belongs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ESSENTIAL</span></code></dt><dd><p>if set, then the package manager stays disabled until that
+component is updated.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VIRTUAL</span></code></dt><dd><p>if set, then the component will be hidden from the installer.
+It is a equivalent of the <code class="docutils literal notranslate"><span class="pre">HIDDEN</span></code> option from the
+<span class="target" id="index-1-command:cpack_add_component"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FORCED_INSTALLATION</span></code></dt><dd><p>if set, then the component must always be installed.
+It is a equivalent of the <code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code> option from the
+<span class="target" id="index-2-command:cpack_add_component"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REQUIRES_ADMIN_RIGHTS</span></code></dt><dd><p>set it if the component needs to be installed with elevated permissions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>is used to create domain-like identification for this component.
+By default used origin component name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code></dt><dd><p>set to rewrite original name configured by
+<span class="target" id="index-3-command:cpack_add_component"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span></code></dt><dd><p>set to rewrite original description configured by
+<span class="target" id="index-4-command:cpack_add_component"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UPDATE_TEXT</span></code></dt><dd><p>will be added to the component description if this is an update to
+the component.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VERSION</span></code></dt><dd><p>is version of component.
+By default used <span class="target" id="index-0-variable:CPACK_PACKAGE_VERSION"></span><a class="reference internal" href="CPack.html#variable:CPACK_PACKAGE_VERSION" title="CPACK_PACKAGE_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_VERSION</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RELEASE_DATE</span></code></dt><dd><p>keep empty to auto generate.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SCRIPT</span></code></dt><dd><p>is a relative or absolute path to operations script
+for this component.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PRIORITY</span></code> | <code class="docutils literal notranslate"><span class="pre">SORTING_PRIORITY</span></code></dt><dd><p>is priority of the component in the tree.
+The <code class="docutils literal notranslate"><span class="pre">PRIORITY</span></code> option is deprecated and will be removed in a future
+version of CMake. Please use <code class="docutils literal notranslate"><span class="pre">SORTING_PRIORITY</span></code> option instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> | <code class="docutils literal notranslate"><span class="pre">DEPENDENCIES</span></code></dt><dd><p>list of dependency component or component group identifiers in
+QtIFW style.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AUTO_DEPEND_ON</span></code></dt><dd><p>list of identifiers of component or component group in QtIFW style
+that this component has an automatic dependency on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LICENSES</span></code></dt><dd><p>pair of &lt;display_name&gt; and &lt;file_path&gt; of license text for this
+component. You can specify more then one license.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEFAULT</span></code></dt><dd><p>Possible values are: TRUE, FALSE, and SCRIPT.
+Set to FALSE to disable the component in the installer or to SCRIPT
+to resolved during runtime (don’t forget add the file of the script
+as a value of the <code class="docutils literal notranslate"><span class="pre">SCRIPT</span></code> option).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USER_INTERFACES</span></code></dt><dd><p>is a list of &lt;file_path&gt; (‘.ui’ files) representing pages to load.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TRANSLATIONS</span></code></dt><dd><p>is a list of &lt;file_path&gt; (‘.qm’ files) representing translations to load.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REPLACES</span></code></dt><dd><p>list of identifiers of component or component group to replace.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CHECKABLE</span></code></dt><dd><p>Possible values are: TRUE, FALSE.
+Set to FALSE if you want to hide the checkbox for an item.
+This is useful when only a few subcomponents should be selected
+instead of all.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:cpack_ifw_configure_component_group">
+<code class="sig-name descname">cpack_ifw_configure_component_group</code><a class="headerlink" href="#command:cpack_ifw_configure_component_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the arguments specific to the CPack IFW generator.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_ifw_configure_component_group(&lt;groupname&gt; [VIRTUAL]
+                    [FORCED_INSTALLATION] [REQUIRES_ADMIN_RIGHTS]
+                    [NAME &lt;name&gt;]
+                    [DISPLAY_NAME &lt;display_name&gt;] # Note: Internationalization supported
+                    [DESCRIPTION &lt;description&gt;] # Note: Internationalization supported
+                    [UPDATE_TEXT &lt;update_text&gt;]
+                    [VERSION &lt;version&gt;]
+                    [RELEASE_DATE &lt;release_date&gt;]
+                    [SCRIPT &lt;script&gt;]
+                    [PRIORITY|SORTING_PRIORITY &lt;sorting_priority&gt;] # Note: PRIORITY is deprecated
+                    [DEPENDS|DEPENDENCIES &lt;com_id&gt; ...]
+                    [AUTO_DEPEND_ON &lt;comp_id&gt; ...]
+                    [LICENSES &lt;display_name&gt; &lt;file_path&gt; ...]
+                    [DEFAULT &lt;value&gt;]
+                    [USER_INTERFACES &lt;file_path&gt; &lt;file_path&gt; ...]
+                    [TRANSLATIONS &lt;file_path&gt; &lt;file_path&gt; ...]
+                    [REPLACES &lt;comp_id&gt; ...]
+                    [CHECKABLE &lt;value&gt;])
+</pre></div>
+</div>
+<p>This command should be called after <span class="target" id="index-0-command:cpack_add_component_group"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>
+command.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">VIRTUAL</span></code></dt><dd><p>if set, then the group will be hidden from the installer.
+Note that setting this on a root component does not work.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FORCED_INSTALLATION</span></code></dt><dd><p>if set, then the group must always be installed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REQUIRES_ADMIN_RIGHTS</span></code></dt><dd><p>set it if the component group needs to be installed with elevated
+permissions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>is used to create domain-like identification for this component group.
+By default used origin component group name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code></dt><dd><p>set to rewrite original name configured by
+<span class="target" id="index-1-command:cpack_add_component_group"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span></code></dt><dd><p>set to rewrite original description configured by
+<span class="target" id="index-2-command:cpack_add_component_group"></span><a class="reference internal" href="CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UPDATE_TEXT</span></code></dt><dd><p>will be added to the component group description if this is an update to
+the component group.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VERSION</span></code></dt><dd><p>is version of component group.
+By default used <span class="target" id="index-1-variable:CPACK_PACKAGE_VERSION"></span><a class="reference internal" href="CPack.html#variable:CPACK_PACKAGE_VERSION" title="CPACK_PACKAGE_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_VERSION</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RELEASE_DATE</span></code></dt><dd><p>keep empty to auto generate.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SCRIPT</span></code></dt><dd><p>is a relative or absolute path to operations script
+for this component group.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PRIORITY</span></code> | <code class="docutils literal notranslate"><span class="pre">SORTING_PRIORITY</span></code></dt><dd><p>is priority of the component group in the tree.
+The <code class="docutils literal notranslate"><span class="pre">PRIORITY</span></code> option is deprecated and will be removed in a future
+version of CMake. Please use <code class="docutils literal notranslate"><span class="pre">SORTING_PRIORITY</span></code> option instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> | <code class="docutils literal notranslate"><span class="pre">DEPENDENCIES</span></code></dt><dd><p>list of dependency component or component group identifiers in
+QtIFW style.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AUTO_DEPEND_ON</span></code></dt><dd><p>list of identifiers of component or component group in QtIFW style
+that this component group has an automatic dependency on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LICENSES</span></code></dt><dd><p>pair of &lt;display_name&gt; and &lt;file_path&gt; of license text for this
+component group. You can specify more then one license.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEFAULT</span></code></dt><dd><p>Possible values are: TRUE, FALSE, and SCRIPT.
+Set to TRUE to preselect the group in the installer
+(this takes effect only on groups that have no visible child components)
+or to SCRIPT to resolved during runtime (don’t forget add the file of
+the script as a value of the <code class="docutils literal notranslate"><span class="pre">SCRIPT</span></code> option).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USER_INTERFACES</span></code></dt><dd><p>is a list of &lt;file_path&gt; (‘.ui’ files) representing pages to load.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TRANSLATIONS</span></code></dt><dd><p>is a list of &lt;file_path&gt; (‘.qm’ files) representing translations to load.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REPLACES</span></code></dt><dd><p>list of identifiers of component or component group to replace.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CHECKABLE</span></code></dt><dd><p>Possible values are: TRUE, FALSE.
+Set to FALSE if you want to hide the checkbox for an item.
+This is useful when only a few subcomponents should be selected
+instead of all.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:cpack_ifw_add_repository">
+<code class="sig-name descname">cpack_ifw_add_repository</code><a class="headerlink" href="#command:cpack_ifw_add_repository" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add QtIFW specific remote repository to binary installer.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_ifw_add_repository(&lt;reponame&gt; [DISABLED]
+                    URL &lt;url&gt;
+                    [USERNAME &lt;username&gt;]
+                    [PASSWORD &lt;password&gt;]
+                    [DISPLAY_NAME &lt;display_name&gt;])
+</pre></div>
+</div>
+<p>This command will also add the &lt;reponame&gt; repository
+to a variable <span class="target" id="index-0-variable:CPACK_IFW_REPOSITORIES_ALL"></span><a class="reference internal" href="../cpack_gen/ifw.html#variable:CPACK_IFW_REPOSITORIES_ALL" title="CPACK_IFW_REPOSITORIES_ALL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_IFW_REPOSITORIES_ALL</span></code></a>.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">DISABLED</span></code></dt><dd><p>if set, then the repository will be disabled by default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">URL</span></code></dt><dd><p>is points to a list of available components.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USERNAME</span></code></dt><dd><p>is used as user on a protected repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PASSWORD</span></code></dt><dd><p>is password to use on a protected repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code></dt><dd><p>is string to display instead of the URL.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:cpack_ifw_update_repository">
+<code class="sig-name descname">cpack_ifw_update_repository</code><a class="headerlink" href="#command:cpack_ifw_update_repository" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update QtIFW specific repository from remote repository.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_ifw_update_repository(&lt;reponame&gt;
+                    [[ADD|REMOVE] URL &lt;url&gt;]|
+                     [REPLACE OLD_URL &lt;old_url&gt; NEW_URL &lt;new_url&gt;]]
+                    [USERNAME &lt;username&gt;]
+                    [PASSWORD &lt;password&gt;]
+                    [DISPLAY_NAME &lt;display_name&gt;])
+</pre></div>
+</div>
+<p>This command will also add the &lt;reponame&gt; repository
+to a variable <span class="target" id="index-1-variable:CPACK_IFW_REPOSITORIES_ALL"></span><a class="reference internal" href="../cpack_gen/ifw.html#variable:CPACK_IFW_REPOSITORIES_ALL" title="CPACK_IFW_REPOSITORIES_ALL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_IFW_REPOSITORIES_ALL</span></code></a>.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">URL</span></code></dt><dd><p>is points to a list of available components.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OLD_URL</span></code></dt><dd><p>is points to a list that will replaced.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NEW_URL</span></code></dt><dd><p>is points to a list that will replace to.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USERNAME</span></code></dt><dd><p>is used as user on a protected repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PASSWORD</span></code></dt><dd><p>is password to use on a protected repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code></dt><dd><p>is string to display instead of the URL.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:cpack_ifw_add_package_resources">
+<code class="sig-name descname">cpack_ifw_add_package_resources</code><a class="headerlink" href="#command:cpack_ifw_add_package_resources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add additional resources in the installer binary.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_ifw_add_package_resources(&lt;file_path&gt; &lt;file_path&gt; ...)
+</pre></div>
+</div>
+<p>This command will also add the specified files
+to a variable <span class="target" id="index-0-variable:CPACK_IFW_PACKAGE_RESOURCES"></span><a class="reference internal" href="../cpack_gen/ifw.html#variable:CPACK_IFW_PACKAGE_RESOURCES" title="CPACK_IFW_PACKAGE_RESOURCES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_IFW_PACKAGE_RESOURCES</span></code></a>.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPackIFW</a><ul>
+<li><a class="reference internal" href="#commands">Commands</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CPackComponent.html"
+                        title="previous chapter">CPackComponent</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CPackIFWConfigureFile.html"
+                        title="next chapter">CPackIFWConfigureFile</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CPackIFW.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CPackIFWConfigureFile.html" title="CPackIFWConfigureFile"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CPackComponent.html" title="CPackComponent"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPackIFW</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

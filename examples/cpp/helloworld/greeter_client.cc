@@ -67,6 +67,24 @@ class GreeterClient {
     }
   }
 
+  std::string SayHelloAgain(const std::string& user) {
+    // Follows the same pattern as SayHello.
+    HelloRequest request;
+    request.set_name(user);
+    HelloReply reply;
+    ClientContext context;
+
+    // Here we can use the stub's newly available method we just added.
+    Status status = stub_->SayHelloAgain(&context, request, &reply);
+    if (status.ok()) {
+      return reply.message();
+    } else {
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+      return "RPC failed";
+    }
+  }
+
  private:
   std::unique_ptr<Greeter::Stub> stub_;
 };
@@ -99,9 +117,13 @@ int main(int argc, char** argv) {
     target_str = "localhost:50051";
   }
   GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+        grpc::CreateChannel(target_str, grpc::SslCredentials()));
+//      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
+  std::cout << "Greeter received: " << reply << std::endl;
+
+  reply = greeter.SayHelloAgain(user);
   std::cout << "Greeter received: " << reply << std::endl;
 
   return 0;

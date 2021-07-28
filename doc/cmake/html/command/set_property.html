@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>set_property &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="site_name" href="site_name.html" />
+    <link rel="prev" title="set_directory_properties" href="set_directory_properties.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="site_name.html" title="site_name"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="set_directory_properties.html" title="set_directory_properties"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">set_property</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="set-property">
+<span id="command:set_property"></span><h1>set_property<a class="headerlink" href="#set-property" title="Permalink to this headline">¶</a></h1>
+<p>Set a named property in a given scope.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="o">&lt;</span><span class="no">GLOBAL</span><span class="w">                      </span><span class="p">|</span><span class="w"></span>
+<span class="w">              </span><span class="no">DIRECTORY</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;dir&gt;</span><span class="p">]</span><span class="w">           </span><span class="p">|</span><span class="w"></span>
+<span class="w">              </span><span class="no">TARGET</span><span class="w">    </span><span class="p">[</span><span class="nv">&lt;target1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w">   </span><span class="p">|</span><span class="w"></span>
+<span class="w">              </span><span class="no">SOURCE</span><span class="w">    </span><span class="p">[</span><span class="nv">&lt;src1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">                        </span><span class="p">[</span><span class="no">DIRECTORY</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="p">|</span><span class="w"></span>
+<span class="w">                        </span><span class="p">[</span><span class="no">TARGET_DIRECTORY</span><span class="w"> </span><span class="nv">&lt;targets&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">              </span><span class="no">INSTALL</span><span class="w">   </span><span class="p">[</span><span class="nv">&lt;file1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w">     </span><span class="p">|</span><span class="w"></span>
+<span class="w">              </span><span class="no">TEST</span><span class="w">      </span><span class="p">[</span><span class="nv">&lt;test1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w">     </span><span class="p">|</span><span class="w"></span>
+<span class="w">              </span><span class="no">CACHE</span><span class="w">     </span><span class="p">[</span><span class="nv">&lt;entry1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w">    </span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">             </span><span class="p">[</span><span class="no">APPEND</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">APPEND_STRING</span><span class="p">]</span><span class="w"></span>
+<span class="w">             </span><span class="no">PROPERTY</span><span class="w"> </span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;value1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets one property on zero or more objects of a scope.</p>
+<p>The first argument determines the scope in which the property is set.
+It must be one of the following:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code></dt><dd><p>Scope is unique and does not accept a name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DIRECTORY</span></code></dt><dd><p>Scope defaults to the current directory but other directories
+(already processed by CMake) may be named by full or relative path.
+Each path may reference either a source directory, or since CMake 3.19,
+a binary directory.
+Relative paths are treated as relative to the current source directory.
+See also the <span class="target" id="index-0-command:set_directory_properties"></span><a class="reference internal" href="set_directory_properties.html#command:set_directory_properties" title="set_directory_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_directory_properties()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TARGET</span></code></dt><dd><p>Scope may name zero or more existing targets.
+See also the <span class="target" id="index-0-command:set_target_properties"></span><a class="reference internal" href="set_target_properties.html#command:set_target_properties" title="set_target_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_target_properties()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SOURCE</span></code></dt><dd><p>Scope may name zero or more source files.  By default, source file properties
+are only visible to targets added in the same directory (<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>).
+Visibility can be set in other directory scopes using one or both of the
+following sub-options:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">DIRECTORY</span> <span class="pre">&lt;dirs&gt;...</span></code></dt><dd><p>The source file property will be set in each of the <code class="docutils literal notranslate"><span class="pre">&lt;dirs&gt;</span></code>
+directories’ scopes.  Each path may reference either a source directory,
+or since CMake 3.19, a binary directory.  CMake must already know about
+each of these directories, either by having added them through a call to
+<span class="target" id="index-0-command:add_subdirectory"></span><a class="reference internal" href="add_subdirectory.html#command:add_subdirectory" title="add_subdirectory"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_subdirectory()</span></code></a> or it being the top level source directory.
+Relative paths are treated as relative to the current source directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TARGET_DIRECTORY</span> <span class="pre">&lt;targets&gt;...</span></code></dt><dd><p>The source file property will be set in each of the directory scopes
+where any of the specified <code class="docutils literal notranslate"><span class="pre">&lt;targets&gt;</span></code> were created (the <code class="docutils literal notranslate"><span class="pre">&lt;targets&gt;</span></code>
+must therefore already exist).</p>
+</dd>
+</dl>
+<p>See also the <span class="target" id="index-0-command:set_source_files_properties"></span><a class="reference internal" href="set_source_files_properties.html#command:set_source_files_properties" title="set_source_files_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_source_files_properties()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INSTALL</span></code></dt><dd><p>Scope may name zero or more installed file paths.
+These are made available to CPack to influence deployment.</p>
+<p>Both the property key and value may use generator expressions.
+Specific properties may apply to installed files and/or directories.</p>
+<p>Path components have to be separated by forward slashes,
+must be normalized and are case sensitive.</p>
+<p>To reference the installation prefix itself with a relative path use <code class="docutils literal notranslate"><span class="pre">.</span></code>.</p>
+<p>Currently installed file properties are only defined for
+the WIX generator where the given paths are relative
+to the installation prefix.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST</span></code></dt><dd><p>Scope may name zero or more existing tests.
+See also the <span class="target" id="index-0-command:set_tests_properties"></span><a class="reference internal" href="set_tests_properties.html#command:set_tests_properties" title="set_tests_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_tests_properties()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CACHE</span></code></dt><dd><p>Scope must name zero or more cache existing entries.</p>
+</dd>
+</dl>
+<p>The required <code class="docutils literal notranslate"><span class="pre">PROPERTY</span></code> option is immediately followed by the name of
+the property to set.  Remaining arguments are used to compose the
+property value in the form of a semicolon-separated list.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> option is given the list is appended to any existing
+property value (except that empty values are ignored and not appended).
+If the <code class="docutils literal notranslate"><span class="pre">APPEND_STRING</span></code> option is given the string is
+appended to any existing property value as string, i.e. it results in a
+longer string and not a list of strings.  When using <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> or
+<code class="docutils literal notranslate"><span class="pre">APPEND_STRING</span></code> with a property defined to support <code class="docutils literal notranslate"><span class="pre">INHERITED</span></code>
+behavior (see <span class="target" id="index-0-command:define_property"></span><a class="reference internal" href="define_property.html#command:define_property" title="define_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">define_property()</span></code></a>), no inheriting occurs when
+finding the initial value to append to.  If the property is not already
+directly set in the nominated scope, the command will behave as though
+<code class="docutils literal notranslate"><span class="pre">APPEND</span></code> or <code class="docutils literal notranslate"><span class="pre">APPEND_STRING</span></code> had not been given.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-properties(7)"></span><a class="reference internal" href="../manual/cmake-properties.7.html#manual:cmake-properties(7)" title="cmake-properties(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-properties(7)</span></code></a> manual for a list of properties
+in each scope.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="set_directory_properties.html"
+                        title="previous chapter">set_directory_properties</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="site_name.html"
+                        title="next chapter">site_name</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/set_property.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="site_name.html" title="site_name"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="set_directory_properties.html" title="set_directory_properties"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">set_property</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

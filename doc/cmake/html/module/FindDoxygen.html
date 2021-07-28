@@ -1,0 +1,528 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindDoxygen &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindEnvModules" href="FindEnvModules.html" />
+    <link rel="prev" title="FindDevIL" href="FindDevIL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindEnvModules.html" title="FindEnvModules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindDevIL.html" title="FindDevIL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindDoxygen</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="finddoxygen">
+<span id="module:FindDoxygen"></span><h1>FindDoxygen<a class="headerlink" href="#finddoxygen" title="Permalink to this headline">¶</a></h1>
+<p>Doxygen is a documentation generation tool (see <a class="reference external" href="http://www.doxygen.org">http://www.doxygen.org</a>).
+This module looks for Doxygen and some optional tools it supports. These
+tools are enabled as components in the <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">dot</span></code></dt><dd><p><a class="reference external" href="http://graphviz.org">Graphviz</a> <code class="docutils literal notranslate"><span class="pre">dot</span></code> utility used to render various
+graphs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">mscgen</span></code></dt><dd><p><a class="reference external" href="http://www.mcternan.me.uk/mscgen/">Message Chart Generator</a> utility used
+by Doxygen’s <code class="docutils literal notranslate"><span class="pre">\msc</span></code> and <code class="docutils literal notranslate"><span class="pre">\mscfile</span></code> commands.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dia</span></code></dt><dd><p><a class="reference external" href="https://wiki.gnome.org/Apps/Dia">Dia</a> the diagram editor used by Doxygen’s
+<code class="docutils literal notranslate"><span class="pre">\diafile</span></code> command.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Require dot, treat the other components as optional</span>
+<span class="nf">find_package(</span><span class="nb">Doxygen</span><span class="w"></span>
+<span class="w">             </span><span class="no">REQUIRED</span><span class="w"> </span><span class="nb">dot</span><span class="w"></span>
+<span class="w">             </span><span class="no">OPTIONAL_COMPONENTS</span><span class="w"> </span><span class="nb">mscgen</span><span class="w"> </span><span class="nb">dia</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The following variables are defined by this module:</p>
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_FOUND">
+<code class="sig-name descname">DOXYGEN_FOUND</code><a class="headerlink" href="#variable:DOXYGEN_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the <code class="docutils literal notranslate"><span class="pre">doxygen</span></code> executable was found.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_VERSION">
+<code class="sig-name descname">DOXYGEN_VERSION</code><a class="headerlink" href="#variable:DOXYGEN_VERSION" title="Permalink to this definition">¶</a></dt>
+<dd><p>The version reported by <code class="docutils literal notranslate"><span class="pre">doxygen</span> <span class="pre">--version</span></code>.</p>
+</dd></dl>
+
+<p>The module defines <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> targets for Doxygen and each component found.
+These can be used as part of custom commands, etc. and should be preferred over
+old-style (and now deprecated) variables like <code class="docutils literal notranslate"><span class="pre">DOXYGEN_EXECUTABLE</span></code>. The
+following import targets are defined if their corresponding executable could be
+found (the component import targets will only be defined if that component was
+requested):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Doxygen::doxygen
+Doxygen::dot
+Doxygen::mscgen
+Doxygen::dia
+</pre></div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake command">
+<dt id="command:doxygen_add_docs">
+<code class="sig-name descname">doxygen_add_docs</code><a class="headerlink" href="#command:doxygen_add_docs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is intended as a convenience for adding a target for generating
+documentation with Doxygen. It aims to provide sensible defaults so that
+projects can generally just provide the input files and directories and that
+will be sufficient to give sensible results. The function supports the
+ability to customize the Doxygen configuration used to build the
+documentation.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>doxygen_add_docs(targetName
+    [filesOrDirs...]
+    [ALL]
+    [USE_STAMP_FILE]
+    [WORKING_DIRECTORY dir]
+    [COMMENT comment])
+</pre></div>
+</div>
+<p>The function constructs a <code class="docutils literal notranslate"><span class="pre">Doxyfile</span></code> and defines a custom target that runs
+Doxygen on that generated file. The listed files and directories are used as
+the <code class="docutils literal notranslate"><span class="pre">INPUT</span></code> of the generated <code class="docutils literal notranslate"><span class="pre">Doxyfile</span></code> and they can contain wildcards.
+Any files that are listed explicitly will also be added as <code class="docutils literal notranslate"><span class="pre">SOURCES</span></code> of the
+custom target so they will show up in an IDE project’s source list.</p>
+<p>So that relative input paths work as expected, by default the working
+directory of the Doxygen command will be the current source directory (i.e.
+<span class="target" id="index-0-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>). This can be overridden with the
+<code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code> option to change the directory used as the relative
+base point. Note also that Doxygen’s default behavior is to strip the working
+directory from relative paths in the generated documentation (see the
+<code class="docutils literal notranslate"><span class="pre">STRIP_FROM_PATH</span></code> <a class="reference external" href="http://www.doxygen.org/manual/config.html">Doxygen config option</a> for details).</p>
+<p>If provided, the optional <code class="docutils literal notranslate"><span class="pre">comment</span></code> will be passed as the <code class="docutils literal notranslate"><span class="pre">COMMENT</span></code> for
+the <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a> command used to create the custom target
+internally.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">ALL</span></code> is set, the target will be added to the default build target.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">USE_STAMP_FILE</span></code> is set, the custom command defined by this function will
+create a stamp file with the name <code class="docutils literal notranslate"><span class="pre">&lt;targetName&gt;.stamp</span></code> in the current
+binary directory whenever doxygen is re-run.  With this option present, all
+items in <code class="docutils literal notranslate"><span class="pre">&lt;filesOrDirs&gt;</span></code> must be files (i.e. no directories, symlinks or
+wildcards) and each of the files must exist at the time
+<code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code> is called.  An error will be raised if any of the
+items listed is missing or is not a file when <code class="docutils literal notranslate"><span class="pre">USE_STAMP_FILE</span></code> is given.
+A dependency will be created on each of the files so that doxygen will only
+be re-run if one of the files is updated.  Without the <code class="docutils literal notranslate"><span class="pre">USE_STAMP_FILE</span></code>
+option, doxygen will always be re-run if the <code class="docutils literal notranslate"><span class="pre">&lt;targetName&gt;</span></code> target is built
+regardless of whether anything listed in <code class="docutils literal notranslate"><span class="pre">&lt;filesOrDirs&gt;</span></code> has changed.</p>
+<p>The contents of the generated <code class="docutils literal notranslate"><span class="pre">Doxyfile</span></code> can be customized by setting CMake
+variables before calling <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code>. Any variable with a name of
+the form <code class="docutils literal notranslate"><span class="pre">DOXYGEN_&lt;tag&gt;</span></code> will have its value substituted for the
+corresponding <code class="docutils literal notranslate"><span class="pre">&lt;tag&gt;</span></code> configuration option in the <code class="docutils literal notranslate"><span class="pre">Doxyfile</span></code>. See the
+<a class="reference external" href="http://www.doxygen.org/manual/config.html">Doxygen documentation</a> for the
+full list of supported configuration options.</p>
+<p>Some of Doxygen’s defaults are overridden to provide more appropriate
+behavior for a CMake project. Each of the following will be explicitly set
+unless the variable already has a value before <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code> is
+called (with some exceptions noted):</p>
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_HAVE_DOT">
+<code class="sig-name descname">DOXYGEN_HAVE_DOT</code><a class="headerlink" href="#variable:DOXYGEN_HAVE_DOT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <code class="docutils literal notranslate"><span class="pre">YES</span></code> if the <code class="docutils literal notranslate"><span class="pre">dot</span></code> component was requested and it was found,
+<code class="docutils literal notranslate"><span class="pre">NO</span></code> otherwise. Any existing value of <code class="docutils literal notranslate"><span class="pre">DOXYGEN_HAVE_DOT</span></code> is ignored.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_DOT_MULTI_TARGETS">
+<code class="sig-name descname">DOXYGEN_DOT_MULTI_TARGETS</code><a class="headerlink" href="#variable:DOXYGEN_DOT_MULTI_TARGETS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <code class="docutils literal notranslate"><span class="pre">YES</span></code> by this module (note that this requires a <code class="docutils literal notranslate"><span class="pre">dot</span></code> version
+newer than 1.8.10). This option is only meaningful if <code class="docutils literal notranslate"><span class="pre">DOXYGEN_HAVE_DOT</span></code>
+is also set to <code class="docutils literal notranslate"><span class="pre">YES</span></code>.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_GENERATE_LATEX">
+<code class="sig-name descname">DOXYGEN_GENERATE_LATEX</code><a class="headerlink" href="#variable:DOXYGEN_GENERATE_LATEX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <code class="docutils literal notranslate"><span class="pre">NO</span></code> by this module.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_WARN_FORMAT">
+<code class="sig-name descname">DOXYGEN_WARN_FORMAT</code><a class="headerlink" href="#variable:DOXYGEN_WARN_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd><p>For Visual Studio based generators, this is set to the form recognized by
+the Visual Studio IDE: <code class="docutils literal notranslate"><span class="pre">$file($line)</span> <span class="pre">:</span> <span class="pre">$text</span></code>. For all other generators,
+Doxygen’s default value is not overridden.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_PROJECT_NAME">
+<code class="sig-name descname">DOXYGEN_PROJECT_NAME</code><a class="headerlink" href="#variable:DOXYGEN_PROJECT_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populated with the name of the current project (i.e.
+<span class="target" id="index-0-variable:PROJECT_NAME"></span><a class="reference internal" href="../variable/PROJECT_NAME.html#variable:PROJECT_NAME" title="PROJECT_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_NAME</span></code></a>).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_PROJECT_NUMBER">
+<code class="sig-name descname">DOXYGEN_PROJECT_NUMBER</code><a class="headerlink" href="#variable:DOXYGEN_PROJECT_NUMBER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populated with the version of the current project (i.e.
+<span class="target" id="index-0-variable:PROJECT_VERSION"></span><a class="reference internal" href="../variable/PROJECT_VERSION.html#variable:PROJECT_VERSION" title="PROJECT_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION</span></code></a>).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_PROJECT_BRIEF">
+<code class="sig-name descname">DOXYGEN_PROJECT_BRIEF</code><a class="headerlink" href="#variable:DOXYGEN_PROJECT_BRIEF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populated with the description of the current project (i.e.
+<span class="target" id="index-0-variable:PROJECT_DESCRIPTION"></span><a class="reference internal" href="../variable/PROJECT_DESCRIPTION.html#variable:PROJECT_DESCRIPTION" title="PROJECT_DESCRIPTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_DESCRIPTION</span></code></a>).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_INPUT">
+<code class="sig-name descname">DOXYGEN_INPUT</code><a class="headerlink" href="#variable:DOXYGEN_INPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projects should not set this variable. It will be populated with the set of
+files and directories passed to <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code>, thereby providing
+consistent behavior with the other built-in commands like
+<span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>, <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> and
+<span class="target" id="index-1-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>. If a variable named <code class="docutils literal notranslate"><span class="pre">DOXYGEN_INPUT</span></code> is set
+by the project, it will be ignored and a warning will be issued.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_RECURSIVE">
+<code class="sig-name descname">DOXYGEN_RECURSIVE</code><a class="headerlink" href="#variable:DOXYGEN_RECURSIVE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <code class="docutils literal notranslate"><span class="pre">YES</span></code> by this module.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_EXCLUDE_PATTERNS">
+<code class="sig-name descname">DOXYGEN_EXCLUDE_PATTERNS</code><a class="headerlink" href="#variable:DOXYGEN_EXCLUDE_PATTERNS" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the set of inputs includes directories, this variable will specify
+patterns used to exclude files from them. The following patterns are added
+by <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code> to ensure CMake-specific files and directories
+are not included in the input. If the project sets
+<code class="docutils literal notranslate"><span class="pre">DOXYGEN_EXCLUDE_PATTERNS</span></code>, those contents are merged with these
+additional patterns rather than replacing them:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>*/.git/*
+*/.svn/*
+*/.hg/*
+*/CMakeFiles/*
+*/_CPack_Packages/*
+DartConfiguration.tcl
+CMakeLists.txt
+CMakeCache.txt
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_OUTPUT_DIRECTORY">
+<code class="sig-name descname">DOXYGEN_OUTPUT_DIRECTORY</code><a class="headerlink" href="#variable:DOXYGEN_OUTPUT_DIRECTORY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <span class="target" id="index-0-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a> by this module. Note that if
+the project provides its own value for this and it is a relative path, it
+will be converted to an absolute path relative to the current binary
+directory. This is necessary because doxygen will normally be run from a
+directory within the source tree so that relative source paths work as
+expected. If this directory does not exist, it will be recursively created
+prior to executing the doxygen commands.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>To change any of these defaults or override any other Doxygen config option,
+set relevant variables before calling <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code>. For example:</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">DOXYGEN_GENERATE_HTML</span><span class="w"> </span><span class="no">NO</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">DOXYGEN_GENERATE_MAN</span><span class="w"> </span><span class="no">YES</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">doxygen_add_docs(</span><span class="w"></span>
+<span class="w">    </span><span class="nb">doxygen</span><span class="w"></span>
+<span class="w">    </span><span class="o">${</span><span class="nt">PROJECT_SOURCE_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">    </span><span class="no">COMMENT</span><span class="w"> </span><span class="s">&quot;Generate man pages&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>A number of Doxygen config options accept lists of values, but Doxygen requires
+them to be separated by whitespace. CMake variables hold lists as a string with
+items separated by semi-colons, so a conversion needs to be performed. The
+<code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code> command specifically checks the following Doxygen config
+options and will convert their associated CMake variable’s contents into the
+required form if set.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ABBREVIATE_BRIEF
+ALIASES
+CITE_BIB_FILES
+DIAFILE_DIRS
+DOTFILE_DIRS
+DOT_FONTPATH
+ENABLED_SECTIONS
+EXAMPLE_PATH
+EXAMPLE_PATTERNS
+EXCLUDE
+EXCLUDE_PATTERNS
+EXCLUDE_SYMBOLS
+EXPAND_AS_DEFINED
+EXTENSION_MAPPING
+EXTRA_PACKAGES
+EXTRA_SEARCH_MAPPINGS
+FILE_PATTERNS
+FILTER_PATTERNS
+FILTER_SOURCE_PATTERNS
+HTML_EXTRA_FILES
+HTML_EXTRA_STYLESHEET
+IGNORE_PREFIX
+IMAGE_PATH
+INCLUDE_FILE_PATTERNS
+INCLUDE_PATH
+INPUT
+LATEX_EXTRA_FILES
+LATEX_EXTRA_STYLESHEET
+MATHJAX_EXTENSIONS
+MSCFILE_DIRS
+PLANTUML_INCLUDE_PATH
+PREDEFINED
+QHP_CUST_FILTER_ATTRS
+QHP_SECT_FILTER_ATTRS
+STRIP_FROM_INC_PATH
+STRIP_FROM_PATH
+TAGFILES
+TCL_SUBST
+</pre></div>
+</div>
+<p>The following single value Doxygen options will be quoted automatically
+if they contain at least one space:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CHM_FILE
+DIA_PATH
+DOCBOOK_OUTPUT
+DOCSET_FEEDNAME
+DOCSET_PUBLISHER_NAME
+DOT_FONTNAME
+DOT_PATH
+EXTERNAL_SEARCH_ID
+FILE_VERSION_FILTER
+GENERATE_TAGFILE
+HHC_LOCATION
+HTML_FOOTER
+HTML_HEADER
+HTML_OUTPUT
+HTML_STYLESHEET
+INPUT_FILTER
+LATEX_FOOTER
+LATEX_HEADER
+LATEX_OUTPUT
+LAYOUT_FILE
+MAN_OUTPUT
+MAN_SUBDIR
+MATHJAX_CODEFILE
+MSCGEN_PATH
+OUTPUT_DIRECTORY
+PERL_PATH
+PLANTUML_JAR_PATH
+PROJECT_BRIEF
+PROJECT_LOGO
+PROJECT_NAME
+QCH_FILE
+QHG_LOCATION
+QHP_CUST_FILTER_NAME
+QHP_VIRTUAL_FOLDER
+RTF_EXTENSIONS_FILE
+RTF_OUTPUT
+RTF_STYLESHEET_FILE
+SEARCHDATA_FILE
+USE_MDFILE_AS_MAINPAGE
+WARN_FORMAT
+WARN_LOGFILE
+XML_OUTPUT
+</pre></div>
+</div>
+<p>There are situations where it may be undesirable for a particular config option
+to be automatically quoted by <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code>, such as <code class="docutils literal notranslate"><span class="pre">ALIASES</span></code> which
+may need to include its own embedded quoting.  The <code class="docutils literal notranslate"><span class="pre">DOXYGEN_VERBATIM_VARS</span></code>
+variable can be used to specify a list of Doxygen variables (including the
+leading <code class="docutils literal notranslate"><span class="pre">DOXYGEN_</span></code> prefix) which should not be quoted.  The project is then
+responsible for ensuring that those variables’ values make sense when placed
+directly in the Doxygen input file.  In the case of list variables, list items
+are still separated by spaces, it is only the automatic quoting that is
+skipped.  For example, the following allows <code class="docutils literal notranslate"><span class="pre">doxygen_add_docs()</span></code> to apply
+quoting to <code class="docutils literal notranslate"><span class="pre">DOXYGEN_PROJECT_BRIEF</span></code>, but not each item in the
+<code class="docutils literal notranslate"><span class="pre">DOXYGEN_ALIASES</span></code> list (<a class="reference internal" href="../manual/cmake-language.7.html#bracket-argument"><span class="std std-ref">bracket syntax</span></a> can also
+be used to make working with embedded quotes easier):</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">DOXYGEN_PROJECT_BRIEF</span><span class="w"> </span><span class="s">&quot;String with spaces&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">DOXYGEN_ALIASES</span><span class="w"></span>
+<span class="w">    </span><span class="p">[[</span><span class="nb">somealias</span><span class="p">=</span><span class="s">&quot;@some_command param&quot;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;anotherAlias=@foobar&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">DOXYGEN_VERBATIM_VARS</span><span class="w"> </span><span class="no">DOXYGEN_ALIASES</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The resultant <code class="docutils literal notranslate"><span class="pre">Doxyfile</span></code> will contain the following lines:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>PROJECT_BRIEF = &quot;String with spaces&quot;
+ALIASES       = somealias=&quot;@some_command param&quot; anotherAlias=@foobar
+</pre></div>
+</div>
+</div>
+<div class="section" id="deprecated-result-variables">
+<h2>Deprecated Result Variables<a class="headerlink" href="#deprecated-result-variables" title="Permalink to this headline">¶</a></h2>
+<p>For compatibility with previous versions of CMake, the following variables
+are also defined but they are deprecated and should no longer be used:</p>
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_EXECUTABLE">
+<code class="sig-name descname">DOXYGEN_EXECUTABLE</code><a class="headerlink" href="#variable:DOXYGEN_EXECUTABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path to the <code class="docutils literal notranslate"><span class="pre">doxygen</span></code> command. If projects need to refer to the
+<code class="docutils literal notranslate"><span class="pre">doxygen</span></code> executable directly, they should use the <code class="docutils literal notranslate"><span class="pre">Doxygen::doxygen</span></code>
+import target instead.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_DOT_FOUND">
+<code class="sig-name descname">DOXYGEN_DOT_FOUND</code><a class="headerlink" href="#variable:DOXYGEN_DOT_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the <code class="docutils literal notranslate"><span class="pre">dot</span></code> executable was found.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_DOT_EXECUTABLE">
+<code class="sig-name descname">DOXYGEN_DOT_EXECUTABLE</code><a class="headerlink" href="#variable:DOXYGEN_DOT_EXECUTABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path to the <code class="docutils literal notranslate"><span class="pre">dot</span></code> command. If projects need to refer to the <code class="docutils literal notranslate"><span class="pre">dot</span></code>
+executable directly, they should use the <code class="docutils literal notranslate"><span class="pre">Doxygen::dot</span></code> import target
+instead.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_DOT_PATH">
+<code class="sig-name descname">DOXYGEN_DOT_PATH</code><a class="headerlink" href="#variable:DOXYGEN_DOT_PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path to the directory containing the <code class="docutils literal notranslate"><span class="pre">dot</span></code> executable as reported in
+<code class="docutils literal notranslate"><span class="pre">DOXYGEN_DOT_EXECUTABLE</span></code>. The path may have forward slashes even on Windows
+and is not suitable for direct substitution into a <code class="docutils literal notranslate"><span class="pre">Doxyfile.in</span></code> template.
+If you need this value, get the <span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION"></span><a class="reference internal" href="../prop_tgt/IMPORTED_LOCATION.html#prop_tgt:IMPORTED_LOCATION" title="IMPORTED_LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION</span></code></a> property of the
+<code class="docutils literal notranslate"><span class="pre">Doxygen::dot</span></code> target and use <span class="target" id="index-0-command:get_filename_component"></span><a class="reference internal" href="../command/get_filename_component.html#command:get_filename_component" title="get_filename_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_filename_component()</span></code></a> to extract
+the directory part of that path. You may also want to consider using
+<span class="target" id="index-0-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(TO_NATIVE_PATH)</span></code></a> to prepare the path for a Doxygen
+configuration file.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="deprecated-hint-variables">
+<h2>Deprecated Hint Variables<a class="headerlink" href="#deprecated-hint-variables" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake variable">
+<dt id="variable:DOXYGEN_SKIP_DOT">
+<code class="sig-name descname">DOXYGEN_SKIP_DOT</code><a class="headerlink" href="#variable:DOXYGEN_SKIP_DOT" title="Permalink to this definition">¶</a></dt>
+<dd><p>This variable has no effect for the component form of <code class="docutils literal notranslate"><span class="pre">find_package</span></code>.
+In backward compatibility mode (i.e. without components list) it prevents
+the finder module from searching for Graphviz’s <code class="docutils literal notranslate"><span class="pre">dot</span></code> utility.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindDoxygen</a><ul>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+<li><a class="reference internal" href="#deprecated-result-variables">Deprecated Result Variables</a></li>
+<li><a class="reference internal" href="#deprecated-hint-variables">Deprecated Hint Variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindDevIL.html"
+                        title="previous chapter">FindDevIL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindEnvModules.html"
+                        title="next chapter">FindEnvModules</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindDoxygen.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindEnvModules.html" title="FindEnvModules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindDevIL.html" title="FindDevIL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindDoxygen</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

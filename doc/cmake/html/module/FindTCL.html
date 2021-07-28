@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindTCL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindTclsh" href="FindTclsh.html" />
+    <link rel="prev" title="FindSWIG" href="FindSWIG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindTclsh.html" title="FindTclsh"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindSWIG.html" title="FindSWIG"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindTCL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findtcl">
+<span id="module:FindTCL"></span><h1>FindTCL<a class="headerlink" href="#findtcl" title="Permalink to this headline">¶</a></h1>
+<p>TK_INTERNAL_PATH was removed.</p>
+<p>This module finds if Tcl is installed and determines where the include
+files and libraries are.  It also determines what the name of the
+library is.  This code sets the following variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>TCL_FOUND              = Tcl was found
+TK_FOUND               = Tk was found
+TCLTK_FOUND            = Tcl and Tk were found
+TCL_LIBRARY            = path to Tcl library (tcl tcl80)
+TCL_INCLUDE_PATH       = path to where tcl.h can be found
+TCL_TCLSH              = path to tclsh binary (tcl tcl80)
+TK_LIBRARY             = path to Tk library (tk tk80 etc)
+TK_INCLUDE_PATH        = path to where tk.h can be found
+TK_WISH                = full path to the wish executable
+</pre></div>
+</div>
+<p>In an effort to remove some clutter and clear up some issues for
+people who are not necessarily Tcl/Tk gurus/developers, some
+variables were moved or removed.  Changes compared to CMake 2.4 are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>=&gt; they were only useful for people writing Tcl/Tk extensions.
+=&gt; these libs are not packaged by default with Tcl/Tk distributions.
+   Even when Tcl/Tk is built from source, several flavors of debug libs
+   are created and there is no real reason to pick a single one
+   specifically (say, amongst tcl84g, tcl84gs, or tcl84sgx).
+   Let&#39;s leave that choice to the user by allowing him to assign
+   TCL_LIBRARY to any Tcl library, debug or not.
+=&gt; this ended up being only a Win32 variable, and there is a lot of
+   confusion regarding the location of this file in an installed Tcl/Tk
+   tree anyway (see 8.5 for example). If you need the internal path at
+   this point it is safer you ask directly where the *source* tree is
+   and dig from there.
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindSWIG.html"
+                        title="previous chapter">FindSWIG</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindTclsh.html"
+                        title="next chapter">FindTclsh</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindTCL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindTclsh.html" title="FindTclsh"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindSWIG.html" title="FindSWIG"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindTCL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

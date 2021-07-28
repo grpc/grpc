@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS_CSHARP_&lt;tagname&gt; &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VS_DEPLOYMENT_CONTENT" href="VS_DEPLOYMENT_CONTENT.html" />
+    <link rel="prev" title="VS_COPY_TO_OUT_DIR" href="VS_COPY_TO_OUT_DIR.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="VS_DEPLOYMENT_CONTENT.html" title="VS_DEPLOYMENT_CONTENT"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="VS_COPY_TO_OUT_DIR.html" title="VS_COPY_TO_OUT_DIR"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_CSHARP_&lt;tagname&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="vs-csharp-tagname">
+<span id="prop_sf:VS_CSHARP_<tagname>"></span><h1>VS_CSHARP_&lt;tagname&gt;<a class="headerlink" href="#vs-csharp-tagname" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.8.</span></p>
+</div>
+<p>Visual Studio and CSharp source-file-specific configuration.</p>
+<p>Tell the <span class="target" id="index-0-manual:cmake-generators(7)"></span><a class="reference internal" href="../manual/cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">generators</span></code></a>
+to set the source file tag <code class="docutils literal notranslate"><span class="pre">&lt;tagname&gt;</span></code>
+to a given value in the generated Visual Studio CSharp
+project. Ignored on other generators and languages. This property
+can be used to define dependencies between source files or set any
+other Visual Studio specific parameters.</p>
+<p>Example usage:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_source_files_property(</span><span class="nv">&lt;filename&gt;</span><span class="w"></span>
+<span class="w">         </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">         </span><span class="nb">VS_CSHARP_DependentUpon</span><span class="w"> </span><span class="nv">&lt;other file&gt;</span><span class="w"></span>
+<span class="w">         </span><span class="nb">VS_CSHARP_SubType</span><span class="w"> </span><span class="s">&quot;Form&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VS_COPY_TO_OUT_DIR.html"
+                        title="previous chapter">VS_COPY_TO_OUT_DIR</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="VS_DEPLOYMENT_CONTENT.html"
+                        title="next chapter">VS_DEPLOYMENT_CONTENT</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_sf/VS_CSHARP_tagname.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="VS_DEPLOYMENT_CONTENT.html" title="VS_DEPLOYMENT_CONTENT"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="VS_COPY_TO_OUT_DIR.html" title="VS_COPY_TO_OUT_DIR"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_CSHARP_&lt;tagname&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

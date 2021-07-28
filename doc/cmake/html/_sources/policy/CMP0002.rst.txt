@@ -1,0 +1,28 @@
+CMP0002
+-------
+
+Logical target names must be globally unique.
+
+Targets names created with :command:`add_executable`, :command:`add_library`, or
+:command:`add_custom_target` are logical build target names.  Logical target
+names must be globally unique because:
+
+::
+
+  - Unique names may be referenced unambiguously both in CMake
+    code and on make tool command lines.
+  - Logical names are used by Xcode and VS IDE generators
+    to produce meaningful project names for the targets.
+
+The logical name of executable and library targets does not have to
+correspond to the physical file names built.  Consider using the
+:prop_tgt:`OUTPUT_NAME` target property to create two targets with the same
+physical name while keeping logical names distinct.  Custom targets
+must simply have globally unique names (unless one uses the global
+property :prop_gbl:`ALLOW_DUPLICATE_CUSTOM_TARGETS` with a Makefiles generator).
+
+This policy was introduced in CMake version 2.6.0.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

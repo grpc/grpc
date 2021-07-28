@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINK_LIBRARIES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LINK_OPTIONS" href="LINK_OPTIONS.html" />
+    <link rel="prev" title="LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;" href="LINK_INTERFACE_MULTIPLICITY_CONFIG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="LINK_OPTIONS.html" title="LINK_OPTIONS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_MULTIPLICITY_CONFIG.html" title="LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_LIBRARIES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="link-libraries">
+<span id="prop_tgt:LINK_LIBRARIES"></span><h1>LINK_LIBRARIES<a class="headerlink" href="#link-libraries" title="Permalink to this headline">¶</a></h1>
+<p>List of direct link dependencies.</p>
+<p>This property specifies the list of libraries or targets which will be
+used for linking.  In addition to accepting values from the
+<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command, values may be set directly on
+any target using the <span class="target" id="index-0-command:set_property"></span><a class="reference internal" href="../command/set_property.html#command:set_property" title="set_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_property()</span></code></a> command.</p>
+<p>The value of this property is used by the generators to set the link
+libraries for the compiler.</p>
+<p>Contents of <code class="docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span></code> may use “generator expressions” with the
+syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a> manual
+for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a> manual
+for more on defining buildsystem properties.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A call to <span class="target" id="index-1-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries(&lt;target&gt;</span> <span class="pre">...)</span></code></a> may update this
+property on <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>.  If <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> was not created in the same
+directory as the call then <span class="target" id="index-2-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> will wrap each
+entry with the form <code class="docutils literal notranslate"><span class="pre">::&#64;(directory-id);...;::&#64;</span></code>, where the <code class="docutils literal notranslate"><span class="pre">::&#64;</span></code> is
+literal and the <code class="docutils literal notranslate"><span class="pre">(directory-id)</span></code> is unspecified.
+This tells the generators that the named libraries must be looked up in
+the scope of the caller rather than in the scope in which the
+<code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> was created.  Valid directory ids are stripped on export
+by the <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a> and <span class="target" id="index-0-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a> commands.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LINK_INTERFACE_MULTIPLICITY_CONFIG.html"
+                        title="previous chapter">LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="LINK_OPTIONS.html"
+                        title="next chapter">LINK_OPTIONS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/LINK_LIBRARIES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="LINK_OPTIONS.html" title="LINK_OPTIONS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_MULTIPLICITY_CONFIG.html" title="LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_LIBRARIES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

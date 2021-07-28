@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0043 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0042" href="CMP0042.html" />
+    <link rel="prev" title="CMP0044" href="CMP0044.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0042.html" title="CMP0042"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0044.html" title="CMP0044"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0043</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0043">
+<span id="policy:CMP0043"></span><h1>CMP0043<a class="headerlink" href="#cmp0043" title="Permalink to this headline">¶</a></h1>
+<p>Ignore COMPILE_DEFINITIONS_&lt;Config&gt; properties</p>
+<p>CMake 2.8.12 and lower allowed setting the
+<span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS_CONFIG.html#prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</span></code></a> target property and
+<span class="target" id="index-0-prop_dir:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_dir/COMPILE_DEFINITIONS_CONFIG.html#prop_dir:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</span></code></a> directory property to apply
+configuration-specific compile definitions.</p>
+<p>Since CMake 2.8.10, the <span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> property has supported
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> for setting
+configuration-dependent content.  The continued existence of the suffixed
+variables is redundant, and causes a maintenance burden.  Population of the
+<span class="target" id="index-1-prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS_CONFIG.html#prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_DEBUG</span></code></a> property
+may be replaced with a population of <span class="target" id="index-1-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> directly
+or via <span class="target" id="index-0-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Old Interfaces:</span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_DEFINITIONS_DEBUG</span><span class="w"> </span><span class="no">DEBUG_MODE</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">DIRECTORY</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_DEFINITIONS_DEBUG</span><span class="w"> </span><span class="no">DIR_DEBUG_MODE</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="c"># New Interfaces:</span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_DEFINITIONS</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="nb">Debug</span><span class="o">&gt;:</span><span class="no">DEBUG_MODE</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">tgt</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="nb">Debug</span><span class="o">&gt;:</span><span class="no">DEBUG_MODE</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">DIRECTORY</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_DEFINITIONS</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="nb">Debug</span><span class="o">&gt;:</span><span class="no">DIR_DEBUG_MODE</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior for this policy is to consume the content of the suffixed
+<span class="target" id="index-2-prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS_CONFIG.html#prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</span></code></a> target property when generating the
+compilation command. The <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior for this policy is to ignore the content
+of the <span class="target" id="index-3-prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS_CONFIG.html#prop_tgt:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</span></code></a> target property .</p>
+<p>This policy was introduced in CMake version 3.0.  CMake version
+3.19.6 warns when the policy is not set and uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.  Use
+the <span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="../command/cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command to set it to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> or <code class="docutils literal notranslate"><span class="pre">NEW</span></code> explicitly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0044.html"
+                        title="previous chapter">CMP0044</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0042.html"
+                        title="next chapter">CMP0042</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0043.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0042.html" title="CMP0042"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0044.html" title="CMP0044"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0043</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

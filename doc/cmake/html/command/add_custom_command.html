@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_custom_command &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_custom_target" href="add_custom_target.html" />
+    <link rel="prev" title="add_compile_options" href="add_compile_options.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_custom_target.html" title="add_custom_target"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_compile_options.html" title="add_compile_options"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_custom_command</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-custom-command">
+<span id="command:add_custom_command"></span><h1>add_custom_command<a class="headerlink" href="#add-custom-command" title="Permalink to this headline">¶</a></h1>
+<p>Add a custom build rule to the generated build system.</p>
+<p>There are two main signatures for <code class="docutils literal notranslate"><span class="pre">add_custom_command</span></code>.</p>
+<div class="section" id="generating-files">
+<h2>Generating Files<a class="headerlink" href="#generating-files" title="Permalink to this headline">¶</a></h2>
+<p>The first signature is for adding a custom command to produce an output:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output1</span><span class="w"> </span><span class="p">[</span><span class="nb">output2</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">                   </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">command1</span><span class="w"> </span><span class="p">[</span><span class="no">ARGS</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nb">args1...</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">command2</span><span class="w"> </span><span class="p">[</span><span class="no">ARGS</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nb">args2...</span><span class="p">]</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">MAIN_DEPENDENCY</span><span class="w"> </span><span class="nb">depend</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">DEPENDS</span><span class="w"> </span><span class="p">[</span><span class="nb">depends...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">BYPRODUCTS</span><span class="w"> </span><span class="p">[</span><span class="nb">files...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">IMPLICIT_DEPENDS</span><span class="w"> </span><span class="nv">&lt;lang1&gt;</span><span class="w"> </span><span class="nb">depend1</span><span class="w"></span>
+<span class="w">                                    </span><span class="p">[</span><span class="nv">&lt;lang2&gt;</span><span class="w"> </span><span class="nb">depend2</span><span class="p">]</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">WORKING_DIRECTORY</span><span class="w"> </span><span class="nb">dir</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMENT</span><span class="w"> </span><span class="nb">comment</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">DEPFILE</span><span class="w"> </span><span class="nb">depfile</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">JOB_POOL</span><span class="w"> </span><span class="nb">job_pool</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">VERBATIM</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">APPEND</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">USES_TERMINAL</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMAND_EXPAND_LISTS</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This defines a command to generate specified <code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code> file(s).
+A target created in the same directory (<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file)
+that specifies any output of the custom command as a source file
+is given a rule to generate the file using the command at build time.
+Do not list the output in more than one independent target that
+may build in parallel or the two instances of the rule may conflict
+(instead use the <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a> command to drive the
+command and make the other targets depend on that one).
+In makefile terms this creates a new target in the following form:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OUTPUT: MAIN_DEPENDENCY DEPENDS
+        COMMAND
+</pre></div>
+</div>
+<p>The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">APPEND</span></code></dt><dd><p>Append the <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> and <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option values to the custom
+command for the first output specified.  There must have already
+been a previous call to this command with the same output.
+The <code class="docutils literal notranslate"><span class="pre">COMMENT</span></code>, <code class="docutils literal notranslate"><span class="pre">MAIN_DEPENDENCY</span></code>, and <code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code>
+options are currently ignored when APPEND is given, but may be
+used in the future.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code></dt><dd><p>Specify the files the command is expected to produce but whose
+modification time may or may not be newer than the dependencies.
+If a byproduct name is a relative path it will be interpreted
+relative to the build tree directory corresponding to the
+current source directory.
+Each byproduct file will be marked with the <span class="target" id="index-0-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a>
+source file property automatically.</p>
+<p>Explicit specification of byproducts is supported by the
+<span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator to tell the <code class="docutils literal notranslate"><span class="pre">ninja</span></code> build tool
+how to regenerate byproducts when they are missing.  It is
+also useful when other build rules (e.g. custom commands)
+depend on the byproducts.  Ninja requires a build rule for any
+generated file on which another rule depends even if there are
+order-only dependencies to ensure the byproducts will be
+available before their dependents build.</p>
+<p>The <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> will remove <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> and other
+<span class="target" id="index-1-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a> files during <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND</span></code></dt><dd><p>Specify the command-line(s) to execute at build time.
+If more than one <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> is specified they will be executed in order,
+but <em>not</em> necessarily composed into a stateful shell or batch script.
+(To run a full script, use the <span class="target" id="index-0-command:configure_file"></span><a class="reference internal" href="configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> command or the
+<span class="target" id="index-0-command:file"></span><a class="reference internal" href="file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(GENERATE)</span></code></a> command to create it, and then specify
+a <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> to launch it.)
+The optional <code class="docutils literal notranslate"><span class="pre">ARGS</span></code> argument is for backward compatibility and
+will be ignored.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> specifies an executable target name (created by the
+<span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command), it will automatically be replaced
+by the location of the executable created at build time if either of
+the following is true:</p>
+<ul class="simple">
+<li><p>The target is not being cross-compiled (i.e. the
+<span class="target" id="index-0-variable:CMAKE_CROSSCOMPILING"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING.html#variable:CMAKE_CROSSCOMPILING" title="CMAKE_CROSSCOMPILING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING</span></code></a> variable is not set to true).</p></li>
+<li><p>The target is being cross-compiled and an emulator is provided (i.e.
+its <span class="target" id="index-0-prop_tgt:CROSSCOMPILING_EMULATOR"></span><a class="reference internal" href="../prop_tgt/CROSSCOMPILING_EMULATOR.html#prop_tgt:CROSSCOMPILING_EMULATOR" title="CROSSCOMPILING_EMULATOR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CROSSCOMPILING_EMULATOR</span></code></a> target property is set).
+In this case, the contents of <span class="target" id="index-1-prop_tgt:CROSSCOMPILING_EMULATOR"></span><a class="reference internal" href="../prop_tgt/CROSSCOMPILING_EMULATOR.html#prop_tgt:CROSSCOMPILING_EMULATOR" title="CROSSCOMPILING_EMULATOR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CROSSCOMPILING_EMULATOR</span></code></a> will be
+prepended to the command before the location of the target executable.</p></li>
+</ul>
+<p>If neither of the above conditions are met, it is assumed that the
+command name is a program to be found on the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> at build time.</p>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> may use
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.
+Use the <code class="docutils literal notranslate"><span class="pre">TARGET_FILE</span></code> generator expression to refer to the location of
+a target later in the command line (i.e. as a command argument rather
+than as the command to execute).</p>
+<p>Whenever one of the following target based generator expressions are used as
+a command to execute or is mentioned in a command argument, a target-level
+dependency will be added automatically so that the mentioned target will be
+built before any target using this custom command
+(see policy <span class="target" id="index-0-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TARGET_FILE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TARGET_LINKER_FILE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TARGET_SONAME_FILE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TARGET_PDB_FILE</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>This target-level dependency does NOT add a file-level dependency that would
+cause the custom command to re-run whenever the executable is recompiled.
+List target names with the <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option to add such file-level
+dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMENT</span></code></dt><dd><p>Display the given message before the commands are executed at
+build time.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code></dt><dd><p>Specify files on which the command depends.  Each argument is converted
+to a dependency as follows:</p>
+<ol class="arabic simple">
+<li><p>If the argument is the name of a target (created by the
+<span class="target" id="index-1-command:add_custom_target"></span><a class="reference internal" href="add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>, <span class="target" id="index-1-command:add_executable"></span><a class="reference internal" href="add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>, or
+<span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command) a target-level dependency is
+created to make sure the target is built before any target
+using this custom command.  Additionally, if the target is an
+executable or library, a file-level dependency is created to
+cause the custom command to re-run whenever the target is
+recompiled.</p></li>
+<li><p>If the argument is an absolute path, a file-level dependency
+is created on that path.</p></li>
+<li><p>If the argument is the name of a source file that has been
+added to a target or on which a source file property has been set,
+a file-level dependency is created on that source file.</p></li>
+<li><p>If the argument is a relative path and it exists in the current
+source directory, a file-level dependency is created on that
+file in the current source directory.</p></li>
+<li><p>Otherwise, a file-level dependency is created on that path relative
+to the current binary directory.</p></li>
+</ol>
+<p>If any dependency is an <code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code> of another custom command in the same
+directory (<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file), CMake automatically brings the other
+custom command into the target in which this command is built.
+A target-level dependency is added if any dependency is listed as
+<code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> of a target or any of its build events in the same
+directory to ensure the byproducts will be available.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> is not specified, the command will run whenever
+the <code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code> is missing; if the command does not actually
+create the <code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code>, the rule will always run.</p>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> may use
+<span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND_EXPAND_LISTS</span></code></dt><dd><p>Lists in <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> arguments will be expanded, including those
+created with
+<span class="target" id="index-2-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>,
+allowing <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> arguments such as
+<code class="docutils literal notranslate"><span class="pre">${CC}</span> <span class="pre">&quot;-I$&lt;JOIN:$&lt;TARGET_PROPERTY:foo,INCLUDE_DIRECTORIES&gt;,;-I&gt;&quot;</span> <span class="pre">foo.cc</span></code>
+to be properly expanded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">IMPLICIT_DEPENDS</span></code></dt><dd><p>Request scanning of implicit dependencies of an input file.
+The language given specifies the programming language whose
+corresponding dependency scanner should be used.
+Currently only <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code> language scanners are supported.
+The language has to be specified for every file in the
+<code class="docutils literal notranslate"><span class="pre">IMPLICIT_DEPENDS</span></code> list.  Dependencies discovered from the
+scanning are added to those of the custom command at build time.
+Note that the <code class="docutils literal notranslate"><span class="pre">IMPLICIT_DEPENDS</span></code> option is currently supported
+only for Makefile generators and will be ignored by other generators.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">JOB_POOL</span></code></dt><dd><p>Specify a <span class="target" id="index-0-prop_gbl:JOB_POOLS"></span><a class="reference internal" href="../prop_gbl/JOB_POOLS.html#prop_gbl:JOB_POOLS" title="JOB_POOLS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">pool</span></code></a> for the <span class="target" id="index-1-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>
+generator. Incompatible with <code class="docutils literal notranslate"><span class="pre">USES_TERMINAL</span></code>, which implies
+the <code class="docutils literal notranslate"><span class="pre">console</span></code> pool.
+Using a pool that is not defined by <span class="target" id="index-1-prop_gbl:JOB_POOLS"></span><a class="reference internal" href="../prop_gbl/JOB_POOLS.html#prop_gbl:JOB_POOLS" title="JOB_POOLS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">JOB_POOLS</span></code></a> causes
+an error by ninja at build time.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MAIN_DEPENDENCY</span></code></dt><dd><p>Specify the primary input source file to the command.  This is
+treated just like any value given to the <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option
+but also suggests to Visual Studio generators where to hang
+the custom command. Each source file may have at most one command
+specifying it as its main dependency. A compile command (i.e. for a
+library or an executable) counts as an implicit main dependency which
+gets silently overwritten by a custom command specification.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT</span></code></dt><dd><p>Specify the output files the command is expected to produce.
+If an output name is a relative path it will be interpreted
+relative to the build tree directory corresponding to the
+current source directory.
+Each output file will be marked with the <span class="target" id="index-2-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a>
+source file property automatically.
+If the output of the custom command is not actually created
+as a file on disk it should be marked with the <span class="target" id="index-0-prop_sf:SYMBOLIC"></span><a class="reference internal" href="../prop_sf/SYMBOLIC.html#prop_sf:SYMBOLIC" title="SYMBOLIC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SYMBOLIC</span></code></a>
+source file property.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL</span></code></dt><dd><p>The command will be given direct access to the terminal if possible.
+With the <span class="target" id="index-2-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator, this places the command in
+the <code class="docutils literal notranslate"><span class="pre">console</span></code> <span class="target" id="index-2-prop_gbl:JOB_POOLS"></span><a class="reference internal" href="../prop_gbl/JOB_POOLS.html#prop_gbl:JOB_POOLS" title="JOB_POOLS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">pool</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code></dt><dd><p>All arguments to the commands will be escaped properly for the
+build tool so that the invoked command receives each argument
+unchanged.  Note that one level of escapes is still used by the
+CMake language processor before add_custom_command even sees the
+arguments.  Use of <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> is recommended as it enables
+correct behavior.  When <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> is not given the behavior
+is platform specific because there is no protection of
+tool-specific special characters.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code></dt><dd><p>Execute the command with the given current working directory.
+If it is a relative path it will be interpreted relative to the
+build tree directory corresponding to the current source directory.</p>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code> may use
+<span class="target" id="index-3-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPFILE</span></code></dt><dd><p>Specify a <code class="docutils literal notranslate"><span class="pre">.d</span></code> depfile for the <span class="target" id="index-3-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator.
+A <code class="docutils literal notranslate"><span class="pre">.d</span></code> file holds dependencies usually emitted by the custom
+command itself.
+Using <code class="docutils literal notranslate"><span class="pre">DEPFILE</span></code> with other generators than Ninja is an error.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="build-events">
+<h2>Build Events<a class="headerlink" href="#build-events" title="Permalink to this headline">¶</a></h2>
+<p>The second signature adds a custom command to a target such as a
+library or executable.  This is useful for performing an operation
+before or after building the target.  The command becomes part of the
+target and will only execute when the target itself is built.  If the
+target is already built, the command will not execute.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="no">TARGET</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="w"></span>
+<span class="w">                   </span><span class="no">PRE_BUILD</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">PRE_LINK</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">POST_BUILD</span><span class="w"></span>
+<span class="w">                   </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">command1</span><span class="w"> </span><span class="p">[</span><span class="no">ARGS</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nb">args1...</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">command2</span><span class="w"> </span><span class="p">[</span><span class="no">ARGS</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nb">args2...</span><span class="p">]</span><span class="w"> </span><span class="p">...]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">BYPRODUCTS</span><span class="w"> </span><span class="p">[</span><span class="nb">files...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">WORKING_DIRECTORY</span><span class="w"> </span><span class="nb">dir</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMENT</span><span class="w"> </span><span class="nb">comment</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">VERBATIM</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">USES_TERMINAL</span><span class="p">]</span><span class="w"></span>
+<span class="w">                   </span><span class="p">[</span><span class="no">COMMAND_EXPAND_LISTS</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This defines a new command that will be associated with building the
+specified <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>.  The <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> must be defined in the current
+directory; targets defined in other directories may not be specified.</p>
+<p>When the command will happen is determined by which
+of the following is specified:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PRE_BUILD</span></code></dt><dd><p>On <a class="reference internal" href="../manual/cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a>, run before any other rules are
+executed within the target.
+On other generators, run just before <code class="docutils literal notranslate"><span class="pre">PRE_LINK</span></code> commands.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PRE_LINK</span></code></dt><dd><p>Run after sources have been compiled but before linking the binary
+or running the librarian or archiver tool of a static library.
+This is not defined for targets created by the
+<span class="target" id="index-2-command:add_custom_target"></span><a class="reference internal" href="add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">POST_BUILD</span></code></dt><dd><p>Run after all other rules within the target have been executed.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because generator expressions can be used in custom commands,
+it is possible to define <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> lines or whole custom commands
+which evaluate to empty strings for certain configurations.
+For <strong>Visual Studio 2010 (and newer)</strong> generators these command
+lines or custom commands will be omitted for the specific
+configuration and no “empty-string-command” will be added.</p>
+<p>This allows to add individual build events for every configuration.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">add_custom_command</a><ul>
+<li><a class="reference internal" href="#generating-files">Generating Files</a></li>
+<li><a class="reference internal" href="#build-events">Build Events</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_compile_options.html"
+                        title="previous chapter">add_compile_options</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_custom_target.html"
+                        title="next chapter">add_custom_target</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_custom_command.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_custom_target.html" title="add_custom_target"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_compile_options.html" title="add_compile_options"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_custom_command</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,586 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CMAKE-PRESETS" "7" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cmake-presets \- CMakePresets.json
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH INTRODUCTION
+.sp
+One problem that CMake users often face is sharing settings with other people
+for common ways to configure a project. This may be done to support CI builds,
+or for users who frequently use the same build. CMake supports two files,
+\fBCMakePresets.json\fP and \fBCMakeUserPresets.json\fP, that allow users to
+specify common configure options and share them with others.
+.sp
+\fBCMakePresets.json\fP and \fBCMakeUserPresets.json\fP live in the project’s root
+directory. They both have exactly the same format, and both are optional
+(though at least one must be present if \fB\-\-preset\fP is specified.)
+\fBCMakePresets.json\fP is meant to save project\-wide builds, while
+\fBCMakeUserPresets.json\fP is meant for developers to save their own local
+builds. \fBCMakePresets.json\fP may be checked into a version control system, and
+\fBCMakeUserPresets.json\fP should NOT be checked in. For example, if a project
+is using Git, \fBCMakePresets.json\fP may be tracked, and
+\fBCMakeUserPresets.json\fP should be added to the \fB\&.gitignore\fP\&.
+.SH FORMAT
+.INDENT 0.0
+.INDENT 3.5
+The files are a JSON document with an object as the root:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+  "version": 1,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Config",
+      "description": "Default build using Ninja generator",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": {
+        "FIRST_CACHE_VARIABLE": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "SECOND_CACHE_VARIABLE": "ON"
+      },
+      "environment": {
+        "MY_ENVIRONMENT_VARIABLE": "Test",
+        "PATH": "$env{HOME}/ninja/bin:$penv{PATH}"
+      },
+      "vendor": {
+        "example.com/ExampleIDE/1.0": {
+          "autoFormat": true
+        }
+      }
+    },
+    {
+      "name": "ninja\-multi",
+      "inherits": "default",
+      "displayName": "Ninja Multi\-Config",
+      "description": "Default build using Ninja Multi\-Config generator",
+      "generator": "Ninja Multi\-Config"
+    }
+  ],
+  "vendor": {
+    "example.com/ExampleIDE/1.0": {
+      "autoFormat": false
+    }
+  }
+}
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The root object recognizes the following fields:
+.sp
+\fBversion\fP
+.INDENT 0.0
+.INDENT 3.5
+A required integer representing the version of the JSON schema. Currently,
+the only supported version is 1.
+.UNINDENT
+.UNINDENT
+.sp
+\fBcmakeMinimumRequired\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional object representing the minimum version of CMake needed to
+build this project. This object consists of the following fields:
+.sp
+\fBmajor\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional integer representing the major version.
+.UNINDENT
+.UNINDENT
+.sp
+\fBminor\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional integer representing the minor version.
+.UNINDENT
+.UNINDENT
+.sp
+\fBpatch\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional integer representing the patch version.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBvendor\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map if
+it does exist. However, the keys should be a vendor\-specific domain name
+followed by a \fB/\fP\-separated path. For example, the Example IDE 1.0 could
+use \fBexample.com/ExampleIDE/1.0\fP\&. The value of each field can be anything
+desired by the vendor, though will typically be a map.
+.UNINDENT
+.UNINDENT
+.sp
+\fBconfigurePresets\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional array of configure preset objects. Each preset may contain the
+following fields:
+.sp
+\fBname\fP
+.INDENT 0.0
+.INDENT 3.5
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the \fB\-\-preset\fP argument. There must not be
+two presets in the union of \fBCMakePresets.json\fP and
+\fBCMakeUserPresets.json\fP in the same directory with the same name.
+.UNINDENT
+.UNINDENT
+.sp
+\fBhidden\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the \fB\-\-preset=\fP argument,
+will not show up in the \fBCMake GUI\fP, and does not
+have to have a valid \fBgenerator\fP or \fBbinaryDir\fP, even from
+inheritance. \fBhidden\fP presets are intended to be used as a base for
+other presets to inherit via the \fBinherits\fP field.
+.UNINDENT
+.UNINDENT
+.sp
+\fBinherits\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional array of strings representing the names of presets to inherit
+from. The preset will inherit all of the fields from the \fBinherits\fP
+presets by default (except \fBname\fP, \fBhidden\fP, \fBinherits\fP,
+\fBdescription\fP, and \fBdisplayName\fP), but can override them as
+desired. If multiple \fBinherits\fP presets provide conflicting values for
+the same field, the earlier preset in the \fBinherits\fP list will be
+preferred. Presets in \fBCMakePresets.json\fP may not inherit from presets
+in \fBCMakeUserPresets.json\fP\&.
+.sp
+This field can also be a string, which is equivalent to an array
+containing one string.
+.UNINDENT
+.UNINDENT
+.sp
+\fBvendor\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field. If vendors use their own per\-preset
+\fBvendor\fP field, they should implement inheritance in a sensible manner
+when appropriate.
+.UNINDENT
+.UNINDENT
+.sp
+\fBdisplayName\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string with a human\-friendly name of the preset.
+.UNINDENT
+.UNINDENT
+.sp
+\fBdescription\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string with a human\-friendly description of the preset.
+.UNINDENT
+.UNINDENT
+.sp
+\fBgenerator\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string representing the generator to use for the preset. If
+\fBgenerator\fP is not specified, it must be inherited from the
+\fBinherits\fP preset (unless this preset is \fBhidden\fP).
+.sp
+Note that for Visual Studio generators, unlike in the command line \fB\-G\fP
+argument, you cannot include the platform name in the generator name. Use
+the \fBarchitecture\fP field instead.
+.UNINDENT
+.UNINDENT
+.sp
+\fBarchitecture\fP
+\fBtoolset\fP
+.INDENT 0.0
+.INDENT 3.5
+Optional fields representing the platform and toolset, respectively, for
+generators that support them. Each may be either a string or an object
+with the following fields:
+.sp
+\fBvalue\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string representing the value.
+.UNINDENT
+.UNINDENT
+.sp
+\fBstrategy\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string telling CMake how to handle the \fBarchitecture\fP or
+\fBtoolset\fP field. Valid values are:
+.sp
+\fB"set"\fP
+.INDENT 0.0
+.INDENT 3.5
+Set the respective value. This will result in an error for generators
+that do not support the respective field.
+.UNINDENT
+.UNINDENT
+.sp
+\fB"external"\fP
+.INDENT 0.0
+.INDENT 3.5
+Do not set the value, even if the generator supports it. This is
+useful if, for example, a preset uses the Ninja generator, and an IDE
+knows how to set up the Visual C++ environment from the
+\fBarchitecture\fP and \fBtoolset\fP fields. In that case, CMake will
+ignore the field, but the IDE can use them to set up the environment
+before invoking CMake.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBbinaryDir\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string representing the path to the output binary directory.
+This field supports macro expansion. If a relative path is specified, it
+is calculated relative to the source directory. If \fBbinaryDir\fP is not
+specified, it must be inherited from the \fBinherits\fP preset (unless this
+preset is \fBhidden\fP).
+.UNINDENT
+.UNINDENT
+.sp
+\fBcmakeExecutable\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string representing the path to the CMake executable to use
+for this preset. This is reserved for use by IDEs, and is not used by
+CMake itself. IDEs that use this field should expand any macros in it.
+.UNINDENT
+.UNINDENT
+.sp
+\fBcacheVariables\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional map of cache variables. The key is the variable name (which
+may not be an empty string), and the value is either \fBnull\fP, a boolean
+(which is equivalent to a value of \fB"TRUE"\fP or \fB"FALSE"\fP and a type
+of \fBBOOL\fP), a string representing the value of the variable (which
+supports macro expansion), or an object with the following fields:
+.sp
+\fBtype\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional string representing the type of the variable.
+.UNINDENT
+.UNINDENT
+.sp
+\fBvalue\fP
+.INDENT 0.0
+.INDENT 3.5
+A required string or boolean representing the value of the variable.
+A boolean is equivalent to \fB"TRUE"\fP or \fB"FALSE"\fP\&. This field
+supports macro expansion.
+.UNINDENT
+.UNINDENT
+.sp
+Cache variables are inherited through the \fBinherits\fP field, and the
+preset’s variables will be the union of its own \fBcacheVariables\fP and
+the \fBcacheVariables\fP from all its parents. If multiple presets in this
+union define the same variable, the standard rules of \fBinherits\fP are
+applied. Setting a variable to \fBnull\fP causes it to not be set, even if
+a value was inherited from another preset.
+.UNINDENT
+.UNINDENT
+.sp
+\fBenvironment\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either \fBnull\fP or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process’s
+environment. This field supports macro expansion, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example,
+if \fBENV_1\fP is \fB$env{ENV_2}\fP, \fBENV_2\fP may not be \fB$env{ENV_1}\fP\&.)
+.sp
+Environment variables are inherited through the \fBinherits\fP field, and
+the preset’s environment will be the union of its own \fBenvironment\fP and
+the \fBenvironment\fP from all its parents. If multiple presets in this
+union define the same variable, the standard rules of \fBinherits\fP are
+applied. Setting a variable to \fBnull\fP causes it to not be set, even if
+a value was inherited from another preset.
+.UNINDENT
+.UNINDENT
+.sp
+\fBwarnings\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional object specifying the warnings to enable. The object may
+contain the following fields:
+.sp
+\fBdev\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Equivalent to passing \fB\-Wdev\fP or \fB\-Wno\-dev\fP
+on the command line. This may not be set to \fBfalse\fP if \fBerrors.dev\fP
+is set to \fBtrue\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+\fBdeprecated\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Equivalent to passing \fB\-Wdeprecated\fP or
+\fB\-Wno\-deprecated\fP on the command line. This may not be set to
+\fBfalse\fP if \fBerrors.deprecated\fP is set to \fBtrue\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+\fBuninitialized\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fB\-\-warn\-uninitialized\fP on the command line.
+.UNINDENT
+.UNINDENT
+.sp
+\fBunusedCli\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBfalse\fP is equivalent to passing
+\fB\-\-no\-warn\-unused\-cli\fP on the command line.
+.UNINDENT
+.UNINDENT
+.sp
+\fBsystemVars\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fB\-\-check\-system\-vars\fP on the command line.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBerrors\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional object specifying the errors to enable. The object may
+contain the following fields:
+.sp
+\fBdev\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Equivalent to passing \fB\-Werror=dev\fP or
+\fB\-Wno\-error=dev\fP on the command line. This may not be set to \fBtrue\fP
+if \fBwarnings.dev\fP is set to \fBfalse\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+\fBdeprecated\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Equivalent to passing \fB\-Werror=deprecated\fP or
+\fB\-Wno\-error=deprecated\fP on the command line. This may not be set to
+\fBtrue\fP if \fBwarnings.deprecated\fP is set to \fBfalse\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBdebug\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional object specifying debug options. The object may contain the
+following fields:
+.sp
+\fBoutput\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fB\-\-debug\-output\fP on the command line.
+.UNINDENT
+.UNINDENT
+.sp
+\fBtryCompile\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fB\-\-debug\-trycompile\fP on the command line.
+.UNINDENT
+.UNINDENT
+.sp
+\fBfind\fP
+.INDENT 0.0
+.INDENT 3.5
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fB\-\-debug\-find\fP on the command line.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+As mentioned above, some fields support macro expansion. Macros are
+recognized in the form \fB$<macro\-namespace>{<macro\-name>}\fP\&. All macros are
+evaluated in the context of the preset being used, even if the macro is in a
+field that was inherited from another preset. For example, if the \fBBase\fP
+preset sets variable \fBPRESET_NAME\fP to \fB${presetName}\fP, and the
+\fBDerived\fP preset inherits from \fBBase\fP, \fBPRESET_NAME\fP will be set to
+\fBDerived\fP\&.
+.sp
+It is an error to not put a closing brace at the end of a macro name. For
+example, \fB${sourceDir\fP is invalid. A dollar sign (\fB$\fP) followed by
+anything other than a left curly brace (\fB{\fP) with a possible namespace is
+interpreted as a literal dollar sign.
+.sp
+Recognized macros include:
+.sp
+\fB${sourceDir}\fP
+.INDENT 0.0
+.INDENT 3.5
+Path to the project source directory.
+.UNINDENT
+.UNINDENT
+.sp
+\fB${sourceParentDir}\fP
+.INDENT 0.0
+.INDENT 3.5
+Path to the project source directory’s parent directory.
+.UNINDENT
+.UNINDENT
+.sp
+\fB${sourceDirName}\fP
+.INDENT 0.0
+.INDENT 3.5
+The last filename component of \fB${sourceDir}\fP\&. For example, if
+\fB${sourceDir}\fP is \fB/path/to/source\fP, this would be \fBsource\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+\fB${presetName}\fP
+.INDENT 0.0
+.INDENT 3.5
+Name specified in the preset’s \fBname\fP field.
+.UNINDENT
+.UNINDENT
+.sp
+\fB${generator}\fP
+.INDENT 0.0
+.INDENT 3.5
+Generator specified in the preset’s \fBgenerator\fP field.
+.UNINDENT
+.UNINDENT
+.sp
+\fB${dollar}\fP
+.INDENT 0.0
+.INDENT 3.5
+A literal dollar sign (\fB$\fP).
+.UNINDENT
+.UNINDENT
+.sp
+\fB$env{<variable\-name>}\fP
+.INDENT 0.0
+.INDENT 3.5
+Environment variable with name \fB<variable\-name>\fP\&. The variable name may
+not be an empty string. If the variable is defined in the \fBenvironment\fP
+field, that value is used instead of the value from the parent environment.
+If the environment variable is not defined, this evaluates as an empty
+string.
+.sp
+Note that while Windows environment variable names are case\-insensitive,
+variable names within a preset are still case\-sensitive. This may lead to
+unexpected results when using inconsistent casing. For best results, keep
+the casing of environment variable names consistent.
+.UNINDENT
+.UNINDENT
+.sp
+\fB$penv{<variable\-name>}\fP
+.INDENT 0.0
+.INDENT 3.5
+Similar to \fB$env{<variable\-name>}\fP, except that the value only comes from
+the parent environment, and never from the \fBenvironment\fP field. This
+allows you to prepend or append values to existing environment variables.
+For example, setting \fBPATH\fP to \fB/path/to/ninja/bin:$penv{PATH}\fP will
+prepend \fB/path/to/ninja/bin\fP to the \fBPATH\fP environment variable. This
+is needed because \fB$env{<variable\-name>}\fP does not allow circular
+references.
+.UNINDENT
+.UNINDENT
+.sp
+\fB$vendor{<macro\-name>}\fP
+.INDENT 0.0
+.INDENT 3.5
+An extension point for vendors to insert their own macros. CMake will not
+be able to use presets which have a \fB$vendor{<macro\-name>}\fP macro, and
+effectively ignores such presets. However, it will still be able to use
+other presets from the same file.
+.sp
+CMake does not make any attempt to interpret \fB$vendor{<macro\-name>}\fP
+macros. However, to avoid name collisions, IDE vendors should prefix
+\fB<macro\-name>\fP with a very short (preferably <= 4 characters) vendor
+identifier prefix, followed by a \fB\&.\fP, followed by the macro name. For
+example, the Example IDE could have \fB$vendor{xide.ideInstallDir}\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH SCHEMA
+.sp
+\fBThis file\fP provides a machine\-readable
+JSON schema for the \fBCMakePresets.json\fP format.
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

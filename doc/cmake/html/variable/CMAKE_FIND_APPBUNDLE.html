@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_FIND_APPBUNDLE &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_FIND_FRAMEWORK" href="CMAKE_FIND_FRAMEWORK.html" />
+    <link rel="prev" title="CMAKE_EXPORT_NO_PACKAGE_REGISTRY" href="CMAKE_EXPORT_NO_PACKAGE_REGISTRY.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_FIND_FRAMEWORK.html" title="CMAKE_FIND_FRAMEWORK"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_EXPORT_NO_PACKAGE_REGISTRY.html" title="CMAKE_EXPORT_NO_PACKAGE_REGISTRY"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_FIND_APPBUNDLE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-find-appbundle">
+<span id="variable:CMAKE_FIND_APPBUNDLE"></span><h1>CMAKE_FIND_APPBUNDLE<a class="headerlink" href="#cmake-find-appbundle" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.4.</span></p>
+</div>
+<p>This variable affects how <code class="docutils literal notranslate"><span class="pre">find_*</span></code> commands choose between
+macOS Application Bundles and unix-style package components.</p>
+<p>On Darwin or systems supporting macOS Application Bundles, the
+<code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_APPBUNDLE</span></code> variable can be set to empty or
+one of the following:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">FIRST</span></code></dt><dd><p>Try to find application bundles before standard programs.
+This is the default on Darwin.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LAST</span></code></dt><dd><p>Try to find application bundles after standard programs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ONLY</span></code></dt><dd><p>Only try to find application bundles.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NEVER</span></code></dt><dd><p>Never try to find application bundles.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_EXPORT_NO_PACKAGE_REGISTRY.html"
+                        title="previous chapter">CMAKE_EXPORT_NO_PACKAGE_REGISTRY</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_FIND_FRAMEWORK.html"
+                        title="next chapter">CMAKE_FIND_FRAMEWORK</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_FIND_APPBUNDLE.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_FIND_FRAMEWORK.html" title="CMAKE_FIND_FRAMEWORK"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_EXPORT_NO_PACKAGE_REGISTRY.html" title="CMAKE_EXPORT_NO_PACKAGE_REGISTRY"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_FIND_APPBUNDLE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

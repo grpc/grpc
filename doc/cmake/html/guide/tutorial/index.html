@@ -1,0 +1,1310 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMake Tutorial &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="User Interaction Guide" href="../user-interaction/index.html" />
+    <link rel="prev" title="CPack WIX Generator" href="../../cpack_gen/wix.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../user-interaction/index.html" title="User Interaction Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../../cpack_gen/wix.html" title="CPack WIX Generator"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">CMake Tutorial</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-tutorial">
+<span id="guide:CMake Tutorial"></span><h1><a class="toc-backref" href="#id1">CMake Tutorial</a><a class="headerlink" href="#cmake-tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-tutorial" id="id1">CMake Tutorial</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#a-basic-starting-point-step-1" id="id3">A Basic Starting Point (Step 1)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#adding-a-version-number-and-configured-header-file" id="id4">Adding a Version Number and Configured Header File</a></p></li>
+<li><p><a class="reference internal" href="#specify-the-c-standard" id="id5">Specify the C++ Standard</a></p></li>
+<li><p><a class="reference internal" href="#build-and-test" id="id6">Build and Test</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#adding-a-library-step-2" id="id7">Adding a Library (Step 2)</a></p></li>
+<li><p><a class="reference internal" href="#adding-usage-requirements-for-library-step-3" id="id8">Adding Usage Requirements for Library (Step 3)</a></p></li>
+<li><p><a class="reference internal" href="#installing-and-testing-step-4" id="id9">Installing and Testing (Step 4)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#install-rules" id="id10">Install Rules</a></p></li>
+<li><p><a class="reference internal" href="#testing-support" id="id11">Testing Support</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#adding-system-introspection-step-5" id="id12">Adding System Introspection (Step 5)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#specify-compile-definition" id="id13">Specify Compile Definition</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#adding-a-custom-command-and-generated-file-step-6" id="id14">Adding a Custom Command and Generated File (Step 6)</a></p></li>
+<li><p><a class="reference internal" href="#building-an-installer-step-7" id="id15">Building an Installer (Step 7)</a></p></li>
+<li><p><a class="reference internal" href="#adding-support-for-a-dashboard-step-8" id="id16">Adding Support for a Dashboard (Step 8)</a></p></li>
+<li><p><a class="reference internal" href="#mixing-static-and-shared-step-9" id="id17">Mixing Static and Shared (Step 9)</a></p></li>
+<li><p><a class="reference internal" href="#adding-generator-expressions-step-10" id="id18">Adding Generator Expressions (Step 10)</a></p></li>
+<li><p><a class="reference internal" href="#adding-export-configuration-step-11" id="id19">Adding Export Configuration (Step 11)</a></p></li>
+<li><p><a class="reference internal" href="#packaging-debug-and-release-step-12" id="id20">Packaging Debug and Release (Step 12)</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The CMake tutorial provides a step-by-step guide that covers common build
+system issues that CMake helps address. Seeing how various topics all
+work together in an example project can be very helpful. The tutorial
+documentation and source code for examples can be found in the
+<code class="docutils literal notranslate"><span class="pre">Help/guide/tutorial</span></code> directory of the CMake source code tree. Each step has
+its own subdirectory containing code that may be used as a starting point. The
+tutorial examples are progressive so that each step provides the complete
+solution for the previous step.</p>
+</div>
+<div class="section" id="a-basic-starting-point-step-1">
+<h2><a class="toc-backref" href="#id3">A Basic Starting Point (Step 1)</a><a class="headerlink" href="#a-basic-starting-point-step-1" title="Permalink to this headline">¶</a></h2>
+<p>The most basic project is an executable built from source code files.
+For simple projects, a three line <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file is all that is
+required. This will be the starting point for our tutorial. Create a
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file in the <code class="docutils literal notranslate"><span class="pre">Step1</span></code> directory that looks like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.10</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># set the project name</span>
+<span class="nf">project(</span><span class="nb">Tutorial</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the executable</span>
+<span class="nf">add_executable(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="nb">tutorial.cxx</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that this example uses lower case commands in the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.
+Upper, lower, and mixed case commands are supported by CMake. The source
+code for <code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code> is provided in the <code class="docutils literal notranslate"><span class="pre">Step1</span></code> directory and can be
+used to compute the square root of a number.</p>
+<div class="section" id="adding-a-version-number-and-configured-header-file">
+<h3><a class="toc-backref" href="#id4">Adding a Version Number and Configured Header File</a><a class="headerlink" href="#adding-a-version-number-and-configured-header-file" title="Permalink to this headline">¶</a></h3>
+<p>The first feature we will add is to provide our executable and project with a
+version number. While we could do this exclusively in the source code, using
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> provides more flexibility.</p>
+<p>First, modify the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file to use the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command
+to set the project name and version number.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.10</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># set the project name and version</span>
+<span class="nf">project(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.0</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then, configure a header file to pass the version number to the source
+code:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">configure_file(</span><span class="nb">TutorialConfig.h.in</span><span class="w"> </span><span class="nb">TutorialConfig.h</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Since the configured file will be written into the binary tree, we
+must add that directory to the list of paths to search for include
+files. Add the following lines to the end of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">                           </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="w"></span>
+<span class="w">                           </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Using your favorite editor, create <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code> in the source
+directory with the following contents:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="na">//</span><span class="w"> </span><span class="nb">the</span><span class="w"> </span><span class="nb">configured</span><span class="w"> </span><span class="nb">options</span><span class="w"> </span><span class="nb">and</span><span class="w"> </span><span class="nb">settings</span><span class="w"> </span><span class="nb">for</span><span class="w"> </span><span class="nb">Tutorial</span><span class="w"></span>
+<span class="c">#define Tutorial_VERSION_MAJOR @Tutorial_VERSION_MAJOR@</span>
+<span class="c">#define Tutorial_VERSION_MINOR @Tutorial_VERSION_MINOR@</span>
+</pre></div>
+</div>
+<p>When CMake configures this header file the values for
+<code class="docutils literal notranslate"><span class="pre">&#64;Tutorial_VERSION_MAJOR&#64;</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;Tutorial_VERSION_MINOR&#64;</span></code> will be
+replaced.</p>
+<p>Next modify <code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code> to include the configured header file,
+<code class="docutils literal notranslate"><span class="pre">TutorialConfig.h</span></code>.</p>
+<p>Finally, let’s print out the executable name and version number by updating
+<code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code> as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span>  <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// report version</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; Version &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">Tutorial_VERSION_MAJOR</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;.&quot;</span>
+              <span class="o">&lt;&lt;</span> <span class="n">Tutorial_VERSION_MINOR</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Usage: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; number&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="specify-the-c-standard">
+<h3><a class="toc-backref" href="#id5">Specify the C++ Standard</a><a class="headerlink" href="#specify-the-c-standard" title="Permalink to this headline">¶</a></h3>
+<p>Next let’s add some C++11 features to our project by replacing <code class="docutils literal notranslate"><span class="pre">atof</span></code> with
+<code class="docutils literal notranslate"><span class="pre">std::stod</span></code> in <code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code>.  At the same time, remove
+<code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;cstdlib&gt;</span></code>.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span>  <span class="k">const</span> <span class="kt">double</span> <span class="n">inputValue</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stod</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</pre></div>
+</div>
+<p>We will need to explicitly state in the CMake code that it should use the
+correct flags. The easiest way to enable support for a specific C++ standard
+in CMake is by using the <span class="target" id="index-0-variable:CMAKE_CXX_STANDARD"></span><a class="reference internal" href="../../variable/CMAKE_CXX_STANDARD.html#variable:CMAKE_CXX_STANDARD" title="CMAKE_CXX_STANDARD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_STANDARD</span></code></a> variable. For this
+tutorial, set the <span class="target" id="index-1-variable:CMAKE_CXX_STANDARD"></span><a class="reference internal" href="../../variable/CMAKE_CXX_STANDARD.html#variable:CMAKE_CXX_STANDARD" title="CMAKE_CXX_STANDARD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_STANDARD</span></code></a> variable in the
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file to 11 and <span class="target" id="index-0-variable:CMAKE_CXX_STANDARD_REQUIRED"></span><a class="reference internal" href="../../variable/CMAKE_CXX_STANDARD_REQUIRED.html#variable:CMAKE_CXX_STANDARD_REQUIRED" title="CMAKE_CXX_STANDARD_REQUIRED"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_STANDARD_REQUIRED</span></code></a> to
+True. Make sure to add the <code class="docutils literal notranslate"><span class="pre">CMAKE_CXX_STANDARD</span></code> declarations above the call
+to <code class="docutils literal notranslate"><span class="pre">add_executable</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.10</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># set the project name and version</span>
+<span class="nf">project(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.0</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># specify the C++ standard</span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD</span><span class="w"> </span><span class="m">11</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD_REQUIRED</span><span class="w"> </span><span class="nb">True</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="build-and-test">
+<h3><a class="toc-backref" href="#id6">Build and Test</a><a class="headerlink" href="#build-and-test" title="Permalink to this headline">¶</a></h3>
+<p>Run the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool.</p>
+<p>For example, from the command line we could navigate to the
+<code class="docutils literal notranslate"><span class="pre">Help/guide/tutorial</span></code> directory of the CMake source code tree and create a
+build directory:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">mkdir Step1_build</span>
+</pre></div>
+</div>
+<p>Next, navigate to the build directory and run CMake to configure the project
+and generate a native build system:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd Step1_build</span>
+<span class="go">cmake ../Step1</span>
+</pre></div>
+</div>
+<p>Then call that build system to actually compile/link the project:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake --build .</span>
+</pre></div>
+</div>
+<p>Finally, try to use the newly built <code class="docutils literal notranslate"><span class="pre">Tutorial</span></code> with these commands:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Tutorial 4294967296</span>
+<span class="go">Tutorial 10</span>
+<span class="go">Tutorial</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="adding-a-library-step-2">
+<h2><a class="toc-backref" href="#id7">Adding a Library (Step 2)</a><a class="headerlink" href="#adding-a-library-step-2" title="Permalink to this headline">¶</a></h2>
+<p>Now we will add a library to our project. This library will contain our own
+implementation for computing the square root of a number. The executable can
+then use this library instead of the standard square root function provided by
+the compiler.</p>
+<p>For this tutorial we will put the library into a subdirectory
+called <code class="docutils literal notranslate"><span class="pre">MathFunctions</span></code>. This directory already contains a header file,
+<code class="docutils literal notranslate"><span class="pre">MathFunctions.h</span></code>, and a source file <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>. The source file has one
+function called <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> that provides similar functionality to the
+compiler’s <code class="docutils literal notranslate"><span class="pre">sqrt</span></code> function.</p>
+<p>Add the following one line <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file to the <code class="docutils literal notranslate"><span class="pre">MathFunctions</span></code>
+directory:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="nb">mysqrt.cxx</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To make use of the new library we will add an <span class="target" id="index-0-command:add_subdirectory"></span><a class="reference internal" href="../../command/add_subdirectory.html#command:add_subdirectory" title="add_subdirectory"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_subdirectory()</span></code></a>
+call in the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file so that the library will get
+built. We add the new library to the executable, and add <code class="docutils literal notranslate"><span class="pre">MathFunctions</span></code> as
+an include directory so that the <code class="docutils literal notranslate"><span class="pre">mqsqrt.h</span></code> header file can be found. The
+last few lines of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file should now look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># add the MathFunctions library</span>
+<span class="nf">add_subdirectory(</span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the executable</span>
+<span class="nf">add_executable(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="nb">tutorial.cxx</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">target_link_libraries(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the binary tree to the search path for include files</span>
+<span class="c"># so that we will find TutorialConfig.h</span>
+<span class="nf">target_include_directories(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">                          </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="w"></span>
+<span class="w">                          </span><span class="s">&quot;${PROJECT_SOURCE_DIR}/MathFunctions&quot;</span><span class="w"></span>
+<span class="w">                          </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now let us make the MathFunctions library optional. While for the tutorial
+there really isn’t any need to do so, for larger projects this is a common
+occurrence. The first step is to add an option to the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">option(</span><span class="no">USE_MYMATH</span><span class="w"> </span><span class="s">&quot;Use tutorial provided math implementation&quot;</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># configure a header file to pass some of the CMake settings</span>
+<span class="c"># to the source code</span>
+<span class="nf">configure_file(</span><span class="nb">TutorialConfig.h.in</span><span class="w"> </span><span class="nb">TutorialConfig.h</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This option will be displayed in the <span class="target" id="index-1-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> and
+<span class="target" id="index-0-manual:ccmake(1)"></span><a class="reference internal" href="../../manual/ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ccmake</span></code></a>
+with a default value of ON that can be changed by the user. This setting will
+be stored in the cache so that the user does not need to set the value each
+time they run CMake on a build directory.</p>
+<p>The next change is to make building and linking the MathFunctions library
+conditional. To do this we change the end of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>
+file to look like the following:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">if(</span><span class="no">USE_MYMATH</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">add_subdirectory(</span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="no">EXTRA_LIBS</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="no">EXTRA_INCLUDES</span><span class="w"> </span><span class="s">&quot;${PROJECT_SOURCE_DIR}/MathFunctions&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+
+<span class="c"># add the executable</span>
+<span class="nf">add_executable(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="nb">tutorial.cxx</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">target_link_libraries(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="o">${</span><span class="nt">EXTRA_LIBS</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the binary tree to the search path for include files</span>
+<span class="c"># so that we will find TutorialConfig.h</span>
+<span class="nf">target_include_directories(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">                           </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="w"></span>
+<span class="w">                           </span><span class="o">${</span><span class="nt">EXTRA_INCLUDES</span><span class="o">}</span><span class="w"></span>
+<span class="w">                           </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note the use of the variable <code class="docutils literal notranslate"><span class="pre">EXTRA_LIBS</span></code> to collect up any optional
+libraries to later be linked into the executable. The variable
+<code class="docutils literal notranslate"><span class="pre">EXTRA_INCLUDES</span></code> is used similarly for optional header files. This is a
+classic approach when dealing with many optional components, we will cover
+the modern approach in the next step.</p>
+<p>The corresponding changes to the source code are fairly straightforward.
+First, in <code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code>, include the <code class="docutils literal notranslate"><span class="pre">MathFunctions.h</span></code> header if we
+need it:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifdef USE_MYMATH</span>
+<span class="cp">#  include &quot;MathFunctions.h&quot;</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<p>Then, in the same file, make <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code> control which square root
+function is used:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifdef USE_MYMATH</span>
+  <span class="k">const</span> <span class="kt">double</span> <span class="n">outputValue</span> <span class="o">=</span> <span class="n">mysqrt</span><span class="p">(</span><span class="n">inputValue</span><span class="p">);</span>
+<span class="cp">#else</span>
+  <span class="k">const</span> <span class="kt">double</span> <span class="n">outputValue</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">inputValue</span><span class="p">);</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<p>Since the source code now requires <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code> we can add it to
+<code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code> with the following line:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#cmakedefine USE_MYMATH</span>
+</pre></div>
+</div>
+<p><strong>Exercise</strong>: Why is it important that we configure <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code>
+after the option for <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code>? What would happen if we inverted the two?</p>
+<p>Run the <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-2-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool. Then run the built Tutorial executable.</p>
+<p>Now let’s update the value of <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code>. The easiest way is to use the
+<span class="target" id="index-3-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> or  <span class="target" id="index-1-manual:ccmake(1)"></span><a class="reference internal" href="../../manual/ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ccmake</span></code></a> if you’re
+in the terminal. Or, alternatively, if you want to change the option from the
+command-line, try:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake ../Step2 -DUSE_MYMATH=OFF</span>
+</pre></div>
+</div>
+<p>Rebuild and run the tutorial again.</p>
+<p>Which function gives better results, sqrt or mysqrt?</p>
+</div>
+<div class="section" id="adding-usage-requirements-for-library-step-3">
+<h2><a class="toc-backref" href="#id8">Adding Usage Requirements for Library (Step 3)</a><a class="headerlink" href="#adding-usage-requirements-for-library-step-3" title="Permalink to this headline">¶</a></h2>
+<p>Usage requirements allow for far better control over a library or executable’s
+link and include line while also giving more control over the transitive
+property of targets inside CMake. The primary commands that leverage usage
+requirements are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="target" id="index-0-command:target_compile_definitions"></span><a class="reference internal" href="../../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:target_compile_options"></span><a class="reference internal" href="../../command/target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:target_include_directories"></span><a class="reference internal" href="../../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a></p></li>
+</ul>
+</div></blockquote>
+<p>Let’s refactor our code from <a class="reference internal" href="#adding-a-library-step-2">Adding a Library (Step 2)</a> to use the modern
+CMake approach of usage requirements. We first state that anybody linking to
+MathFunctions needs to include the current source directory, while
+MathFunctions itself doesn’t. So this can become an <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> usage
+requirement.</p>
+<p>Remember <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> means things that consumers require but the producer
+doesn’t. Add the following lines to the end of
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">          </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">          </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now that we’ve specified usage requirements for MathFunctions we can safely
+remove our uses of the <code class="docutils literal notranslate"><span class="pre">EXTRA_INCLUDES</span></code> variable from the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>, here:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">if(</span><span class="no">USE_MYMATH</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">add_subdirectory(</span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="no">EXTRA_LIBS</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And here:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">                           </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="w"></span>
+<span class="w">                           </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Once this is done, run the <span class="target" id="index-2-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-4-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool or by using <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">.</span></code> from the build
+directory.</p>
+</div>
+<div class="section" id="installing-and-testing-step-4">
+<h2><a class="toc-backref" href="#id9">Installing and Testing (Step 4)</a><a class="headerlink" href="#installing-and-testing-step-4" title="Permalink to this headline">¶</a></h2>
+<p>Now we can start adding install rules and testing support to our project.</p>
+<div class="section" id="install-rules">
+<h3><a class="toc-backref" href="#id10">Install Rules</a><a class="headerlink" href="#install-rules" title="Permalink to this headline">¶</a></h3>
+<p>The install rules are fairly simple: for MathFunctions we want to install the
+library and header file and for the application we want to install the
+executable and configured header.</p>
+<p>So to the end of <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> we add:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">lib</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="nb">MathFunctions.h</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And to the end of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> we add:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">bin</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="s">&quot;${PROJECT_BINARY_DIR}/TutorialConfig.h&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>That is all that is needed to create a basic local install of the tutorial.</p>
+<p>Now run the <span class="target" id="index-3-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-5-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool.</p>
+<p>Then run the install step by using the <code class="docutils literal notranslate"><span class="pre">install</span></code> option of the
+<span class="target" id="index-4-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> command (introduced in 3.15, older versions of
+CMake must use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code>) from the command line. For
+multi-configuration tools, don’t forget to use the <code class="docutils literal notranslate"><span class="pre">--config</span></code> argument to
+specify the configuration. If using an IDE, simply build the <code class="docutils literal notranslate"><span class="pre">INSTALL</span></code>
+target. This step will install the appropriate header files, libraries, and
+executables. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake --install .</span>
+</pre></div>
+</div>
+<p>The CMake variable <span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> is used to determine the
+root of where the files will be installed. If using the <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span></code>
+command, the installation prefix can be overridden via the <code class="docutils literal notranslate"><span class="pre">--prefix</span></code>
+argument. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake --install . --prefix &quot;/home/myuser/installdir&quot;</span>
+</pre></div>
+</div>
+<p>Navigate to the install directory and verify that the installed Tutorial runs.</p>
+</div>
+<div class="section" id="testing-support">
+<h3><a class="toc-backref" href="#id11">Testing Support</a><a class="headerlink" href="#testing-support" title="Permalink to this headline">¶</a></h3>
+<p>Next let’s test our application. At the end of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>
+file we can enable testing and then add a number of basic tests to verify that
+the application is working correctly.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">enable_testing()</span><span class="w"></span>
+
+<span class="c"># does the application run</span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">Runs</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">25</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># does the usage message work?</span>
+<span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">Usage</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">Tutorial</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_tests_properties(</span><span class="nb">Usage</span><span class="w"></span>
+<span class="w">  </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">PASS_REGULAR_EXPRESSION</span><span class="w"> </span><span class="s">&quot;Usage:.*number&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># define a function to simplify adding tests</span>
+<span class="nf">function(</span><span class="nb">do_test</span><span class="w"> </span><span class="nb">target</span><span class="w"> </span><span class="nb">arg</span><span class="w"> </span><span class="nb">result</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">Comp</span><span class="o">${</span><span class="nt">arg</span><span class="o">}</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">target</span><span class="o">}</span><span class="w"> </span><span class="o">${</span><span class="nt">arg</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set_tests_properties(</span><span class="nb">Comp</span><span class="o">${</span><span class="nt">arg</span><span class="o">}</span><span class="w"></span>
+<span class="w">    </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">PASS_REGULAR_EXPRESSION</span><span class="w"> </span><span class="o">${</span><span class="nt">result</span><span class="o">}</span><span class="w"></span>
+<span class="w">    </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endfunction(</span><span class="nb">do_test</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># do a bunch of result based tests</span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="s">&quot;4 is 2&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">9</span><span class="w"> </span><span class="s">&quot;9 is 3&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="s">&quot;5 is 2.236&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">7</span><span class="w"> </span><span class="s">&quot;7 is 2.645&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">25</span><span class="w"> </span><span class="s">&quot;25 is 5&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="p">-</span><span class="m">25</span><span class="w"> </span><span class="s">&quot;-25 is [-nan|nan|0]&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">do_test(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="m">0.0001</span><span class="w"> </span><span class="s">&quot;0.0001 is 0.01&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The first test simply verifies that the application runs, does not segfault or
+otherwise crash, and has a zero return value. This is the basic form of a
+CTest test.</p>
+<p>The next test makes use of the <span class="target" id="index-0-prop_test:PASS_REGULAR_EXPRESSION"></span><a class="reference internal" href="../../prop_test/PASS_REGULAR_EXPRESSION.html#prop_test:PASS_REGULAR_EXPRESSION" title="PASS_REGULAR_EXPRESSION"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">PASS_REGULAR_EXPRESSION</span></code></a> test
+property to verify that the output of the test contains certain strings. In
+this case, verifying that the usage message is printed when an incorrect number
+of arguments are provided.</p>
+<p>Lastly, we have a function called <code class="docutils literal notranslate"><span class="pre">do_test</span></code> that runs the application and
+verifies that the computed square root is correct for given input. For each
+invocation of <code class="docutils literal notranslate"><span class="pre">do_test</span></code>, another test is added to the project with a name,
+input, and expected results based on the passed arguments.</p>
+<p>Rebuild the application and then cd to the binary directory and run the
+<span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest</span></code></a> executable: <code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-N</span></code> and <code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-VV</span></code>. For
+multi-config generators (e.g. Visual Studio), the configuration type must be
+specified. To run tests in Debug mode, for example, use <code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-C</span> <span class="pre">Debug</span> <span class="pre">-VV</span></code>
+from the build directory (not the Debug subdirectory!). Alternatively, build
+the <code class="docutils literal notranslate"><span class="pre">RUN_TESTS</span></code> target from the IDE.</p>
+</div>
+</div>
+<div class="section" id="adding-system-introspection-step-5">
+<h2><a class="toc-backref" href="#id12">Adding System Introspection (Step 5)</a><a class="headerlink" href="#adding-system-introspection-step-5" title="Permalink to this headline">¶</a></h2>
+<p>Let us consider adding some code to our project that depends on features the
+target platform may not have. For this example, we will add some code that
+depends on whether or not the target platform has the <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code>
+functions. Of course almost every platform has these functions but for this
+tutorial assume that they are not common.</p>
+<p>If the platform has <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> then we will use them to compute the
+square root in the <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> function. We first test for the availability of
+these functions using the <span class="target" id="index-0-module:CheckSymbolExists"></span><a class="reference internal" href="../../module/CheckSymbolExists.html#module:CheckSymbolExists" title="CheckSymbolExists"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckSymbolExists</span></code></a> module in the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>. On some platforms, we will need to link to the m library.
+If <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> are not initially found, require the m library and try
+again.</p>
+<p>We’re going to use the new defines in <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code>, so be sure to
+set them before that file is configured.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">CheckSymbolExists</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_symbol_exists(</span><span class="nb">log</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_LOG</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_symbol_exists(</span><span class="nb">exp</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(NOT</span> <span class="nf">(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">AND</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">))</span><span class="w"></span>
+<span class="w">  </span><span class="nf">unset(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">CACHE</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">unset(</span><span class="no">HAVE_EXP</span><span class="w"> </span><span class="no">CACHE</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="no">CMAKE_REQUIRED_LIBRARIES</span><span class="w"> </span><span class="s">&quot;m&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">check_symbol_exists(</span><span class="nb">log</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_LOG</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">check_symbol_exists(</span><span class="nb">exp</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">if(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">AND</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">target_link_libraries(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">m</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">endif()</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now let’s add these defines to <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code> so that we can use them
+from <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">// does the platform provide exp and log functions?</span>
+<span class="gp">#</span>cmakedefine HAVE_LOG
+<span class="gp">#</span>cmakedefine HAVE_EXP
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> are available on the system, then we will use them to
+compute the square root in the <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> function. Add the following code to
+the <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> function in <code class="docutils literal notranslate"><span class="pre">MathFunctions/mysqrt.cxx</span></code> (don’t forget the
+<code class="docutils literal notranslate"><span class="pre">#endif</span></code> before returning the result!):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#if defined(HAVE_LOG) &amp;&amp; defined(HAVE_EXP)</span>
+  <span class="kt">double</span> <span class="n">result</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">);</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Computing sqrt of &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; to be &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">result</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot; using log and exp&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="cp">#else</span>
+  <span class="kt">double</span> <span class="n">result</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>We will also need to modify <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code> to include <code class="docutils literal notranslate"><span class="pre">cmath</span></code>.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;cmath&gt;</span><span class="cp"></span>
+</pre></div>
+</div>
+<p>Run the <span class="target" id="index-5-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-6-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool and run the Tutorial executable.</p>
+<p>You will notice that we’re not using <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code>, even if we think they
+should be available. We should realize quickly that we have forgotten to
+include <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h</span></code> in <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>.</p>
+<p>We will also need to update <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> so <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>
+knows where this file is located:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">          </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">          </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_BINARY_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">          </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>After making this update, go ahead and build the project again and run the
+built Tutorial executable. If <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> are still not being used,
+open the generated <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h</span></code> file from the build directory. Maybe
+they aren’t available on the current system?</p>
+<p>Which function gives better results now, sqrt or mysqrt?</p>
+<div class="section" id="specify-compile-definition">
+<h3><a class="toc-backref" href="#id13">Specify Compile Definition</a><a class="headerlink" href="#specify-compile-definition" title="Permalink to this headline">¶</a></h3>
+<p>Is there a better place for us to save the <code class="docutils literal notranslate"><span class="pre">HAVE_LOG</span></code> and <code class="docutils literal notranslate"><span class="pre">HAVE_EXP</span></code> values
+other than in <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h</span></code>? Let’s try to use
+<span class="target" id="index-1-command:target_compile_definitions"></span><a class="reference internal" href="../../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>.</p>
+<p>First, remove the defines from <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h.in</span></code>. We no longer need to
+include <code class="docutils literal notranslate"><span class="pre">TutorialConfig.h</span></code> from <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code> or the extra include in
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code>.</p>
+<p>Next, we can move the check for <code class="docutils literal notranslate"><span class="pre">HAVE_LOG</span></code> and <code class="docutils literal notranslate"><span class="pre">HAVE_EXP</span></code> to
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> and then specify those values as <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code>
+compile definitions.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">CheckSymbolExists</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_symbol_exists(</span><span class="nb">log</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_LOG</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_symbol_exists(</span><span class="nb">exp</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(NOT</span> <span class="nf">(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">AND</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">))</span><span class="w"></span>
+<span class="w">  </span><span class="nf">unset(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">CACHE</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">unset(</span><span class="no">HAVE_EXP</span><span class="w"> </span><span class="no">CACHE</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="no">CMAKE_REQUIRED_LIBRARIES</span><span class="w"> </span><span class="s">&quot;m&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">check_symbol_exists(</span><span class="nb">log</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_LOG</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">check_symbol_exists(</span><span class="nb">exp</span><span class="w"> </span><span class="s">&quot;math.h&quot;</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">if(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">AND</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">target_link_libraries(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">m</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">endif()</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+
+<span class="c"># add compile definitions</span>
+<span class="nf">if(</span><span class="no">HAVE_LOG</span><span class="w"> </span><span class="no">AND</span><span class="w"> </span><span class="no">HAVE_EXP</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">target_compile_definitions(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">                             </span><span class="no">PRIVATE</span><span class="w"> </span><span class="s">&quot;HAVE_LOG&quot;</span><span class="w"> </span><span class="s">&quot;HAVE_EXP&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>After making these updates, go ahead and build the project again. Run the
+built Tutorial executable and verify that the results are same as earlier in
+this step.</p>
+</div>
+</div>
+<div class="section" id="adding-a-custom-command-and-generated-file-step-6">
+<h2><a class="toc-backref" href="#id14">Adding a Custom Command and Generated File (Step 6)</a><a class="headerlink" href="#adding-a-custom-command-and-generated-file-step-6" title="Permalink to this headline">¶</a></h2>
+<p>Suppose, for the purpose of this tutorial, we decide that we never want to use
+the platform <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> functions and instead would like to
+generate a table of precomputed values to use in the <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> function.
+In this section, we will create the table as part of the build process,
+and then compile that table into our application.</p>
+<p>First, let’s remove the check for the <code class="docutils literal notranslate"><span class="pre">log</span></code> and <code class="docutils literal notranslate"><span class="pre">exp</span></code> functions in
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code>. Then remove the check for <code class="docutils literal notranslate"><span class="pre">HAVE_LOG</span></code> and
+<code class="docutils literal notranslate"><span class="pre">HAVE_EXP</span></code> from <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>. At the same time, we can remove
+<code class="code docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;cmath&gt;</span></code>.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">MathFunctions</span></code> subdirectory, a new source file named
+<code class="docutils literal notranslate"><span class="pre">MakeTable.cxx</span></code> has been provided to generate the table.</p>
+<p>After reviewing the file, we can see that the table is produced as valid C++
+code and that the output filename is passed in as an argument.</p>
+<p>The next step is to add the appropriate commands to the
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> file to build the MakeTable executable and
+then run it as part of the build process. A few commands are needed to
+accomplish this.</p>
+<p>First, at the top of <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code>, the executable for
+<code class="docutils literal notranslate"><span class="pre">MakeTable</span></code> is added as any other executable would be added.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">MakeTable</span><span class="w"> </span><span class="nb">MakeTable.cxx</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then we add a custom command that specifies how to produce <code class="docutils literal notranslate"><span class="pre">Table.h</span></code>
+by running MakeTable.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">MakeTable</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">MakeTable</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Next we have to let CMake know that <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code> depends on the generated
+file <code class="docutils literal notranslate"><span class="pre">Table.h</span></code>. This is done by adding the generated <code class="docutils literal notranslate"><span class="pre">Table.h</span></code> to the list
+of sources for the library MathFunctions.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">            </span><span class="nb">mysqrt.cxx</span><span class="w"></span>
+<span class="w">            </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">            </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>We also have to add the current binary directory to the list of include
+directories so that <code class="docutils literal notranslate"><span class="pre">Table.h</span></code> can be found and included by <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">          </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">          </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">          </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now let’s use the generated table. First, modify <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code> to include
+<code class="docutils literal notranslate"><span class="pre">Table.h</span></code>. Next, we can rewrite the mysqrt function to use the table:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span> <span class="nf">mysqrt</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">// use the table to help find an initial value</span>
+  <span class="kt">double</span> <span class="n">result</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Use the table to help find an initial value &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">sqrtTable</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">)];</span>
+  <span class="p">}</span>
+
+  <span class="c1">// do ten iterations</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">double</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="p">(</span><span class="n">result</span> <span class="o">*</span> <span class="n">result</span><span class="p">);</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">/</span> <span class="n">result</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Computing sqrt of &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; to be &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Run the <span class="target" id="index-6-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable or the
+<span class="target" id="index-7-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project and then build it
+with your chosen build tool.</p>
+<p>When this project is built it will first build the <code class="docutils literal notranslate"><span class="pre">MakeTable</span></code> executable.
+It will then run <code class="docutils literal notranslate"><span class="pre">MakeTable</span></code> to produce <code class="docutils literal notranslate"><span class="pre">Table.h</span></code>. Finally, it will
+compile <code class="docutils literal notranslate"><span class="pre">mysqrt.cxx</span></code> which includes <code class="docutils literal notranslate"><span class="pre">Table.h</span></code> to produce the MathFunctions
+library.</p>
+<p>Run the Tutorial executable and verify that it is using the table.</p>
+</div>
+<div class="section" id="building-an-installer-step-7">
+<h2><a class="toc-backref" href="#id15">Building an Installer (Step 7)</a><a class="headerlink" href="#building-an-installer-step-7" title="Permalink to this headline">¶</a></h2>
+<p>Next suppose that we want to distribute our project to other people so that
+they can use it. We want to provide both binary and source distributions on a
+variety of platforms. This is a little different from the install we did
+previously in <a class="reference internal" href="#installing-and-testing-step-4">Installing and Testing (Step 4)</a> , where we were
+installing the binaries that we had built from the source code. In this
+example we will be building installation packages that support binary
+installations and package management features. To accomplish this we will use
+CPack to create platform specific installers. Specifically we need to add a
+few lines to the bottom of our top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">InstallRequiredSystemLibraries</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CPACK_RESOURCE_FILE_LICENSE</span><span class="w"> </span><span class="s">&quot;${CMAKE_CURRENT_SOURCE_DIR}/License.txt&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CPACK_PACKAGE_VERSION_MAJOR</span><span class="w"> </span><span class="s">&quot;${Tutorial_VERSION_MAJOR}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CPACK_PACKAGE_VERSION_MINOR</span><span class="w"> </span><span class="s">&quot;${Tutorial_VERSION_MINOR}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">include(</span><span class="nb">CPack</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>That is all there is to it. We start by including
+<span class="target" id="index-0-module:InstallRequiredSystemLibraries"></span><a class="reference internal" href="../../module/InstallRequiredSystemLibraries.html#module:InstallRequiredSystemLibraries" title="InstallRequiredSystemLibraries"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">InstallRequiredSystemLibraries</span></code></a>. This module will include any runtime
+libraries that are needed by the project for the current platform. Next we set
+some CPack variables to where we have stored the license and version
+information for this project. The version information was set earlier in this
+tutorial and the <code class="docutils literal notranslate"><span class="pre">license.txt</span></code> has been included in the top-level source
+directory for this step.</p>
+<p>Finally we include the <span class="target" id="index-0-module:CPack"></span><a class="reference internal" href="../../module/CPack.html#module:CPack" title="CPack"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">module</span></code></a> which will use these
+variables and some other properties of the current system to setup an
+installer.</p>
+<p>The next step is to build the project in the usual manner and then run the
+<span class="target" id="index-0-manual:cpack(1)"></span><a class="reference internal" href="../../manual/cpack.1.html#manual:cpack(1)" title="cpack(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cpack</span></code></a> executable. To build a binary distribution, from the
+binary directory run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cpack</span>
+</pre></div>
+</div>
+<p>To specify the generator, use the <code class="docutils literal notranslate"><span class="pre">-G</span></code> option. For multi-config builds, use
+<code class="docutils literal notranslate"><span class="pre">-C</span></code> to specify the configuration. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cpack -G ZIP -C Debug</span>
+</pre></div>
+</div>
+<p>To create a source distribution you would type:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cpack --config CPackSourceConfig.cmake</span>
+</pre></div>
+</div>
+<p>Alternatively, run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">package</span></code> or right click the <code class="docutils literal notranslate"><span class="pre">Package</span></code> target and
+<code class="docutils literal notranslate"><span class="pre">Build</span> <span class="pre">Project</span></code> from an IDE.</p>
+<p>Run the installer found in the binary directory. Then run the installed
+executable and verify that it works.</p>
+</div>
+<div class="section" id="adding-support-for-a-dashboard-step-8">
+<h2><a class="toc-backref" href="#id16">Adding Support for a Dashboard (Step 8)</a><a class="headerlink" href="#adding-support-for-a-dashboard-step-8" title="Permalink to this headline">¶</a></h2>
+<p>Adding support for submitting our test results to a dashboard is simple. We
+already defined a number of tests for our project in <a class="reference internal" href="#testing-support">Testing Support</a>. Now we
+just have to run those tests and submit them to a dashboard. To include support
+for dashboards we include the <span class="target" id="index-0-module:CTest"></span><a class="reference internal" href="../../module/CTest.html#module:CTest" title="CTest"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CTest</span></code></a> module in our top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>.</p>
+<p>Replace:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># enable testing</span>
+<span class="nf">enable_testing()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>With:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># enable dashboard scripting</span>
+<span class="nf">include(</span><span class="nb">CTest</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-1-module:CTest"></span><a class="reference internal" href="../../module/CTest.html#module:CTest" title="CTest"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CTest</span></code></a> module will automatically call <code class="docutils literal notranslate"><span class="pre">enable_testing()</span></code>, so we
+can remove it from our CMake files.</p>
+<p>We will also need to create a <code class="docutils literal notranslate"><span class="pre">CTestConfig.cmake</span></code> file in the top-level
+directory where we can specify the name of the project and where to submit the
+dashboard.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CTEST_PROJECT_NAME</span><span class="w"> </span><span class="s">&quot;CMakeTutorial&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_NIGHTLY_START_TIME</span><span class="w"> </span><span class="s">&quot;00:00:00 EST&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CTEST_DROP_METHOD</span><span class="w"> </span><span class="s">&quot;http&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_DROP_SITE</span><span class="w"> </span><span class="s">&quot;my.cdash.org&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_DROP_LOCATION</span><span class="w"> </span><span class="s">&quot;/submit.php?project=CMakeTutorial&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_DROP_SITE_CDASH</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-1-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest</span></code></a> executable will read in this file when it runs.
+To create a simple dashboard you can run the <span class="target" id="index-7-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a>
+executable or the <span class="target" id="index-8-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a> to configure the project,
+but do not build it yet. Instead, change directory to the binary tree, and then
+run:</p>
+<blockquote>
+<div><p>ctest [-VV] -D Experimental</p>
+</div></blockquote>
+<p>Remember, for multi-config generators (e.g. Visual Studio), the configuration
+type must be specified:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest [-VV] -C Debug -D Experimental
+</pre></div>
+</div>
+<p>Or, from an IDE, build the <code class="docutils literal notranslate"><span class="pre">Experimental</span></code> target.</p>
+<p>The <span class="target" id="index-2-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest</span></code></a> executable will build and test the project and
+submit the results to Kitware’s public dashboard:
+<a class="reference external" href="https://my.cdash.org/index.php?project=CMakeTutorial">https://my.cdash.org/index.php?project=CMakeTutorial</a>.</p>
+</div>
+<div class="section" id="mixing-static-and-shared-step-9">
+<h2><a class="toc-backref" href="#id17">Mixing Static and Shared (Step 9)</a><a class="headerlink" href="#mixing-static-and-shared-step-9" title="Permalink to this headline">¶</a></h2>
+<p>In this section we will show how the <span class="target" id="index-0-variable:BUILD_SHARED_LIBS"></span><a class="reference internal" href="../../variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS" title="BUILD_SHARED_LIBS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></a> variable can
+be used to control the default behavior of <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>,
+and allow control over how libraries without an explicit type (<code class="docutils literal notranslate"><span class="pre">STATIC</span></code>,
+<code class="docutils literal notranslate"><span class="pre">SHARED</span></code>, <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> or <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code>) are built.</p>
+<p>To accomplish this we need to add <span class="target" id="index-1-variable:BUILD_SHARED_LIBS"></span><a class="reference internal" href="../../variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS" title="BUILD_SHARED_LIBS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></a> to the
+top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>. We use the <span class="target" id="index-0-command:option"></span><a class="reference internal" href="../../command/option.html#command:option" title="option"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">option()</span></code></a> command as it allows
+users to optionally select if the value should be ON or OFF.</p>
+<p>Next we are going to refactor MathFunctions to become a real library that
+encapsulates using <code class="docutils literal notranslate"><span class="pre">mysqrt</span></code> or <code class="docutils literal notranslate"><span class="pre">sqrt</span></code>, instead of requiring the calling
+code to do this logic. This will also mean that <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code> will not control
+building MathFunctions, but instead will control the behavior of this library.</p>
+<p>The first step is to update the starting section of the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> to look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.10</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># set the project name and version</span>
+<span class="nf">project(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.0</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># specify the C++ standard</span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD</span><span class="w"> </span><span class="m">11</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD_REQUIRED</span><span class="w"> </span><span class="nb">True</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># control where the static and shared libraries are built so that on windows</span>
+<span class="c"># we don&#39;t need to tinker with the path to run the executable</span>
+<span class="nf">set(</span><span class="no">CMAKE_ARCHIVE_OUTPUT_DIRECTORY</span><span class="w"> </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_LIBRARY_OUTPUT_DIRECTORY</span><span class="w"> </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_RUNTIME_OUTPUT_DIRECTORY</span><span class="w"> </span><span class="s">&quot;${PROJECT_BINARY_DIR}&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">option(</span><span class="no">BUILD_SHARED_LIBS</span><span class="w"> </span><span class="s">&quot;Build using shared libraries&quot;</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># configure a header file to pass the version number only</span>
+<span class="nf">configure_file(</span><span class="nb">TutorialConfig.h.in</span><span class="w"> </span><span class="nb">TutorialConfig.h</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the MathFunctions library</span>
+<span class="nf">add_subdirectory(</span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># add the executable</span>
+<span class="nf">add_executable(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="nb">tutorial.cxx</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now that we have made MathFunctions always be used, we will need to update
+the logic of that library. So, in <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> we need to
+create a SqrtLibrary that will conditionally be built and installed when
+<code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code> is enabled. Now, since this is a tutorial, we are going to
+explicitly require that SqrtLibrary is built statically.</p>
+<p>The end result is that <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> should look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># add the library that runs</span>
+<span class="nf">add_library(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="nb">MathFunctions.cxx</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># state that anybody linking to us needs to include the current source dir</span>
+<span class="c"># to find MathFunctions.h, while we don&#39;t.</span>
+<span class="nf">target_include_directories(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">                           </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">                           </span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># should we use our own math functions</span>
+<span class="nf">option(</span><span class="no">USE_MYMATH</span><span class="w"> </span><span class="s">&quot;Use tutorial provided math implementation&quot;</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">USE_MYMATH</span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="nf">target_compile_definitions(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="s">&quot;USE_MYMATH&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="c"># first we add the executable that generates the table</span>
+<span class="w">  </span><span class="nf">add_executable(</span><span class="nb">MakeTable</span><span class="w"> </span><span class="nb">MakeTable.cxx</span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="c"># add the command to generate the source code</span>
+<span class="w">  </span><span class="nf">add_custom_command(</span><span class="w"></span>
+<span class="w">    </span><span class="no">OUTPUT</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">    </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">MakeTable</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">    </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">MakeTable</span><span class="w"></span>
+<span class="w">    </span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="c"># library that just does sqrt</span>
+<span class="w">  </span><span class="nf">add_library(</span><span class="nb">SqrtLibrary</span><span class="w"> </span><span class="no">STATIC</span><span class="w"></span>
+<span class="w">              </span><span class="nb">mysqrt.cxx</span><span class="w"></span>
+<span class="w">              </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/Table.h</span><span class="w"></span>
+<span class="w">              </span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="c"># state that we depend on our binary dir to find Table.h</span>
+<span class="w">  </span><span class="nf">target_include_directories(</span><span class="nb">SqrtLibrary</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">                             </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="w">                             </span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="nf">target_link_libraries(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+
+<span class="c"># define the symbol stating we are using the declspec(dllexport) when</span>
+<span class="c"># building on windows</span>
+<span class="nf">target_compile_definitions(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="s">&quot;EXPORTING_MYMATH&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># install rules</span>
+<span class="nf">set(</span><span class="nb">installable_libs</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">installable_libs</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="o">${</span><span class="nt">installable_libs</span><span class="o">}</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">lib</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="nb">MathFunctions.h</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Next, update <code class="docutils literal notranslate"><span class="pre">MathFunctions/mysqrt.cxx</span></code> to use the <code class="docutils literal notranslate"><span class="pre">mathfunctions</span></code> and
+<code class="docutils literal notranslate"><span class="pre">detail</span></code> namespaces:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span> <span class="cpf">&quot;MathFunctions.h&quot;</span><span class="cp"></span>
+
+<span class="c1">// include the generated table</span>
+<span class="cp">#include</span> <span class="cpf">&quot;Table.h&quot;</span><span class="cp"></span>
+
+<span class="k">namespace</span> <span class="n">mathfunctions</span> <span class="p">{</span>
+<span class="k">namespace</span> <span class="n">detail</span> <span class="p">{</span>
+<span class="c1">// a hack square root calculation using simple operations</span>
+<span class="kt">double</span> <span class="n">mysqrt</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">// use the table to help find an initial value</span>
+  <span class="kt">double</span> <span class="n">result</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Use the table to help find an initial value &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">sqrtTable</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">)];</span>
+  <span class="p">}</span>
+
+  <span class="c1">// do ten iterations</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">double</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="p">(</span><span class="n">result</span> <span class="o">*</span> <span class="n">result</span><span class="p">);</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">/</span> <span class="n">result</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Computing sqrt of &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; to be &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We also need to make some changes in <code class="docutils literal notranslate"><span class="pre">tutorial.cxx</span></code>, so that it no longer
+uses <code class="docutils literal notranslate"><span class="pre">USE_MYMATH</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Always include <code class="docutils literal notranslate"><span class="pre">MathFunctions.h</span></code></p></li>
+<li><p>Always use <code class="docutils literal notranslate"><span class="pre">mathfunctions::sqrt</span></code></p></li>
+<li><p>Don’t include cmath</p></li>
+</ol>
+<p>Finally, update <code class="docutils literal notranslate"><span class="pre">MathFunctions/MathFunctions.h</span></code> to use dll export defines:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#if defined(_WIN32)</span>
+<span class="cp">#  if defined(EXPORTING_MYMATH)</span>
+<span class="cp">#    define DECLSPEC __declspec(dllexport)</span>
+<span class="cp">#  else</span>
+<span class="cp">#    define DECLSPEC __declspec(dllimport)</span>
+<span class="cp">#  endif</span>
+<span class="cp">#else </span><span class="c1">// non windows</span>
+<span class="cp">#  define DECLSPEC</span>
+<span class="cp">#endif</span>
+
+<span class="k">namespace</span> <span class="n">mathfunctions</span> <span class="p">{</span>
+<span class="kt">double</span> <span class="n">DECLSPEC</span> <span class="n">sqrt</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>At this point, if you build everything, you may notice that linking fails
+as we are combining a static library without position independent code with a
+library that has position independent code. The solution to this is to
+explicitly set the <span class="target" id="index-0-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> target property of
+SqrtLibrary to be True no matter the build type.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="c"># state that SqrtLibrary need PIC when the default is shared libraries</span>
+<span class="w">  </span><span class="nf">set_target_properties(</span><span class="nb">SqrtLibrary</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">                        </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="o">${</span><span class="nt">BUILD_SHARED_LIBS</span><span class="o">}</span><span class="w"></span>
+<span class="w">                        </span><span class="nf">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="nf">target_link_libraries(</span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><strong>Exercise</strong>: We modified <code class="docutils literal notranslate"><span class="pre">MathFunctions.h</span></code> to use dll export defines.
+Using CMake documentation can you find a helper module to simplify this?</p>
+</div>
+<div class="section" id="adding-generator-expressions-step-10">
+<h2><a class="toc-backref" href="#id18">Adding Generator Expressions (Step 10)</a><a class="headerlink" href="#adding-generator-expressions-step-10" title="Permalink to this headline">¶</a></h2>
+<p><span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Generator</span> <span class="pre">expressions</span></code></a> are evaluated
+during build system generation to produce information specific to each build
+configuration.</p>
+<p><span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Generator</span> <span class="pre">expressions</span></code></a> are allowed in
+the context of many target properties, such as <span class="target" id="index-0-prop_tgt:LINK_LIBRARIES"></span><a class="reference internal" href="../../prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES" title="LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span></code></a>,
+<span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>, <span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> and others.
+They may also be used when using commands to populate those properties, such as
+<span class="target" id="index-1-command:target_link_libraries"></span><a class="reference internal" href="../../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a>, <span class="target" id="index-1-command:target_include_directories"></span><a class="reference internal" href="../../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>,
+<span class="target" id="index-2-command:target_compile_definitions"></span><a class="reference internal" href="../../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a> and others.</p>
+<p><span class="target" id="index-2-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Generator</span> <span class="pre">expressions</span></code></a>  may be used
+to enable conditional linking, conditional definitions used when compiling,
+conditional include directories and more. The conditions may be based on the
+build configuration, target properties, platform information or any other
+queryable information.</p>
+<p>There are different types of
+<span class="target" id="index-3-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> including
+Logical, Informational, and Output expressions.</p>
+<p>Logical expressions are used to create conditional output. The basic
+expressions are the 0 and 1 expressions. A <code class="docutils literal notranslate"><span class="pre">$&lt;0:...&gt;</span></code> results in the empty
+string, and <code class="docutils literal notranslate"><span class="pre">&lt;1:...&gt;</span></code> results in the content of “…”.  They can also be
+nested.</p>
+<p>A common usage of
+<span class="target" id="index-4-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> is to
+conditionally add compiler flags, such as those for language levels or
+warnings. A nice pattern is to associate this information to an <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code>
+target allowing this information to propagate. Let’s start by constructing an
+<code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> target and specifying the required C++ standard level of <code class="docutils literal notranslate"><span class="pre">11</span></code>
+instead of using <span class="target" id="index-2-variable:CMAKE_CXX_STANDARD"></span><a class="reference internal" href="../../variable/CMAKE_CXX_STANDARD.html#variable:CMAKE_CXX_STANDARD" title="CMAKE_CXX_STANDARD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_STANDARD</span></code></a>.</p>
+<p>So the following code:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># specify the C++ standard</span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD</span><span class="w"> </span><span class="m">11</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_STANDARD_REQUIRED</span><span class="w"> </span><span class="nb">True</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Would be replaced with:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">tutorial_compiler_flags</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_features(</span><span class="nb">tutorial_compiler_flags</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="nb">cxx_std_11</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Next we add the desired compiler warning flags that we want for our project. As
+warning flags vary based on the compiler we use the <code class="docutils literal notranslate"><span class="pre">COMPILE_LANG_AND_ID</span></code>
+generator expression to control which flags to apply given a language and a set
+of compiler ids as seen below:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">gcc_like_cxx</span><span class="w"> </span><span class="s">&quot;$&lt;COMPILE_LANG_AND_ID:CXX,ARMClang,AppleClang,Clang,GNU&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="nb">msvc_cxx</span><span class="w"> </span><span class="s">&quot;$&lt;COMPILE_LANG_AND_ID:CXX,MSVC&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_options(</span><span class="nb">tutorial_compiler_flags</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;$&lt;${gcc_like_cxx}:$&lt;BUILD_INTERFACE:-Wall;-Wextra;-Wshadow;-Wformat=2;-Wunused&gt;&gt;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;$&lt;${msvc_cxx}:$&lt;BUILD_INTERFACE:-W3&gt;&gt;&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Looking at this we see that the warning flags are encapsulated inside a
+<code class="docutils literal notranslate"><span class="pre">BUILD_INTERFACE</span></code> condition. This is done so that consumers of our installed
+project will not inherit our warning flags.</p>
+<p><strong>Exercise</strong>: Modify <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> so that all targets have
+a <span class="target" id="index-2-command:target_link_libraries"></span><a class="reference internal" href="../../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> call to <code class="docutils literal notranslate"><span class="pre">tutorial_compiler_flags</span></code>.</p>
+</div>
+<div class="section" id="adding-export-configuration-step-11">
+<h2><a class="toc-backref" href="#id19">Adding Export Configuration (Step 11)</a><a class="headerlink" href="#adding-export-configuration-step-11" title="Permalink to this headline">¶</a></h2>
+<p>During <a class="reference internal" href="#installing-and-testing-step-4">Installing and Testing (Step 4)</a> of the tutorial we added the ability
+for CMake to install the library and headers of the project. During
+<a class="reference internal" href="#building-an-installer-step-7">Building an Installer (Step 7)</a> we added the ability to package up this
+information so it could be distributed to other people.</p>
+<p>The next step is to add the necessary information so that other CMake projects
+can use our project, be it from a build directory, a local install or when
+packaged.</p>
+<p>The first step is to update our <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(TARGETS)</span></code></a> commands to not
+only specify a <code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> but also an <code class="docutils literal notranslate"><span class="pre">EXPORT</span></code>. The <code class="docutils literal notranslate"><span class="pre">EXPORT</span></code> keyword
+generates and installs a CMake file containing code to import all targets
+listed in the install command from the installation tree. So let’s go ahead and
+explicitly <code class="docutils literal notranslate"><span class="pre">EXPORT</span></code> the MathFunctions library by updating the <code class="docutils literal notranslate"><span class="pre">install</span></code>
+command in <code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code> to look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">installable_libs</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="w"> </span><span class="nb">tutorial_compiler_flags</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">installable_libs</span><span class="w"> </span><span class="nb">SqrtLibrary</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="o">${</span><span class="nt">installable_libs</span><span class="o">}</span><span class="w"></span>
+<span class="w">        </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">lib</span><span class="w"></span>
+<span class="w">        </span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">MathFunctionsTargets</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="nb">MathFunctions.h</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now that we have MathFunctions being exported, we also need to explicitly
+install the generated <code class="docutils literal notranslate"><span class="pre">MathFunctionsTargets.cmake</span></code> file. This is done by
+adding the following to the bottom of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">MathFunctionsTargets</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILE</span><span class="w"> </span><span class="nb">MathFunctionsTargets.cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">lib/cmake/MathFunctions</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>At this point you should try and run CMake. If everything is setup properly
+you will see that CMake will generate an error that looks like:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Target &quot;MathFunctions&quot; INTERFACE_INCLUDE_DIRECTORIES property contains</span>
+<span class="go">path:</span>
+
+<span class="go">  &quot;/Users/robert/Documents/CMakeClass/Tutorial/Step11/MathFunctions&quot;</span>
+
+<span class="go">which is prefixed in the source directory.</span>
+</pre></div>
+</div>
+<p>What CMake is trying to say is that during generating the export information
+it will export a path that is intrinsically tied to the current machine and
+will not be valid on other machines. The solution to this is to update the
+MathFunctions <span class="target" id="index-2-command:target_include_directories"></span><a class="reference internal" href="../../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a> to understand that it needs
+different <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> locations when being used from within the build
+directory and from an install / package. This means converting the
+<span class="target" id="index-3-command:target_include_directories"></span><a class="reference internal" href="../../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a> call for MathFunctions to look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">MathFunctions</span><span class="w"></span>
+<span class="w">                           </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">                            </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}&gt;</span><span class="w"></span>
+<span class="w">                            </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="nb">include</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">                           </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Once this has been updated, we can re-run CMake and verify that it doesn’t
+warn anymore.</p>
+<p>At this point, we have CMake properly packaging the target information that is
+required but we will still need to generate a <code class="docutils literal notranslate"><span class="pre">MathFunctionsConfig.cmake</span></code> so
+that the CMake <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command can find our project. So let’s go
+ahead and add a new file to the top-level of the project called
+<code class="docutils literal notranslate"><span class="pre">Config.cmake.in</span></code> with the following contents:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>
+@PACKAGE_INIT@
+
+include ( &quot;${CMAKE_CURRENT_LIST_DIR}/MathFunctionsTargets.cmake&quot; )
+</pre></div>
+</div>
+<p>Then, to properly configure and install that file, add the following to the
+bottom of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">MathFunctionsTargets</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILE</span><span class="w"> </span><span class="nb">MathFunctionsTargets.cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">lib/cmake/MathFunctions</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">include(</span><span class="nb">CMakePackageConfigHelpers</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># generate the config file that is includes the exports</span>
+<span class="nf">configure_package_config_file(</span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/Config.cmake.in</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;${CMAKE_CURRENT_BINARY_DIR}/MathFunctionsConfig.cmake&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">INSTALL_DESTINATION</span><span class="w"> </span><span class="s">&quot;lib/cmake/example&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">NO_SET_AND_CHECK_MACRO</span><span class="w"></span>
+<span class="w">  </span><span class="no">NO_CHECK_REQUIRED_COMPONENTS_MACRO</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+<span class="c"># generate the version file for the config file</span>
+<span class="nf">write_basic_package_version_file(</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;${CMAKE_CURRENT_BINARY_DIR}/MathFunctionsConfigVersion.cmake&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">VERSION</span><span class="w"> </span><span class="s">&quot;${Tutorial_VERSION_MAJOR}.${Tutorial_VERSION_MINOR}&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBILITY</span><span class="w"> </span><span class="nb">AnyNewerVersion</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="c"># install the configuration file</span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"></span>
+<span class="w">  </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/MathFunctionsConfig.cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">lib/cmake/MathFunctions</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>At this point, we have generated a relocatable CMake Configuration for our
+project that can be used after the project has been installed or packaged. If
+we want our project to also be used from a build directory we only have to add
+the following to the bottom of the top level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">export(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">MathFunctionsTargets</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILE</span><span class="w"> </span><span class="s">&quot;${CMAKE_CURRENT_BINARY_DIR}/MathFunctionsTargets.cmake&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>With this export call we now generate a <code class="docutils literal notranslate"><span class="pre">Targets.cmake</span></code>, allowing the
+configured <code class="docutils literal notranslate"><span class="pre">MathFunctionsConfig.cmake</span></code> in the build directory to be used by
+other projects, without needing it to be installed.</p>
+</div>
+<div class="section" id="packaging-debug-and-release-step-12">
+<h2><a class="toc-backref" href="#id20">Packaging Debug and Release (Step 12)</a><a class="headerlink" href="#packaging-debug-and-release-step-12" title="Permalink to this headline">¶</a></h2>
+<p><strong>Note:</strong> This example is valid for single-configuration generators and will
+not work for multi-configuration generators (e.g. Visual Studio).</p>
+<p>By default, CMake’s model is that a build directory only contains a single
+configuration, be it Debug, Release, MinSizeRel, or RelWithDebInfo. It is
+possible, however, to setup CPack to bundle multiple build directories and
+construct a package that contains multiple configurations of the same project.</p>
+<p>First, we want to ensure that the debug and release builds use different names
+for the executables and libraries that will be installed. Let’s use <cite>d</cite> as the
+postfix for the debug executable and libraries.</p>
+<p>Set <span class="target" id="index-0-variable:CMAKE_DEBUG_POSTFIX"></span><a class="reference internal" href="../../variable/CMAKE_DEBUG_POSTFIX.html#variable:CMAKE_DEBUG_POSTFIX" title="CMAKE_DEBUG_POSTFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_DEBUG_POSTFIX</span></code></a> near the beginning of the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_DEBUG_POSTFIX</span><span class="w"> </span><span class="nb">d</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">tutorial_compiler_flags</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And the <span class="target" id="index-0-prop_tgt:DEBUG_POSTFIX"></span><a class="reference internal" href="../../prop_tgt/DEBUG_POSTFIX.html#prop_tgt:DEBUG_POSTFIX" title="DEBUG_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DEBUG_POSTFIX</span></code></a> property on the tutorial executable:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="nb">tutorial.cxx</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_target_properties(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"> </span><span class="no">DEBUG_POSTFIX</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_DEBUG_POSTFIX</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">target_link_libraries(</span><span class="nb">Tutorial</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Let’s also add version numbering to the MathFunctions library. In
+<code class="docutils literal notranslate"><span class="pre">MathFunctions/CMakeLists.txt</span></code>, set the <span class="target" id="index-0-prop_tgt:VERSION"></span><a class="reference internal" href="../../prop_tgt/VERSION.html#prop_tgt:VERSION" title="VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VERSION</span></code></a> and
+<span class="target" id="index-0-prop_tgt:SOVERSION"></span><a class="reference internal" href="../../prop_tgt/SOVERSION.html#prop_tgt:SOVERSION" title="SOVERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SOVERSION</span></code></a> properties:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="s">&quot;1.0.0&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">MathFunctions</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">SOVERSION</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>From the <code class="docutils literal notranslate"><span class="pre">Step12</span></code> directory, create <code class="docutils literal notranslate"><span class="pre">debug</span></code> and <code class="docutils literal notranslate"><span class="pre">release</span></code>
+subbdirectories. The layout will look like:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Step12
+   - debug
+   - release
+</pre></div>
+</div>
+<p>Now we need to setup debug and release builds. We can use
+<span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> to set the configuration type:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd debug</span>
+<span class="go">cmake -DCMAKE_BUILD_TYPE=Debug ..</span>
+<span class="go">cmake --build .</span>
+<span class="go">cd ../release</span>
+<span class="go">cmake -DCMAKE_BUILD_TYPE=Release ..</span>
+<span class="go">cmake --build .</span>
+</pre></div>
+</div>
+<p>Now that both the debug and release builds are complete, we can use a custom
+configuration file to package both builds into a single release. In the
+<code class="docutils literal notranslate"><span class="pre">Step12</span></code> directory, create a file called <code class="docutils literal notranslate"><span class="pre">MultiCPackConfig.cmake</span></code>. In this
+file, first include the default configuration file that was created by the
+<span class="target" id="index-8-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span></code></a> executable.</p>
+<p>Next, use the <code class="docutils literal notranslate"><span class="pre">CPACK_INSTALL_CMAKE_PROJECTS</span></code> variable to specify which
+projects to install. In this case, we want to install both debug and release.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="s">&quot;release/CPackConfig.cmake&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CPACK_INSTALL_CMAKE_PROJECTS</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;debug;Tutorial;ALL;/&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;release;Tutorial;ALL;/&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>From the <code class="docutils literal notranslate"><span class="pre">Step12</span></code> directory, run <span class="target" id="index-1-manual:cpack(1)"></span><a class="reference internal" href="../../manual/cpack.1.html#manual:cpack(1)" title="cpack(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cpack</span></code></a> specifying our
+custom configuration file with the <code class="docutils literal notranslate"><span class="pre">config</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cpack --config MultiCPackConfig.cmake</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMake Tutorial</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#a-basic-starting-point-step-1">A Basic Starting Point (Step 1)</a><ul>
+<li><a class="reference internal" href="#adding-a-version-number-and-configured-header-file">Adding a Version Number and Configured Header File</a></li>
+<li><a class="reference internal" href="#specify-the-c-standard">Specify the C++ Standard</a></li>
+<li><a class="reference internal" href="#build-and-test">Build and Test</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-a-library-step-2">Adding a Library (Step 2)</a></li>
+<li><a class="reference internal" href="#adding-usage-requirements-for-library-step-3">Adding Usage Requirements for Library (Step 3)</a></li>
+<li><a class="reference internal" href="#installing-and-testing-step-4">Installing and Testing (Step 4)</a><ul>
+<li><a class="reference internal" href="#install-rules">Install Rules</a></li>
+<li><a class="reference internal" href="#testing-support">Testing Support</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-system-introspection-step-5">Adding System Introspection (Step 5)</a><ul>
+<li><a class="reference internal" href="#specify-compile-definition">Specify Compile Definition</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-a-custom-command-and-generated-file-step-6">Adding a Custom Command and Generated File (Step 6)</a></li>
+<li><a class="reference internal" href="#building-an-installer-step-7">Building an Installer (Step 7)</a></li>
+<li><a class="reference internal" href="#adding-support-for-a-dashboard-step-8">Adding Support for a Dashboard (Step 8)</a></li>
+<li><a class="reference internal" href="#mixing-static-and-shared-step-9">Mixing Static and Shared (Step 9)</a></li>
+<li><a class="reference internal" href="#adding-generator-expressions-step-10">Adding Generator Expressions (Step 10)</a></li>
+<li><a class="reference internal" href="#adding-export-configuration-step-11">Adding Export Configuration (Step 11)</a></li>
+<li><a class="reference internal" href="#packaging-debug-and-release-step-12">Packaging Debug and Release (Step 12)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../../cpack_gen/wix.html"
+                        title="previous chapter">CPack WIX Generator</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../user-interaction/index.html"
+                        title="next chapter">User Interaction Guide</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/guide/tutorial/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../user-interaction/index.html" title="User Interaction Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../../cpack_gen/wix.html" title="CPack WIX Generator"
+             >previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">CMake Tutorial</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

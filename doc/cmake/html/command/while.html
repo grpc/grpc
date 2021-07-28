@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>while &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_compile_definitions" href="add_compile_definitions.html" />
+    <link rel="prev" title="variable_watch" href="variable_watch.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_compile_definitions.html" title="add_compile_definitions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="variable_watch.html" title="variable_watch"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">while</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="while">
+<span id="command:while"></span><h1>while<a class="headerlink" href="#while" title="Permalink to this headline">¶</a></h1>
+<p>Evaluate a group of commands while a condition is true</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">while(</span><span class="nv">&lt;condition&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nv">&lt;commands&gt;</span><span class="w"></span>
+<span class="nf">endwhile()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>All commands between while and the matching <span class="target" id="index-0-command:endwhile"></span><a class="reference internal" href="endwhile.html#command:endwhile" title="endwhile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endwhile()</span></code></a> are recorded
+without being invoked.  Once the <span class="target" id="index-1-command:endwhile"></span><a class="reference internal" href="endwhile.html#command:endwhile" title="endwhile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endwhile()</span></code></a> is evaluated, the
+recorded list of commands is invoked as long as the <code class="docutils literal notranslate"><span class="pre">&lt;condition&gt;</span></code> is true.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;condition&gt;</span></code> has the same syntax and is evaluated using the same logic
+as described at length for the <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if()</span></code></a> command.</p>
+<p>The commands <span class="target" id="index-0-command:break"></span><a class="reference internal" href="break.html#command:break" title="break"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">break()</span></code></a> and <span class="target" id="index-0-command:continue"></span><a class="reference internal" href="continue.html#command:continue" title="continue"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">continue()</span></code></a> provide means to
+escape from the normal control flow.</p>
+<p>Per legacy, the <span class="target" id="index-2-command:endwhile"></span><a class="reference internal" href="endwhile.html#command:endwhile" title="endwhile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endwhile()</span></code></a> command admits
+an optional <code class="docutils literal notranslate"><span class="pre">&lt;condition&gt;</span></code> argument.
+If used, it must be a verbatim repeat of the argument of the opening
+<code class="docutils literal notranslate"><span class="pre">while</span></code> command.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="variable_watch.html"
+                        title="previous chapter">variable_watch</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_compile_definitions.html"
+                        title="next chapter">add_compile_definitions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/while.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_compile_definitions.html" title="add_compile_definitions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="variable_watch.html" title="variable_watch"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">while</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

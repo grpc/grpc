@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINK_OPTIONS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LINK_SEARCH_END_STATIC" href="LINK_SEARCH_END_STATIC.html" />
+    <link rel="prev" title="LINK_LIBRARIES" href="LINK_LIBRARIES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="LINK_SEARCH_END_STATIC.html" title="LINK_SEARCH_END_STATIC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LINK_LIBRARIES.html" title="LINK_LIBRARIES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_OPTIONS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="link-options">
+<span id="prop_tgt:LINK_OPTIONS"></span><h1>LINK_OPTIONS<a class="headerlink" href="#link-options" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.13.</span></p>
+</div>
+<p>List of options to use for the link step of shared library, module
+and executable targets as well as the device link step. Targets that are static
+libraries need to use the <span class="target" id="index-0-prop_tgt:STATIC_LIBRARY_OPTIONS"></span><a class="reference internal" href="STATIC_LIBRARY_OPTIONS.html#prop_tgt:STATIC_LIBRARY_OPTIONS" title="STATIC_LIBRARY_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">STATIC_LIBRARY_OPTIONS</span></code></a> target property.</p>
+<p>These options are used for both normal linking and device linking
+(see policy <span class="target" id="index-0-policy:CMP0105"></span><a class="reference internal" href="../policy/CMP0105.html#policy:CMP0105" title="CMP0105"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0105</span></code></a>). To control link options for normal and device
+link steps, <code class="docutils literal notranslate"><span class="pre">$&lt;HOST_LINK&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">$&lt;DEVICE_LINK&gt;</span></code>
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> can be used.</p>
+<p>This property holds a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> of
+options specified so far for its target.  Use the <span class="target" id="index-0-command:target_link_options"></span><a class="reference internal" href="../command/target_link_options.html#command:target_link_options" title="target_link_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_options()</span></code></a>
+command to append more options.</p>
+<p>This property is initialized by the <span class="target" id="index-0-prop_dir:LINK_OPTIONS"></span><a class="reference internal" href="../prop_dir/LINK_OPTIONS.html#prop_dir:LINK_OPTIONS" title="LINK_OPTIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code></a> directory
+property when a target is created, and is used by the generators to set
+the options for the compiler.</p>
+<p>Contents of <code class="docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code> may use “generator expressions” with the
+syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a> manual
+for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a> manual
+for more on defining buildsystem properties.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This property must be used in preference to <span class="target" id="index-0-prop_tgt:LINK_FLAGS"></span><a class="reference internal" href="LINK_FLAGS.html#prop_tgt:LINK_FLAGS" title="LINK_FLAGS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_FLAGS</span></code></a> property.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LINK_LIBRARIES.html"
+                        title="previous chapter">LINK_LIBRARIES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="LINK_SEARCH_END_STATIC.html"
+                        title="next chapter">LINK_SEARCH_END_STATIC</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/LINK_OPTIONS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="LINK_SEARCH_END_STATIC.html" title="LINK_SEARCH_END_STATIC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LINK_LIBRARIES.html" title="LINK_LIBRARIES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_OPTIONS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

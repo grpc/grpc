@@ -1,0 +1,60 @@
+#!/bin/sh
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
+# file Copyright.txt or https://cmake.org/licensing for details.
+
+# This script is internal to CMake and meant only to be
+# invoked by CMake-generated build systems on AIX.
+
+usage='usage: ExportImportList -o <out-file> [-l <lib>] [-n] [--] <objects>...'
+
+die() {
+    echo "$@" 1>&2; exit 1
+}
+
+# Process command-line arguments.
+out=''
+lib=''
+no_objects=''
+while test "$#" != 0; do
+    case "$1" in
+    -l) shift; lib="$1" ;;
+    -o) shift; out="$1" ;;
+    -n) no_objects='1' ;;
+    --) shift; break ;;
+    -*) die "$usage" ;;
+    *)  break ;;
+    esac
+    shift
+done
+test -n "$out" || die "$usage"
+
+# Build a temporary file that atomically replaces the output later.
+out_tmp="$out.tmp$$"
+trap 'rm -f "$out_tmp"' EXIT INT TERM
+> "$out_tmp"
+
+# Collect symbols exported from all object files.
+if test -z "$no_objects"; then
+    for f in "$@"; do
+        dump -tov -X 32_64 "$f" |
+        awk '
+            BEGIN {
+                V["EXPORTED"]=" export"
+                V["PROTECTED"]=" protected"
+            }
+            /^\[[0-9]+\]\tm +[^ ]+ +\.(text|data|bss) +[^ ]+ +(extern|weak) +(EXPORTED|PROTECTED| ) / {
+                if (!match($NF,/^(\.|__sinit|__sterm|__[0-9]+__)/)) {
+                    print $NF V[$(NF-1)]
+                }
+            }
+        '
+    done >> "$out_tmp"
+fi
+
+# Generate the export/import file.
+{
+    if test -n "$lib"; then
+        echo "#! $lib"
+    fi
+    sort -u "$out_tmp"
+} > "$out"

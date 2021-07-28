@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UseJava &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="UseJavaClassFilelist" href="UseJavaClassFilelist.html" />
+    <link rel="prev" title="UseEcos" href="UseEcos.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="UseJavaClassFilelist.html" title="UseJavaClassFilelist"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="UseEcos.html" title="UseEcos"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">UseJava</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="usejava">
+<span id="module:UseJava"></span><h1>UseJava<a class="headerlink" href="#usejava" title="Permalink to this headline">¶</a></h1>
+<p>Use Module for Java</p>
+<p>This file provides functions for Java.  It is assumed that
+<span class="target" id="index-0-module:FindJava"></span><a class="reference internal" href="FindJava.html#module:FindJava" title="FindJava"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindJava</span></code></a> has already been loaded.  See <span class="target" id="index-1-module:FindJava"></span><a class="reference internal" href="FindJava.html#module:FindJava" title="FindJava"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindJava</span></code></a> for
+information on how to load Java into your CMake project.</p>
+<div class="section" id="creating-and-installing-jars">
+<h2>Creating And Installing JARs<a class="headerlink" href="#creating-and-installing-jars" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nv">&lt;target_name&gt;</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">SOURCES</span><span class="p">]</span><span class="w"> </span><span class="nv">&lt;source1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;source2&gt;...</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;resource1&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">INCLUDE_JARS</span><span class="w"> </span><span class="nv">&lt;jar1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;jar2&gt;...</span><span class="p">]]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">ENTRY_POINT</span><span class="w"> </span><span class="nv">&lt;entry&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">VERSION</span><span class="w"> </span><span class="nv">&lt;version&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">OUTPUT_NAME</span><span class="w"> </span><span class="nv">&lt;name&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">OUTPUT_DIR</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">GENERATE_NATIVE_HEADERS</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">        </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command creates a <code class="docutils literal notranslate"><span class="pre">&lt;target_name&gt;.jar</span></code>.  It compiles the given
+<code class="docutils literal notranslate"><span class="pre">&lt;source&gt;</span></code> files and adds the given <code class="docutils literal notranslate"><span class="pre">&lt;resource&gt;</span></code> files to
+the jar file.  Source files can be java files or listing files
+(prefixed by <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>).  If only resource files are given then just a jar file
+is created.  The list of <code class="docutils literal notranslate"><span class="pre">INCLUDE_JARS</span></code> are added to the classpath when
+compiling the java sources and also to the dependencies of the target.
+<code class="docutils literal notranslate"><span class="pre">INCLUDE_JARS</span></code> also accepts other target names created by <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code>.
+For backwards compatibility, jar files listed as sources are ignored (as
+they have been since the first version of this module).</p>
+<p>The default <code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span></code> can also be changed by setting the variable
+<code class="docutils literal notranslate"><span class="pre">CMAKE_JAVA_TARGET_OUTPUT_DIR</span></code>.</p>
+<p>Optionally, using option <code class="docutils literal notranslate"><span class="pre">GENERATE_NATIVE_HEADERS</span></code>, native header files can
+be generated for methods declared as native.  These files provide the
+connective glue that allow your Java and C code to interact.  An INTERFACE
+target will be created for an easy usage of generated files.  Sub-option
+<code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> can be used to specify the output directory for generated
+header files.</p>
+<p><code class="docutils literal notranslate"><span class="pre">GENERATE_NATIVE_HEADERS</span></code> option requires, at least, version 1.8 of the JDK.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code> function sets the following target properties on
+<code class="docutils literal notranslate"><span class="pre">&lt;target_name&gt;</span></code>:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">INSTALL_FILES</span></code></dt><dd><p>The files which should be installed.  This is used by <code class="docutils literal notranslate"><span class="pre">install_jar()</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">JNI_SYMLINK</span></code></dt><dd><p>The JNI symlink which should be installed.  This is used by
+<code class="docutils literal notranslate"><span class="pre">install_jni_symlink()</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">JAR_FILE</span></code></dt><dd><p>The location of the jar file so that you can include it.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CLASSDIR</span></code></dt><dd><p>The directory where the class files can be found.  For example to use them
+with <code class="docutils literal notranslate"><span class="pre">javah</span></code>.</p>
+</dd>
+</dl>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install_jar(</span><span class="nv">&lt;target_name&gt;</span><span class="w"> </span><span class="nv">&lt;destination&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install_jar(</span><span class="nv">&lt;target_name&gt;</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;destination&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">COMPONENT</span><span class="w"> </span><span class="nv">&lt;component&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command installs the <code class="docutils literal notranslate"><span class="pre">&lt;target_name&gt;</span></code> files to the given
+<code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code>.  It should be called in the same scope as <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code> or
+it will fail.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">install_jar()</span></code> function sets the <code class="docutils literal notranslate"><span class="pre">INSTALL_DESTINATION</span></code> target
+property on jars so installed.  This property holds the <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> as
+described above, and is used by <code class="docutils literal notranslate"><span class="pre">install_jar_exports()</span></code>.  You can get this
+information with <span class="target" id="index-0-command:get_property"></span><a class="reference internal" href="../command/get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> and the <code class="docutils literal notranslate"><span class="pre">INSTALL_DESTINATION</span></code>
+property key.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install_jni_symlink(</span><span class="nv">&lt;target_name&gt;</span><span class="w"> </span><span class="nv">&lt;destination&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install_jni_symlink(</span><span class="nv">&lt;target_name&gt;</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;destination&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">COMPONENT</span><span class="w"> </span><span class="nv">&lt;component&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command installs the <code class="docutils literal notranslate"><span class="pre">&lt;target_name&gt;</span></code> JNI symlinks to the given
+<code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code>.  It should be called in the same scope as <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code> or
+it will fail.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install_jar_exports(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nv">&lt;jars&gt;...</span><span class="w"></span>
+<span class="w">                    </span><span class="p">[</span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nv">&lt;namespace&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                    </span><span class="no">FILE</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="w"></span>
+<span class="w">                    </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nv">&lt;destination&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">COMPONENT</span><span class="w"> </span><span class="nv">&lt;component&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command installs a target export file <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> for the named jar
+targets to the given <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> directory.  Its function is similar to
+that of <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORTS)</span></code></a>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">export_jars(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nv">&lt;jars&gt;...</span><span class="w"></span>
+<span class="w">            </span><span class="p">[</span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nv">&lt;namespace&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">            </span><span class="no">FILE</span><span class="w"> </span><span class="nv">&lt;filename&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command writes a target export file <code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> for the named <code class="docutils literal notranslate"><span class="pre">&lt;jars&gt;</span></code>
+targets.  Its function is similar to that of <span class="target" id="index-0-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a>.</p>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>To add compile flags to the target you can set these flags with the following
+variable:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_JAVA_COMPILE_FLAGS</span><span class="w"> </span><span class="p">-</span><span class="nb">nowarn</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To add a path or a jar file to the class path you can do this with the
+<code class="docutils literal notranslate"><span class="pre">CMAKE_JAVA_INCLUDE_PATH</span></code> variable.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_JAVA_INCLUDE_PATH</span><span class="w"> </span><span class="na">/usr/share/java/shibboleet.jar</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To use a different output name for the target you can set it with:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nb">foobar</span><span class="w"> </span><span class="nb">foobar.java</span><span class="w"> </span><span class="no">OUTPUT_NAME</span><span class="w"> </span><span class="nb">shibboleet.jar</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To use a different output directory than <code class="docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code> you can
+set it with:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nb">foobar</span><span class="w"> </span><span class="nb">foobar.java</span><span class="w"> </span><span class="no">OUTPUT_DIR</span><span class="w"> </span><span class="o">${</span><span class="nt">PROJECT_BINARY_DIR</span><span class="o">}</span><span class="na">/bin</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To define an entry point in your jar you can set it with the <code class="docutils literal notranslate"><span class="pre">ENTRY_POINT</span></code>
+named argument:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nb">example</span><span class="w"> </span><span class="no">ENTRY_POINT</span><span class="w"> </span><span class="na">com/examples/MyProject/Main</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To define a custom manifest for the jar, you can set it with the <code class="docutils literal notranslate"><span class="pre">MANIFEST</span></code>
+named argument:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nb">example</span><span class="w"> </span><span class="no">MANIFEST</span><span class="w"> </span><span class="na">/path/to/manifest</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To add a version to the target output name you can set it using the <code class="docutils literal notranslate"><span class="pre">VERSION</span></code>
+named argument to <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code>.  The following example will create a jar file
+with the name <code class="docutils literal notranslate"><span class="pre">shibboleet-1.0.0.jar</span></code> and will create a symlink
+<code class="docutils literal notranslate"><span class="pre">shibboleet.jar</span></code> pointing to the jar with the version information.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_jar(</span><span class="nb">shibboleet</span><span class="w"> </span><span class="nb">shibbotleet.java</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.2.0</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If the target is a JNI library, utilize the following commands to
+create a JNI symbolic link:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_JNI_TARGET</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_jar(</span><span class="nb">shibboleet</span><span class="w"> </span><span class="nb">shibbotleet.java</span><span class="w"> </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.2.0</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install_jar(</span><span class="nb">shibboleet</span><span class="w"> </span><span class="o">${</span><span class="nt">LIB_INSTALL_DIR</span><span class="o">}</span><span class="na">/shibboleet</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install_jni_symlink(</span><span class="nb">shibboleet</span><span class="w"> </span><span class="o">${</span><span class="nt">JAVA_LIB_INSTALL_DIR</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If a single target needs to produce more than one jar from its
+java source code, to prevent the accumulation of duplicate class
+files in subsequent jars, set/reset <code class="docutils literal notranslate"><span class="pre">CMAKE_JAR_CLASSES_PREFIX</span></code> prior
+to calling the <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code> function:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_JAR_CLASSES_PREFIX</span><span class="w"> </span><span class="na">com/redhat/foo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_jar(</span><span class="nb">foo</span><span class="w"> </span><span class="nb">foo.java</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_JAR_CLASSES_PREFIX</span><span class="w"> </span><span class="na">com/redhat/bar</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_jar(</span><span class="nb">bar</span><span class="w"> </span><span class="nb">bar.java</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For an optimum usage of option <code class="docutils literal notranslate"><span class="pre">GENERATE_NATIVE_HEADERS</span></code>, it is recommended to
+include module JNI before any call to <code class="docutils literal notranslate"><span class="pre">add_jar()</span></code>. The produced target for
+native headers can then be used to compile C/C++ sources with the
+<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_package(</span><span class="no">JNI</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_jar(</span><span class="nb">foo</span><span class="w"> </span><span class="nb">foo.java</span><span class="w"> </span><span class="no">GENERATE_NATIVE_HEADERS</span><span class="w"> </span><span class="nb">foo-native</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">bar</span><span class="w"> </span><span class="nb">bar.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">bar</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">foo-native</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="finding-jars">
+<h2>Finding JARs<a class="headerlink" href="#finding-jars" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_jar(</span><span class="nv">&lt;VAR&gt;</span><span class="w"></span>
+<span class="w">         </span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">NAMES</span><span class="w"> </span><span class="nv">&lt;name1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;name2&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">         </span><span class="p">[</span><span class="no">PATHS</span><span class="w"> </span><span class="nv">&lt;path1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;path2&gt;...</span><span class="w"> </span><span class="no">ENV</span><span class="w"> </span><span class="nv">&lt;var&gt;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">         </span><span class="p">[</span><span class="no">VERSIONS</span><span class="w"> </span><span class="nv">&lt;version1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;version2&gt;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">         </span><span class="p">[</span><span class="no">DOC</span><span class="w"> </span><span class="s">&quot;cache documentation string&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command is used to find a full path to the named jar.  A cache
+entry named by <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;</span></code> is created to store the result of this command.
+If the full path to a jar is found the result is stored in the
+variable and the search will not repeated unless the variable is
+cleared.  If nothing is found, the result will be <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;-NOTFOUND</span></code>, and
+the search will be attempted again next time <code class="docutils literal notranslate"><span class="pre">find_jar()</span></code> is invoked with
+the same variable.  The name of the full path to a file that is
+searched for is specified by the names listed after <code class="docutils literal notranslate"><span class="pre">NAMES</span></code> argument.
+Additional search locations can be specified after the <code class="docutils literal notranslate"><span class="pre">PATHS</span></code> argument.
+If you require special a version of a jar file you can specify it with
+the <code class="docutils literal notranslate"><span class="pre">VERSIONS</span></code> argument.  The argument after <code class="docutils literal notranslate"><span class="pre">DOC</span></code> will be used for the
+documentation string in the cache.</p>
+</div>
+<div class="section" id="javadoc">
+<h2>Javadoc<a class="headerlink" href="#javadoc" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">create_javadoc()</span></code> command can be used to create java documentation
+based on files or packages.  For more details please read the javadoc manpage.</p>
+<p>There are two main signatures for <code class="docutils literal notranslate"><span class="pre">create_javadoc()</span></code>.  The first signature
+works with package names on a path with source files.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javadoc(</span><span class="nv">&lt;VAR&gt;</span><span class="w"></span>
+<span class="w">               </span><span class="no">PACKAGES</span><span class="w"> </span><span class="nv">&lt;pkg1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;pkg2&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">SOURCEPATH</span><span class="w"> </span><span class="nv">&lt;sourcepath&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">CLASSPATH</span><span class="w"> </span><span class="nv">&lt;classpath&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">INSTALLPATH</span><span class="w"> </span><span class="nv">&lt;install path&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">DOCTITLE</span><span class="w"> </span><span class="s">&quot;the documentation title&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">WINDOWTITLE</span><span class="w"> </span><span class="s">&quot;the title of the document&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">AUTHOR</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">USE</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">VERSION</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javadoc(</span><span class="nb">my_example_doc</span><span class="w"></span>
+<span class="w">  </span><span class="no">PACKAGES</span><span class="w"> </span><span class="nb">com.example.foo</span><span class="w"> </span><span class="nb">com.example.bar</span><span class="w"></span>
+<span class="w">  </span><span class="no">SOURCEPATH</span><span class="w"> </span><span class="s">&quot;${CMAKE_CURRENT_SOURCE_DIR}&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSPATH</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_JAVA_INCLUDE_PATH</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">WINDOWTITLE</span><span class="w"> </span><span class="s">&quot;My example&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">DOCTITLE</span><span class="w"> </span><span class="s">&quot;&lt;h1&gt;My example&lt;/h1&gt;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">AUTHOR</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">USE</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">VERSION</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The second signature for <code class="docutils literal notranslate"><span class="pre">create_javadoc()</span></code> works on a given list of
+files.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javadoc(</span><span class="nv">&lt;VAR&gt;</span><span class="w"></span>
+<span class="w">               </span><span class="no">FILES</span><span class="w"> </span><span class="nv">&lt;file1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;file2&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">CLASSPATH</span><span class="w"> </span><span class="nv">&lt;classpath&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">INSTALLPATH</span><span class="w"> </span><span class="nv">&lt;install path&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">DOCTITLE</span><span class="w"> </span><span class="s">&quot;the documentation title&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">WINDOWTITLE</span><span class="w"> </span><span class="s">&quot;the title of the document&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">AUTHOR</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">USE</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">VERSION</span><span class="w"> </span><span class="no">TRUE</span><span class="p">|</span><span class="no">FALSE</span><span class="p">]</span><span class="w"></span>
+<span class="w">              </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javadoc(</span><span class="nb">my_example_doc</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILES</span><span class="w"> </span><span class="o">${</span><span class="nt">example_SRCS</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSPATH</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_JAVA_INCLUDE_PATH</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">WINDOWTITLE</span><span class="w"> </span><span class="s">&quot;My example&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">DOCTITLE</span><span class="w"> </span><span class="s">&quot;&lt;h1&gt;My example&lt;/h1&gt;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">AUTHOR</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">USE</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">VERSION</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Both signatures share most of the options.  These options are the same
+as what you can find in the javadoc manpage.  Please look at the
+manpage for <code class="docutils literal notranslate"><span class="pre">CLASSPATH</span></code>, <code class="docutils literal notranslate"><span class="pre">DOCTITLE</span></code>, <code class="docutils literal notranslate"><span class="pre">WINDOWTITLE</span></code>, <code class="docutils literal notranslate"><span class="pre">AUTHOR</span></code>, <code class="docutils literal notranslate"><span class="pre">USE</span></code>
+and <code class="docutils literal notranslate"><span class="pre">VERSION</span></code>.</p>
+<p>If you don’t set the <code class="docutils literal notranslate"><span class="pre">INSTALLPATH</span></code>, then by default the documentation will
+be installed to :</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>${CMAKE_INSTALL_PREFIX}/share/javadoc/&lt;VAR&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="header-generation">
+<h2>Header Generation<a class="headerlink" href="#header-generation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javah(</span><span class="no">TARGET</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">GENERATED_FILES</span><span class="w"> </span><span class="nv">&lt;VAR&gt;</span><span class="w"></span>
+<span class="w">             </span><span class="no">CLASSES</span><span class="w"> </span><span class="nv">&lt;class&gt;...</span><span class="w"></span>
+<span class="w">             </span><span class="p">[</span><span class="no">CLASSPATH</span><span class="w"> </span><span class="nv">&lt;classpath&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">             </span><span class="p">[</span><span class="no">DEPENDS</span><span class="w"> </span><span class="nv">&lt;depend&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">             </span><span class="p">[</span><span class="no">OUTPUT_NAME</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="p">|</span><span class="no">OUTPUT_DIR</span><span class="w"> </span><span class="nv">&lt;path&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">             </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Create C header files from java classes. These files provide the connective glue
+that allow your Java and C code to interact.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.11.</span></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This command will no longer be supported starting with version 10 of the JDK
+due to the <a class="reference external" href="http://openjdk.java.net/jeps/313">suppression of javah tool</a>.
+The <code class="docutils literal notranslate"><span class="pre">add_jar(GENERATE_NATIVE_HEADERS)</span></code> command should be used instead.</p>
+</div>
+<p>There are two main signatures for <code class="docutils literal notranslate"><span class="pre">create_javah()</span></code>.  The first signature
+returns generated files through variable specified by the <code class="docutils literal notranslate"><span class="pre">GENERATED_FILES</span></code>
+option.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javah(</span><span class="no">GENERATED_FILES</span><span class="w"> </span><span class="nb">files_headers</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSES</span><span class="w"> </span><span class="nb">org.cmake.HelloWorld</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSPATH</span><span class="w"> </span><span class="nb">hello.jar</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The second signature for <code class="docutils literal notranslate"><span class="pre">create_javah()</span></code> creates a target which encapsulates
+header files generation. E.g.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_javah(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">target_headers</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSES</span><span class="w"> </span><span class="nb">org.cmake.HelloWorld</span><span class="w"></span>
+<span class="w">  </span><span class="no">CLASSPATH</span><span class="w"> </span><span class="nb">hello.jar</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Both signatures share same options.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CLASSES</span> <span class="pre">&lt;class&gt;...</span></code></dt><dd><p>Specifies Java classes used to generate headers.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CLASSPATH</span> <span class="pre">&lt;classpath&gt;...</span></code></dt><dd><p>Specifies various paths to look up classes. Here .class files, jar files or
+targets created by command add_jar can be used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span> <span class="pre">&lt;depend&gt;...</span></code></dt><dd><p>Targets on which the javah target depends.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME</span> <span class="pre">&lt;path&gt;</span></code></dt><dd><p>Concatenates the resulting header files for all the classes listed by option
+<code class="docutils literal notranslate"><span class="pre">CLASSES</span></code> into <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code>.  Same behavior as option <code class="docutils literal notranslate"><span class="pre">-o</span></code> of javah tool.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span> <span class="pre">&lt;path&gt;</span></code></dt><dd><p>Sets the directory where the header files will be generated.  Same behavior
+as option <code class="docutils literal notranslate"><span class="pre">-d</span></code> of javah tool.  If not specified,
+<span class="target" id="index-0-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a> is used as the output directory.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">UseJava</a><ul>
+<li><a class="reference internal" href="#creating-and-installing-jars">Creating And Installing JARs</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#finding-jars">Finding JARs</a></li>
+<li><a class="reference internal" href="#javadoc">Javadoc</a></li>
+<li><a class="reference internal" href="#header-generation">Header Generation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="UseEcos.html"
+                        title="previous chapter">UseEcos</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="UseJavaClassFilelist.html"
+                        title="next chapter">UseJavaClassFilelist</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/UseJava.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="UseJavaClassFilelist.html" title="UseJavaClassFilelist"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="UseEcos.html" title="UseEcos"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">UseJava</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

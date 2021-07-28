@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindPerlLibs &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindPHP4" href="FindPHP4.html" />
+    <link rel="prev" title="FindPerl" href="FindPerl.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindPHP4.html" title="FindPHP4"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindPerl.html" title="FindPerl"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPerlLibs</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findperllibs">
+<span id="module:FindPerlLibs"></span><h1>FindPerlLibs<a class="headerlink" href="#findperllibs" title="Permalink to this headline">¶</a></h1>
+<p>Find Perl libraries</p>
+<p>This module finds if PERL is installed and determines where the
+include files and libraries are.  It also determines what the name of
+the library is.  This code sets the following variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>PERLLIBS_FOUND    = True if perl.h &amp; libperl were found
+PERL_INCLUDE_PATH = path to where perl.h is found
+PERL_LIBRARY      = path to libperl
+PERL_EXECUTABLE   = full path to the perl binary
+</pre></div>
+</div>
+<p>The minimum required version of Perl can be specified using the
+standard syntax, e.g.  find_package(PerlLibs 6.0)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>The following variables are also available if needed
+(introduced after CMake 2.6.4)
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>PERL_SITESEARCH     = path to the sitesearch install dir (-V:installsitesearch)
+PERL_SITEARCH       = path to the sitelib install directory (-V:installsitearch)
+PERL_SITELIB        = path to the sitelib install directory (-V:installsitelib)
+PERL_VENDORARCH     = path to the vendor arch install directory (-V:installvendorarch)
+PERL_VENDORLIB      = path to the vendor lib install directory (-V:installvendorlib)
+PERL_ARCHLIB        = path to the core arch lib install directory (-V:archlib)
+PERL_PRIVLIB        = path to the core priv lib install directory (-V:privlib)
+PERL_UPDATE_ARCHLIB = path to the update arch lib install directory (-V:installarchlib)
+PERL_UPDATE_PRIVLIB = path to the update priv lib install directory (-V:installprivlib)
+PERL_EXTRA_C_FLAGS = Compilation flags used to build perl
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindPerl.html"
+                        title="previous chapter">FindPerl</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindPHP4.html"
+                        title="next chapter">FindPHP4</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindPerlLibs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindPHP4.html" title="FindPHP4"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindPerl.html" title="FindPerl"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPerlLibs</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

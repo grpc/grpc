@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMakePackageConfigHelpers &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMakePrintHelpers" href="CMakePrintHelpers.html" />
+    <link rel="prev" title="CMakeGraphVizOptions" href="CMakeGraphVizOptions.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMakePrintHelpers.html" title="CMakePrintHelpers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMakeGraphVizOptions.html" title="CMakeGraphVizOptions"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakePackageConfigHelpers</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmakepackageconfighelpers">
+<span id="module:CMakePackageConfigHelpers"></span><h1>CMakePackageConfigHelpers<a class="headerlink" href="#cmakepackageconfighelpers" title="Permalink to this headline">¶</a></h1>
+<p>Helpers functions for creating config files that can be included by other
+projects to find and use a package.</p>
+<p>Adds the <span class="target" id="index-0-command:configure_package_config_file"></span><a class="reference internal" href="#command:configure_package_config_file" title="configure_package_config_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_package_config_file()</span></code></a> and
+<span class="target" id="index-0-command:write_basic_package_version_file"></span><a class="reference internal" href="#command:write_basic_package_version_file" title="write_basic_package_version_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">write_basic_package_version_file()</span></code></a> commands.</p>
+<div class="section" id="generating-a-package-configuration-file">
+<h2>Generating a Package Configuration File<a class="headerlink" href="#generating-a-package-configuration-file" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake command">
+<dt id="command:configure_package_config_file">
+<code class="sig-name descname">configure_package_config_file</code><a class="headerlink" href="#command:configure_package_config_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a config file for a project:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>configure_package_config_file(&lt;input&gt; &lt;output&gt;
+  INSTALL_DESTINATION &lt;path&gt;
+  [PATH_VARS &lt;var1&gt; &lt;var2&gt; ... &lt;varN&gt;]
+  [NO_SET_AND_CHECK_MACRO]
+  [NO_CHECK_REQUIRED_COMPONENTS_MACRO]
+  [INSTALL_PREFIX &lt;path&gt;]
+  )
+</pre></div>
+</div>
+</dd></dl>
+
+<p><code class="docutils literal notranslate"><span class="pre">configure_package_config_file()</span></code> should be used instead of the plain
+<span class="target" id="index-0-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> command when creating the <code class="docutils literal notranslate"><span class="pre">&lt;PackageName&gt;Config.cmake</span></code>
+or <code class="docutils literal notranslate"><span class="pre">&lt;PackageName&gt;-config.cmake</span></code> file for installing a project or library.
+It helps making the resulting package relocatable by avoiding hardcoded paths
+in the installed <code class="docutils literal notranslate"><span class="pre">Config.cmake</span></code> file.</p>
+<p>In a <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file there may be code like this to make the install
+destinations know to the using project:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">FOO_INCLUDE_DIR</span><span class="w">   </span><span class="s">&quot;@CMAKE_INSTALL_FULL_INCLUDEDIR@&quot;</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">FOO_DATA_DIR</span><span class="w">   </span><span class="s">&quot;@CMAKE_INSTALL_PREFIX@/@RELATIVE_DATA_INSTALL_DIR@&quot;</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">FOO_ICONS_DIR</span><span class="w">   </span><span class="s">&quot;@CMAKE_INSTALL_PREFIX@/share/icons&quot;</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="c">#...logic to determine installedPrefix from the own location...</span>
+<span class="nf">set(</span><span class="no">FOO_CONFIG_DIR</span><span class="w">  </span><span class="s">&quot;${installedPrefix}/@CONFIG_INSTALL_DIR@&quot;</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>All 4 options shown above are not sufficient, since the first 3 hardcode the
+absolute directory locations, and the 4th case works only if the logic to
+determine the <code class="docutils literal notranslate"><span class="pre">installedPrefix</span></code> is correct, and if <code class="docutils literal notranslate"><span class="pre">CONFIG_INSTALL_DIR</span></code>
+contains a relative path, which in general cannot be guaranteed.  This has the
+effect that the resulting <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file would work poorly under
+Windows and OSX, where users are used to choose the install location of a
+binary package at install time, independent from how
+<span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> was set at build/cmake time.</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">configure_package_config_file</span></code> helps.  If used correctly, it makes
+the resulting <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file relocatable.  Usage:</p>
+<ol class="arabic simple">
+<li><p>write a <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake.in</span></code> file as you are used to</p></li>
+<li><p>insert a line containing only the string <code class="docutils literal notranslate"><span class="pre">&#64;PACKAGE_INIT&#64;</span></code></p></li>
+<li><p>instead of <code class="docutils literal notranslate"><span class="pre">set(FOO_DIR</span> <span class="pre">&quot;&#64;SOME_INSTALL_DIR&#64;&quot;)</span></code>, use
+<code class="docutils literal notranslate"><span class="pre">set(FOO_DIR</span> <span class="pre">&quot;&#64;PACKAGE_SOME_INSTALL_DIR&#64;&quot;)</span></code> (this must be after the
+<code class="docutils literal notranslate"><span class="pre">&#64;PACKAGE_INIT&#64;</span></code> line)</p></li>
+<li><p>instead of using the normal <span class="target" id="index-1-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a>, use
+<code class="docutils literal notranslate"><span class="pre">configure_package_config_file()</span></code></p></li>
+</ol>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;output&gt;</span></code> arguments are the input and output file, the
+same way as in <span class="target" id="index-2-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> given to <code class="docutils literal notranslate"><span class="pre">INSTALL_DESTINATION</span></code> must be the destination where
+the <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file will be installed to.  This path can either be
+absolute, or relative to the <code class="docutils literal notranslate"><span class="pre">INSTALL_PREFIX</span></code> path.</p>
+<p>The variables <code class="docutils literal notranslate"><span class="pre">&lt;var1&gt;</span></code> to <code class="docutils literal notranslate"><span class="pre">&lt;varN&gt;</span></code> given as <code class="docutils literal notranslate"><span class="pre">PATH_VARS</span></code> are the
+variables which contain install destinations.  For each of them the macro will
+create a helper variable <code class="docutils literal notranslate"><span class="pre">PACKAGE_&lt;var...&gt;</span></code>.  These helper variables must be
+used in the <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake.in</span></code> file for setting the installed location.
+They are calculated by <code class="docutils literal notranslate"><span class="pre">configure_package_config_file</span></code> so that they are
+always relative to the installed location of the package.  This works both for
+relative and also for absolute locations.  For absolute locations it works
+only if the absolute location is a subdirectory of <code class="docutils literal notranslate"><span class="pre">INSTALL_PREFIX</span></code>.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">INSTALL_PREFIX</span></code> argument is passed, this is used as base path to
+calculate all the relative paths.  The <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;</span></code> argument must be an absolute
+path.  If this argument is not passed, the <span class="target" id="index-1-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a>
+variable will be used instead.  The default value is good when generating a
+FooConfig.cmake file to use your package from the install tree.  When
+generating a FooConfig.cmake file to use your package from the build tree this
+option should be used.</p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">configure_package_config_file</span></code> also generates two helper macros,
+<code class="docutils literal notranslate"><span class="pre">set_and_check()</span></code> and <code class="docutils literal notranslate"><span class="pre">check_required_components()</span></code> into the
+<code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">set_and_check()</span></code> should be used instead of the normal <code class="docutils literal notranslate"><span class="pre">set()</span></code> command for
+setting directories and file locations.  Additionally to setting the variable
+it also checks that the referenced file or directory actually exists and fails
+with a <code class="docutils literal notranslate"><span class="pre">FATAL_ERROR</span></code> otherwise.  This makes sure that the created
+<code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file does not contain wrong references.
+When using the <code class="docutils literal notranslate"><span class="pre">NO_SET_AND_CHECK_MACRO</span></code>, this macro is not generated
+into the <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">check_required_components(&lt;PackageName&gt;)</span></code> should be called at the end of
+the <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file. This macro checks whether all requested,
+non-optional components have been found, and if this is not the case, sets
+the <code class="docutils literal notranslate"><span class="pre">Foo_FOUND</span></code> variable to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>, so that the package is considered to
+be not found.  It does that by testing the <code class="docutils literal notranslate"><span class="pre">Foo_&lt;Component&gt;_FOUND</span></code>
+variables for all requested required components.  This macro should be
+called even if the package doesn’t provide any components to make sure
+users are not specifying components erroneously.  When using the
+<code class="docutils literal notranslate"><span class="pre">NO_CHECK_REQUIRED_COMPONENTS_MACRO</span></code> option, this macro is not generated
+into the <code class="docutils literal notranslate"><span class="pre">FooConfig.cmake</span></code> file.</p>
+<p>For an example see below the documentation for
+<span class="target" id="index-1-command:write_basic_package_version_file"></span><a class="reference internal" href="#command:write_basic_package_version_file" title="write_basic_package_version_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">write_basic_package_version_file()</span></code></a>.</p>
+</div>
+<div class="section" id="generating-a-package-version-file">
+<h2>Generating a Package Version File<a class="headerlink" href="#generating-a-package-version-file" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake command">
+<dt id="command:write_basic_package_version_file">
+<code class="sig-name descname">write_basic_package_version_file</code><a class="headerlink" href="#command:write_basic_package_version_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a version file for a project:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>write_basic_package_version_file(&lt;filename&gt;
+  [VERSION &lt;major.minor.patch&gt;]
+  COMPATIBILITY &lt;AnyNewerVersion|SameMajorVersion|SameMinorVersion|ExactVersion&gt;
+  [ARCH_INDEPENDENT] )
+</pre></div>
+</div>
+</dd></dl>
+
+<p>Writes a file for use as <code class="docutils literal notranslate"><span class="pre">&lt;PackageName&gt;ConfigVersion.cmake</span></code> file to
+<code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code>.  See the documentation of <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> for
+details on this.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;filename&gt;</span></code> is the output filename, it should be in the build tree.
+<code class="docutils literal notranslate"><span class="pre">&lt;major.minor.patch&gt;</span></code> is the version number of the project to be installed.</p>
+<p>If no <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> is given, the <span class="target" id="index-0-variable:PROJECT_VERSION"></span><a class="reference internal" href="../variable/PROJECT_VERSION.html#variable:PROJECT_VERSION" title="PROJECT_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION</span></code></a> variable is used.
+If this hasn’t been set, it errors out.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">COMPATIBILITY</span></code> mode <code class="docutils literal notranslate"><span class="pre">AnyNewerVersion</span></code> means that the installed
+package version will be considered compatible if it is newer or exactly the
+same as the requested version.  This mode should be used for packages which
+are fully backward compatible, also across major versions.
+If <code class="docutils literal notranslate"><span class="pre">SameMajorVersion</span></code> is used instead, then the behaviour differs from
+<code class="docutils literal notranslate"><span class="pre">AnyNewerVersion</span></code> in that the major version number must be the same as
+requested, e.g.  version 2.0 will not be considered compatible if 1.0 is
+requested.  This mode should be used for packages which guarantee backward
+compatibility within the same major version.
+If <code class="docutils literal notranslate"><span class="pre">SameMinorVersion</span></code> is used, the behaviour is the same as
+<code class="docutils literal notranslate"><span class="pre">SameMajorVersion</span></code>, but both major and minor version must be the same as
+requested, e.g version 0.2 will not be compatible if 0.1 is requested.
+If <code class="docutils literal notranslate"><span class="pre">ExactVersion</span></code> is used, then the package is only considered compatible if
+the requested version matches exactly its own version number (not considering
+the tweak version).  For example, version 1.2.3 of a package is only
+considered compatible to requested version 1.2.3.  This mode is for packages
+without compatibility guarantees.
+If your project has more elaborated version matching rules, you will need to
+write your own custom <code class="docutils literal notranslate"><span class="pre">ConfigVersion.cmake</span></code> file instead of using this
+macro.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">COMPATIBILITY_MODE</span></code> <code class="docutils literal notranslate"><span class="pre">AnyNewerVersion</span></code>, <code class="docutils literal notranslate"><span class="pre">SameMajorVersion</span></code> and
+<code class="docutils literal notranslate"><span class="pre">SameMinorVersion</span></code> handle the version range if any is specified (see
+<span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command for the details). <code class="docutils literal notranslate"><span class="pre">ExactVersion</span></code> is
+incompatible with version ranges and will display an author warning if one is
+specified.</p>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">ARCH_INDEPENDENT</span></code> is given, the installed package version will be
+considered compatible even if it was built for a different architecture than
+the requested architecture.  Otherwise, an architecture check will be performed,
+and the package will be considered compatible only if the architecture matches
+exactly.  For example, if the package is built for a 32-bit architecture, the
+package is only considered compatible if it is used on a 32-bit architecture,
+unless <code class="docutils literal notranslate"><span class="pre">ARCH_INDEPENDENT</span></code> is given, in which case the package is considered
+compatible on any architecture.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">ARCH_INDEPENDENT</span></code> is intended for header-only libraries or similar
+packages with no binaries.</p>
+</div>
+<p>Internally, this macro executes <span class="target" id="index-3-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> to create the
+resulting version file.  Depending on the <code class="docutils literal notranslate"><span class="pre">COMPATIBILITY</span></code>, the corresponding
+<code class="docutils literal notranslate"><span class="pre">BasicConfigVersion-&lt;COMPATIBILITY&gt;.cmake.in</span></code> file is used.
+Please note that these files are internal to CMake and you should not call
+<span class="target" id="index-4-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> on them yourself, but they can be used as starting
+point to create more sophisticted custom <code class="docutils literal notranslate"><span class="pre">ConfigVersion.cmake</span></code> files.</p>
+</div>
+<div class="section" id="example-generating-package-files">
+<h2>Example Generating Package Files<a class="headerlink" href="#example-generating-package-files" title="Permalink to this headline">¶</a></h2>
+<p>Example using both <span class="target" id="index-1-command:configure_package_config_file"></span><a class="reference internal" href="#command:configure_package_config_file" title="configure_package_config_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_package_config_file()</span></code></a> and
+<code class="docutils literal notranslate"><span class="pre">write_basic_package_version_file()</span></code>:</p>
+<p><code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">INCLUDE_INSTALL_DIR</span><span class="w"> </span><span class="na">include/</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">LIB_INSTALL_DIR</span><span class="w"> </span><span class="na">lib/</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">SYSCONFIG_INSTALL_DIR</span><span class="w"> </span><span class="na">etc/foo/</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="c">#...</span>
+<span class="nf">include(</span><span class="nb">CMakePackageConfigHelpers</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">configure_package_config_file(</span><span class="nb">FooConfig.cmake.in</span><span class="w"></span>
+<span class="w">  </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/FooConfig.cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">INSTALL_DESTINATION</span><span class="w"> </span><span class="o">${</span><span class="nt">LIB_INSTALL_DIR</span><span class="o">}</span><span class="na">/Foo/cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">PATH_VARS</span><span class="w"> </span><span class="no">INCLUDE_INSTALL_DIR</span><span class="w"> </span><span class="no">SYSCONFIG_INSTALL_DIR</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">write_basic_package_version_file(</span><span class="w"></span>
+<span class="w">  </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/FooConfigVersion.cmake</span><span class="w"></span>
+<span class="w">  </span><span class="no">VERSION</span><span class="w"> </span><span class="m">1.2.3</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBILITY</span><span class="w"> </span><span class="nb">SameMajorVersion</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/FooConfig.cmake</span><span class="w"></span>
+<span class="w">              </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/FooConfigVersion.cmake</span><span class="w"></span>
+<span class="w">        </span><span class="no">DESTINATION</span><span class="w"> </span><span class="o">${</span><span class="nt">LIB_INSTALL_DIR</span><span class="o">}</span><span class="na">/Foo/cmake</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">FooConfig.cmake.in</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(FOO_VERSION x.y.z)
+...
+@PACKAGE_INIT@
+...
+set_and_check(FOO_INCLUDE_DIR &quot;@PACKAGE_INCLUDE_INSTALL_DIR@&quot;)
+set_and_check(FOO_SYSCONFIG_DIR &quot;@PACKAGE_SYSCONFIG_INSTALL_DIR@&quot;)
+
+check_required_components(Foo)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMakePackageConfigHelpers</a><ul>
+<li><a class="reference internal" href="#generating-a-package-configuration-file">Generating a Package Configuration File</a></li>
+<li><a class="reference internal" href="#generating-a-package-version-file">Generating a Package Version File</a></li>
+<li><a class="reference internal" href="#example-generating-package-files">Example Generating Package Files</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMakeGraphVizOptions.html"
+                        title="previous chapter">CMakeGraphVizOptions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMakePrintHelpers.html"
+                        title="next chapter">CMakePrintHelpers</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CMakePackageConfigHelpers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMakePrintHelpers.html" title="CMakePrintHelpers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMakeGraphVizOptions.html" title="CMakeGraphVizOptions"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakePackageConfigHelpers</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

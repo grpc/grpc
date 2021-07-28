@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C_STANDARD &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="C_STANDARD_REQUIRED" href="C_STANDARD_REQUIRED.html" />
+    <link rel="prev" title="C_EXTENSIONS" href="C_EXTENSIONS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="C_STANDARD_REQUIRED.html" title="C_STANDARD_REQUIRED"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="C_EXTENSIONS.html" title="C_EXTENSIONS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">C_STANDARD</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="c-standard">
+<span id="prop_tgt:C_STANDARD"></span><h1>C_STANDARD<a class="headerlink" href="#c-standard" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.1.</span></p>
+</div>
+<p>The C standard whose features are requested to build this target.</p>
+<p>This property specifies the C standard whose features are requested
+to build this target.  For some compilers, this results in adding a
+flag such as <code class="docutils literal notranslate"><span class="pre">-std=gnu11</span></code> to the compile line.  For compilers that
+have no notion of a C standard level, such as Microsoft Visual C++ before
+VS 16.7, this property has no effect.</p>
+<p>Supported values are <code class="docutils literal notranslate"><span class="pre">90</span></code>, <code class="docutils literal notranslate"><span class="pre">99</span></code> and <code class="docutils literal notranslate"><span class="pre">11</span></code>.</p>
+<p>If the value requested does not result in a compile flag being added for
+the compiler in use, a previous standard flag will be added instead.  This
+means that using:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">C_STANDARD</span><span class="w"> </span><span class="m">11</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>with a compiler which does not support <code class="docutils literal notranslate"><span class="pre">-std=gnu11</span></code> or an equivalent
+flag will not result in an error or warning, but will instead add the
+<code class="docutils literal notranslate"><span class="pre">-std=gnu99</span></code> or <code class="docutils literal notranslate"><span class="pre">-std=gnu90</span></code> flag if supported.  This “decay” behavior may
+be controlled with the <span class="target" id="index-0-prop_tgt:C_STANDARD_REQUIRED"></span><a class="reference internal" href="C_STANDARD_REQUIRED.html#prop_tgt:C_STANDARD_REQUIRED" title="C_STANDARD_REQUIRED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">C_STANDARD_REQUIRED</span></code></a> target property.
+Additionally, the <span class="target" id="index-0-prop_tgt:C_EXTENSIONS"></span><a class="reference internal" href="C_EXTENSIONS.html#prop_tgt:C_EXTENSIONS" title="C_EXTENSIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">C_EXTENSIONS</span></code></a> target property may be used to
+control whether compiler-specific extensions are enabled on a per-target basis.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-compile-features(7)"></span><a class="reference internal" href="../manual/cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-compile-features(7)</span></code></a> manual for information on
+compile features and a list of supported compilers.</p>
+<p>This property is initialized by the value of
+the <span class="target" id="index-0-variable:CMAKE_C_STANDARD"></span><a class="reference internal" href="../variable/CMAKE_C_STANDARD.html#variable:CMAKE_C_STANDARD" title="CMAKE_C_STANDARD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_STANDARD</span></code></a> variable if it is set when a target
+is created.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="C_EXTENSIONS.html"
+                        title="previous chapter">C_EXTENSIONS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="C_STANDARD_REQUIRED.html"
+                        title="next chapter">C_STANDARD_REQUIRED</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/C_STANDARD.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="C_STANDARD_REQUIRED.html" title="C_STANDARD_REQUIRED"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="C_EXTENSIONS.html" title="C_EXTENSIONS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">C_STANDARD</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

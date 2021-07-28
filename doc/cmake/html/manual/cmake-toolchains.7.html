@@ -1,0 +1,767 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-toolchains(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-variables(7)" href="cmake-variables.7.html" />
+    <link rel="prev" title="cmake-server(7)" href="cmake-server.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-variables.7.html" title="cmake-variables(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake-server.7.html" title="cmake-server(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-toolchains(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-toolchains(7)"></span><div class="section" id="cmake-toolchains-7">
+<h1><a class="toc-backref" href="#id7">cmake-toolchains(7)</a><a class="headerlink" href="#cmake-toolchains-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-toolchains-7" id="id7">cmake-toolchains(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id8">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#languages" id="id9">Languages</a></p></li>
+<li><p><a class="reference internal" href="#variables-and-properties" id="id10">Variables and Properties</a></p></li>
+<li><p><a class="reference internal" href="#toolchain-features" id="id11">Toolchain Features</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling" id="id12">Cross Compiling</a></p>
+<ul>
+<li><p><a class="reference internal" href="#cross-compiling-for-linux" id="id13">Cross Compiling for Linux</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-the-cray-linux-environment" id="id14">Cross Compiling for the Cray Linux Environment</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-using-clang" id="id15">Cross Compiling using Clang</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-qnx" id="id16">Cross Compiling for QNX</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-windows-ce" id="id17">Cross Compiling for Windows CE</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-windows-10-universal-applications" id="id18">Cross Compiling for Windows 10 Universal Applications</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-windows-phone" id="id19">Cross Compiling for Windows Phone</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-windows-store" id="id20">Cross Compiling for Windows Store</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-android" id="id21">Cross Compiling for Android</a></p>
+<ul>
+<li><p><a class="reference internal" href="#cross-compiling-for-android-with-the-ndk" id="id22">Cross Compiling for Android with the NDK</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-android-with-a-standalone-toolchain" id="id23">Cross Compiling for Android with a Standalone Toolchain</a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-android-with-nvidia-nsight-tegra-visual-studio-edition" id="id24">Cross Compiling for Android with NVIDIA Nsight Tegra Visual Studio Edition</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#cross-compiling-for-ios-tvos-or-watchos" id="id25">Cross Compiling for iOS, tvOS, or watchOS</a></p>
+<ul>
+<li><p><a class="reference internal" href="#code-signing" id="id26">Code Signing</a></p></li>
+<li><p><a class="reference internal" href="#switching-between-device-and-simulator" id="id27">Switching Between Device and Simulator</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id8">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>CMake uses a toolchain of utilities to compile, link libraries and create
+archives, and other tasks to drive the build. The toolchain utilities available
+are determined by the languages enabled. In normal builds, CMake automatically
+determines the toolchain for host builds based on system introspection and
+defaults. In cross-compiling scenarios, a toolchain file may be specified
+with information about compiler and utility paths.</p>
+</div>
+<div class="section" id="languages">
+<h2><a class="toc-backref" href="#id9">Languages</a><a class="headerlink" href="#languages" title="Permalink to this headline">¶</a></h2>
+<p>Languages are enabled by the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command.  Language-specific
+built-in variables, such as
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER</span></code></a>,
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER_ID</span></code></a> etc are set by
+invoking the <span class="target" id="index-1-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command.  If no project command
+is in the top-level CMakeLists file, one will be implicitly generated. By default
+the enabled languages are <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">project(</span><span class="nb">C_Only</span><span class="w"> </span><span class="no">C</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A special value of <code class="docutils literal notranslate"><span class="pre">NONE</span></code> can also be used with the <span class="target" id="index-2-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command
+to enable no languages:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">project(</span><span class="nb">MyProject</span><span class="w"> </span><span class="no">NONE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-0-command:enable_language"></span><a class="reference internal" href="../command/enable_language.html#command:enable_language" title="enable_language"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">enable_language()</span></code></a> command can be used to enable languages after the
+<span class="target" id="index-3-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">enable_language(</span><span class="no">CXX</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When a language is enabled, CMake finds a compiler for that language, and
+determines some information, such as the vendor and version of the compiler,
+the target architecture and bitwidth, the location of corresponding utilities
+etc.</p>
+<p>The <span class="target" id="index-0-prop_gbl:ENABLED_LANGUAGES"></span><a class="reference internal" href="../prop_gbl/ENABLED_LANGUAGES.html#prop_gbl:ENABLED_LANGUAGES" title="ENABLED_LANGUAGES"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">ENABLED_LANGUAGES</span></code></a> global property contains the languages which
+are currently enabled.</p>
+</div>
+<div class="section" id="variables-and-properties">
+<h2><a class="toc-backref" href="#id10">Variables and Properties</a><a class="headerlink" href="#variables-and-properties" title="Permalink to this headline">¶</a></h2>
+<p>Several variables relate to the language components of a toolchain which are
+enabled. <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER</span></code></a> is the full path to the compiler used
+for <code class="docutils literal notranslate"><span class="pre">&lt;LANG&gt;</span></code>. <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> is the identifier used
+by CMake for the compiler and <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> is the
+version of the compiler.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS"></span><a class="reference internal" href="../variable/CMAKE_LANG_FLAGS.html#variable:CMAKE_&lt;LANG&gt;_FLAGS" title="CMAKE_&lt;LANG&gt;_FLAGS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_FLAGS</span></code></a> variables and the configuration-specific
+equivalents contain flags that will be added to the compile command when
+compiling a file of a particular language.</p>
+<p>As the linker is invoked by the compiler driver, CMake needs a way to determine
+which compiler to use to invoke the linker. This is calculated by the
+<span class="target" id="index-0-prop_sf:LANGUAGE"></span><a class="reference internal" href="../prop_sf/LANGUAGE.html#prop_sf:LANGUAGE" title="LANGUAGE"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">LANGUAGE</span></code></a> of source files in the target, and in the case of static
+libraries, the language of the dependent libraries. The choice CMake makes may
+be overridden with the <span class="target" id="index-0-prop_tgt:LINKER_LANGUAGE"></span><a class="reference internal" href="../prop_tgt/LINKER_LANGUAGE.html#prop_tgt:LINKER_LANGUAGE" title="LINKER_LANGUAGE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINKER_LANGUAGE</span></code></a> target property.</p>
+</div>
+<div class="section" id="toolchain-features">
+<h2><a class="toc-backref" href="#id11">Toolchain Features</a><a class="headerlink" href="#toolchain-features" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides the <span class="target" id="index-0-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a> command and wrapper macros such as
+<span class="target" id="index-0-module:CheckCXXSourceCompiles"></span><a class="reference internal" href="../module/CheckCXXSourceCompiles.html#module:CheckCXXSourceCompiles" title="CheckCXXSourceCompiles"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckCXXSourceCompiles</span></code></a>, <span class="target" id="index-0-module:CheckCXXSymbolExists"></span><a class="reference internal" href="../module/CheckCXXSymbolExists.html#module:CheckCXXSymbolExists" title="CheckCXXSymbolExists"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckCXXSymbolExists</span></code></a> and
+<span class="target" id="index-0-module:CheckIncludeFile"></span><a class="reference internal" href="../module/CheckIncludeFile.html#module:CheckIncludeFile" title="CheckIncludeFile"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckIncludeFile</span></code></a> to test capability and availability of various
+toolchain features. These APIs test the toolchain in some way and cache the
+result so that the test does not have to be performed again the next time
+CMake runs.</p>
+<p>Some toolchain features have built-in handling in CMake, and do not require
+compile-tests. For example, <span class="target" id="index-0-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> allows
+specifying that a target should be built as position-independent code, if
+the compiler supports that feature. The <span class="target" id="index-0-prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET"></span><a class="reference internal" href="../prop_tgt/LANG_VISIBILITY_PRESET.html#prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET" title="&lt;LANG&gt;_VISIBILITY_PRESET"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;LANG&gt;_VISIBILITY_PRESET</span></code></a>
+and <span class="target" id="index-0-prop_tgt:VISIBILITY_INLINES_HIDDEN"></span><a class="reference internal" href="../prop_tgt/VISIBILITY_INLINES_HIDDEN.html#prop_tgt:VISIBILITY_INLINES_HIDDEN" title="VISIBILITY_INLINES_HIDDEN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VISIBILITY_INLINES_HIDDEN</span></code></a> target properties add flags for
+hidden visibility, if supported by the compiler.</p>
+</div>
+<div class="section" id="cross-compiling">
+<span id="cross-compiling-toolchain"></span><h2><a class="toc-backref" href="#id12">Cross Compiling</a><a class="headerlink" href="#cross-compiling" title="Permalink to this headline">¶</a></h2>
+<p>If <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> is invoked with the command line parameter
+<code class="docutils literal notranslate"><span class="pre">-DCMAKE_TOOLCHAIN_FILE=path/to/file</span></code>, the file will be loaded early to set
+values for the compilers.
+The <span class="target" id="index-0-variable:CMAKE_CROSSCOMPILING"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING.html#variable:CMAKE_CROSSCOMPILING" title="CMAKE_CROSSCOMPILING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING</span></code></a> variable is set to true when CMake is
+cross-compiling.</p>
+<p>Note that using the <span class="target" id="index-0-variable:CMAKE_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_SOURCE_DIR.html#variable:CMAKE_SOURCE_DIR" title="CMAKE_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SOURCE_DIR</span></code></a> or <span class="target" id="index-0-variable:CMAKE_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_BINARY_DIR.html#variable:CMAKE_BINARY_DIR" title="CMAKE_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BINARY_DIR</span></code></a>
+variables inside a toolchain file is typically undesirable.  The toolchain
+file is used in contexts where these variables have different values when used
+in different places (e.g. as part of a call to <span class="target" id="index-1-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a>).  In most
+cases, where there is a need to evaluate paths inside a toolchain file, the more
+appropriate variable to use would be <span class="target" id="index-0-variable:CMAKE_CURRENT_LIST_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_LIST_DIR.html#variable:CMAKE_CURRENT_LIST_DIR" title="CMAKE_CURRENT_LIST_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_LIST_DIR</span></code></a>, since
+it always has an unambiguous, predictable value.</p>
+<div class="section" id="cross-compiling-for-linux">
+<h3><a class="toc-backref" href="#id13">Cross Compiling for Linux</a><a class="headerlink" href="#cross-compiling-for-linux" title="Permalink to this headline">¶</a></h3>
+<p>A typical cross-compiling toolchain for Linux has content such
+as:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">Linux</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_PROCESSOR</span><span class="w"> </span><span class="nb">arm</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_SYSROOT</span><span class="w"> </span><span class="na">/home/devel/rasp-pi-rootfs</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_STAGING_PREFIX</span><span class="w"> </span><span class="na">/home/devel/stage</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="nb">tools</span><span class="w"> </span><span class="na">/home/devel/gcc-4.7-linaro-rpi-gnueabihf</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_C_COMPILER</span><span class="w"> </span><span class="o">${</span><span class="nt">tools</span><span class="o">}</span><span class="na">/bin/arm-linux-gnueabihf-gcc</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_COMPILER</span><span class="w"> </span><span class="o">${</span><span class="nt">tools</span><span class="o">}</span><span class="na">/bin/arm-linux-gnueabihf-g++</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_FIND_ROOT_PATH_MODE_PROGRAM</span><span class="w"> </span><span class="no">NEVER</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_FIND_ROOT_PATH_MODE_LIBRARY</span><span class="w"> </span><span class="no">ONLY</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_FIND_ROOT_PATH_MODE_INCLUDE</span><span class="w"> </span><span class="no">ONLY</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_FIND_ROOT_PATH_MODE_PACKAGE</span><span class="w"> </span><span class="no">ONLY</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-0-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> is the CMake-identifier of the target platform
+to build for.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_SYSTEM_PROCESSOR"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_PROCESSOR.html#variable:CMAKE_SYSTEM_PROCESSOR" title="CMAKE_SYSTEM_PROCESSOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_PROCESSOR</span></code></a> is the CMake-identifier of the target architecture
+to build for.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> is optional, and may be specified if a sysroot
+is available.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_STAGING_PREFIX.html#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a> is also optional. It may be used to specify
+a path on the host to install to. The <span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> is always
+the runtime installation location, even when cross-compiling.</p>
+<p>The <span class="target" id="index-2-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER</span></code></a> variables may be set to full paths, or to
+names of compilers to search for in standard locations.   For toolchains that
+do not support linking binaries without custom flags or scripts one may set
+the <span class="target" id="index-0-variable:CMAKE_TRY_COMPILE_TARGET_TYPE"></span><a class="reference internal" href="../variable/CMAKE_TRY_COMPILE_TARGET_TYPE.html#variable:CMAKE_TRY_COMPILE_TARGET_TYPE" title="CMAKE_TRY_COMPILE_TARGET_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TRY_COMPILE_TARGET_TYPE</span></code></a> variable to <code class="docutils literal notranslate"><span class="pre">STATIC_LIBRARY</span></code>
+to tell CMake not to try to link executables during its checks.</p>
+<p>CMake <code class="docutils literal notranslate"><span class="pre">find_*</span></code> commands will look in the sysroot, and the <span class="target" id="index-0-variable:CMAKE_FIND_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH.html#variable:CMAKE_FIND_ROOT_PATH" title="CMAKE_FIND_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH</span></code></a>
+entries by default in all cases, as well as looking in the host system root prefix.
+Although this can be controlled on a case-by-case basis, when cross-compiling, it
+can be useful to exclude looking in either the host or the target for particular
+artifacts. Generally, includes, libraries and packages should be found in the
+target system prefixes, whereas executables which must be run as part of the build
+should be found only on the host and not on the target. This is the purpose of
+the <code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH_MODE_*</span></code> variables.</p>
+</div>
+<div class="section" id="cross-compiling-for-the-cray-linux-environment">
+<span id="cray-cross-compile"></span><h3><a class="toc-backref" href="#id14">Cross Compiling for the Cray Linux Environment</a><a class="headerlink" href="#cross-compiling-for-the-cray-linux-environment" title="Permalink to this headline">¶</a></h3>
+<p>Cross compiling for compute nodes in the Cray Linux Environment can be done
+without needing a separate toolchain file.  Specifying
+<code class="docutils literal notranslate"><span class="pre">-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment</span></code> on the CMake command line will
+ensure that the appropriate build settings and search paths are configured.
+The platform will pull its configuration from the current environment
+variables and will configure a project to use the compiler wrappers from the
+Cray Programming Environment’s <code class="docutils literal notranslate"><span class="pre">PrgEnv-*</span></code> modules if present and loaded.</p>
+<p>The default configuration of the Cray Programming Environment is to only
+support static libraries.  This can be overridden and shared libraries
+enabled by setting the <code class="docutils literal notranslate"><span class="pre">CRAYPE_LINK_TYPE</span></code> environment variable to
+<code class="docutils literal notranslate"><span class="pre">dynamic</span></code>.</p>
+<p>Running CMake without specifying <span class="target" id="index-1-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> will
+run the configure step in host mode assuming a standard Linux environment.
+If not overridden, the <code class="docutils literal notranslate"><span class="pre">PrgEnv-*</span></code> compiler wrappers will end up getting used,
+which if targeting the either the login node or compute node, is likely not the
+desired behavior.  The exception to this would be if you are building directly
+on a NID instead of cross-compiling from a login node. If trying to build
+software for a login node, you will need to either first unload the
+currently loaded <code class="docutils literal notranslate"><span class="pre">PrgEnv-*</span></code> module or explicitly tell CMake to use the
+system compilers in <code class="docutils literal notranslate"><span class="pre">/usr/bin</span></code> instead of the Cray wrappers.  If instead
+targeting a compute node is desired, just specify the
+<span class="target" id="index-2-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> as mentioned above.</p>
+</div>
+<div class="section" id="cross-compiling-using-clang">
+<h3><a class="toc-backref" href="#id15">Cross Compiling using Clang</a><a class="headerlink" href="#cross-compiling-using-clang" title="Permalink to this headline">¶</a></h3>
+<p>Some compilers such as Clang are inherently cross compilers.
+The <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_TARGET"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_TARGET.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_TARGET" title="CMAKE_&lt;LANG&gt;_COMPILER_TARGET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_TARGET</span></code></a> can be set to pass a
+value to those supported compilers when compiling:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">Linux</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_PROCESSOR</span><span class="w"> </span><span class="nb">arm</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="nb">triple</span><span class="w"> </span><span class="nb">arm-linux-gnueabihf</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_C_COMPILER</span><span class="w"> </span><span class="nb">clang</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_C_COMPILER_TARGET</span><span class="w"> </span><span class="o">${</span><span class="nt">triple</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_COMPILER</span><span class="w"> </span><span class="nb">clang++</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_COMPILER_TARGET</span><span class="w"> </span><span class="o">${</span><span class="nt">triple</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Similarly, some compilers do not ship their own supplementary utilities
+such as linkers, but provide a way to specify the location of the external
+toolchain which will be used by the compiler driver. The
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_EXTERNAL_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_EXTERNAL_TOOLCHAIN.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_EXTERNAL_TOOLCHAIN" title="CMAKE_&lt;LANG&gt;_COMPILER_EXTERNAL_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_EXTERNAL_TOOLCHAIN</span></code></a> variable can be set in a
+toolchain file to pass the path to the compiler driver.</p>
+</div>
+<div class="section" id="cross-compiling-for-qnx">
+<h3><a class="toc-backref" href="#id16">Cross Compiling for QNX</a><a class="headerlink" href="#cross-compiling-for-qnx" title="Permalink to this headline">¶</a></h3>
+<p>As the Clang compiler the QNX QCC compile is inherently a cross compiler.
+And the <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER_TARGET"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_TARGET.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_TARGET" title="CMAKE_&lt;LANG&gt;_COMPILER_TARGET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_TARGET</span></code></a> can be set to pass a
+value to those supported compilers when compiling:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="no">QNX</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="nb">arch</span><span class="w"> </span><span class="nb">gcc_ntoarmv7le</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_C_COMPILER</span><span class="w"> </span><span class="nb">qcc</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_C_COMPILER_TARGET</span><span class="w"> </span><span class="o">${</span><span class="nt">arch</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_COMPILER</span><span class="w"> </span><span class="no">QCC</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_CXX_COMPILER_TARGET</span><span class="w"> </span><span class="o">${</span><span class="nt">arch</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_SYSROOT</span><span class="w"> </span><span class="o">$ENV{</span><span class="nt">QNX_TARGET</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-windows-ce">
+<h3><a class="toc-backref" href="#id17">Cross Compiling for Windows CE</a><a class="headerlink" href="#cross-compiling-for-windows-ce" title="Permalink to this headline">¶</a></h3>
+<p>Cross compiling for Windows CE requires the corresponding SDK being
+installed on your system.  These SDKs are usually installed under
+<code class="docutils literal notranslate"><span class="pre">C:/Program</span> <span class="pre">Files</span> <span class="pre">(x86)/Windows</span> <span class="pre">CE</span> <span class="pre">Tools/SDKs</span></code>.</p>
+<p>A toolchain file to configure a Visual Studio generator for
+Windows CE may look like this:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">WindowsCE</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_VERSION</span><span class="w"> </span><span class="m">8.0</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_PROCESSOR</span><span class="w"> </span><span class="nb">arm</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_GENERATOR_TOOLSET</span><span class="w"> </span><span class="no">CE800</span><span class="nf">)</span><span class="w"> </span><span class="c"># Can be omitted for 8.0</span>
+<span class="nf">set(</span><span class="no">CMAKE_GENERATOR_PLATFORM</span><span class="w"> </span><span class="no">SDK_AM335X_SK_WEC2013_V310</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a> tells the generator which SDK to use.
+Further <span class="target" id="index-0-variable:CMAKE_SYSTEM_VERSION"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_VERSION.html#variable:CMAKE_SYSTEM_VERSION" title="CMAKE_SYSTEM_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_VERSION</span></code></a> tells the generator what version of
+Windows CE to use.  Currently version 8.0 (Windows Embedded Compact 2013) is
+supported out of the box.  Other versions may require one to set
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> to the correct value.</p>
+</div>
+<div class="section" id="cross-compiling-for-windows-10-universal-applications">
+<h3><a class="toc-backref" href="#id18">Cross Compiling for Windows 10 Universal Applications</a><a class="headerlink" href="#cross-compiling-for-windows-10-universal-applications" title="Permalink to this headline">¶</a></h3>
+<p>A toolchain file to configure a Visual Studio generator for a
+Windows 10 Universal Application may look like this:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">WindowsStore</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_VERSION</span><span class="w"> </span><span class="m">10.0</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A Windows 10 Universal Application targets both Windows Store and
+Windows Phone.  Specify the <span class="target" id="index-1-variable:CMAKE_SYSTEM_VERSION"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_VERSION.html#variable:CMAKE_SYSTEM_VERSION" title="CMAKE_SYSTEM_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_VERSION</span></code></a> variable
+to be <code class="docutils literal notranslate"><span class="pre">10.0</span></code> to build with the latest available Windows 10 SDK.
+Specify a more specific version (e.g. <code class="docutils literal notranslate"><span class="pre">10.0.10240.0</span></code> for RTM)
+to build with the corresponding SDK.</p>
+</div>
+<div class="section" id="cross-compiling-for-windows-phone">
+<h3><a class="toc-backref" href="#id19">Cross Compiling for Windows Phone</a><a class="headerlink" href="#cross-compiling-for-windows-phone" title="Permalink to this headline">¶</a></h3>
+<p>A toolchain file to configure a Visual Studio generator for
+Windows Phone may look like this:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">WindowsPhone</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_VERSION</span><span class="w"> </span><span class="m">8.1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-windows-store">
+<h3><a class="toc-backref" href="#id20">Cross Compiling for Windows Store</a><a class="headerlink" href="#cross-compiling-for-windows-store" title="Permalink to this headline">¶</a></h3>
+<p>A toolchain file to configure a Visual Studio generator for
+Windows Store may look like this:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">WindowsStore</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_VERSION</span><span class="w"> </span><span class="m">8.1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-android">
+<span id="id1"></span><h3><a class="toc-backref" href="#id21">Cross Compiling for Android</a><a class="headerlink" href="#cross-compiling-for-android" title="Permalink to this headline">¶</a></h3>
+<p>A toolchain file may configure cross-compiling for Android by setting the
+<span class="target" id="index-3-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> variable to <code class="docutils literal notranslate"><span class="pre">Android</span></code>.  Further configuration
+is specific to the Android development environment to be used.</p>
+<p>For <a class="reference internal" href="cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a>, CMake expects <a class="reference internal" href="#cross-compiling-for-android-with-nvidia-nsight-tegra-visual-studio-edition"><span class="std std-ref">NVIDIA Nsight Tegra
+Visual Studio Edition</span></a> or the <a class="reference internal" href="#cross-compiling-for-android-with-the-ndk"><span class="std std-ref">Visual Studio tools for Android</span></a> to be installed. See those sections
+for further configuration details.</p>
+<p>For <a class="reference internal" href="cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> and the <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator,
+CMake expects one of these environments:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cross-compiling-for-android-with-the-ndk"><span class="std std-ref">NDK</span></a></p></li>
+<li><p><a class="reference internal" href="#cross-compiling-for-android-with-a-standalone-toolchain"><span class="std std-ref">Standalone Toolchain</span></a></p></li>
+</ul>
+<p>CMake uses the following steps to select one of the environments:</p>
+<ul class="simple">
+<li><p>If the <span class="target" id="index-0-variable:CMAKE_ANDROID_NDK"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK.html#variable:CMAKE_ANDROID_NDK" title="CMAKE_ANDROID_NDK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK</span></code></a> variable is set, the NDK at the
+specified location will be used.</p></li>
+<li><p>Else, if the <span class="target" id="index-0-variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STANDALONE_TOOLCHAIN.html#variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN" title="CMAKE_ANDROID_STANDALONE_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span></code></a> variable
+is set, the Standalone Toolchain at the specified location will be used.</p></li>
+<li><p>Else, if the <span class="target" id="index-1-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> variable is set to a directory
+of the form <code class="docutils literal notranslate"><span class="pre">&lt;ndk&gt;/platforms/android-&lt;api&gt;/arch-&lt;arch&gt;</span></code>, the <code class="docutils literal notranslate"><span class="pre">&lt;ndk&gt;</span></code>
+part will be used as the value of <span class="target" id="index-1-variable:CMAKE_ANDROID_NDK"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK.html#variable:CMAKE_ANDROID_NDK" title="CMAKE_ANDROID_NDK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK</span></code></a> and the
+NDK will be used.</p></li>
+<li><p>Else, if the <span class="target" id="index-2-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> variable is set to a directory of the
+form <code class="docutils literal notranslate"><span class="pre">&lt;standalone-toolchain&gt;/sysroot</span></code>, the <code class="docutils literal notranslate"><span class="pre">&lt;standalone-toolchain&gt;</span></code> part
+will be used as the value of <span class="target" id="index-1-variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STANDALONE_TOOLCHAIN.html#variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN" title="CMAKE_ANDROID_STANDALONE_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span></code></a>
+and the Standalone Toolchain will be used.</p></li>
+<li><p>Else, if a cmake variable <code class="docutils literal notranslate"><span class="pre">ANDROID_NDK</span></code> is set it will be used
+as the value of <span class="target" id="index-2-variable:CMAKE_ANDROID_NDK"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK.html#variable:CMAKE_ANDROID_NDK" title="CMAKE_ANDROID_NDK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK</span></code></a>, and the NDK will be used.</p></li>
+<li><p>Else, if a cmake variable <code class="docutils literal notranslate"><span class="pre">ANDROID_STANDALONE_TOOLCHAIN</span></code> is set, it will be
+used as the value of <span class="target" id="index-2-variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STANDALONE_TOOLCHAIN.html#variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN" title="CMAKE_ANDROID_STANDALONE_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span></code></a>, and the
+Standalone Toolchain will be used.</p></li>
+<li><p>Else, if an environment variable <code class="docutils literal notranslate"><span class="pre">ANDROID_NDK_ROOT</span></code> or
+<code class="docutils literal notranslate"><span class="pre">ANDROID_NDK</span></code> is set, it will be used as the value of
+<span class="target" id="index-3-variable:CMAKE_ANDROID_NDK"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK.html#variable:CMAKE_ANDROID_NDK" title="CMAKE_ANDROID_NDK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK</span></code></a>, and the NDK will be used.</p></li>
+<li><p>Else, if an environment variable <code class="docutils literal notranslate"><span class="pre">ANDROID_STANDALONE_TOOLCHAIN</span></code> is
+set then it will be used as the value of
+<span class="target" id="index-3-variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STANDALONE_TOOLCHAIN.html#variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN" title="CMAKE_ANDROID_STANDALONE_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span></code></a>, and the Standalone
+Toolchain will be used.</p></li>
+<li><p>Else, an error diagnostic will be issued that neither the NDK or
+Standalone Toolchain can be found.</p></li>
+</ul>
+<div class="section" id="cross-compiling-for-android-with-the-ndk">
+<span id="id2"></span><h4><a class="toc-backref" href="#id22">Cross Compiling for Android with the NDK</a><a class="headerlink" href="#cross-compiling-for-android-with-the-ndk" title="Permalink to this headline">¶</a></h4>
+<p>A toolchain file may configure <a class="reference internal" href="cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a>,
+<a class="reference internal" href="cmake-generators.7.html#ninja-generators"><span class="std std-ref">Ninja Generators</span></a>, or <a class="reference internal" href="cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> to target
+Android for cross-compiling.</p>
+<p>Configure use of an Android NDK with the following variables:</p>
+<dl class="simple">
+<dt><span class="target" id="index-4-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a></dt><dd><p>Set to <code class="docutils literal notranslate"><span class="pre">Android</span></code>.  Must be specified to enable cross compiling
+for Android.</p>
+</dd>
+<dt><span class="target" id="index-2-variable:CMAKE_SYSTEM_VERSION"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_VERSION.html#variable:CMAKE_SYSTEM_VERSION" title="CMAKE_SYSTEM_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_VERSION</span></code></a></dt><dd><p>Set to the Android API level.  If not specified, the value is
+determined as follows:</p>
+<ul class="simple">
+<li><p>If the <span class="target" id="index-0-variable:CMAKE_ANDROID_API"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_API.html#variable:CMAKE_ANDROID_API" title="CMAKE_ANDROID_API"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_API</span></code></a> variable is set, its value
+is used as the API level.</p></li>
+<li><p>If the <span class="target" id="index-3-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> variable is set, the API level is
+detected from the NDK directory structure containing the sysroot.</p></li>
+<li><p>Otherwise, the latest API level available in the NDK is used.</p></li>
+</ul>
+</dd>
+<dt><span class="target" id="index-0-variable:CMAKE_ANDROID_ARCH_ABI"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARCH_ABI.html#variable:CMAKE_ANDROID_ARCH_ABI" title="CMAKE_ANDROID_ARCH_ABI"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARCH_ABI</span></code></a></dt><dd><p>Set to the Android ABI (architecture).  If not specified, this
+variable will default to <code class="docutils literal notranslate"><span class="pre">armeabi</span></code>.
+The <span class="target" id="index-0-variable:CMAKE_ANDROID_ARCH"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARCH.html#variable:CMAKE_ANDROID_ARCH" title="CMAKE_ANDROID_ARCH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARCH</span></code></a> variable will be computed
+from <code class="docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARCH_ABI</span></code> automatically.
+Also see the <span class="target" id="index-0-variable:CMAKE_ANDROID_ARM_MODE"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARM_MODE.html#variable:CMAKE_ANDROID_ARM_MODE" title="CMAKE_ANDROID_ARM_MODE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARM_MODE</span></code></a> and
+<span class="target" id="index-0-variable:CMAKE_ANDROID_ARM_NEON"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARM_NEON.html#variable:CMAKE_ANDROID_ARM_NEON" title="CMAKE_ANDROID_ARM_NEON"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARM_NEON</span></code></a> variables.</p>
+</dd>
+<dt><span class="target" id="index-4-variable:CMAKE_ANDROID_NDK"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK.html#variable:CMAKE_ANDROID_NDK" title="CMAKE_ANDROID_NDK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK</span></code></a></dt><dd><p>Set to the absolute path to the Android NDK root directory.
+A <code class="docutils literal notranslate"><span class="pre">${CMAKE_ANDROID_NDK}/platforms</span></code> directory must exist.
+If not specified, a default for this variable will be chosen
+as specified <a class="reference internal" href="#cross-compiling-for-android"><span class="std std-ref">above</span></a>.</p>
+</dd>
+<dt><span class="target" id="index-0-variable:CMAKE_ANDROID_NDK_DEPRECATED_HEADERS"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK_DEPRECATED_HEADERS.html#variable:CMAKE_ANDROID_NDK_DEPRECATED_HEADERS" title="CMAKE_ANDROID_NDK_DEPRECATED_HEADERS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK_DEPRECATED_HEADERS</span></code></a></dt><dd><p>Set to a true value to use the deprecated per-api-level headers
+instead of the unified headers.  If not specified, the default will
+be false unless using a NDK that does not provide unified headers.</p>
+</dd>
+<dt><span class="target" id="index-0-variable:CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION.html#variable:CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION" title="CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION</span></code></a></dt><dd><p>On NDK r19 or above, this variable must be unset or set to <code class="docutils literal notranslate"><span class="pre">clang</span></code>.
+On NDK r18 or below, set this to the version of the NDK toolchain to
+be selected as the compiler.  If not specified, the default will be
+the latest available GCC toolchain.</p>
+</dd>
+<dt><span class="target" id="index-0-variable:CMAKE_ANDROID_STL_TYPE"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STL_TYPE.html#variable:CMAKE_ANDROID_STL_TYPE" title="CMAKE_ANDROID_STL_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STL_TYPE</span></code></a></dt><dd><p>Set to specify which C++ standard library to use.  If not specified,
+a default will be selected as described in the variable documentation.</p>
+</dd>
+</dl>
+<p>The following variables will be computed and provided automatically:</p>
+<dl class="simple">
+<dt><span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_LANG_ANDROID_TOOLCHAIN_PREFIX.html#variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX" title="CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX</span></code></a></dt><dd><p>The absolute path prefix to the binutils in the NDK toolchain.</p>
+</dd>
+<dt><span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX"></span><a class="reference internal" href="../variable/CMAKE_LANG_ANDROID_TOOLCHAIN_SUFFIX.html#variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX" title="CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX</span></code></a></dt><dd><p>The host platform suffix of the binutils in the NDK toolchain.</p>
+</dd>
+</dl>
+<p>For example, a toolchain file might contain:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">Android</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_SYSTEM_VERSION</span><span class="w"> </span><span class="m">21</span><span class="nf">)</span><span class="w"> </span><span class="c"># API level</span>
+<span class="nf">set(</span><span class="no">CMAKE_ANDROID_ARCH_ABI</span><span class="w"> </span><span class="nb">arm64-v8a</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_ANDROID_NDK</span><span class="w"> </span><span class="na">/path/to/android-ndk</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_ANDROID_STL_TYPE</span><span class="w"> </span><span class="nb">gnustl_static</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Alternatively one may specify the values without a toolchain file:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake ../src <span class="se">\</span>
+  -DCMAKE_SYSTEM_NAME<span class="o">=</span>Android <span class="se">\</span>
+  -DCMAKE_SYSTEM_VERSION<span class="o">=</span><span class="m">21</span> <span class="se">\</span>
+  -DCMAKE_ANDROID_ARCH_ABI<span class="o">=</span>arm64-v8a <span class="se">\</span>
+  -DCMAKE_ANDROID_NDK<span class="o">=</span>/path/to/android-ndk <span class="se">\</span>
+  -DCMAKE_ANDROID_STL_TYPE<span class="o">=</span>gnustl_static
+</pre></div>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-android-with-a-standalone-toolchain">
+<span id="id3"></span><h4><a class="toc-backref" href="#id23">Cross Compiling for Android with a Standalone Toolchain</a><a class="headerlink" href="#cross-compiling-for-android-with-a-standalone-toolchain" title="Permalink to this headline">¶</a></h4>
+<p>A toolchain file may configure <a class="reference internal" href="cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> or the
+<span class="target" id="index-1-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator to target Android for cross-compiling
+using a standalone toolchain.</p>
+<p>Configure use of an Android standalone toolchain with the following variables:</p>
+<dl class="simple">
+<dt><span class="target" id="index-5-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a></dt><dd><p>Set to <code class="docutils literal notranslate"><span class="pre">Android</span></code>.  Must be specified to enable cross compiling
+for Android.</p>
+</dd>
+<dt><span class="target" id="index-4-variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_STANDALONE_TOOLCHAIN.html#variable:CMAKE_ANDROID_STANDALONE_TOOLCHAIN" title="CMAKE_ANDROID_STANDALONE_TOOLCHAIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span></code></a></dt><dd><p>Set to the absolute path to the standalone toolchain root directory.
+A <code class="docutils literal notranslate"><span class="pre">${CMAKE_ANDROID_STANDALONE_TOOLCHAIN}/sysroot</span></code> directory
+must exist.
+If not specified, a default for this variable will be chosen
+as specified <a class="reference internal" href="#cross-compiling-for-android"><span class="std std-ref">above</span></a>.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:CMAKE_ANDROID_ARM_MODE"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARM_MODE.html#variable:CMAKE_ANDROID_ARM_MODE" title="CMAKE_ANDROID_ARM_MODE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARM_MODE</span></code></a></dt><dd><p>When the standalone toolchain targets ARM, optionally set this to <code class="docutils literal notranslate"><span class="pre">ON</span></code>
+to target 32-bit ARM instead of 16-bit Thumb.
+See variable documentation for details.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:CMAKE_ANDROID_ARM_NEON"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARM_NEON.html#variable:CMAKE_ANDROID_ARM_NEON" title="CMAKE_ANDROID_ARM_NEON"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARM_NEON</span></code></a></dt><dd><p>When the standalone toolchain targets ARM v7, optionally set thisto <code class="docutils literal notranslate"><span class="pre">ON</span></code>
+to target ARM NEON devices.  See variable documentation for details.</p>
+</dd>
+</dl>
+<p>The following variables will be computed and provided automatically:</p>
+<dl class="simple">
+<dt><span class="target" id="index-3-variable:CMAKE_SYSTEM_VERSION"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_VERSION.html#variable:CMAKE_SYSTEM_VERSION" title="CMAKE_SYSTEM_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_VERSION</span></code></a></dt><dd><p>The Android API level detected from the standalone toolchain.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:CMAKE_ANDROID_ARCH_ABI"></span><a class="reference internal" href="../variable/CMAKE_ANDROID_ARCH_ABI.html#variable:CMAKE_ANDROID_ARCH_ABI" title="CMAKE_ANDROID_ARCH_ABI"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ANDROID_ARCH_ABI</span></code></a></dt><dd><p>The Android ABI detected from the standalone toolchain.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_LANG_ANDROID_TOOLCHAIN_PREFIX.html#variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX" title="CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_PREFIX</span></code></a></dt><dd><p>The absolute path prefix to the <code class="docutils literal notranslate"><span class="pre">binutils</span></code> in the standalone toolchain.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX"></span><a class="reference internal" href="../variable/CMAKE_LANG_ANDROID_TOOLCHAIN_SUFFIX.html#variable:CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX" title="CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_ANDROID_TOOLCHAIN_SUFFIX</span></code></a></dt><dd><p>The host platform suffix of the <code class="docutils literal notranslate"><span class="pre">binutils</span></code> in the standalone toolchain.</p>
+</dd>
+</dl>
+<p>For example, a toolchain file might contain:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">Android</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_ANDROID_STANDALONE_TOOLCHAIN</span><span class="w"> </span><span class="na">/path/to/android-toolchain</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Alternatively one may specify the values without a toolchain file:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake ../src <span class="se">\</span>
+  -DCMAKE_SYSTEM_NAME<span class="o">=</span>Android <span class="se">\</span>
+  -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN<span class="o">=</span>/path/to/android-toolchain
+</pre></div>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-android-with-nvidia-nsight-tegra-visual-studio-edition">
+<span id="id4"></span><h4><a class="toc-backref" href="#id24">Cross Compiling for Android with NVIDIA Nsight Tegra Visual Studio Edition</a><a class="headerlink" href="#cross-compiling-for-android-with-nvidia-nsight-tegra-visual-studio-edition" title="Permalink to this headline">¶</a></h4>
+<p>A toolchain file to configure one of the <a class="reference internal" href="cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a>
+to build using NVIDIA Nsight Tegra targeting Android may look like this:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_SYSTEM_NAME</span><span class="w"> </span><span class="nb">Android</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-1-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> may be set to select
+the Nsight Tegra “Toolchain Version” value.</p>
+<p>See also target properties:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_ANT_ADDITIONAL_OPTIONS"></span><a class="reference internal" href="../prop_tgt/ANDROID_ANT_ADDITIONAL_OPTIONS.html#prop_tgt:ANDROID_ANT_ADDITIONAL_OPTIONS" title="ANDROID_ANT_ADDITIONAL_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_ANT_ADDITIONAL_OPTIONS</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_API_MIN"></span><a class="reference internal" href="../prop_tgt/ANDROID_API_MIN.html#prop_tgt:ANDROID_API_MIN" title="ANDROID_API_MIN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_API_MIN</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_API"></span><a class="reference internal" href="../prop_tgt/ANDROID_API.html#prop_tgt:ANDROID_API" title="ANDROID_API"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_API</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_ARCH"></span><a class="reference internal" href="../prop_tgt/ANDROID_ARCH.html#prop_tgt:ANDROID_ARCH" title="ANDROID_ARCH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_ARCH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_ASSETS_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/ANDROID_ASSETS_DIRECTORIES.html#prop_tgt:ANDROID_ASSETS_DIRECTORIES" title="ANDROID_ASSETS_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_ASSETS_DIRECTORIES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_GUI"></span><a class="reference internal" href="../prop_tgt/ANDROID_GUI.html#prop_tgt:ANDROID_GUI" title="ANDROID_GUI"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_GUI</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_JAR_DEPENDENCIES"></span><a class="reference internal" href="../prop_tgt/ANDROID_JAR_DEPENDENCIES.html#prop_tgt:ANDROID_JAR_DEPENDENCIES" title="ANDROID_JAR_DEPENDENCIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_JAR_DEPENDENCIES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_JAR_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/ANDROID_JAR_DIRECTORIES.html#prop_tgt:ANDROID_JAR_DIRECTORIES" title="ANDROID_JAR_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_JAR_DIRECTORIES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_JAVA_SOURCE_DIR"></span><a class="reference internal" href="../prop_tgt/ANDROID_JAVA_SOURCE_DIR.html#prop_tgt:ANDROID_JAVA_SOURCE_DIR" title="ANDROID_JAVA_SOURCE_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_JAVA_SOURCE_DIR</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_NATIVE_LIB_DEPENDENCIES"></span><a class="reference internal" href="../prop_tgt/ANDROID_NATIVE_LIB_DEPENDENCIES.html#prop_tgt:ANDROID_NATIVE_LIB_DEPENDENCIES" title="ANDROID_NATIVE_LIB_DEPENDENCIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_NATIVE_LIB_DEPENDENCIES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_NATIVE_LIB_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/ANDROID_NATIVE_LIB_DIRECTORIES.html#prop_tgt:ANDROID_NATIVE_LIB_DIRECTORIES" title="ANDROID_NATIVE_LIB_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_NATIVE_LIB_DIRECTORIES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_PROCESS_MAX"></span><a class="reference internal" href="../prop_tgt/ANDROID_PROCESS_MAX.html#prop_tgt:ANDROID_PROCESS_MAX" title="ANDROID_PROCESS_MAX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_PROCESS_MAX</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_PROGUARD_CONFIG_PATH"></span><a class="reference internal" href="../prop_tgt/ANDROID_PROGUARD_CONFIG_PATH.html#prop_tgt:ANDROID_PROGUARD_CONFIG_PATH" title="ANDROID_PROGUARD_CONFIG_PATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_PROGUARD_CONFIG_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_PROGUARD"></span><a class="reference internal" href="../prop_tgt/ANDROID_PROGUARD.html#prop_tgt:ANDROID_PROGUARD" title="ANDROID_PROGUARD"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_PROGUARD</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_SECURE_PROPS_PATH"></span><a class="reference internal" href="../prop_tgt/ANDROID_SECURE_PROPS_PATH.html#prop_tgt:ANDROID_SECURE_PROPS_PATH" title="ANDROID_SECURE_PROPS_PATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_SECURE_PROPS_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_SKIP_ANT_STEP"></span><a class="reference internal" href="../prop_tgt/ANDROID_SKIP_ANT_STEP.html#prop_tgt:ANDROID_SKIP_ANT_STEP" title="ANDROID_SKIP_ANT_STEP"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_SKIP_ANT_STEP</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:ANDROID_STL_TYPE"></span><a class="reference internal" href="../prop_tgt/ANDROID_STL_TYPE.html#prop_tgt:ANDROID_STL_TYPE" title="ANDROID_STL_TYPE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ANDROID_STL_TYPE</span></code></a></p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="cross-compiling-for-ios-tvos-or-watchos">
+<span id="id5"></span><h3><a class="toc-backref" href="#id25">Cross Compiling for iOS, tvOS, or watchOS</a><a class="headerlink" href="#cross-compiling-for-ios-tvos-or-watchos" title="Permalink to this headline">¶</a></h3>
+<p>For cross-compiling to iOS, tvOS, or watchOS, the <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a>
+generator is recommended.  The <span class="target" id="index-0-generator:Unix Makefiles"></span><a class="reference internal" href="../generator/Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a> or
+<span class="target" id="index-2-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generators can also be used, but they require the
+project to handle more areas like target CPU selection and code signing.</p>
+<p>Any of the three systems can be targeted by setting the
+<span class="target" id="index-6-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> variable to a value from the table below.
+By default, the latest Device SDK is chosen.  As for all Apple platforms,
+a different SDK (e.g. a simulator) can be selected by setting the
+<span class="target" id="index-0-variable:CMAKE_OSX_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_OSX_SYSROOT.html#variable:CMAKE_OSX_SYSROOT" title="CMAKE_OSX_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_OSX_SYSROOT</span></code></a> variable, although this should rarely be
+necessary (see <a class="reference internal" href="#switching-between-device-and-simulator"><span class="std std-ref">Switching Between Device and Simulator</span></a> below).
+A list of available SDKs can be obtained by running <code class="docutils literal notranslate"><span class="pre">xcodebuild</span> <span class="pre">-showsdks</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 28%" />
+<col style="width: 33%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>OS</p></th>
+<th class="head"><p>CMAKE_SYSTEM_NAME</p></th>
+<th class="head"><p>Device SDK (default)</p></th>
+<th class="head"><p>Simulator SDK</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>iOS</p></td>
+<td><p>iOS</p></td>
+<td><p>iphoneos</p></td>
+<td><p>iphonesimulator</p></td>
+</tr>
+<tr class="row-odd"><td><p>tvOS</p></td>
+<td><p>tvOS</p></td>
+<td><p>appletvos</p></td>
+<td><p>appletvsimulator</p></td>
+</tr>
+<tr class="row-even"><td><p>watchOS</p></td>
+<td><p>watchOS</p></td>
+<td><p>watchos</p></td>
+<td><p>watchsimulator</p></td>
+</tr>
+</tbody>
+</table>
+<p>For example, to create a CMake configuration for iOS, the following
+command is sufficient:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake .. -GXcode -DCMAKE_SYSTEM_NAME=iOS</span>
+</pre></div>
+</div>
+<p>Variable <span class="target" id="index-0-variable:CMAKE_OSX_ARCHITECTURES"></span><a class="reference internal" href="../variable/CMAKE_OSX_ARCHITECTURES.html#variable:CMAKE_OSX_ARCHITECTURES" title="CMAKE_OSX_ARCHITECTURES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_OSX_ARCHITECTURES</span></code></a> can be used to set architectures
+for both device and simulator. Variable <span class="target" id="index-0-variable:CMAKE_OSX_DEPLOYMENT_TARGET"></span><a class="reference internal" href="../variable/CMAKE_OSX_DEPLOYMENT_TARGET.html#variable:CMAKE_OSX_DEPLOYMENT_TARGET" title="CMAKE_OSX_DEPLOYMENT_TARGET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_OSX_DEPLOYMENT_TARGET</span></code></a>
+can be used to set an iOS/tvOS/watchOS deployment target.</p>
+<p>Next configuration will install fat 5 architectures iOS library
+and add the <code class="docutils literal notranslate"><span class="pre">-miphoneos-version-min=9.3</span></code>/<code class="docutils literal notranslate"><span class="pre">-mios-simulator-version-min=9.3</span></code>
+flags to the compiler:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake -S. -B_builds -GXcode <span class="se">\</span>
+    -DCMAKE_SYSTEM_NAME<span class="o">=</span>iOS <span class="se">\</span>
+    <span class="s2">&quot;-DCMAKE_OSX_ARCHITECTURES=armv7;armv7s;arm64;i386;x86_64&quot;</span> <span class="se">\</span>
+    -DCMAKE_OSX_DEPLOYMENT_TARGET<span class="o">=</span><span class="m">9</span>.3 <span class="se">\</span>
+    -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/_install <span class="se">\</span>
+    -DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH<span class="o">=</span>NO <span class="se">\</span>
+    -DCMAKE_IOS_INSTALL_COMBINED<span class="o">=</span>YES
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># CMakeLists.txt</span>
+<span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.14</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">foo</span><span class="w"> </span><span class="nb">foo.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">lib</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Install:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build _builds --config Release --target install
+</pre></div>
+</div>
+<p>Check library:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> lipo -info _install/lib/libfoo.a
+<span class="go">Architectures in the fat file: _install/lib/libfoo.a are: i386 armv7 armv7s x86_64 arm64</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> otool -l _install/lib/libfoo.a <span class="p">|</span> grep -A2 LC_VERSION_MIN_IPHONEOS
+<span class="go">      cmd LC_VERSION_MIN_IPHONEOS</span>
+<span class="go">  cmdsize 16</span>
+<span class="go">  version 9.3</span>
+</pre></div>
+</div>
+<div class="section" id="code-signing">
+<h4><a class="toc-backref" href="#id26">Code Signing</a><a class="headerlink" href="#code-signing" title="Permalink to this headline">¶</a></h4>
+<p>Some build artifacts for the embedded Apple platforms require mandatory
+code signing.  If the <span class="target" id="index-1-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator is being used and
+code signing is required or desired, the development team ID can be
+specified via the <code class="docutils literal notranslate"><span class="pre">CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM</span></code> CMake variable.
+This team ID will then be included in the generated Xcode project.
+By default, CMake avoids the need for code signing during the internal
+configuration phase (i.e compiler ID and feature detection).</p>
+</div>
+<div class="section" id="switching-between-device-and-simulator">
+<span id="id6"></span><h4><a class="toc-backref" href="#id27">Switching Between Device and Simulator</a><a class="headerlink" href="#switching-between-device-and-simulator" title="Permalink to this headline">¶</a></h4>
+<p>When configuring for any of the embedded platforms, one can target either
+real devices or the simulator.  Both have their own separate SDK, but CMake
+only supports specifying a single SDK for the configuration phase.  This
+means the developer must select one or the other at configuration time.
+When using the <span class="target" id="index-2-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator, this is less of a limitation
+because Xcode still allows you to build for either a device or a simulator,
+even though configuration was only performed for one of the two.  From
+within the Xcode IDE, builds are performed for the selected “destination”
+platform.  When building from the command line, the desired sdk can be
+specified directly by passing a <code class="docutils literal notranslate"><span class="pre">-sdk</span></code> option to the underlying build
+tool (<code class="docutils literal notranslate"><span class="pre">xcodebuild</span></code>).  For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build ... -- -sdk iphonesimulator
+</pre></div>
+</div>
+<p>Please note that checks made during configuration were performed against
+the configure-time SDK and might not hold true for other SDKs.  Commands
+like <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a>, <span class="target" id="index-0-command:find_library"></span><a class="reference internal" href="../command/find_library.html#command:find_library" title="find_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_library()</span></code></a>, etc. store and use
+details only for the configured SDK/platform, so they can be problematic
+if wanting to switch between device and simulator builds. You can follow
+the next rules to make device + simulator configuration work:</p>
+<ul class="simple">
+<li><p>Use explicit <code class="docutils literal notranslate"><span class="pre">-l</span></code> linker flag,
+e.g. <code class="docutils literal notranslate"><span class="pre">target_link_libraries(foo</span> <span class="pre">PUBLIC</span> <span class="pre">&quot;-lz&quot;)</span></code></p></li>
+<li><p>Use explicit <code class="docutils literal notranslate"><span class="pre">-framework</span></code> linker flag,
+e.g. <code class="docutils literal notranslate"><span class="pre">target_link_libraries(foo</span> <span class="pre">PUBLIC</span> <span class="pre">&quot;-framework</span> <span class="pre">CoreFoundation&quot;)</span></code></p></li>
+<li><p>Use <span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> only for libraries installed with
+<span class="target" id="index-0-variable:CMAKE_IOS_INSTALL_COMBINED"></span><a class="reference internal" href="../variable/CMAKE_IOS_INSTALL_COMBINED.html#variable:CMAKE_IOS_INSTALL_COMBINED" title="CMAKE_IOS_INSTALL_COMBINED"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_IOS_INSTALL_COMBINED</span></code></a> feature</p></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-toolchains(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#languages">Languages</a></li>
+<li><a class="reference internal" href="#variables-and-properties">Variables and Properties</a></li>
+<li><a class="reference internal" href="#toolchain-features">Toolchain Features</a></li>
+<li><a class="reference internal" href="#cross-compiling">Cross Compiling</a><ul>
+<li><a class="reference internal" href="#cross-compiling-for-linux">Cross Compiling for Linux</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-the-cray-linux-environment">Cross Compiling for the Cray Linux Environment</a></li>
+<li><a class="reference internal" href="#cross-compiling-using-clang">Cross Compiling using Clang</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-qnx">Cross Compiling for QNX</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-windows-ce">Cross Compiling for Windows CE</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-windows-10-universal-applications">Cross Compiling for Windows 10 Universal Applications</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-windows-phone">Cross Compiling for Windows Phone</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-windows-store">Cross Compiling for Windows Store</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-android">Cross Compiling for Android</a><ul>
+<li><a class="reference internal" href="#cross-compiling-for-android-with-the-ndk">Cross Compiling for Android with the NDK</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-android-with-a-standalone-toolchain">Cross Compiling for Android with a Standalone Toolchain</a></li>
+<li><a class="reference internal" href="#cross-compiling-for-android-with-nvidia-nsight-tegra-visual-studio-edition">Cross Compiling for Android with NVIDIA Nsight Tegra Visual Studio Edition</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cross-compiling-for-ios-tvos-or-watchos">Cross Compiling for iOS, tvOS, or watchOS</a><ul>
+<li><a class="reference internal" href="#code-signing">Code Signing</a></li>
+<li><a class="reference internal" href="#switching-between-device-and-simulator">Switching Between Device and Simulator</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake-server.7.html"
+                        title="previous chapter">cmake-server(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-variables.7.html"
+                        title="next chapter">cmake-variables(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-toolchains.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-variables.7.html" title="cmake-variables(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake-server.7.html" title="cmake-server(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-toolchains(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

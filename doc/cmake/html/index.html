@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMake Reference Documentation &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="cmake(1)" href="manual/cmake.1.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="manual/cmake.1.html" title="cmake(1)"
+             accesskey="N">next</a> |</li>
+  <li>
+    <img src="_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="#">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">CMake Reference Documentation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>CMake is a tool to manage building of source code.  Originally, CMake was
+designed as a generator for various dialects of <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>, today
+CMake generates modern buildsystems such as <code class="docutils literal notranslate"><span class="pre">Ninja</span></code> as well as project
+files for IDEs such as Visual Studio and Xcode.</p>
+<p>CMake is widely used for the C and C++ languages, but it may be used to
+build source code of other languages too.</p>
+<p>People encountering CMake for the first time may have different initial
+goals.  To learn how to build a source code package downloaded from the
+internet, start with the <span class="target" id="index-0-guide:User Interaction Guide"></span><a class="reference internal" href="guide/user-interaction/index.html#guide:User Interaction Guide" title="User Interaction Guide"><code class="xref cmake cmake-guide docutils literal notranslate"><span class="pre">User</span> <span class="pre">Interaction</span> <span class="pre">Guide</span></code></a>.
+This will detail the steps needed to run the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> or
+<span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> executable and how to choose a generator, and
+how to complete the build.</p>
+<p>The <span class="target" id="index-0-guide:Using Dependencies Guide"></span><a class="reference internal" href="guide/using-dependencies/index.html#guide:Using Dependencies Guide" title="Using Dependencies Guide"><code class="xref cmake cmake-guide docutils literal notranslate"><span class="pre">Using</span> <span class="pre">Dependencies</span> <span class="pre">Guide</span></code></a> is aimed at developers
+wishing to get started using a third-party library.</p>
+<p>For developers starting a project using CMake, the <span class="target" id="index-0-guide:CMake Tutorial"></span><a class="reference internal" href="guide/tutorial/index.html#guide:CMake Tutorial" title="CMake Tutorial"><code class="xref cmake cmake-guide docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">Tutorial</span></code></a>
+is a suitable starting point.  The <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+manual is aimed at developers expanding their knowledge of maintaining
+a buildsystem and becoming familiar with the build targets that
+can be represented in CMake.  The <span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="manual/cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual
+explains how to create packages which can easily be consumed by
+third-party CMake-based buildsystems.</p>
+</div>
+<div class="section" id="command-line-tools">
+<h1>Command-Line Tools<a class="headerlink" href="#command-line-tools" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake.1.html">cmake(1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/ctest.1.html">ctest(1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cpack.1.html">cpack(1)</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="interactive-dialogs">
+<h1>Interactive Dialogs<a class="headerlink" href="#interactive-dialogs" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-gui.1.html">cmake-gui(1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/ccmake.1.html">ccmake(1)</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="reference-manuals">
+<h1>Reference Manuals<a class="headerlink" href="#reference-manuals" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-buildsystem.7.html">cmake-buildsystem(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-commands.7.html">cmake-commands(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-compile-features.7.html">cmake-compile-features(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-developer.7.html">cmake-developer(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-env-variables.7.html">cmake-env-variables(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-file-api.7.html">cmake-file-api(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-generator-expressions.7.html">cmake-generator-expressions(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-generators.7.html">cmake-generators(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-language.7.html">cmake-language(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-modules.7.html">cmake-modules(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-packages.7.html">cmake-packages(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-policies.7.html">cmake-policies(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-presets.7.html">cmake-presets(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-properties.7.html">cmake-properties(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-qt.7.html">cmake-qt(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-server.7.html">cmake-server(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-toolchains.7.html">cmake-toolchains(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cmake-variables.7.html">cmake-variables(7)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manual/cpack-generators.7.html">cpack-generators(7)</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="guides">
+<h1>Guides<a class="headerlink" href="#guides" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guide/tutorial/index.html">CMake Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/user-interaction/index.html">User Interaction Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/using-dependencies/index.html">Using Dependencies Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/importing-exporting/index.html">Importing and Exporting Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/ide-integration/index.html">IDE Integration Guide</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="release-notes">
+<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="release/index.html">CMake Release Notes</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="index-and-search">
+<h1>Index and Search<a class="headerlink" href="#index-and-search" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a></li>
+<li><a class="reference internal" href="#command-line-tools">Command-Line Tools</a></li>
+<li><a class="reference internal" href="#interactive-dialogs">Interactive Dialogs</a></li>
+<li><a class="reference internal" href="#reference-manuals">Reference Manuals</a></li>
+<li><a class="reference internal" href="#guides">Guides</a></li>
+<li><a class="reference internal" href="#release-notes">Release Notes</a></li>
+<li><a class="reference internal" href="#index-and-search">Index and Search</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="manual/cmake.1.html"
+                        title="next chapter">cmake(1)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="manual/cmake.1.html" title="cmake(1)"
+             >next</a> |</li>
+  <li>
+    <img src="_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="#">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">CMake Reference Documentation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

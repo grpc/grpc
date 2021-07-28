@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINK_FLAGS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LINK_FLAGS_&lt;CONFIG&gt;" href="LINK_FLAGS_CONFIG.html" />
+    <link rel="prev" title="LINK_DIRECTORIES" href="LINK_DIRECTORIES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="LINK_FLAGS_CONFIG.html" title="LINK_FLAGS_&lt;CONFIG&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LINK_DIRECTORIES.html" title="LINK_DIRECTORIES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_FLAGS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="link-flags">
+<span id="prop_tgt:LINK_FLAGS"></span><h1>LINK_FLAGS<a class="headerlink" href="#link-flags" title="Permalink to this headline">¶</a></h1>
+<p>Additional flags to use when linking this target if it is a shared library,
+module library, or an executable. Static libraries need to use
+<span class="target" id="index-0-prop_tgt:STATIC_LIBRARY_OPTIONS"></span><a class="reference internal" href="STATIC_LIBRARY_OPTIONS.html#prop_tgt:STATIC_LIBRARY_OPTIONS" title="STATIC_LIBRARY_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">STATIC_LIBRARY_OPTIONS</span></code></a> or <span class="target" id="index-0-prop_tgt:STATIC_LIBRARY_FLAGS"></span><a class="reference internal" href="STATIC_LIBRARY_FLAGS.html#prop_tgt:STATIC_LIBRARY_FLAGS" title="STATIC_LIBRARY_FLAGS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">STATIC_LIBRARY_FLAGS</span></code></a>
+properties.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">LINK_FLAGS</span></code> property, managed as a string, can be used to add extra
+flags to the link step of a target.  <span class="target" id="index-0-prop_tgt:LINK_FLAGS_&lt;CONFIG&gt;"></span><a class="reference internal" href="LINK_FLAGS_CONFIG.html#prop_tgt:LINK_FLAGS_&lt;CONFIG&gt;" title="LINK_FLAGS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_FLAGS_&lt;CONFIG&gt;</span></code></a> will add
+to the configuration <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code>, for example, <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>, <code class="docutils literal notranslate"><span class="pre">RELEASE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">MINSIZEREL</span></code>, <code class="docutils literal notranslate"><span class="pre">RELWITHDEBINFO</span></code>, …</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This property has been superseded by <span class="target" id="index-0-prop_tgt:LINK_OPTIONS"></span><a class="reference internal" href="LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS" title="LINK_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code></a> property.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LINK_DIRECTORIES.html"
+                        title="previous chapter">LINK_DIRECTORIES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="LINK_FLAGS_CONFIG.html"
+                        title="next chapter">LINK_FLAGS_&lt;CONFIG&gt;</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/LINK_FLAGS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="LINK_FLAGS_CONFIG.html" title="LINK_FLAGS_&lt;CONFIG&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LINK_DIRECTORIES.html" title="LINK_DIRECTORIES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_FLAGS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

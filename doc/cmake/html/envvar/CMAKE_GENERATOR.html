@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_GENERATOR &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_GENERATOR_INSTANCE" href="CMAKE_GENERATOR_INSTANCE.html" />
+    <link rel="prev" title="CMAKE_EXPORT_COMPILE_COMMANDS" href="CMAKE_EXPORT_COMPILE_COMMANDS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_GENERATOR_INSTANCE.html" title="CMAKE_GENERATOR_INSTANCE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_EXPORT_COMPILE_COMMANDS.html" title="CMAKE_EXPORT_COMPILE_COMMANDS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-env-variables.7.html" accesskey="U">cmake-env-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_GENERATOR</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-generator">
+<span id="envvar:CMAKE_GENERATOR"></span><h1>CMAKE_GENERATOR<a class="headerlink" href="#cmake-generator" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.15.</span></p>
+</div>
+<p>This is a CMake <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-environment-variables"><span class="std std-ref">Environment Variable</span></a>. Its initial value is taken from
+the calling process environment.</p>
+<p>Specifies the CMake default generator to use when no generator is supplied
+with <code class="docutils literal notranslate"><span class="pre">-G</span></code>. If the provided value doesn’t name a generator known by CMake,
+the internal default is used.  Either way the resulting generator selection
+is stored in the <span class="target" id="index-0-variable:CMAKE_GENERATOR"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR.html#variable:CMAKE_GENERATOR" title="CMAKE_GENERATOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span></code></a> variable.</p>
+<p>Some generators may be additionally configured using the environment
+variables:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-envvar:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="CMAKE_GENERATOR_PLATFORM.html#envvar:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a></p></li>
+<li><p><span class="target" id="index-0-envvar:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="CMAKE_GENERATOR_TOOLSET.html#envvar:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a></p></li>
+<li><p><span class="target" id="index-0-envvar:CMAKE_GENERATOR_INSTANCE"></span><a class="reference internal" href="CMAKE_GENERATOR_INSTANCE.html#envvar:CMAKE_GENERATOR_INSTANCE" title="CMAKE_GENERATOR_INSTANCE"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_INSTANCE</span></code></a></p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_EXPORT_COMPILE_COMMANDS.html"
+                        title="previous chapter">CMAKE_EXPORT_COMPILE_COMMANDS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_GENERATOR_INSTANCE.html"
+                        title="next chapter">CMAKE_GENERATOR_INSTANCE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/envvar/CMAKE_GENERATOR.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_GENERATOR_INSTANCE.html" title="CMAKE_GENERATOR_INSTANCE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_EXPORT_COMPILE_COMMANDS.html" title="CMAKE_EXPORT_COMPILE_COMMANDS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-env-variables.7.html" >cmake-env-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_GENERATOR</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ctest_submit &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ctest_test" href="ctest_test.html" />
+    <link rel="prev" title="ctest_start" href="ctest_start.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ctest_test.html" title="ctest_test"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ctest_start.html" title="ctest_start"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_submit</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctest-submit">
+<span id="command:ctest_submit"></span><h1>ctest_submit<a class="headerlink" href="#ctest-submit" title="Permalink to this headline">¶</a></h1>
+<p>Perform the <a class="reference internal" href="../manual/ctest.1.html#ctest-submit-step"><span class="std std-ref">CTest Submit Step</span></a> as a <a class="reference internal" href="../manual/ctest.1.html#dashboard-client"><span class="std std-ref">Dashboard Client</span></a>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest_submit([PARTS &lt;part&gt;...] [FILES &lt;file&gt;...]
+             [SUBMIT_URL &lt;url&gt;]
+             [BUILD_ID &lt;result-var&gt;]
+             [HTTPHEADER &lt;header&gt;]
+             [RETRY_COUNT &lt;count&gt;]
+             [RETRY_DELAY &lt;delay&gt;]
+             [RETURN_VALUE &lt;result-var&gt;]
+             [CAPTURE_CMAKE_ERROR &lt;result-var&gt;]
+             [QUIET]
+             )
+</pre></div>
+</div>
+<p>Submit results to a dashboard server.
+By default all available parts are submitted.</p>
+<p>The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PARTS</span> <span class="pre">&lt;part&gt;...</span></code></dt><dd><p>Specify a subset of parts to submit.  Valid part names are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Start      = nothing
+Update     = ctest_update results, in Update.xml
+Configure  = ctest_configure results, in Configure.xml
+Build      = ctest_build results, in Build.xml
+Test       = ctest_test results, in Test.xml
+Coverage   = ctest_coverage results, in Coverage.xml
+MemCheck   = ctest_memcheck results, in DynamicAnalysis.xml
+Notes      = Files listed by CTEST_NOTES_FILES, in Notes.xml
+ExtraFiles = Files listed by CTEST_EXTRA_SUBMIT_FILES
+Upload     = Files prepared for upload by ctest_upload(), in Upload.xml
+Submit     = nothing
+Done       = Build is complete, in Done.xml
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILES</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Specify an explicit list of specific files to be submitted.
+Each individual file must exist at the time of the call.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SUBMIT_URL</span> <span class="pre">&lt;url&gt;</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">http</span></code> or <code class="docutils literal notranslate"><span class="pre">https</span></code> URL of the dashboard server to send the submission
+to.  If not given, the <span class="target" id="index-0-variable:CTEST_SUBMIT_URL"></span><a class="reference internal" href="../variable/CTEST_SUBMIT_URL.html#variable:CTEST_SUBMIT_URL" title="CTEST_SUBMIT_URL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_SUBMIT_URL</span></code></a> variable is used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD_ID</span> <span class="pre">&lt;result-var&gt;</span></code></dt><dd><p>Store in the <code class="docutils literal notranslate"><span class="pre">&lt;result-var&gt;</span></code> variable the ID assigned to this build by
+CDash.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HTTPHEADER</span> <span class="pre">&lt;HTTP-header&gt;</span></code></dt><dd><p>Specify HTTP header to be included in the request to CDash during submission.
+For example, CDash can be configured to only accept submissions from
+authenticated clients. In this case, you should provide a bearer token in your
+header:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ctest_submit(</span><span class="no">HTTPHEADER</span><span class="w"> </span><span class="s">&quot;Authorization: Bearer &lt;auth-token&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This suboption can be repeated several times for multiple headers.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RETRY_COUNT</span> <span class="pre">&lt;count&gt;</span></code></dt><dd><p>Specify how many times to retry a timed-out submission.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RETRY_DELAY</span> <span class="pre">&lt;delay&gt;</span></code></dt><dd><p>Specify how long (in seconds) to wait after a timed-out submission
+before attempting to re-submit.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RETURN_VALUE</span> <span class="pre">&lt;result-var&gt;</span></code></dt><dd><p>Store in the <code class="docutils literal notranslate"><span class="pre">&lt;result-var&gt;</span></code> variable <code class="docutils literal notranslate"><span class="pre">0</span></code> for success and
+non-zero on failure.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CAPTURE_CMAKE_ERROR</span> <span class="pre">&lt;result-var&gt;</span></code></dt><dd><p>Store in the <code class="docutils literal notranslate"><span class="pre">&lt;result-var&gt;</span></code> variable -1 if there are any errors running
+the command and prevent ctest from returning non-zero if an error occurs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QUIET</span></code></dt><dd><p>Suppress all non-error messages that would have otherwise been
+printed to the console.</p>
+</dd>
+</dl>
+<div class="section" id="submit-to-cdash-upload-api">
+<h2>Submit to CDash Upload API<a class="headerlink" href="#submit-to-cdash-upload-api" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest_submit(CDASH_UPLOAD &lt;file&gt; [CDASH_UPLOAD_TYPE &lt;type&gt;]
+             [SUBMIT_URL &lt;url&gt;]
+             [HTTPHEADER &lt;header&gt;]
+             [RETRY_COUNT &lt;count&gt;]
+             [RETRY_DELAY &lt;delay&gt;]
+             [RETURN_VALUE &lt;result-var&gt;]
+             [QUIET])
+</pre></div>
+</div>
+<p>This second signature is used to upload files to CDash via the CDash
+file upload API. The API first sends a request to upload to CDash along
+with a content hash of the file. If CDash does not already have the file,
+then it is uploaded. Along with the file, a CDash type string is specified
+to tell CDash which handler to use to process the data.</p>
+<p>This signature accepts the <code class="docutils literal notranslate"><span class="pre">SUBMIT_URL</span></code>, <code class="docutils literal notranslate"><span class="pre">BUILD_ID</span></code>, <code class="docutils literal notranslate"><span class="pre">HTTPHEADER</span></code>,
+<code class="docutils literal notranslate"><span class="pre">RETRY_COUNT</span></code>, <code class="docutils literal notranslate"><span class="pre">RETRY_DELAY</span></code>, <code class="docutils literal notranslate"><span class="pre">RETURN_VALUE</span></code> and <code class="docutils literal notranslate"><span class="pre">QUIET</span></code> options
+as described above.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">ctest_submit</a><ul>
+<li><a class="reference internal" href="#submit-to-cdash-upload-api">Submit to CDash Upload API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ctest_start.html"
+                        title="previous chapter">ctest_start</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ctest_test.html"
+                        title="next chapter">ctest_test</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/ctest_submit.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ctest_test.html" title="ctest_test"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ctest_start.html" title="ctest_start"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_submit</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

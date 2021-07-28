@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS_SETTINGS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VS_SHADER_DISABLE_OPTIMIZATIONS" href="VS_SHADER_DISABLE_OPTIMIZATIONS.html" />
+    <link rel="prev" title="VS_RESOURCE_GENERATOR" href="VS_RESOURCE_GENERATOR.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="VS_SHADER_DISABLE_OPTIMIZATIONS.html" title="VS_SHADER_DISABLE_OPTIMIZATIONS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="VS_RESOURCE_GENERATOR.html" title="VS_RESOURCE_GENERATOR"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_SETTINGS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="vs-settings">
+<span id="prop_sf:VS_SETTINGS"></span><h1>VS_SETTINGS<a class="headerlink" href="#vs-settings" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.18.</span></p>
+</div>
+<p>Set any item metadata on a non-built file.</p>
+<p>Takes a list of <code class="docutils literal notranslate"><span class="pre">Key=Value</span></code> pairs. Tells the Visual Studio generator to set
+<code class="docutils literal notranslate"><span class="pre">Key</span></code> to <code class="docutils literal notranslate"><span class="pre">Value</span></code> as item metadata on the file.</p>
+<p>For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">SOURCE</span><span class="w"> </span><span class="nb">file.hlsl</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">VS_SETTINGS</span><span class="w"> </span><span class="s">&quot;Key=Value&quot;</span><span class="w"> </span><span class="s">&quot;Key2=Value2&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>will set <code class="docutils literal notranslate"><span class="pre">Key</span></code> to <code class="docutils literal notranslate"><span class="pre">Value</span></code> and <code class="docutils literal notranslate"><span class="pre">Key2</span></code> to <code class="docutils literal notranslate"><span class="pre">Value2</span></code> on the
+<code class="docutils literal notranslate"><span class="pre">file.hlsl</span></code> item as metadata.</p>
+<p><span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Generator</span> <span class="pre">expressions</span></code></a> are supported.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VS_RESOURCE_GENERATOR.html"
+                        title="previous chapter">VS_RESOURCE_GENERATOR</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="VS_SHADER_DISABLE_OPTIMIZATIONS.html"
+                        title="next chapter">VS_SHADER_DISABLE_OPTIMIZATIONS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_sf/VS_SETTINGS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="VS_SHADER_DISABLE_OPTIMIZATIONS.html" title="VS_SHADER_DISABLE_OPTIMIZATIONS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="VS_RESOURCE_GENERATOR.html" title="VS_RESOURCE_GENERATOR"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_SETTINGS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

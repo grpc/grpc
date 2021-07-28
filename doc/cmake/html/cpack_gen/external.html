@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPack External Generator &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPack FreeBSD Generator" href="freebsd.html" />
+    <link rel="prev" title="CPack DragNDrop Generator" href="dmg.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="freebsd.html" title="CPack FreeBSD Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="dmg.html" title="CPack DragNDrop Generator"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" accesskey="U">cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack External Generator</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-external-generator">
+<span id="cpack_gen:CPack External Generator"></span><h1>CPack External Generator<a class="headerlink" href="#cpack-external-generator" title="Permalink to this headline">¶</a></h1>
+<p>CPack provides many generators to create packages for a variety of platforms
+and packaging systems. The intention is for CMake/CPack to be a complete
+end-to-end solution for building and packaging a software project. However, it
+may not always be possible to use CPack for the entire packaging process, due
+to either technical limitations or policies that require the use of certain
+tools. For this reason, CPack provides the “External” generator, which allows
+external packaging software to take advantage of some of the functionality
+provided by CPack, such as component installation and the dependency graph.</p>
+<div class="section" id="integration-with-external-packaging-tools">
+<h2>Integration with External Packaging Tools<a class="headerlink" href="#integration-with-external-packaging-tools" title="Permalink to this headline">¶</a></h2>
+<p>The CPack External generator generates a <code class="docutils literal notranslate"><span class="pre">.json</span></code> file containing the
+CPack internal metadata, which gives external software information
+on how to package the software. External packaging software may itself
+invoke CPack, consume the generated metadata,
+install and package files as required.</p>
+<p>Alternatively CPack can invoke an external packaging software
+through an optional custom CMake script in
+<span class="target" id="index-0-variable:CPACK_EXTERNAL_PACKAGE_SCRIPT"></span><a class="reference internal" href="#variable:CPACK_EXTERNAL_PACKAGE_SCRIPT" title="CPACK_EXTERNAL_PACKAGE_SCRIPT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_PACKAGE_SCRIPT</span></code></a> instead.</p>
+<p>Staging of installation files may also optionally be
+taken care of by the generator when enabled through the
+<span class="target" id="index-0-variable:CPACK_EXTERNAL_ENABLE_STAGING"></span><a class="reference internal" href="#variable:CPACK_EXTERNAL_ENABLE_STAGING" title="CPACK_EXTERNAL_ENABLE_STAGING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_ENABLE_STAGING</span></code></a> variable.</p>
+</div>
+<div class="section" id="json-format">
+<h2>JSON Format<a class="headerlink" href="#json-format" title="Permalink to this headline">¶</a></h2>
+<p>The JSON metadata file contains a list of CPack components and component groups,
+the various options passed to <span class="target" id="index-0-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a> and
+<span class="target" id="index-0-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>, the dependencies between the components
+and component groups, and various other options passed to CPack.</p>
+<p>The JSON’s root object will always provide two fields:
+<code class="docutils literal notranslate"><span class="pre">formatVersionMajor</span></code> and <code class="docutils literal notranslate"><span class="pre">formatVersionMinor</span></code>, which are always integers
+that describe the output format of the generator. Backwards-compatible changes
+to the output format (for example, adding a new field that didn’t exist before)
+cause the minor version to be incremented, and backwards-incompatible changes
+(for example, deleting a field or changing its meaning) cause the major version
+to be incremented and the minor version reset to 0. The format version is
+always of the format <code class="docutils literal notranslate"><span class="pre">major.minor</span></code>. In other words, it always has exactly two
+parts, separated by a period.</p>
+<p>You can request one or more specific versions of the output format as described
+below with <span class="target" id="index-0-variable:CPACK_EXTERNAL_REQUESTED_VERSIONS"></span><a class="reference internal" href="#variable:CPACK_EXTERNAL_REQUESTED_VERSIONS" title="CPACK_EXTERNAL_REQUESTED_VERSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_REQUESTED_VERSIONS</span></code></a>. The output format will
+have a major version that exactly matches the requested major version, and a
+minor version that is greater than or equal to the requested minor version. If
+no version is requested with <span class="target" id="index-1-variable:CPACK_EXTERNAL_REQUESTED_VERSIONS"></span><a class="reference internal" href="#variable:CPACK_EXTERNAL_REQUESTED_VERSIONS" title="CPACK_EXTERNAL_REQUESTED_VERSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_REQUESTED_VERSIONS</span></code></a>, the
+latest known major version is used by default. Currently, the only supported
+format is 1.0, which is described below.</p>
+<div class="section" id="version-1-0">
+<h3>Version 1.0<a class="headerlink" href="#version-1-0" title="Permalink to this headline">¶</a></h3>
+<p>In addition to the standard format fields, format version 1.0 provides the
+following fields in the root:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">components</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">components</span></code> field is an object with component names as the keys and
+objects describing the components as the values. The component objects have
+the following fields:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>The name of the component. This is always the same as the key in the
+<code class="docutils literal notranslate"><span class="pre">components</span></code> object.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayName</span></code></dt><dd><p>The value of the <code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code> field passed to
+<span class="target" id="index-1-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">description</span></code></dt><dd><p>The value of the <code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span></code> field passed to
+<span class="target" id="index-2-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isHidden</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">HIDDEN</span></code> was passed to <span class="target" id="index-3-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>, false if
+it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isRequired</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code> was passed to <span class="target" id="index-4-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>, false if
+it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isDisabledByDefault</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">DISABLED</span></code> was passed to <span class="target" id="index-5-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>, false if
+it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">group</span></code></dt><dd><p>Only present if <code class="docutils literal notranslate"><span class="pre">GROUP</span></code> was passed to <span class="target" id="index-6-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>. If
+so, this field is a string value containing the component’s group.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dependencies</span></code></dt><dd><p>An array of components the component depends on. This contains the values
+in the <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> argument passed to <span class="target" id="index-7-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>. If no
+<code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> argument was passed, this is an empty list.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">installationTypes</span></code></dt><dd><p>An array of installation types the component is part of. This contains the
+values in the <code class="docutils literal notranslate"><span class="pre">INSTALL_TYPES</span></code> argument passed to
+<span class="target" id="index-8-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>. If no <code class="docutils literal notranslate"><span class="pre">INSTALL_TYPES</span></code> argument was
+passed, this is an empty list.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isDownloaded</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">DOWNLOADED</span></code> was passed to <span class="target" id="index-9-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>, false
+if it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">archiveFile</span></code></dt><dd><p>The name of the archive file passed with the <code class="docutils literal notranslate"><span class="pre">ARCHIVE_FILE</span></code> argument to
+<span class="target" id="index-10-command:cpack_add_component"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component" title="cpack_add_component"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component()</span></code></a>. If no <code class="docutils literal notranslate"><span class="pre">ARCHIVE_FILE</span></code> argument was passed,
+this is an empty string.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">componentGroups</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">componentGroups</span></code> field is an object with component group names as the
+keys and objects describing the component groups as the values. The component
+group objects have the following fields:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>The name of the component group. This is always the same as the key in the
+<code class="docutils literal notranslate"><span class="pre">componentGroups</span></code> object.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayName</span></code></dt><dd><p>The value of the <code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code> field passed to
+<span class="target" id="index-1-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">description</span></code></dt><dd><p>The value of the <code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span></code> field passed to
+<span class="target" id="index-2-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">parentGroup</span></code></dt><dd><p>Only present if <code class="docutils literal notranslate"><span class="pre">PARENT_GROUP</span></code> was passed to
+<span class="target" id="index-3-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>. If so, this field is a string value
+containing the component group’s parent group.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isExpandedByDefault</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">EXPANDED</span></code> was passed to <span class="target" id="index-4-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>,
+false if it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isBold</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">BOLD_TITLE</span></code> was passed to <span class="target" id="index-5-command:cpack_add_component_group"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_component_group" title="cpack_add_component_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_component_group()</span></code></a>,
+false if it was not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">components</span></code></dt><dd><p>An array of names of components that are direct members of the group
+(components that have this group as their <code class="docutils literal notranslate"><span class="pre">GROUP</span></code>). Components of
+subgroups are not included.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">subgroups</span></code></dt><dd><p>An array of names of component groups that are subgroups of the group
+(groups that have this group as their <code class="docutils literal notranslate"><span class="pre">PARENT_GROUP</span></code>).</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">installationTypes</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">installationTypes</span></code> field is an object with installation type names as
+the keys and objects describing the installation types as the values. The
+installation type objects have the following fields:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>The name of the installation type. This is always the same as the key in
+the <code class="docutils literal notranslate"><span class="pre">installationTypes</span></code> object.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayName</span></code></dt><dd><p>The value of the <code class="docutils literal notranslate"><span class="pre">DISPLAY_NAME</span></code> field passed to
+<span class="target" id="index-0-command:cpack_add_install_type"></span><a class="reference internal" href="../module/CPackComponent.html#command:cpack_add_install_type" title="cpack_add_install_type"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cpack_add_install_type()</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">index</span></code></dt><dd><p>The integer index of the installation type in the list.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">projects</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">projects</span></code> field is an array of objects describing CMake projects which
+comprise the CPack project. The values in this field are derived from
+<span class="target" id="index-0-variable:CPACK_INSTALL_CMAKE_PROJECTS"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_INSTALL_CMAKE_PROJECTS" title="CPACK_INSTALL_CMAKE_PROJECTS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_INSTALL_CMAKE_PROJECTS</span></code></a>. In most cases, this will be only a
+single project. The project objects have the following fields:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">projectName</span></code></dt><dd><p>The project name passed to <span class="target" id="index-1-variable:CPACK_INSTALL_CMAKE_PROJECTS"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_INSTALL_CMAKE_PROJECTS" title="CPACK_INSTALL_CMAKE_PROJECTS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_INSTALL_CMAKE_PROJECTS</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">component</span></code></dt><dd><p>The name of the component or component set which comprises the project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">directory</span></code></dt><dd><p>The build directory of the CMake project. This is the directory which
+contains the <code class="docutils literal notranslate"><span class="pre">cmake_install.cmake</span></code> script.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">subDirectory</span></code></dt><dd><p>The subdirectory to install the project into inside the CPack package.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">packageName</span></code></dt><dd><p>The package name given in <span class="target" id="index-0-variable:CPACK_PACKAGE_NAME"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_NAME" title="CPACK_PACKAGE_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_NAME</span></code></a>. Only present if
+this option is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">packageVersion</span></code></dt><dd><p>The package version given in <span class="target" id="index-0-variable:CPACK_PACKAGE_VERSION"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_VERSION" title="CPACK_PACKAGE_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_VERSION</span></code></a>. Only present
+if this option is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">packageDescriptionFile</span></code></dt><dd><p>The package description file given in
+<span class="target" id="index-0-variable:CPACK_PACKAGE_DESCRIPTION_FILE"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_DESCRIPTION_FILE" title="CPACK_PACKAGE_DESCRIPTION_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_DESCRIPTION_FILE</span></code></a>. Only present if this option is
+set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">packageDescriptionSummary</span></code></dt><dd><p>The package description summary given in
+<span class="target" id="index-0-variable:CPACK_PACKAGE_DESCRIPTION_SUMMARY"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_DESCRIPTION_SUMMARY" title="CPACK_PACKAGE_DESCRIPTION_SUMMARY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_DESCRIPTION_SUMMARY</span></code></a>. Only present if this option is
+set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">buildConfig</span></code></dt><dd><p>The build configuration given to CPack with the <code class="docutils literal notranslate"><span class="pre">-C</span></code> option. Only present
+if this option is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">defaultDirectoryPermissions</span></code></dt><dd><p>The default directory permissions given in
+<span class="target" id="index-0-variable:CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS"></span><a class="reference internal" href="../variable/CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS.html#variable:CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS" title="CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS</span></code></a>. Only present if this
+option is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">setDestdir</span></code></dt><dd><p>True if <span class="target" id="index-0-variable:CPACK_SET_DESTDIR"></span><a class="reference internal" href="../variable/CPACK_SET_DESTDIR.html#variable:CPACK_SET_DESTDIR" title="CPACK_SET_DESTDIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code></a> is true, false if it is not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">packagingInstallPrefix</span></code></dt><dd><p>The install prefix given in <span class="target" id="index-0-variable:CPACK_PACKAGING_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CPACK_PACKAGING_INSTALL_PREFIX.html#variable:CPACK_PACKAGING_INSTALL_PREFIX" title="CPACK_PACKAGING_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGING_INSTALL_PREFIX</span></code></a>. Only
+present if <span class="target" id="index-1-variable:CPACK_SET_DESTDIR"></span><a class="reference internal" href="../variable/CPACK_SET_DESTDIR.html#variable:CPACK_SET_DESTDIR" title="CPACK_SET_DESTDIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code></a> is true.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">stripFiles</span></code></dt><dd><p>True if <span class="target" id="index-0-variable:CPACK_STRIP_FILES"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_STRIP_FILES" title="CPACK_STRIP_FILES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_STRIP_FILES</span></code></a> is true, false if it is not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">warnOnAbsoluteInstallDestination</span></code></dt><dd><p>True if <span class="target" id="index-0-variable:CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION"></span><a class="reference internal" href="../variable/CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION.html#variable:CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION" title="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION</span></code></a> is true, false
+if it is not.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">errorOnAbsoluteInstallDestination</span></code></dt><dd><p>True if <span class="target" id="index-0-variable:CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION"></span><a class="reference internal" href="../variable/CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION.html#variable:CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION" title="CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION</span></code></a> is true,
+false if it is not.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="variables-specific-to-cpack-external-generator">
+<h2>Variables specific to CPack External generator<a class="headerlink" href="#variables-specific-to-cpack-external-generator" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake variable">
+<dt id="variable:CPACK_EXTERNAL_REQUESTED_VERSIONS">
+<code class="sig-name descname">CPACK_EXTERNAL_REQUESTED_VERSIONS</code><a class="headerlink" href="#variable:CPACK_EXTERNAL_REQUESTED_VERSIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>This variable is used to request a specific version of the CPack External
+generator. It is a list of <code class="docutils literal notranslate"><span class="pre">major.minor</span></code> values, separated by semicolons.</p>
+<p>If this variable is set to a non-empty value, the CPack External generator
+will iterate through each item in the list to search for a version that it
+knows how to generate. Requested versions should be listed in order of
+descending preference by the client software, as the first matching version
+in the list will be generated.</p>
+<p>The generator knows how to generate the version if it has a versioned
+generator whose major version exactly matches the requested major version,
+and whose minor version is greater than or equal to the requested minor
+version. For example, if <code class="docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_REQUESTED_VERSIONS</span></code> contains 1.0, and
+the CPack External generator knows how to generate 1.1, it will generate 1.1.
+If the generator doesn’t know how to generate a version in the list, it skips
+the version and looks at the next one. If it doesn’t know how to generate any
+of the requested versions, an error is thrown.</p>
+<p>If this variable is not set, or is empty, the CPack External generator will
+generate the highest major and minor version that it knows how to generate.</p>
+<p>If an invalid version is encountered in <code class="docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_REQUESTED_VERSIONS</span></code> (one
+that doesn’t match <code class="docutils literal notranslate"><span class="pre">major.minor</span></code>, where <code class="docutils literal notranslate"><span class="pre">major</span></code> and <code class="docutils literal notranslate"><span class="pre">minor</span></code> are
+integers), it is ignored.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_EXTERNAL_ENABLE_STAGING">
+<code class="sig-name descname">CPACK_EXTERNAL_ENABLE_STAGING</code><a class="headerlink" href="#variable:CPACK_EXTERNAL_ENABLE_STAGING" title="Permalink to this definition">¶</a></dt>
+<dd><p>This variable can be set to true to enable optional installation
+into a temporary staging area which can then be picked up
+and packaged by an external packaging tool.
+The top level directory used by CPack for the current packaging
+task is contained in <code class="docutils literal notranslate"><span class="pre">CPACK_TOPLEVEL_DIRECTORY</span></code>.
+It is automatically cleaned up on each run before packaging is initiated
+and can be used for custom temporary files required by
+the external packaging tool.
+It also contains the staging area <code class="docutils literal notranslate"><span class="pre">CPACK_TEMPORARY_DIRECTORY</span></code>
+into which CPack performs the installation when staging is enabled.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_EXTERNAL_PACKAGE_SCRIPT">
+<code class="sig-name descname">CPACK_EXTERNAL_PACKAGE_SCRIPT</code><a class="headerlink" href="#variable:CPACK_EXTERNAL_PACKAGE_SCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>This variable can optionally specify the full path to
+a CMake script file to be run as part of the CPack invocation.
+It is invoked after (optional) staging took place and may
+run an external packaging tool. The script has access to
+the variables defined by the CPack config file.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_EXTERNAL_BUILT_PACKAGES">
+<code class="sig-name descname">CPACK_EXTERNAL_BUILT_PACKAGES</code><a class="headerlink" href="#variable:CPACK_EXTERNAL_BUILT_PACKAGES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">CPACK_EXTERNAL_PACKAGE_SCRIPT</span></code> script may set this list variable to the
+full paths of generated package files.  CPack will copy these files from the
+staging directory back to the top build directory and possibly produce
+checksum files if the <span class="target" id="index-0-variable:CPACK_PACKAGE_CHECKSUM"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_CHECKSUM" title="CPACK_PACKAGE_CHECKSUM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_CHECKSUM</span></code></a> is set.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPack External Generator</a><ul>
+<li><a class="reference internal" href="#integration-with-external-packaging-tools">Integration with External Packaging Tools</a></li>
+<li><a class="reference internal" href="#json-format">JSON Format</a><ul>
+<li><a class="reference internal" href="#version-1-0">Version 1.0</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#variables-specific-to-cpack-external-generator">Variables specific to CPack External generator</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="dmg.html"
+                        title="previous chapter">CPack DragNDrop Generator</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="freebsd.html"
+                        title="next chapter">CPack FreeBSD Generator</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cpack_gen/external.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="freebsd.html" title="CPack FreeBSD Generator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="dmg.html" title="CPack DragNDrop Generator"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" >cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack External Generator</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

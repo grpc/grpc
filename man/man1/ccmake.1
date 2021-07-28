@@ -1,0 +1,347 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CCMAKE" "1" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+ccmake \- CMake Curses Dialog Command-Line Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ccmake [<options>] {<path\-to\-source> | <path\-to\-existing\-build>}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+The \fBccmake\fP executable is the CMake curses interface.  Project
+configuration settings may be specified interactively through this
+GUI.  Brief instructions are provided at the bottom of the terminal
+when the program is running.
+.sp
+CMake is a cross\-platform build system generator.  Projects specify
+their build process with platform\-independent CMake listfiles included
+in each directory of a source tree with the name \fBCMakeLists.txt\fP\&.
+Users build a project by using CMake to generate a build system for a
+native tool on their platform.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-S <path\-to\-source>\fP
+Path to root directory of the CMake project to build.
+.TP
+.B \fB\-B <path\-to\-build>\fP
+Path to directory which CMake will use as the root of build directory.
+.sp
+If the directory doesn’t already exist CMake will make it.
+.TP
+.B \fB\-C <initial\-cache>\fP
+Pre\-load a script to populate the cache.
+.sp
+When CMake is first run in an empty build tree, it creates a
+\fBCMakeCache.txt\fP file and populates it with customizable settings for
+the project.  This option may be used to specify a file from which
+to load cache entries before the first pass through the project’s
+CMake listfiles.  The loaded entries take priority over the
+project’s default values.  The given file should be a CMake script
+containing \fBset()\fP commands that use the \fBCACHE\fP option, not a
+cache\-format file.
+.sp
+References to \fBCMAKE_SOURCE_DIR\fP and \fBCMAKE_BINARY_DIR\fP
+within the script evaluate to the top\-level source and build tree.
+.TP
+.B \fB\-D <var>:<type>=<value>, \-D <var>=<value>\fP
+Create or update a CMake \fBCACHE\fP entry.
+.sp
+When CMake is first run in an empty build tree, it creates a
+\fBCMakeCache.txt\fP file and populates it with customizable settings for
+the project.  This option may be used to specify a setting that
+takes priority over the project’s default value.  The option may be
+repeated for as many \fBCACHE\fP entries as desired.
+.sp
+If the \fB:<type>\fP portion is given it must be one of the types
+specified by the \fBset()\fP command documentation for its
+\fBCACHE\fP signature.
+If the \fB:<type>\fP portion is omitted the entry will be created
+with no type if it does not exist with a type already.  If a
+command in the project sets the type to \fBPATH\fP or \fBFILEPATH\fP
+then the \fB<value>\fP will be converted to an absolute path.
+.sp
+This option may also be given as a single argument:
+\fB\-D<var>:<type>=<value>\fP or \fB\-D<var>=<value>\fP\&.
+.TP
+.B \fB\-U <globbing_expr>\fP
+Remove matching entries from CMake \fBCACHE\fP\&.
+.sp
+This option may be used to remove one or more variables from the
+\fBCMakeCache.txt\fP file, globbing expressions using \fB*\fP and \fB?\fP are
+supported.  The option may be repeated for as many \fBCACHE\fP entries as
+desired.
+.sp
+Use with care, you can make your \fBCMakeCache.txt\fP non\-working.
+.TP
+.B \fB\-G <generator\-name>\fP
+Specify a build system generator.
+.sp
+CMake may support multiple native build systems on certain
+platforms.  A generator is responsible for generating a particular
+build system.  Possible generator names are specified in the
+\fBcmake\-generators(7)\fP manual.
+.sp
+If not specified, CMake checks the \fBCMAKE_GENERATOR\fP environment
+variable and otherwise falls back to a builtin default selection.
+.TP
+.B \fB\-T <toolset\-spec>\fP
+Toolset specification for the generator, if supported.
+.sp
+Some CMake generators support a toolset specification to tell
+the native build system how to choose a compiler.  See the
+\fBCMAKE_GENERATOR_TOOLSET\fP variable for details.
+.TP
+.B \fB\-A <platform\-name>\fP
+Specify platform name if supported by generator.
+.sp
+Some CMake generators support a platform name to be given to the
+native build system to choose a compiler or SDK.  See the
+\fBCMAKE_GENERATOR_PLATFORM\fP variable for details.
+.TP
+.B \fB\-Wno\-dev\fP
+Suppress developer warnings.
+.sp
+Suppress warnings that are meant for the author of the
+\fBCMakeLists.txt\fP files. By default this will also turn off
+deprecation warnings.
+.TP
+.B \fB\-Wdev\fP
+Enable developer warnings.
+.sp
+Enable warnings that are meant for the author of the \fBCMakeLists.txt\fP
+files. By default this will also turn on deprecation warnings.
+.TP
+.B \fB\-Werror=dev\fP
+Make developer warnings errors.
+.sp
+Make warnings that are meant for the author of the \fBCMakeLists.txt\fP files
+errors. By default this will also turn on deprecated warnings as errors.
+.TP
+.B \fB\-Wno\-error=dev\fP
+Make developer warnings not errors.
+.sp
+Make warnings that are meant for the author of the \fBCMakeLists.txt\fP files not
+errors. By default this will also turn off deprecated warnings as errors.
+.TP
+.B \fB\-Wdeprecated\fP
+Enable deprecated functionality warnings.
+.sp
+Enable warnings for usage of deprecated functionality, that are meant
+for the author of the \fBCMakeLists.txt\fP files.
+.TP
+.B \fB\-Wno\-deprecated\fP
+Suppress deprecated functionality warnings.
+.sp
+Suppress warnings for usage of deprecated functionality, that are meant
+for the author of the \fBCMakeLists.txt\fP files.
+.TP
+.B \fB\-Werror=deprecated\fP
+Make deprecated macro and function warnings errors.
+.sp
+Make warnings for usage of deprecated macros and functions, that are meant
+for the author of the \fBCMakeLists.txt\fP files, errors.
+.TP
+.B \fB\-Wno\-error=deprecated\fP
+Make deprecated macro and function warnings not errors.
+.sp
+Make warnings for usage of deprecated macros and functions, that are meant
+for the author of the \fBCMakeLists.txt\fP files, not errors.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fB\-\-help,\-help,\-usage,\-h,\-H,/?\fP
+Print usage information and exit.
+.sp
+Usage describes the basic command line interface and its options.
+.TP
+.B \fB\-\-version,\-version,/V [<f>]\fP
+Show program name/version banner and exit.
+.sp
+If a file is specified, the version is written into it.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-full [<f>]\fP
+Print all help manuals and exit.
+.sp
+All manuals are printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual <man> [<f>]\fP
+Print one help manual and exit.
+.sp
+The specified manual is printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual\-list [<f>]\fP
+List help manuals available and exit.
+.sp
+The list contains all manuals for which help may be obtained by
+using the \fB\-\-help\-manual\fP option followed by a manual name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command <cmd> [<f>]\fP
+Print help for one command and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual entry for \fB<cmd>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command\-list [<f>]\fP
+List commands with help available and exit.
+.sp
+The list contains all commands for which help may be obtained by
+using the \fB\-\-help\-command\fP option followed by a command name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-commands [<f>]\fP
+Print cmake\-commands manual and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module <mod> [<f>]\fP
+Print help for one module and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual entry for \fB<mod>\fP is printed
+in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module\-list [<f>]\fP
+List modules with help available and exit.
+.sp
+The list contains all modules for which help may be obtained by
+using the \fB\-\-help\-module\fP option followed by a module name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-modules [<f>]\fP
+Print cmake\-modules manual and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual is printed in a human\-readable
+text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy <cmp> [<f>]\fP
+Print help for one policy and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual entry for \fB<cmp>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy\-list [<f>]\fP
+List policies with help available and exit.
+.sp
+The list contains all policies for which help may be obtained by
+using the \fB\-\-help\-policy\fP option followed by a policy name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policies [<f>]\fP
+Print cmake\-policies manual and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property <prop> [<f>]\fP
+Print help for one property and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual entries for \fB<prop>\fP are
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property\-list [<f>]\fP
+List properties with help available and exit.
+.sp
+The list contains all properties for which help may be obtained by
+using the \fB\-\-help\-property\fP option followed by a property name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-properties [<f>]\fP
+Print cmake\-properties manual and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable <var> [<f>]\fP
+Print help for one variable and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual entry for \fB<var>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable\-list [<f>]\fP
+List variables with help available and exit.
+.sp
+The list contains all variables for which help may be obtained by
+using the \fB\-\-help\-variable\fP option followed by a variable name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variables [<f>]\fP
+Print cmake\-variables manual and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.UNINDENT
+.SH SEE ALSO
+.sp
+The following resources are available to get help using CMake:
+.INDENT 0.0
+.TP
+.B Home Page
+\fI\%https://cmake.org\fP
+.sp
+The primary starting point for learning about CMake.
+.TP
+.B Online Documentation and Community Resources
+\fI\%https://cmake.org/documentation\fP
+.sp
+Links to available documentation and community resources may be
+found on this web page.
+.TP
+.B Discourse Forum
+\fI\%https://discourse.cmake.org\fP
+.sp
+The Discourse Forum hosts discussion and questions about CMake.
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

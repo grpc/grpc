@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindQt4 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindQuickTime" href="FindQuickTime.html" />
+    <link rel="prev" title="FindQt3" href="FindQt3.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindQuickTime.html" title="FindQuickTime"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindQt3.html" title="FindQt3"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindQt4</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findqt4">
+<span id="module:FindQt4"></span><h1>FindQt4<a class="headerlink" href="#findqt4" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="finding-and-using-qt4">
+<h2>Finding and Using Qt4<a class="headerlink" href="#finding-and-using-qt4" title="Permalink to this headline">¶</a></h2>
+<p>This module can be used to find Qt4.  The most important issue is that
+the Qt4 qmake is available via the system path.  This qmake is then
+used to detect basically everything else.  This module defines a
+number of <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets, macros and variables.</p>
+<p>Typical usage could be something like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_AUTOMOC</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_INCLUDE_CURRENT_DIR</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">find_package(</span><span class="nb">Qt4</span><span class="w"> </span><span class="m">4.4.3</span><span class="w"> </span><span class="no">REQUIRED</span><span class="w"> </span><span class="nb">QtGui</span><span class="w"> </span><span class="nb">QtXml</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">myexe</span><span class="w"> </span><span class="nb">main.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myexe</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtGui</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtXml</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using <span class="target" id="index-1-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets, the qtmain.lib static library is
+automatically linked on Windows for <span class="target" id="index-0-prop_tgt:WIN32_EXECUTABLE"></span><a class="reference internal" href="../prop_tgt/WIN32_EXECUTABLE.html#prop_tgt:WIN32_EXECUTABLE" title="WIN32_EXECUTABLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">WIN32</span></code></a>
+executables. To disable that globally, set the
+<code class="docutils literal notranslate"><span class="pre">QT4_NO_LINK_QTMAIN</span></code> variable before finding Qt4. To disable that
+for a particular executable, set the <code class="docutils literal notranslate"><span class="pre">QT4_NO_LINK_QTMAIN</span></code> target
+property to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> on the executable.</p>
+</div>
+</div>
+<div class="section" id="qt-build-tools">
+<h2>Qt Build Tools<a class="headerlink" href="#qt-build-tools" title="Permalink to this headline">¶</a></h2>
+<p>Qt relies on some bundled tools for code generation, such as <code class="docutils literal notranslate"><span class="pre">moc</span></code> for
+meta-object code generation,``uic`` for widget layout and population,
+and <code class="docutils literal notranslate"><span class="pre">rcc</span></code> for virtual filesystem content generation.  These tools may be
+automatically invoked by <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> if the appropriate conditions
+are met.  See <span class="target" id="index-0-manual:cmake-qt(7)"></span><a class="reference internal" href="../manual/cmake-qt.7.html#manual:cmake-qt(7)" title="cmake-qt(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-qt(7)</span></code></a> for more.</p>
+</div>
+<div class="section" id="qt-macros">
+<h2>Qt Macros<a class="headerlink" href="#qt-macros" title="Permalink to this headline">¶</a></h2>
+<p>In some cases it can be necessary or useful to invoke the Qt build tools in a
+more-manual way. Several macros are available to add targets for such uses.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_WRAP_CPP(outfiles inputfile ... [TARGET tgt] OPTIONS ...)
+      create moc code from a list of files containing Qt class with
+      the Q_OBJECT declaration.  Per-directory preprocessor definitions
+      are also added.  If the &lt;tgt&gt; is specified, the
+      INTERFACE_INCLUDE_DIRECTORIES and INTERFACE_COMPILE_DEFINITIONS from
+      the &lt;tgt&gt; are passed to moc.  Options may be given to moc, such as
+      those found when executing &quot;moc -help&quot;.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_WRAP_UI(outfiles inputfile ... OPTIONS ...)
+      create code from a list of Qt designer ui files.
+      Options may be given to uic, such as those found
+      when executing &quot;uic -help&quot;
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_ADD_RESOURCES(outfiles inputfile ... OPTIONS ...)
+      create code from a list of Qt resource files.
+      Options may be given to rcc, such as those found
+      when executing &quot;rcc -help&quot;
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_GENERATE_MOC(inputfile outputfile [TARGET tgt])
+      creates a rule to run moc on infile and create outfile.
+      Use this if for some reason QT4_WRAP_CPP() isn&#39;t appropriate, e.g.
+      because you need a custom filename for the moc file or something
+      similar.  If the &lt;tgt&gt; is specified, the
+      INTERFACE_INCLUDE_DIRECTORIES and INTERFACE_COMPILE_DEFINITIONS from
+      the &lt;tgt&gt; are passed to moc.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_ADD_DBUS_INTERFACE(outfiles interface basename)
+      Create the interface header and implementation files with the
+      given basename from the given interface xml file and add it to
+      the list of sources.
+
+      You can pass additional parameters to the qdbusxml2cpp call by setting
+      properties on the input file:
+
+      INCLUDE the given file will be included in the generate interface header
+
+      CLASSNAME the generated class is named accordingly
+
+      NO_NAMESPACE the generated class is not wrapped in a namespace
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_ADD_DBUS_INTERFACES(outfiles inputfile ... )
+      Create the interface header and implementation files
+      for all listed interface xml files.
+      The basename will be automatically determined from the name
+      of the xml file.
+
+      The source file properties described for
+      QT4_ADD_DBUS_INTERFACE also apply here.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_ADD_DBUS_ADAPTOR(outfiles xmlfile parentheader parentclassname
+                           [basename] [classname])
+      create a dbus adaptor (header and implementation file) from the xml file
+      describing the interface, and add it to the list of sources. The adaptor
+      forwards the calls to a parent class, defined in parentheader and named
+      parentclassname. The name of the generated files will be
+      &lt;basename&gt;adaptor.{cpp,h} where basename defaults to the basename of the
+      xml file.
+      If &lt;classname&gt; is provided, then it will be used as the classname of the
+      adaptor itself.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_GENERATE_DBUS_INTERFACE( header [interfacename] OPTIONS ...)
+      generate the xml interface file from the given header.
+      If the optional argument interfacename is omitted, the name of the
+      interface file is constructed from the basename of the header with
+      the suffix .xml appended.
+      Options may be given to qdbuscpp2xml, such as those found when
+      executing &quot;qdbuscpp2xml --help&quot;
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_CREATE_TRANSLATION( qm_files directories ... sources ...
+                              ts_files ... OPTIONS ...)
+      out: qm_files
+      in:  directories sources ts_files
+      options: flags to pass to lupdate, such as -extensions to specify
+      extensions for a directory scan.
+      generates commands to create .ts (via lupdate) and .qm
+      (via lrelease) - files from directories and/or sources. The ts files are
+      created and/or updated in the source tree (unless given with full paths).
+      The qm files are generated in the build tree.
+      Updating the translations can be done by adding the qm_files
+      to the source list of your library/executable, so they are
+      always updated, or by adding a custom target to control when
+      they get updated/generated.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_ADD_TRANSLATION( qm_files ts_files ... )
+      out: qm_files
+      in:  ts_files
+      generates commands to create .qm from .ts - files. The generated
+      filenames can be found in qm_files. The ts_files
+      must exist and are not updated in any way.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>macro QT4_AUTOMOC(sourcefile1 sourcefile2 ... [TARGET tgt])
+      The qt4_automoc macro is obsolete.  Use the CMAKE_AUTOMOC feature instead.
+      This macro is still experimental.
+      It can be used to have moc automatically handled.
+      So if you have the files foo.h and foo.cpp, and in foo.h a
+      a class uses the Q_OBJECT macro, moc has to run on it. If you don&#39;t
+      want to use QT4_WRAP_CPP() (which is reliable and mature), you can insert
+      #include &quot;foo.moc&quot;
+      in foo.cpp and then give foo.cpp as argument to QT4_AUTOMOC(). This will
+      scan all listed files at cmake-time for such included moc files and if it
+      finds them cause a rule to be generated to run moc at build time on the
+      accompanying header file foo.h.
+      If a source file has the SKIP_AUTOMOC property set it will be ignored by
+      this macro.
+      If the &lt;tgt&gt; is specified, the INTERFACE_INCLUDE_DIRECTORIES and
+      INTERFACE_COMPILE_DEFINITIONS from the &lt;tgt&gt; are passed to moc.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>function QT4_USE_MODULES( target [link_type] modules...)
+       This function is obsolete. Use target_link_libraries with IMPORTED targets
+       instead.
+       Make &lt;target&gt; use the &lt;modules&gt; from Qt. Using a Qt module means
+       to link to the library, add the relevant include directories for the
+       module, and add the relevant compiler defines for using the module.
+       Modules are roughly equivalent to components of Qt4, so usage would be
+       something like:
+        qt4_use_modules(myexe Core Gui Declarative)
+       to use QtCore, QtGui and QtDeclarative. The optional &lt;link_type&gt; argument
+       can be specified as either LINK_PUBLIC or LINK_PRIVATE to specify the
+       same argument to the target_link_libraries call.
+</pre></div>
+</div>
+</div>
+<div class="section" id="imported-targets">
+<h2>IMPORTED Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>A particular Qt library may be used by using the corresponding
+<span class="target" id="index-2-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target with the <span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a>
+command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_link_libraries(</span><span class="nb">myexe</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtGui</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtXml</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Using a target in this way causes :cmake(1)` to use the appropriate include
+directories and compile definitions for the target when compiling <code class="docutils literal notranslate"><span class="pre">myexe</span></code>.</p>
+<p>Targets are aware of their dependencies, so for example it is not necessary
+to list <code class="docutils literal notranslate"><span class="pre">Qt4::QtCore</span></code> if another Qt library is listed, and it is not
+necessary to list <code class="docutils literal notranslate"><span class="pre">Qt4::QtGui</span></code> if <code class="docutils literal notranslate"><span class="pre">Qt4::QtDeclarative</span></code> is listed.
+Targets may be tested for existence in the usual way with the
+<span class="target" id="index-0-command:if"></span><a class="reference internal" href="../command/if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if(TARGET)</span></code></a> command.</p>
+<p>The Qt toolkit may contain both debug and release libraries.
+<span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> will choose the appropriate version based on the build
+configuration.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtCore</span></code></dt><dd><p>The QtCore target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtGui</span></code></dt><dd><p>The QtGui target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::Qt3Support</span></code></dt><dd><p>The Qt3Support target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtAssistant</span></code></dt><dd><p>The QtAssistant target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtAssistantClient</span></code></dt><dd><p>The QtAssistantClient target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QAxContainer</span></code></dt><dd><p>The QAxContainer target (Windows only)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QAxServer</span></code></dt><dd><p>The QAxServer target (Windows only)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtDBus</span></code></dt><dd><p>The QtDBus target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtDeclarative</span></code></dt><dd><p>The QtDeclarative target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtDesigner</span></code></dt><dd><p>The QtDesigner target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtDesignerComponents</span></code></dt><dd><p>The QtDesignerComponents target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtHelp</span></code></dt><dd><p>The QtHelp target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtMotif</span></code></dt><dd><p>The QtMotif target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtMultimedia</span></code></dt><dd><p>The QtMultimedia target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtNetwork</span></code></dt><dd><p>The QtNetwork target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtNsPLugin</span></code></dt><dd><p>The QtNsPLugin target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtOpenGL</span></code></dt><dd><p>The QtOpenGL target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtScript</span></code></dt><dd><p>The QtScript target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtScriptTools</span></code></dt><dd><p>The QtScriptTools target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtSql</span></code></dt><dd><p>The QtSql target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtSvg</span></code></dt><dd><p>The QtSvg target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtTest</span></code></dt><dd><p>The QtTest target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtUiTools</span></code></dt><dd><p>The QtUiTools target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtWebKit</span></code></dt><dd><p>The QtWebKit target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtXml</span></code></dt><dd><p>The QtXml target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::QtXmlPatterns</span></code></dt><dd><p>The QtXmlPatterns target</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4::phonon</span></code></dt><dd><p>The phonon target</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Below is a detailed list of variables that FindQt4.cmake sets.</p>
+</div></blockquote>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Qt4_FOUND</span></code></dt><dd><p>If false, don’t try to use Qt 4.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT_FOUND</span></code></dt><dd><p>If false, don’t try to use Qt. This variable is for compatibility only.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT4_FOUND</span></code></dt><dd><p>If false, don’t try to use Qt 4. This variable is for compatibility only.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT_VERSION_MAJOR</span></code></dt><dd><p>The major version of Qt found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT_VERSION_MINOR</span></code></dt><dd><p>The minor version of Qt found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT_VERSION_PATCH</span></code></dt><dd><p>The patch version of Qt found.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindQt4</a><ul>
+<li><a class="reference internal" href="#finding-and-using-qt4">Finding and Using Qt4</a></li>
+<li><a class="reference internal" href="#qt-build-tools">Qt Build Tools</a></li>
+<li><a class="reference internal" href="#qt-macros">Qt Macros</a></li>
+<li><a class="reference internal" href="#imported-targets">IMPORTED Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindQt3.html"
+                        title="previous chapter">FindQt3</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindQuickTime.html"
+                        title="next chapter">FindQuickTime</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindQt4.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindQuickTime.html" title="FindQuickTime"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindQt3.html" title="FindQt3"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindQt4</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

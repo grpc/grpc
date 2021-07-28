@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeLite &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Eclipse CDT4" href="Eclipse%20CDT4.html" />
+    <link rel="prev" title="CodeBlocks" href="CodeBlocks.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Eclipse%20CDT4.html" title="Eclipse CDT4"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CodeBlocks.html" title="CodeBlocks"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" accesskey="U">cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CodeLite</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="codelite">
+<span id="generator:CodeLite"></span><h1>CodeLite<a class="headerlink" href="#codelite" title="Permalink to this headline">¶</a></h1>
+<p>Generates CodeLite project files.</p>
+<p>Project files for CodeLite will be created in the top directory and
+in every subdirectory which features a CMakeLists.txt file containing
+a <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> call.
+The <span class="target" id="index-0-variable:CMAKE_CODELITE_USE_TARGETS"></span><a class="reference internal" href="../variable/CMAKE_CODELITE_USE_TARGETS.html#variable:CMAKE_CODELITE_USE_TARGETS" title="CMAKE_CODELITE_USE_TARGETS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CODELITE_USE_TARGETS</span></code></a> variable may be set to <code class="docutils literal notranslate"><span class="pre">ON</span></code>
+to change the default behavior from projects to targets as the basis
+for project files.
+The appropriate make program can build the
+project through the default <code class="docutils literal notranslate"><span class="pre">all</span></code> target.  An <code class="docutils literal notranslate"><span class="pre">install</span></code> target
+is also provided.</p>
+<p>This “extra” generator may be specified as:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CodeLite</span> <span class="pre">-</span> <span class="pre">MinGW</span> <span class="pre">Makefiles</span></code></dt><dd><p>Generate with <span class="target" id="index-0-generator:MinGW Makefiles"></span><a class="reference internal" href="MinGW%20Makefiles.html#generator:MinGW Makefiles" title="MinGW Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">MinGW</span> <span class="pre">Makefiles</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CodeLite</span> <span class="pre">-</span> <span class="pre">NMake</span> <span class="pre">Makefiles</span></code></dt><dd><p>Generate with <span class="target" id="index-0-generator:NMake Makefiles"></span><a class="reference internal" href="NMake%20Makefiles.html#generator:NMake Makefiles" title="NMake Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CodeLite</span> <span class="pre">-</span> <span class="pre">Ninja</span></code></dt><dd><p>Generate with <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CodeLite</span> <span class="pre">-</span> <span class="pre">Unix</span> <span class="pre">Makefiles</span></code></dt><dd><p>Generate with <span class="target" id="index-0-generator:Unix Makefiles"></span><a class="reference internal" href="Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a>.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CodeBlocks.html"
+                        title="previous chapter">CodeBlocks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Eclipse%20CDT4.html"
+                        title="next chapter">Eclipse CDT4</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generator/CodeLite.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Eclipse%20CDT4.html" title="Eclipse CDT4"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CodeBlocks.html" title="CodeBlocks"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" >cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CodeLite</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

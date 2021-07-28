@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COMPATIBLE_INTERFACE_NUMBER_MIN &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="COMPATIBLE_INTERFACE_STRING" href="COMPATIBLE_INTERFACE_STRING.html" />
+    <link rel="prev" title="COMPATIBLE_INTERFACE_NUMBER_MAX" href="COMPATIBLE_INTERFACE_NUMBER_MAX.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="COMPATIBLE_INTERFACE_STRING.html" title="COMPATIBLE_INTERFACE_STRING"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="COMPATIBLE_INTERFACE_NUMBER_MAX.html" title="COMPATIBLE_INTERFACE_NUMBER_MAX"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">COMPATIBLE_INTERFACE_NUMBER_MIN</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="compatible-interface-number-min">
+<span id="prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MIN"></span><h1>COMPATIBLE_INTERFACE_NUMBER_MIN<a class="headerlink" href="#compatible-interface-number-min" title="Permalink to this headline">¶</a></h1>
+<p>Properties whose maximum value from the link interface will be used.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_NUMBER_MIN</span></code> property may contain a list of
+properties for this target whose minimum value may be read at generate
+time when evaluated in the <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> variant of the property of all
+linked dependees.  For example, if a
+property <code class="docutils literal notranslate"><span class="pre">FOO</span></code> appears in the list, then for each dependee, the
+<code class="docutils literal notranslate"><span class="pre">INTERFACE_FOO</span></code> property content in all of its dependencies will be
+compared with each other and with the <code class="docutils literal notranslate"><span class="pre">FOO</span></code> property in the depender.
+When reading the <code class="docutils literal notranslate"><span class="pre">FOO</span></code> property at generate time, the minimum value
+will be returned.  If the property is not set, then it is ignored.</p>
+<p>Note that for each dependee, the set of properties specified in this
+property must not intersect with the set specified in any of the other
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#compatible-interface-properties"><span class="std std-ref">Compatible Interface Properties</span></a>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="COMPATIBLE_INTERFACE_NUMBER_MAX.html"
+                        title="previous chapter">COMPATIBLE_INTERFACE_NUMBER_MAX</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="COMPATIBLE_INTERFACE_STRING.html"
+                        title="next chapter">COMPATIBLE_INTERFACE_STRING</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MIN.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="COMPATIBLE_INTERFACE_STRING.html" title="COMPATIBLE_INTERFACE_STRING"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="COMPATIBLE_INTERFACE_NUMBER_MAX.html" title="COMPATIBLE_INTERFACE_NUMBER_MAX"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">COMPATIBLE_INTERFACE_NUMBER_MIN</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

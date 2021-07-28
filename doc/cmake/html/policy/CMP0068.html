@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0068 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0067" href="CMP0067.html" />
+    <link rel="prev" title="CMP0069" href="CMP0069.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0067.html" title="CMP0067"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0069.html" title="CMP0069"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0068</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0068">
+<span id="policy:CMP0068"></span><h1>CMP0068<a class="headerlink" href="#cmp0068" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.9.</span></p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RPATH</span></code> settings on macOS do not affect <code class="docutils literal notranslate"><span class="pre">install_name</span></code>.</p>
+<p>CMake 3.9 and newer remove any effect the following settings may have on the
+<code class="docutils literal notranslate"><span class="pre">install_name</span></code> of a target on macOS:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-prop_tgt:BUILD_WITH_INSTALL_RPATH"></span><a class="reference internal" href="../prop_tgt/BUILD_WITH_INSTALL_RPATH.html#prop_tgt:BUILD_WITH_INSTALL_RPATH" title="BUILD_WITH_INSTALL_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUILD_WITH_INSTALL_RPATH</span></code></a> target property</p></li>
+<li><p><span class="target" id="index-0-prop_tgt:SKIP_BUILD_RPATH"></span><a class="reference internal" href="../prop_tgt/SKIP_BUILD_RPATH.html#prop_tgt:SKIP_BUILD_RPATH" title="SKIP_BUILD_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SKIP_BUILD_RPATH</span></code></a> target property</p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_SKIP_RPATH"></span><a class="reference internal" href="../variable/CMAKE_SKIP_RPATH.html#variable:CMAKE_SKIP_RPATH" title="CMAKE_SKIP_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SKIP_RPATH</span></code></a> variable</p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_SKIP_INSTALL_RPATH"></span><a class="reference internal" href="../variable/CMAKE_SKIP_INSTALL_RPATH.html#variable:CMAKE_SKIP_INSTALL_RPATH" title="CMAKE_SKIP_INSTALL_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SKIP_INSTALL_RPATH</span></code></a> variable</p></li>
+</ul>
+<p>Previously, setting <span class="target" id="index-1-prop_tgt:BUILD_WITH_INSTALL_RPATH"></span><a class="reference internal" href="../prop_tgt/BUILD_WITH_INSTALL_RPATH.html#prop_tgt:BUILD_WITH_INSTALL_RPATH" title="BUILD_WITH_INSTALL_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUILD_WITH_INSTALL_RPATH</span></code></a> had the effect of
+setting both the <code class="docutils literal notranslate"><span class="pre">install_name</span></code> of a target to <span class="target" id="index-0-prop_tgt:INSTALL_NAME_DIR"></span><a class="reference internal" href="../prop_tgt/INSTALL_NAME_DIR.html#prop_tgt:INSTALL_NAME_DIR" title="INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_NAME_DIR</span></code></a>
+and the <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> to <span class="target" id="index-0-prop_tgt:INSTALL_RPATH"></span><a class="reference internal" href="../prop_tgt/INSTALL_RPATH.html#prop_tgt:INSTALL_RPATH" title="INSTALL_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_RPATH</span></code></a>.  In CMake 3.9, it only affects
+setting of <code class="docutils literal notranslate"><span class="pre">RPATH</span></code>.  However, if one wants <span class="target" id="index-1-prop_tgt:INSTALL_NAME_DIR"></span><a class="reference internal" href="../prop_tgt/INSTALL_NAME_DIR.html#prop_tgt:INSTALL_NAME_DIR" title="INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_NAME_DIR</span></code></a> to
+apply to the target in the build tree, one may set
+<span class="target" id="index-0-prop_tgt:BUILD_WITH_INSTALL_NAME_DIR"></span><a class="reference internal" href="../prop_tgt/BUILD_WITH_INSTALL_NAME_DIR.html#prop_tgt:BUILD_WITH_INSTALL_NAME_DIR" title="BUILD_WITH_INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUILD_WITH_INSTALL_NAME_DIR</span></code></a>.</p>
+<p>If <span class="target" id="index-1-prop_tgt:SKIP_BUILD_RPATH"></span><a class="reference internal" href="../prop_tgt/SKIP_BUILD_RPATH.html#prop_tgt:SKIP_BUILD_RPATH" title="SKIP_BUILD_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SKIP_BUILD_RPATH</span></code></a>, <span class="target" id="index-1-variable:CMAKE_SKIP_RPATH"></span><a class="reference internal" href="../variable/CMAKE_SKIP_RPATH.html#variable:CMAKE_SKIP_RPATH" title="CMAKE_SKIP_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SKIP_RPATH</span></code></a> or
+<span class="target" id="index-1-variable:CMAKE_SKIP_INSTALL_RPATH"></span><a class="reference internal" href="../variable/CMAKE_SKIP_INSTALL_RPATH.html#variable:CMAKE_SKIP_INSTALL_RPATH" title="CMAKE_SKIP_INSTALL_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SKIP_INSTALL_RPATH</span></code></a> were used to strip the directory portion
+of the <code class="docutils literal notranslate"><span class="pre">install_name</span></code> of a target, one may set <code class="docutils literal notranslate"><span class="pre">INSTALL_NAME_DIR=&quot;&quot;</span></code>
+instead.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of this policy is to use the <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> settings for
+<code class="docutils literal notranslate"><span class="pre">install_name</span></code> on macOS.  The <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior of this policy is to ignore
+the <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> settings for <code class="docutils literal notranslate"><span class="pre">install_name</span></code> on macOS.</p>
+<p>This policy was introduced in CMake version 3.9.  CMake version
+3.19.6 warns when the policy is not set and uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.
+Use the <span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="../command/cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command to set it to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> or <code class="docutils literal notranslate"><span class="pre">NEW</span></code>
+explicitly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0069.html"
+                        title="previous chapter">CMP0069</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0067.html"
+                        title="next chapter">CMP0067</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0068.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0067.html" title="CMP0067"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0069.html" title="CMP0069"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0068</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

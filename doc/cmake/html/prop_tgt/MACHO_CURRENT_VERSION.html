@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MACHO_CURRENT_VERSION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MACOSX_BUNDLE" href="MACOSX_BUNDLE.html" />
+    <link rel="prev" title="MACHO_COMPATIBILITY_VERSION" href="MACHO_COMPATIBILITY_VERSION.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="MACOSX_BUNDLE.html" title="MACOSX_BUNDLE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MACHO_COMPATIBILITY_VERSION.html" title="MACHO_COMPATIBILITY_VERSION"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACHO_CURRENT_VERSION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="macho-current-version">
+<span id="prop_tgt:MACHO_CURRENT_VERSION"></span><h1>MACHO_CURRENT_VERSION<a class="headerlink" href="#macho-current-version" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.17.</span></p>
+</div>
+<p>What current version number is this target for Mach-O binaries.</p>
+<p>For shared libraries on Mach-O systems (e.g. macOS, iOS)
+the <span class="target" id="index-0-prop_tgt:MACHO_COMPATIBILITY_VERSION"></span><a class="reference internal" href="MACHO_COMPATIBILITY_VERSION.html#prop_tgt:MACHO_COMPATIBILITY_VERSION" title="MACHO_COMPATIBILITY_VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACHO_COMPATIBILITY_VERSION</span></code></a> property corresponds to the
+<em>compatibility version</em> and <code class="docutils literal notranslate"><span class="pre">MACHO_CURRENT_VERSION</span></code> corresponds to the
+<em>current version</em>.  These are both embedded in the shared library binary
+and can be checked with the <code class="docutils literal notranslate"><span class="pre">otool</span> <span class="pre">-L</span> <span class="pre">&lt;binary&gt;</span></code> command.</p>
+<p>It should be noted that the <code class="docutils literal notranslate"><span class="pre">MACHO_CURRENT_VERSION</span></code> and
+<span class="target" id="index-1-prop_tgt:MACHO_COMPATIBILITY_VERSION"></span><a class="reference internal" href="MACHO_COMPATIBILITY_VERSION.html#prop_tgt:MACHO_COMPATIBILITY_VERSION" title="MACHO_COMPATIBILITY_VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACHO_COMPATIBILITY_VERSION</span></code></a> properties do not affect the file
+names or version-related symlinks that CMake generates for the library.
+The <span class="target" id="index-0-prop_tgt:VERSION"></span><a class="reference internal" href="VERSION.html#prop_tgt:VERSION" title="VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VERSION</span></code></a> and <span class="target" id="index-0-prop_tgt:SOVERSION"></span><a class="reference internal" href="SOVERSION.html#prop_tgt:SOVERSION" title="SOVERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SOVERSION</span></code></a> target properties still
+control the file and symlink names.  The <code class="docutils literal notranslate"><span class="pre">install_name</span></code> is also still
+controlled by <span class="target" id="index-1-prop_tgt:SOVERSION"></span><a class="reference internal" href="SOVERSION.html#prop_tgt:SOVERSION" title="SOVERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SOVERSION</span></code></a>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">MACHO_CURRENT_VERSION</span></code> and <span class="target" id="index-2-prop_tgt:MACHO_COMPATIBILITY_VERSION"></span><a class="reference internal" href="MACHO_COMPATIBILITY_VERSION.html#prop_tgt:MACHO_COMPATIBILITY_VERSION" title="MACHO_COMPATIBILITY_VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACHO_COMPATIBILITY_VERSION</span></code></a>
+are not given, <span class="target" id="index-1-prop_tgt:VERSION"></span><a class="reference internal" href="VERSION.html#prop_tgt:VERSION" title="VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VERSION</span></code></a> and <span class="target" id="index-2-prop_tgt:SOVERSION"></span><a class="reference internal" href="SOVERSION.html#prop_tgt:SOVERSION" title="SOVERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SOVERSION</span></code></a> are used for
+the version details to be embedded in the binaries respectively.
+The <code class="docutils literal notranslate"><span class="pre">MACHO_CURRENT_VERSION</span></code> and <span class="target" id="index-3-prop_tgt:MACHO_COMPATIBILITY_VERSION"></span><a class="reference internal" href="MACHO_COMPATIBILITY_VERSION.html#prop_tgt:MACHO_COMPATIBILITY_VERSION" title="MACHO_COMPATIBILITY_VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACHO_COMPATIBILITY_VERSION</span></code></a>
+properties only need to be given if the project needs to decouple the file
+and symlink naming from the version details embedded in the binaries
+(e.g. to match libtool conventions).</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MACHO_COMPATIBILITY_VERSION.html"
+                        title="previous chapter">MACHO_COMPATIBILITY_VERSION</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MACOSX_BUNDLE.html"
+                        title="next chapter">MACOSX_BUNDLE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/MACHO_CURRENT_VERSION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="MACOSX_BUNDLE.html" title="MACOSX_BUNDLE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MACHO_COMPATIBILITY_VERSION.html" title="MACHO_COMPATIBILITY_VERSION"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACHO_CURRENT_VERSION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

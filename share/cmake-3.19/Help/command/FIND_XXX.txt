@@ -1,0 +1,161 @@
+A short-hand signature is:
+
+.. parsed-literal::
+
+   |FIND_XXX| (<VAR> name1 [path1 path2 ...])
+
+The general signature is:
+
+.. parsed-literal::
+
+   |FIND_XXX| (
+             <VAR>
+             name | |NAMES|
+             [HINTS path1 [path2 ... ENV var]]
+             [PATHS path1 [path2 ... ENV var]]
+             [PATH_SUFFIXES suffix1 [suffix2 ...]]
+             [DOC "cache documentation string"]
+             [REQUIRED]
+             [NO_DEFAULT_PATH]
+             [NO_PACKAGE_ROOT_PATH]
+             [NO_CMAKE_PATH]
+             [NO_CMAKE_ENVIRONMENT_PATH]
+             [NO_SYSTEM_ENVIRONMENT_PATH]
+             [NO_CMAKE_SYSTEM_PATH]
+             [CMAKE_FIND_ROOT_PATH_BOTH |
+              ONLY_CMAKE_FIND_ROOT_PATH |
+              NO_CMAKE_FIND_ROOT_PATH]
+            )
+
+This command is used to find a |SEARCH_XXX_DESC|.
+A cache entry named by ``<VAR>`` is created to store the result
+of this command.
+If the |SEARCH_XXX| is found the result is stored in the variable
+and the search will not be repeated unless the variable is cleared.
+If nothing is found, the result will be ``<VAR>-NOTFOUND``.
+The ``REQUIRED`` option stops processing with an error message if nothing
+is found, otherwise the search will be attempted again the
+next time |FIND_XXX| is invoked with the same variable.
+
+Options include:
+
+``NAMES``
+  Specify one or more possible names for the |SEARCH_XXX|.
+
+  When using this to specify names with and without a version
+  suffix, we recommend specifying the unversioned name first
+  so that locally-built packages can be found before those
+  provided by distributions.
+
+``HINTS``, ``PATHS``
+  Specify directories to search in addition to the default locations.
+  The ``ENV var`` sub-option reads paths from a system environment
+  variable.
+
+``PATH_SUFFIXES``
+  Specify additional subdirectories to check below each directory
+  location otherwise considered.
+
+``DOC``
+  Specify the documentation string for the ``<VAR>`` cache entry.
+
+``REQUIRED``
+  Stop processing with an error message if nothing is found.
+
+If ``NO_DEFAULT_PATH`` is specified, then no additional paths are
+added to the search.
+If ``NO_DEFAULT_PATH`` is not specified, the search process is as follows:
+
+.. |FIND_PACKAGE_ROOT_PREFIX_PATH_XXX_SUBDIR| replace::
+   |prefix_XXX_SUBDIR| for each ``<prefix>`` in the
+   :variable:`<PackageName>_ROOT` CMake variable and the
+   :envvar:`<PackageName>_ROOT` environment variable if
+   called from within a find module loaded by
+   :command:`find_package(<PackageName>)`
+
+.. |CMAKE_PREFIX_PATH_XXX_SUBDIR| replace::
+   |prefix_XXX_SUBDIR| for each ``<prefix>`` in :variable:`CMAKE_PREFIX_PATH`
+
+.. |SYSTEM_ENVIRONMENT_PREFIX_PATH_XXX_SUBDIR| replace::
+   |prefix_XXX_SUBDIR| for each ``<prefix>/[s]bin`` in ``PATH``, and
+   |entry_XXX_SUBDIR| for other entries in ``PATH``
+
+.. |CMAKE_SYSTEM_PREFIX_PATH_XXX_SUBDIR| replace::
+   |prefix_XXX_SUBDIR| for each ``<prefix>`` in
+   :variable:`CMAKE_SYSTEM_PREFIX_PATH`
+
+1. If called from within a find module or any other script loaded by a call to
+   :command:`find_package(<PackageName>)`, search prefixes unique to the
+   current package being found.  Specifically, look in the
+   :variable:`<PackageName>_ROOT` CMake variable and the
+   :envvar:`<PackageName>_ROOT` environment variable.
+   The package root variables are maintained as a stack, so if called from
+   nested find modules or config packages, root paths from the parent's find
+   module or config package will be searched after paths from the current
+   module or package.  In other words, the search order would be
+   ``<CurrentPackage>_ROOT``, ``ENV{<CurrentPackage>_ROOT}``,
+   ``<ParentPackage>_ROOT``, ``ENV{<ParentPackage>_ROOT}``, etc.
+   This can be skipped if ``NO_PACKAGE_ROOT_PATH`` is passed or by setting
+   the :variable:`CMAKE_FIND_USE_PACKAGE_ROOT_PATH` to ``FALSE``.
+   See policy :policy:`CMP0074`.
+
+   * |FIND_PACKAGE_ROOT_PREFIX_PATH_XXX|
+
+2. Search paths specified in cmake-specific cache variables.
+   These are intended to be used on the command line with a ``-DVAR=value``.
+   The values are interpreted as :ref:`semicolon-separated lists <CMake Language Lists>`.
+   This can be skipped if ``NO_CMAKE_PATH`` is passed or by setting the
+   :variable:`CMAKE_FIND_USE_CMAKE_PATH` to ``FALSE``.
+
+   * |CMAKE_PREFIX_PATH_XXX|
+   * |CMAKE_XXX_PATH|
+   * |CMAKE_XXX_MAC_PATH|
+
+3. Search paths specified in cmake-specific environment variables.
+   These are intended to be set in the user's shell configuration,
+   and therefore use the host's native path separator
+   (``;`` on Windows and ``:`` on UNIX).
+   This can be skipped if ``NO_CMAKE_ENVIRONMENT_PATH`` is passed or
+   by setting the :variable:`CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH` to ``FALSE``.
+
+   * |CMAKE_PREFIX_PATH_XXX|
+   * |CMAKE_XXX_PATH|
+   * |CMAKE_XXX_MAC_PATH|
+
+4. Search the paths specified by the ``HINTS`` option.
+   These should be paths computed by system introspection, such as a
+   hint provided by the location of another item already found.
+   Hard-coded guesses should be specified with the ``PATHS`` option.
+
+5. Search the standard system environment variables.
+   This can be skipped if ``NO_SYSTEM_ENVIRONMENT_PATH`` is passed or by
+   setting the :variable:`CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH` to ``FALSE``.
+
+   * |SYSTEM_ENVIRONMENT_PATH_XXX|
+   * |SYSTEM_ENVIRONMENT_PATH_WINDOWS_XXX|
+
+6. Search cmake variables defined in the Platform files
+   for the current system.  This can be skipped if ``NO_CMAKE_SYSTEM_PATH``
+   is passed or by setting the :variable:`CMAKE_FIND_USE_CMAKE_SYSTEM_PATH`
+   to ``FALSE``.
+
+   * |CMAKE_SYSTEM_PREFIX_PATH_XXX|
+   * |CMAKE_SYSTEM_XXX_PATH|
+   * |CMAKE_SYSTEM_XXX_MAC_PATH|
+
+   The platform paths that these variables contain are locations that
+   typically include installed software. An example being ``/usr/local`` for
+   UNIX based platforms.
+
+7. Search the paths specified by the PATHS option
+   or in the short-hand version of the command.
+   These are typically hard-coded guesses.
+
+.. |FIND_ARGS_XXX| replace:: <VAR> NAMES name
+
+On macOS the :variable:`CMAKE_FIND_FRAMEWORK` and
+:variable:`CMAKE_FIND_APPBUNDLE` variables determine the order of
+preference between Apple-style and unix-style package components.
+
+.. include:: FIND_XXX_ROOT.txt
+.. include:: FIND_XXX_ORDER.txt

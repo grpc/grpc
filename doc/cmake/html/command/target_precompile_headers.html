@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>target_precompile_headers &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="target_sources" href="target_sources.html" />
+    <link rel="prev" title="target_link_options" href="target_link_options.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="target_sources.html" title="target_sources"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="target_link_options.html" title="target_link_options"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">target_precompile_headers</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="target-precompile-headers">
+<span id="command:target_precompile_headers"></span><h1>target_precompile_headers<a class="headerlink" href="#target-precompile-headers" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.16.</span></p>
+</div>
+<p>Add a list of header files to precompile.</p>
+<p>Precompiling header files can speed up compilation by creating a partially
+processed version of some header files, and then using that version during
+compilations rather than repeatedly parsing the original headers.</p>
+<div class="section" id="main-form">
+<h2>Main Form<a class="headerlink" href="#main-form" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_precompile_headers(</span><span class="nv">&lt;target&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">&lt;</span><span class="no">INTERFACE</span><span class="p">|</span><span class="no">PUBLIC</span><span class="p">|</span><span class="no">PRIVATE</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="nb">header1...</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="o">&lt;</span><span class="no">INTERFACE</span><span class="p">|</span><span class="no">PUBLIC</span><span class="p">|</span><span class="no">PRIVATE</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="nb">header2...</span><span class="p">]</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The command adds header files to the <span class="target" id="index-0-prop_tgt:PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS" title="PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRECOMPILE_HEADERS</span></code></a> and/or
+<span class="target" id="index-0-prop_tgt:INTERFACE_PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS" title="INTERFACE_PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_PRECOMPILE_HEADERS</span></code></a> target properties of <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>.
+The named <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> must have been created by a command such as
+<span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> or <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> and must not be an
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#alias-targets"><span class="std std-ref">ALIAS target</span></a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code>, <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> and <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> keywords are required to
+specify the scope of the following arguments.  <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> and <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code>
+items will populate the <span class="target" id="index-1-prop_tgt:PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS" title="PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRECOMPILE_HEADERS</span></code></a> property of
+<code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>.  <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> and <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> items will populate the
+<span class="target" id="index-1-prop_tgt:INTERFACE_PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS" title="INTERFACE_PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_PRECOMPILE_HEADERS</span></code></a> property of <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>
+(<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">IMPORTED targets</span></a> only support <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> items).
+Repeated calls for the same <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> will append items in the order called.</p>
+<p>Projects should generally avoid using <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> or <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> for targets
+that will be <a class="reference internal" href="install.html#install-export"><span class="std std-ref">exported</span></a>, or they should at least use
+the <code class="docutils literal notranslate"><span class="pre">$&lt;BUILD_INTERFACE:...&gt;</span></code> generator expression to prevent precompile
+headers from appearing in an installed exported target.  Consumers of a target
+should typically be in control of what precompile headers they use, not have
+precompile headers forced on them by the targets being consumed (since
+precompile headers are not typically usage requirements).  A notable exception
+to this is where an <a class="reference internal" href="../manual/cmake-buildsystem.7.html#interface-libraries"><span class="std std-ref">interface library</span></a> is created
+to define a commonly used set of precompile headers in one place and then other
+targets link to that interface library privately.  In this case, the interface
+library exists specifically to propagate the precompile headers to its
+consumers and the consumer is effectively still in control, since it decides
+whether to link to the interface library or not.</p>
+<p>The list of header files is used to generate a header file named
+<code class="docutils literal notranslate"><span class="pre">cmake_pch.h|xx</span></code> which is used to generate the precompiled header file
+(<code class="docutils literal notranslate"><span class="pre">.pch</span></code>, <code class="docutils literal notranslate"><span class="pre">.gch</span></code>, <code class="docutils literal notranslate"><span class="pre">.pchi</span></code>) artifact.  The <code class="docutils literal notranslate"><span class="pre">cmake_pch.h|xx</span></code> header
+file will be force included (<code class="docutils literal notranslate"><span class="pre">-include</span></code> for GCC, <code class="docutils literal notranslate"><span class="pre">/FI</span></code> for MSVC) to
+all source files, so sources do not need to have <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;pch.h&quot;</span></code>.</p>
+<p>Header file names specified with angle brackets (e.g. <code class="docutils literal notranslate"><span class="pre">&lt;unordered_map&gt;</span></code>) or
+explicit double quotes (escaped for the <span class="target" id="index-0-manual:cmake-language(7)"></span><a class="reference internal" href="../manual/cmake-language.7.html#manual:cmake-language(7)" title="cmake-language(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-language(7)</span></code></a>,
+e.g. <code class="docutils literal notranslate"><span class="pre">[[&quot;other_header.h&quot;]]</span></code>) will be treated as is, and include directories
+must be available for the compiler to find them.  Other header file names
+(e.g. <code class="docutils literal notranslate"><span class="pre">project_header.h</span></code>) are interpreted as being relative to the current
+source directory (e.g. <span class="target" id="index-0-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>) and will be
+included by absolute path.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_precompile_headers(</span><span class="nb">myTarget</span><span class="w"></span>
+<span class="w">  </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">    </span><span class="nb">project_header.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">    </span><span class="p">[[</span><span class="s">&quot;other_header.h&quot;</span><span class="p">]]</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&lt;unordered_map&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">target_precompile_headers()</span></code> may use “generator expressions”
+with the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.
+See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a> manual for available
+expressions.
+The <code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE:...&gt;</span></code> generator expression is particularly
+useful for specifying a language-specific header to precompile for
+only one language (e.g. <code class="docutils literal notranslate"><span class="pre">CXX</span></code> and not <code class="docutils literal notranslate"><span class="pre">C</span></code>).  In this case, header
+file names that are not explicitly in double quotes or angle brackets
+must be specified by absolute path.  Also, when specifying angle brackets
+inside a generator expression, be sure to encode the closing <code class="docutils literal notranslate"><span class="pre">&gt;</span></code> as
+<code class="docutils literal notranslate"><span class="pre">$&lt;ANGLE-R&gt;</span></code>.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_precompile_headers(</span><span class="nb">mylib</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;$&lt;$&lt;COMPILE_LANGUAGE:CXX&gt;:${CMAKE_CURRENT_SOURCE_DIR}/cxx_only.h&gt;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;$&lt;$&lt;COMPILE_LANGUAGE:C&gt;:&lt;stddef.h$&lt;ANGLE-R&gt;&gt;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;$&lt;$&lt;COMPILE_LANGUAGE:CXX&gt;:&lt;cstddef$&lt;ANGLE-R&gt;&gt;&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="reusing-precompile-headers">
+<h2>Reusing Precompile Headers<a class="headerlink" href="#reusing-precompile-headers" title="Permalink to this headline">¶</a></h2>
+<p>The command also supports a second signature which can be used to specify that
+one target re-uses a precompiled header file artifact from another target
+instead of generating its own:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_precompile_headers(</span><span class="nv">&lt;target&gt;</span><span class="w"> </span><span class="no">REUSE_FROM</span><span class="w"> </span><span class="nv">&lt;other_target&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This form sets the <span class="target" id="index-0-prop_tgt:PRECOMPILE_HEADERS_REUSE_FROM"></span><a class="reference internal" href="../prop_tgt/PRECOMPILE_HEADERS_REUSE_FROM.html#prop_tgt:PRECOMPILE_HEADERS_REUSE_FROM" title="PRECOMPILE_HEADERS_REUSE_FROM"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRECOMPILE_HEADERS_REUSE_FROM</span></code></a> property to
+<code class="docutils literal notranslate"><span class="pre">&lt;other_target&gt;</span></code> and adds a dependency such that <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> will depend
+on <code class="docutils literal notranslate"><span class="pre">&lt;other_target&gt;</span></code>.  CMake will halt with an error if the
+<span class="target" id="index-2-prop_tgt:PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS" title="PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRECOMPILE_HEADERS</span></code></a> property of <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> is already set when
+the <code class="docutils literal notranslate"><span class="pre">REUSE_FROM</span></code> form is used.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">REUSE_FROM</span></code> form requires the same set of compiler options,
+compiler flags and compiler definitions for both <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;other_target&gt;</span></code>.  Some compilers (e.g. GCC) may issue a warning if the
+precompiled header file cannot be used (<code class="docutils literal notranslate"><span class="pre">-Winvalid-pch</span></code>).</p>
+</div>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p>To disable precompile headers for specific targets, see the
+<span class="target" id="index-0-prop_tgt:DISABLE_PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/DISABLE_PRECOMPILE_HEADERS.html#prop_tgt:DISABLE_PRECOMPILE_HEADERS" title="DISABLE_PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DISABLE_PRECOMPILE_HEADERS</span></code></a> target property.</p>
+<p>To prevent precompile headers from being used when compiling a specific
+source file, see the <span class="target" id="index-0-prop_sf:SKIP_PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_sf/SKIP_PRECOMPILE_HEADERS.html#prop_sf:SKIP_PRECOMPILE_HEADERS" title="SKIP_PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_PRECOMPILE_HEADERS</span></code></a> source file property.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">target_precompile_headers</a><ul>
+<li><a class="reference internal" href="#main-form">Main Form</a></li>
+<li><a class="reference internal" href="#reusing-precompile-headers">Reusing Precompile Headers</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="target_link_options.html"
+                        title="previous chapter">target_link_options</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="target_sources.html"
+                        title="next chapter">target_sources</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/target_precompile_headers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="target_sources.html" title="target_sources"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="target_link_options.html" title="target_link_options"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">target_precompile_headers</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

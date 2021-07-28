@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindTIFF &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindUnixCommands" href="FindUnixCommands.html" />
+    <link rel="prev" title="FindThreads" href="FindThreads.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindUnixCommands.html" title="FindUnixCommands"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindThreads.html" title="FindThreads"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindTIFF</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findtiff">
+<span id="module:FindTIFF"></span><h1>FindTIFF<a class="headerlink" href="#findtiff" title="Permalink to this headline">¶</a></h1>
+<p>Find the TIFF library (<code class="docutils literal notranslate"><span class="pre">libtiff</span></code>, <a class="reference external" href="https://libtiff.gitlab.io/libtiff/">https://libtiff.gitlab.io/libtiff/</a>).</p>
+<div class="section" id="optional-components">
+<h2>Optional COMPONENTS<a class="headerlink" href="#optional-components" title="Permalink to this headline">¶</a></h2>
+<p>This module supports the optional component <cite>CXX</cite>, for use with the COMPONENTS
+argument of the <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command. This component has an associated
+imported target, as described below.</p>
+</div>
+<div class="section" id="imported-targets">
+<h2>Imported targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF::TIFF</span></code></dt><dd><p>The TIFF library, if found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF::CXX</span></code></dt><dd><p>The C++ wrapper libtiffxx, if requested by the <cite>COMPONENTS CXX</cite> option,
+if the compiler is not MSVC (which includes the C++ wrapper in libtiff),
+and if found.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_FOUND</span></code></dt><dd><p>true if the TIFF headers and libraries were found</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_INCLUDE_DIR</span></code></dt><dd><p>the directory containing the TIFF headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_INCLUDE_DIRS</span></code></dt><dd><p>the directory containing the TIFF headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_LIBRARIES</span></code></dt><dd><p>TIFF libraries to be linked</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following cache variables may also be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_INCLUDE_DIR</span></code></dt><dd><p>the directory containing the TIFF headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_LIBRARY_RELEASE</span></code></dt><dd><p>the path to the TIFF library for release configurations</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFF_LIBRARY_DEBUG</span></code></dt><dd><p>the path to the TIFF library for debug configurations</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFFXX_LIBRARY_RELEASE</span></code></dt><dd><p>the path to the TIFFXX library for release configurations</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIFFXX_LIBRARY_DEBUG</span></code></dt><dd><p>the path to the TIFFXX library for debug configurations</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindTIFF</a><ul>
+<li><a class="reference internal" href="#optional-components">Optional COMPONENTS</a></li>
+<li><a class="reference internal" href="#imported-targets">Imported targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindThreads.html"
+                        title="previous chapter">FindThreads</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindUnixCommands.html"
+                        title="next chapter">FindUnixCommands</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindTIFF.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindUnixCommands.html" title="FindUnixCommands"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindThreads.html" title="FindThreads"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindTIFF</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

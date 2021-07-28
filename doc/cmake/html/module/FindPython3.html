@@ -1,0 +1,515 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindPython3 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindQt3" href="FindQt3.html" />
+    <link rel="prev" title="FindPython2" href="FindPython2.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindQt3.html" title="FindQt3"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindPython2.html" title="FindPython2"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPython3</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findpython3">
+<span id="module:FindPython3"></span><h1>FindPython3<a class="headerlink" href="#findpython3" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.12.</span></p>
+</div>
+<p>Find Python 3 interpreter, compiler and development environment (include
+directories and libraries).</p>
+<p>When a version is requested, it can be specified as a simple value or as a
+range. For a detailed description of version range usage and capabilities,
+refer to the <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command.</p>
+<p>The following components are supported:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Interpreter</span></code>: search for Python 3 interpreter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Compiler</span></code>: search for Python 3 compiler. Only offered by IronPython.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Development</span></code>: search for development artifacts (include directories and
+libraries). This component includes two sub-components which can be specified
+independently:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Development.Module</span></code>: search for artifacts for Python 3 module
+developments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Development.Embed</span></code>: search for artifacts for Python 3 embedding
+developments.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NumPy</span></code>: search for NumPy include directories.</p></li>
+</ul>
+<p>If no <code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> are specified, <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code> is assumed.</p>
+<p>If component <code class="docutils literal notranslate"><span class="pre">Development</span></code> is specified, it implies sub-components
+<code class="docutils literal notranslate"><span class="pre">Development.Module</span></code> and <code class="docutils literal notranslate"><span class="pre">Development.Embed</span></code>.</p>
+<p>To ensure consistent versions between components <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code>, <code class="docutils literal notranslate"><span class="pre">Compiler</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Development</span></code> (or one of its sub-components) and <code class="docutils literal notranslate"><span class="pre">NumPy</span></code>, specify all
+components at the same time:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find_package (Python3 COMPONENTS Interpreter Development)
+</pre></div>
+</div>
+<p>This module looks only for version 3 of Python. This module can be used
+concurrently with <span class="target" id="index-0-module:FindPython2"></span><a class="reference internal" href="FindPython2.html#module:FindPython2" title="FindPython2"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython2</span></code></a> module to use both Python versions.</p>
+<p>The <span class="target" id="index-0-module:FindPython"></span><a class="reference internal" href="FindPython.html#module:FindPython" title="FindPython"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython</span></code></a> module can be used if Python version does not matter
+for you.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If components <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code> and <code class="docutils literal notranslate"><span class="pre">Development</span></code> (or one of its
+sub-components) are both specified, this module search only for interpreter
+with same platform architecture as the one defined by <code class="docutils literal notranslate"><span class="pre">CMake</span></code>
+configuration. This constraint does not apply if only <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code>
+component is specified.</p>
+</div>
+<div class="section" id="imported-targets">
+<h2>Imported Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following <a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">Imported Targets</span></a>
+(when <span class="target" id="index-0-prop_gbl:CMAKE_ROLE"></span><a class="reference internal" href="../prop_gbl/CMAKE_ROLE.html#prop_gbl:CMAKE_ROLE" title="CMAKE_ROLE"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">CMAKE_ROLE</span></code></a> is <code class="docutils literal notranslate"><span class="pre">PROJECT</span></code>):</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Python3::Interpreter</span></code></dt><dd><p>Python 3 interpreter. Target defined if component <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code> is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3::Compiler</span></code></dt><dd><p>Python 3 compiler. Target defined if component <code class="docutils literal notranslate"><span class="pre">Compiler</span></code> is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3::Module</span></code></dt><dd><p>Python 3 library for Python module. Target defined if component
+<code class="docutils literal notranslate"><span class="pre">Development.Module</span></code> is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3::Python</span></code></dt><dd><p>Python 3 library for Python embedding. Target defined if component
+<code class="docutils literal notranslate"><span class="pre">Development.Embed</span></code> is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3::NumPy</span></code></dt><dd><p>NumPy library for Python 3. Target defined if component <code class="docutils literal notranslate"><span class="pre">NumPy</span></code> is found.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project
+(see <a class="reference internal" href="../manual/cmake-developer.7.html#cmake-developer-standard-variable-names"><span class="std std-ref">Standard Variable Names</span></a>):</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FOUND</span></code></dt><dd><p>System has the Python 3 requested components.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_Interpreter_FOUND</span></code></dt><dd><p>System has the Python 3 interpreter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_EXECUTABLE</span></code></dt><dd><p>Path to the Python 3 interpreter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_INTERPRETER_ID</span></code></dt><dd><dl class="simple">
+<dt>A short string unique to the interpreter. Possible values include:</dt><dd><ul class="simple">
+<li><p>Python</p></li>
+<li><p>ActivePython</p></li>
+<li><p>Anaconda</p></li>
+<li><p>Canopy</p></li>
+<li><p>IronPython</p></li>
+<li><p>PyPy</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_STDLIB</span></code></dt><dd><p>Standard platform independent installation directory.</p>
+<p>Information returned by
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_python_lib(plat_specific=False,standard_lib=True)</span></code>
+or else <code class="docutils literal notranslate"><span class="pre">sysconfig.get_path('stdlib')</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_STDARCH</span></code></dt><dd><p>Standard platform dependent installation directory.</p>
+<p>Information returned by
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_python_lib(plat_specific=True,standard_lib=True)</span></code>
+or else <code class="docutils literal notranslate"><span class="pre">sysconfig.get_path('platstdlib')</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_SITELIB</span></code></dt><dd><p>Third-party platform independent installation directory.</p>
+<p>Information returned by
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_python_lib(plat_specific=False,standard_lib=False)</span></code>
+or else <code class="docutils literal notranslate"><span class="pre">sysconfig.get_path('purelib')</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_SITEARCH</span></code></dt><dd><p>Third-party platform dependent installation directory.</p>
+<p>Information returned by
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_python_lib(plat_specific=True,standard_lib=False)</span></code>
+or else <code class="docutils literal notranslate"><span class="pre">sysconfig.get_path('platlib')</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_SOABI</span></code></dt><dd><p>Extension suffix for modules.</p>
+<p>Information returned by
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_config_var('SOABI')</span></code> or computed from
+<code class="docutils literal notranslate"><span class="pre">distutils.sysconfig.get_config_var('EXT_SUFFIX')</span></code> or
+<code class="docutils literal notranslate"><span class="pre">python3-config</span> <span class="pre">--extension-suffix</span></code>. If package <code class="docutils literal notranslate"><span class="pre">distutils.sysconfig</span></code> is
+not available, <code class="docutils literal notranslate"><span class="pre">sysconfig.get_config_var('SOABI')</span></code> or
+<code class="docutils literal notranslate"><span class="pre">sysconfig.get_config_var('EXT_SUFFIX')</span></code> are used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_Compiler_FOUND</span></code></dt><dd><p>System has the Python 3 compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_COMPILER</span></code></dt><dd><p>Path to the Python 3 compiler. Only offered by IronPython.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_COMPILER_ID</span></code></dt><dd><dl class="simple">
+<dt>A short string unique to the compiler. Possible values include:</dt><dd><ul class="simple">
+<li><p>IronPython</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_DOTNET_LAUNCHER</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">.Net</span></code> interpreter. Only used by <code class="docutils literal notranslate"><span class="pre">IronPython</span></code> implementation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_Development_FOUND</span></code></dt><dd><p>System has the Python 3 development artifacts.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_Development.Module_FOUND</span></code></dt><dd><p>System has the Python 3 development artifacts for Python module.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_Development.Embed_FOUND</span></code></dt><dd><p>System has the Python 3 development artifacts for Python embedding.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_INCLUDE_DIRS</span></code></dt><dd><p>The Python 3 include directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_LINK_OPTIONS</span></code></dt><dd><p>The Python 3 link options. Some configurations require specific link options
+for a correct build and execution.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_LIBRARIES</span></code></dt><dd><p>The Python 3 libraries.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_LIBRARY_DIRS</span></code></dt><dd><p>The Python 3 library directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_RUNTIME_LIBRARY_DIRS</span></code></dt><dd><p>The Python 3 runtime library directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_VERSION</span></code></dt><dd><p>Python 3 version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_VERSION_MAJOR</span></code></dt><dd><p>Python 3 major version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_VERSION_MINOR</span></code></dt><dd><p>Python 3 minor version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_VERSION_PATCH</span></code></dt><dd><p>Python 3 patch version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_PyPy_VERSION</span></code></dt><dd><p>Python 3 PyPy version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_NumPy_FOUND</span></code></dt><dd><p>System has the NumPy.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_NumPy_INCLUDE_DIRS</span></code></dt><dd><p>The NumPy include directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_NumPy_VERSION</span></code></dt><dd><p>The NumPy version.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="hints">
+<h2>Hints<a class="headerlink" href="#hints" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_ROOT_DIR</span></code></dt><dd><p>Define the root directory of a Python 3 installation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_USE_STATIC_LIBS</span></code></dt><dd><ul class="simple">
+<li><p>If not defined, search for shared libraries and static libraries in that
+order.</p></li>
+<li><p>If set to TRUE, search <strong>only</strong> for static libraries.</p></li>
+<li><p>If set to FALSE, search <strong>only</strong> for shared libraries.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_ABI</span></code></dt><dd><p>This variable defines which ABIs, as defined in
+<a class="reference external" href="https://www.python.org/dev/peps/pep-3149/">PEP 3149</a>, should be searched.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">Python3_FIND_ABI</span></code> is not defined, any ABI will be searched.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Python3_FIND_ABI</span></code> variable is a 3-tuple specifying, in that order,
+<code class="docutils literal notranslate"><span class="pre">pydebug</span></code> (<code class="docutils literal notranslate"><span class="pre">d</span></code>), <code class="docutils literal notranslate"><span class="pre">pymalloc</span></code> (<code class="docutils literal notranslate"><span class="pre">m</span></code>) and <code class="docutils literal notranslate"><span class="pre">unicode</span></code> (<code class="docutils literal notranslate"><span class="pre">u</span></code>) flags.
+Each element can be set to one of the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ON</span></code>: Corresponding flag is selected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code>: Corresponding flag is not selected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ANY</span></code>: The two possibilities (<code class="docutils literal notranslate"><span class="pre">ON</span></code> and <code class="docutils literal notranslate"><span class="pre">OFF</span></code>) will be searched.</p></li>
+</ul>
+<p>From this 3-tuple, various ABIs will be searched starting from the most
+specialized to the most general. Moreover, <code class="docutils literal notranslate"><span class="pre">debug</span></code> versions will be
+searched <strong>after</strong> <code class="docutils literal notranslate"><span class="pre">non-debug</span></code> ones.</p>
+<p>For example, if we have:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set (Python3_FIND_ABI &quot;ON&quot; &quot;ANY&quot; &quot;ANY&quot;)
+</pre></div>
+</div>
+<p>The following flags combinations will be appended, in that order, to the
+artifact names: <code class="docutils literal notranslate"><span class="pre">dmu</span></code>, <code class="docutils literal notranslate"><span class="pre">dm</span></code>, <code class="docutils literal notranslate"><span class="pre">du</span></code>, and <code class="docutils literal notranslate"><span class="pre">d</span></code>.</p>
+<p>And to search any possible ABIs:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set (Python3_FIND_ABI &quot;ANY&quot; &quot;ANY&quot; &quot;ANY&quot;)
+</pre></div>
+</div>
+<p>The following combinations, in that order, will be used: <code class="docutils literal notranslate"><span class="pre">mu</span></code>, <code class="docutils literal notranslate"><span class="pre">m</span></code>,
+<code class="docutils literal notranslate"><span class="pre">u</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;empty&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">dmu</span></code>, <code class="docutils literal notranslate"><span class="pre">dm</span></code>, <code class="docutils literal notranslate"><span class="pre">du</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This hint is useful only on <code class="docutils literal notranslate"><span class="pre">POSIX</span></code> systems. So, on <code class="docutils literal notranslate"><span class="pre">Windows</span></code> systems,
+when <code class="docutils literal notranslate"><span class="pre">Python3_FIND_ABI</span></code> is defined, <code class="docutils literal notranslate"><span class="pre">Python</span></code> distributions from
+<a class="reference external" href="https://www.python.org/">python.org</a> will be found only if value for
+each flag is <code class="docutils literal notranslate"><span class="pre">OFF</span></code> or <code class="docutils literal notranslate"><span class="pre">ANY</span></code>.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_STRATEGY</span></code></dt><dd><p>This variable defines how lookup will be done.
+The <code class="docutils literal notranslate"><span class="pre">Python3_FIND_STRATEGY</span></code> variable can be set to one of the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">VERSION</span></code>: Try to find the most recent version in all specified
+locations.
+This is the default if policy <span class="target" id="index-0-policy:CMP0094"></span><a class="reference internal" href="../policy/CMP0094.html#policy:CMP0094" title="CMP0094"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0094</span></code></a> is undefined or set to
+<code class="docutils literal notranslate"><span class="pre">OLD</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOCATION</span></code>: Stops lookup as soon as a version satisfying version
+constraints is founded.
+This is the default if policy <span class="target" id="index-1-policy:CMP0094"></span><a class="reference internal" href="../policy/CMP0094.html#policy:CMP0094" title="CMP0094"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0094</span></code></a> is set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_REGISTRY</span></code></dt><dd><p>On Windows the <code class="docutils literal notranslate"><span class="pre">Python3_FIND_REGISTRY</span></code> variable determine the order
+of preference between registry and environment variables.
+The <code class="docutils literal notranslate"><span class="pre">Python3_FIND_REGISTRY</span></code> variable can be set to one of the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FIRST</span></code>: Try to use registry before environment variables.
+This is the default.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LAST</span></code>: Try to use registry after environment variables.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NEVER</span></code>: Never try to use registry.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_FRAMEWORK</span></code></dt><dd><p>On macOS the <code class="docutils literal notranslate"><span class="pre">Python3_FIND_FRAMEWORK</span></code> variable determine the order of
+preference between Apple-style and unix-style package components.
+This variable can take same values as <span class="target" id="index-0-variable:CMAKE_FIND_FRAMEWORK"></span><a class="reference internal" href="../variable/CMAKE_FIND_FRAMEWORK.html#variable:CMAKE_FIND_FRAMEWORK" title="CMAKE_FIND_FRAMEWORK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_FRAMEWORK</span></code></a>
+variable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Value <code class="docutils literal notranslate"><span class="pre">ONLY</span></code> is not supported so <code class="docutils literal notranslate"><span class="pre">FIRST</span></code> will be used instead.</p>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">Python3_FIND_FRAMEWORK</span></code> is not defined, <span class="target" id="index-1-variable:CMAKE_FIND_FRAMEWORK"></span><a class="reference internal" href="../variable/CMAKE_FIND_FRAMEWORK.html#variable:CMAKE_FIND_FRAMEWORK" title="CMAKE_FIND_FRAMEWORK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_FRAMEWORK</span></code></a>
+variable will be used, if any.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_VIRTUALENV</span></code></dt><dd><p>This variable defines the handling of virtual environments managed by
+<code class="docutils literal notranslate"><span class="pre">virtualenv</span></code> or <code class="docutils literal notranslate"><span class="pre">conda</span></code>. It is meaningful only when a virtual environment
+is active (i.e. the <code class="docutils literal notranslate"><span class="pre">activate</span></code> script has been evaluated). In this case, it
+takes precedence over <code class="docutils literal notranslate"><span class="pre">Python3_FIND_REGISTRY</span></code> and <code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_FRAMEWORK</span></code>
+variables.  The <code class="docutils literal notranslate"><span class="pre">Python3_FIND_VIRTUALENV</span></code> variable can be set to one of the
+following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FIRST</span></code>: The virtual environment is used before any other standard
+paths to look-up for the interpreter. This is the default.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ONLY</span></code>: Only the virtual environment is used to look-up for the
+interpreter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STANDARD</span></code>: The virtual environment is not used to look-up for the
+interpreter but environment variable <code class="docutils literal notranslate"><span class="pre">PATH</span></code> is always considered.
+In this case, variable <code class="docutils literal notranslate"><span class="pre">Python3_FIND_REGISTRY</span></code> (Windows) or
+<code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_FRAMEWORK</span></code> (macOS) can be set with value <code class="docutils literal notranslate"><span class="pre">LAST</span></code> or
+<code class="docutils literal notranslate"><span class="pre">NEVER</span></code> to select preferably the interpreter from the virtual
+environment.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the component <code class="docutils literal notranslate"><span class="pre">Development</span></code> is requested, it is <strong>strongly</strong>
+recommended to also include the component <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code> to get expected
+result.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_FIND_IMPLEMENTATIONS</span></code></dt><dd><p>This variable defines, in an ordered list, the different implementations
+which will be searched. The <code class="docutils literal notranslate"><span class="pre">Python3_FIND_IMPLEMENTATIONS</span></code> variable can
+hold the following values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CPython</span></code>: this is the standard implementation. Various products, like
+<code class="docutils literal notranslate"><span class="pre">Anaconda</span></code> or <code class="docutils literal notranslate"><span class="pre">ActivePython</span></code>, rely on this implementation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IronPython</span></code>: This implementation use the <code class="docutils literal notranslate"><span class="pre">CSharp</span></code> language for
+<code class="docutils literal notranslate"><span class="pre">.NET</span> <span class="pre">Framework</span></code> on top of the <cite>Dynamic Language Runtime</cite> (<code class="docutils literal notranslate"><span class="pre">DLR</span></code>).
+See <a class="reference external" href="http://ironpython.net">IronPython</a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PyPy</span></code>: This implementation use <code class="docutils literal notranslate"><span class="pre">RPython</span></code> language and
+<code class="docutils literal notranslate"><span class="pre">RPython</span> <span class="pre">translation</span> <span class="pre">toolchain</span></code> to produce the python interpreter.
+See <a class="reference external" href="https://www.pypy.org">PyPy</a>.</p></li>
+</ul>
+<p>The default value is:</p>
+<ul class="simple">
+<li><p>Windows platform: <code class="docutils literal notranslate"><span class="pre">CPython</span></code>, <code class="docutils literal notranslate"><span class="pre">IronPython</span></code></p></li>
+<li><p>Other platforms: <code class="docutils literal notranslate"><span class="pre">CPython</span></code></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This hint has the lowest priority of all hints, so even if, for example,
+you specify <code class="docutils literal notranslate"><span class="pre">IronPython</span></code> first and <code class="docutils literal notranslate"><span class="pre">CPython</span></code> in second, a python
+product based on <code class="docutils literal notranslate"><span class="pre">CPython</span></code> can be selected because, for example with
+<code class="docutils literal notranslate"><span class="pre">Python3_FIND_STRATEGY=LOCATION</span></code>, each location will be search first for
+<code class="docutils literal notranslate"><span class="pre">IronPython</span></code> and second for <code class="docutils literal notranslate"><span class="pre">CPython</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">IronPython</span></code> is specified, on platforms other than <code class="docutils literal notranslate"><span class="pre">Windows</span></code>, the
+<code class="docutils literal notranslate"><span class="pre">.Net</span></code> interpreter (i.e. <code class="docutils literal notranslate"><span class="pre">mono</span></code> command) is expected to be available
+through the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> variable.</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="artifacts-specification">
+<h2>Artifacts Specification<a class="headerlink" href="#artifacts-specification" title="Permalink to this headline">¶</a></h2>
+<p>To solve special cases, it is possible to specify directly the artifacts by
+setting the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_EXECUTABLE</span></code></dt><dd><p>The path to the interpreter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_COMPILER</span></code></dt><dd><p>The path to the compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_DOTNET_LAUNCHER</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">.Net</span></code> interpreter. Only used by <code class="docutils literal notranslate"><span class="pre">IronPython</span></code> implementation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_LIBRARY</span></code></dt><dd><p>The path to the library. It will be used to compute the
+variables <code class="docutils literal notranslate"><span class="pre">Python3_LIBRARIES</span></code>, <code class="docutils literal notranslate"><span class="pre">Python3_LIBRARY_DIRS</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Python3_RUNTIME_LIBRARY_DIRS</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_INCLUDE_DIR</span></code></dt><dd><p>The path to the directory of the <code class="docutils literal notranslate"><span class="pre">Python</span></code> headers. It will be used to
+compute the variable <code class="docutils literal notranslate"><span class="pre">Python3_INCLUDE_DIRS</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_NumPy_INCLUDE_DIR</span></code></dt><dd><p>The path to the directory of the <code class="docutils literal notranslate"><span class="pre">NumPy</span></code> headers. It will be used to
+compute the variable <code class="docutils literal notranslate"><span class="pre">Python3_NumPy_INCLUDE_DIRS</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All paths must be absolute. Any artifact specified with a relative path
+will be ignored.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When an artifact is specified, all <code class="docutils literal notranslate"><span class="pre">HINTS</span></code> will be ignored and no search
+will be performed for this artifact.</p>
+<p>If more than one artifact is specified, it is the user’s responsibility to
+ensure the consistency of the various artifacts.</p>
+</div>
+<p>By default, this module supports multiple calls in different directories of a
+project with different version/component requirements while providing correct
+and consistent results for each call. To support this behavior, <code class="docutils literal notranslate"><span class="pre">CMake</span></code> cache
+is not used in the traditional way which can be problematic for interactive
+specification. So, to enable also interactive specification, module behavior
+can be controlled with the following variable:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Python3_ARTIFACTS_INTERACTIVE</span></code></dt><dd><p>Selects the behavior of the module. This is a boolean variable:</p>
+<ul class="simple">
+<li><p>If set to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code>: Create CMake cache entries for the above artifact
+specification variables so that users can edit them interactively.
+This disables support for multiple version/component requirements.</p></li>
+<li><p>If set to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code> or undefined: Enable multiple version/component
+requirements.</p></li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="commands">
+<h2>Commands<a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the command <code class="docutils literal notranslate"><span class="pre">Python3_add_library</span></code> (when
+<span class="target" id="index-1-prop_gbl:CMAKE_ROLE"></span><a class="reference internal" href="../prop_gbl/CMAKE_ROLE.html#prop_gbl:CMAKE_ROLE" title="CMAKE_ROLE"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">CMAKE_ROLE</span></code></a> is <code class="docutils literal notranslate"><span class="pre">PROJECT</span></code>), which has the same semantics as
+<span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> and adds a dependency to target <code class="docutils literal notranslate"><span class="pre">Python3::Python</span></code> or,
+when library type is <code class="docutils literal notranslate"><span class="pre">MODULE</span></code>, to target <code class="docutils literal notranslate"><span class="pre">Python3::Module</span></code> and takes care
+of Python module naming rules:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Python3_add_library (&lt;name&gt; [STATIC | SHARED | MODULE [WITH_SOABI]]
+                     &lt;source1&gt; [&lt;source2&gt; ...])
+</pre></div>
+</div>
+<p>If the library type is not specified, <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> is assumed.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> library type, if option <code class="docutils literal notranslate"><span class="pre">WITH_SOABI</span></code> is specified, the
+module suffix will include the <code class="docutils literal notranslate"><span class="pre">Python3_SOABI</span></code> value, if any.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindPython3</a><ul>
+<li><a class="reference internal" href="#imported-targets">Imported Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#hints">Hints</a></li>
+<li><a class="reference internal" href="#artifacts-specification">Artifacts Specification</a></li>
+<li><a class="reference internal" href="#commands">Commands</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindPython2.html"
+                        title="previous chapter">FindPython2</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindQt3.html"
+                        title="next chapter">FindQt3</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindPython3.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindQt3.html" title="FindQt3"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindPython2.html" title="FindPython2"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPython3</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

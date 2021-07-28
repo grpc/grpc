@@ -1,0 +1,17 @@
+CMP0014
+-------
+
+Input directories must have ``CMakeLists.txt``.
+
+CMake versions before 2.8 silently ignored missing ``CMakeLists.txt``
+files in directories referenced by :command:`add_subdirectory` or  :command:`subdirs`,
+treating them as if present but empty.  In CMake 2.8.0 and above this
+:command:`cmake_policy` determines whether or not the case is an error.
+The ``OLD`` behavior for this policy is to silently ignore the problem.
+The ``NEW`` behavior for this policy is to report an error.
+
+This policy was introduced in CMake version 2.8.0.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

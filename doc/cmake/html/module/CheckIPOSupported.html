@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CheckIPOSupported &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CheckLanguage" href="CheckLanguage.html" />
+    <link rel="prev" title="CheckIncludeFiles" href="CheckIncludeFiles.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CheckLanguage.html" title="CheckLanguage"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CheckIncludeFiles.html" title="CheckIncludeFiles"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckIPOSupported</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="checkiposupported">
+<span id="module:CheckIPOSupported"></span><h1>CheckIPOSupported<a class="headerlink" href="#checkiposupported" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.9.</span></p>
+</div>
+<p>Check whether the compiler supports an interprocedural optimization (IPO/LTO).
+Use this before enabling the <span class="target" id="index-0-prop_tgt:INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../prop_tgt/INTERPROCEDURAL_OPTIMIZATION.html#prop_tgt:INTERPROCEDURAL_OPTIMIZATION" title="INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERPROCEDURAL_OPTIMIZATION</span></code></a> target
+property.</p>
+<dl class="cmake command">
+<dt id="command:check_ipo_supported">
+<code class="sig-name descname">check_ipo_supported</code><a class="headerlink" href="#command:check_ipo_supported" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>check_ipo_supported([RESULT &lt;result&gt;] [OUTPUT &lt;output&gt;]
+                    [LANGUAGES &lt;lang&gt;...])
+</pre></div>
+</div>
+<p>Options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">RESULT</span> <span class="pre">&lt;result&gt;</span></code></dt><dd><p>Set <code class="docutils literal notranslate"><span class="pre">&lt;result&gt;</span></code> variable to <code class="docutils literal notranslate"><span class="pre">YES</span></code> if IPO is supported by the
+compiler and <code class="docutils literal notranslate"><span class="pre">NO</span></code> otherwise.  If this option is not given then
+the command will issue a fatal error if IPO is not supported.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT</span> <span class="pre">&lt;output&gt;</span></code></dt><dd><p>Set <code class="docutils literal notranslate"><span class="pre">&lt;output&gt;</span></code> variable with details about any error.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LANGUAGES</span> <span class="pre">&lt;lang&gt;...</span></code></dt><dd><p>Specify languages whose compilers to check.
+Languages <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CXX</span></code>, and <code class="docutils literal notranslate"><span class="pre">Fortran</span></code> are supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>It makes no sense to use this module when <span class="target" id="index-0-policy:CMP0069"></span><a class="reference internal" href="../policy/CMP0069.html#policy:CMP0069" title="CMP0069"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0069</span></code></a> is set to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> so
+module will return error in this case. See policy <span class="target" id="index-1-policy:CMP0069"></span><a class="reference internal" href="../policy/CMP0069.html#policy:CMP0069" title="CMP0069"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0069</span></code></a> for details.</p>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">check_ipo_supported()</span><span class="w"> </span><span class="c"># fatal error if IPO is not supported</span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># Optional IPO. Do not use IPO if it&#39;s not supported by compiler.</span>
+<span class="nf">check_ipo_supported(</span><span class="no">RESULT</span><span class="w"> </span><span class="nb">result</span><span class="w"> </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="nb">result</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">else()</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">WARNING</span><span class="w"> </span><span class="s">&quot;IPO is not supported: ${output}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CheckIPOSupported</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CheckIncludeFiles.html"
+                        title="previous chapter">CheckIncludeFiles</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CheckLanguage.html"
+                        title="next chapter">CheckLanguage</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CheckIPOSupported.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CheckLanguage.html" title="CheckLanguage"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CheckIncludeFiles.html" title="CheckIncludeFiles"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckIPOSupported</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>create_test_sourcelist &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="define_property" href="define_property.html" />
+    <link rel="prev" title="build_command" href="build_command.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="define_property.html" title="define_property"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="build_command.html" title="build_command"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">create_test_sourcelist</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="create-test-sourcelist">
+<span id="command:create_test_sourcelist"></span><h1>create_test_sourcelist<a class="headerlink" href="#create-test-sourcelist" title="Permalink to this headline">¶</a></h1>
+<p>Create a test driver and source list for building test programs.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">create_test_sourcelist(</span><span class="nb">sourceListName</span><span class="w"> </span><span class="nb">driverName</span><span class="w"></span>
+<span class="w">                       </span><span class="nb">test1</span><span class="w"> </span><span class="nb">test2</span><span class="w"> </span><span class="nb">test3</span><span class="w"></span>
+<span class="w">                       </span><span class="no">EXTRA_INCLUDE</span><span class="w"> </span><span class="nb">include.h</span><span class="w"></span>
+<span class="w">                       </span><span class="no">FUNCTION</span><span class="w"> </span><span class="nb">function</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A test driver is a program that links together many small tests into a
+single executable.  This is useful when building static executables
+with large libraries to shrink the total required size.  The list of
+source files needed to build the test driver will be in
+<code class="docutils literal notranslate"><span class="pre">sourceListName</span></code>.  <code class="docutils literal notranslate"><span class="pre">driverName</span></code> is the name of the test driver program.
+The rest of the arguments consist of a list of test source files, can
+be semicolon separated.  Each test source file should have a function
+in it that is the same name as the file with no extension (foo.cxx
+should have int foo(int, char*[]);) <code class="docutils literal notranslate"><span class="pre">driverName</span></code> will be able to call
+each of the tests by name on the command line.  If <code class="docutils literal notranslate"><span class="pre">EXTRA_INCLUDE</span></code> is
+specified, then the next argument is included into the generated file.
+If <code class="docutils literal notranslate"><span class="pre">FUNCTION</span></code> is specified, then the next argument is taken as a
+function name that is passed a pointer to ac and av.  This can be used
+to add extra command line processing to each test.  The
+<code class="docutils literal notranslate"><span class="pre">CMAKE_TESTDRIVER_BEFORE_TESTMAIN</span></code> cmake variable can be set to
+have code that will be placed directly before calling the test main function.
+<code class="docutils literal notranslate"><span class="pre">CMAKE_TESTDRIVER_AFTER_TESTMAIN</span></code> can be set to have code that
+will be placed directly after the call to the test main function.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="build_command.html"
+                        title="previous chapter">build_command</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="define_property.html"
+                        title="next chapter">define_property</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/create_test_sourcelist.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="define_property.html" title="define_property"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="build_command.html" title="build_command"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">create_test_sourcelist</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPack productbuild Generator &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPack RPM Generator" href="rpm.html" />
+    <link rel="prev" title="CPack PackageMaker Generator" href="packagemaker.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="rpm.html" title="CPack RPM Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="packagemaker.html" title="CPack PackageMaker Generator"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" accesskey="U">cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack productbuild Generator</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-productbuild-generator">
+<span id="cpack_gen:CPack productbuild Generator"></span><h1>CPack productbuild Generator<a class="headerlink" href="#cpack-productbuild-generator" title="Permalink to this headline">¶</a></h1>
+<p>productbuild CPack generator (macOS).</p>
+<div class="section" id="variables-specific-to-cpack-productbuild-generator">
+<h2>Variables specific to CPack productbuild generator<a class="headerlink" href="#variables-specific-to-cpack-productbuild-generator" title="Permalink to this headline">¶</a></h2>
+<p>The following variable is specific to installers built on Mac
+macOS using ProductBuild:</p>
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMMAND_PRODUCTBUILD">
+<code class="sig-name descname">CPACK_COMMAND_PRODUCTBUILD</code><a class="headerlink" href="#variable:CPACK_COMMAND_PRODUCTBUILD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the <code class="docutils literal notranslate"><span class="pre">productbuild(1)</span></code> command used to generate a product archive for
+the macOS Installer or Mac App Store.  This variable can be used to override
+the automatically detected command (or specify its location if the
+auto-detection fails to find it).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_IDENTITY_NAME">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_IDENTITY_NAME</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_IDENTITY_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a digital signature to the resulting package.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_KEYCHAIN_PATH">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_KEYCHAIN_PATH</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_KEYCHAIN_PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify a specific keychain to search for the signing identity.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMMAND_PKGBUILD">
+<code class="sig-name descname">CPACK_COMMAND_PKGBUILD</code><a class="headerlink" href="#variable:CPACK_COMMAND_PKGBUILD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the <code class="docutils literal notranslate"><span class="pre">pkgbuild(1)</span></code> command used to generate an macOS component package
+on macOS.  This variable can be used to override the automatically detected
+command (or specify its location if the auto-detection fails to find it).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PKGBUILD_IDENTITY_NAME">
+<code class="sig-name descname">CPACK_PKGBUILD_IDENTITY_NAME</code><a class="headerlink" href="#variable:CPACK_PKGBUILD_IDENTITY_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a digital signature to the resulting package.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PKGBUILD_KEYCHAIN_PATH">
+<code class="sig-name descname">CPACK_PKGBUILD_KEYCHAIN_PATH</code><a class="headerlink" href="#variable:CPACK_PKGBUILD_KEYCHAIN_PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify a specific keychain to search for the signing identity.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PREFLIGHT_&lt;COMP&gt;_SCRIPT">
+<code class="sig-name descname">CPACK_PREFLIGHT_&lt;COMP&gt;_SCRIPT</code><a class="headerlink" href="#variable:CPACK_PREFLIGHT_<COMP>_SCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full path to a file that will be used as the <code class="docutils literal notranslate"><span class="pre">preinstall</span></code> script for the
+named <code class="docutils literal notranslate"><span class="pre">&lt;COMP&gt;</span></code> component’s package, where <code class="docutils literal notranslate"><span class="pre">&lt;COMP&gt;</span></code> is the uppercased
+component name.  No <code class="docutils literal notranslate"><span class="pre">preinstall</span></code> script is added if this variable is not
+defined for a given component.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_POSTFLIGHT_&lt;COMP&gt;_SCRIPT">
+<code class="sig-name descname">CPACK_POSTFLIGHT_&lt;COMP&gt;_SCRIPT</code><a class="headerlink" href="#variable:CPACK_POSTFLIGHT_<COMP>_SCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full path to a file that will be used as the <code class="docutils literal notranslate"><span class="pre">postinstall</span></code> script for the
+named <code class="docutils literal notranslate"><span class="pre">&lt;COMP&gt;</span></code> component’s package, where <code class="docutils literal notranslate"><span class="pre">&lt;COMP&gt;</span></code> is the uppercased
+component name.  No <code class="docutils literal notranslate"><span class="pre">postinstall</span></code> script is added if this variable is not
+defined for a given component.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_RESOURCES_DIR">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_RESOURCES_DIR</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_RESOURCES_DIR" title="Permalink to this definition">¶</a></dt>
+<dd><p>If specified the productbuild generator copies files from this directory
+(including subdirectories) to the <code class="docutils literal notranslate"><span class="pre">Resources</span></code> directory. This is done
+before the <span class="target" id="index-0-variable:CPACK_RESOURCE_FILE_WELCOME"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_RESOURCE_FILE_WELCOME" title="CPACK_RESOURCE_FILE_WELCOME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RESOURCE_FILE_WELCOME</span></code></a>,
+<span class="target" id="index-0-variable:CPACK_RESOURCE_FILE_README"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_RESOURCE_FILE_README" title="CPACK_RESOURCE_FILE_README"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RESOURCE_FILE_README</span></code></a>, and
+<span class="target" id="index-0-variable:CPACK_RESOURCE_FILE_LICENSE"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_RESOURCE_FILE_LICENSE" title="CPACK_RESOURCE_FILE_LICENSE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RESOURCE_FILE_LICENSE</span></code></a> files are copied.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a background to Distribution XML if specified. The value contains the
+path to image in <code class="docutils literal notranslate"><span class="pre">Resources</span></code> directory.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an <code class="docutils literal notranslate"><span class="pre">alignment</span></code> attribute to the background in Distribution XML.
+Refer to Apple documentation for valid values.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_SCALING">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_SCALING</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_SCALING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <code class="docutils literal notranslate"><span class="pre">scaling</span></code> attribute to the background in Distribution XML.
+Refer to Apple documentation for valid values.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <code class="docutils literal notranslate"><span class="pre">mime-type</span></code> attribute to the background in Distribution XML.
+The option contains MIME type of an image.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_UTI">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_UTI</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_UTI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an <code class="docutils literal notranslate"><span class="pre">uti</span></code> attribute to the background in Distribution XML.
+The option contains UTI type of an image.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a background for the Dark Aqua theme to Distribution XML if
+specified. The value contains the path to image in <code class="docutils literal notranslate"><span class="pre">Resources</span></code>
+directory.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_ALIGNMENT">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_ALIGNMENT</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_ALIGNMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the same as <span class="target" id="index-0-variable:CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT"></span><a class="reference internal" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT" title="CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PRODUCTBUILD_BACKGROUND_ALIGNMENT</span></code></a> option,
+but for the dark theme.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_SCALING">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_SCALING</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_SCALING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the same as <span class="target" id="index-0-variable:CPACK_PRODUCTBUILD_BACKGROUND_SCALING"></span><a class="reference internal" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_SCALING" title="CPACK_PRODUCTBUILD_BACKGROUND_SCALING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PRODUCTBUILD_BACKGROUND_SCALING</span></code></a> option,
+but for the dark theme.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_MIME_TYPE">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_MIME_TYPE</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_MIME_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the same as <span class="target" id="index-0-variable:CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE"></span><a class="reference internal" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE" title="CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PRODUCTBUILD_BACKGROUND_MIME_TYPE</span></code></a> option,
+but for the dark theme.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_UTI">
+<code class="sig-name descname">CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_UTI</code><a class="headerlink" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_DARKAQUA_UTI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the same as <span class="target" id="index-0-variable:CPACK_PRODUCTBUILD_BACKGROUND_UTI"></span><a class="reference internal" href="#variable:CPACK_PRODUCTBUILD_BACKGROUND_UTI" title="CPACK_PRODUCTBUILD_BACKGROUND_UTI"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PRODUCTBUILD_BACKGROUND_UTI</span></code></a> option,
+but for the dark theme.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPack productbuild Generator</a><ul>
+<li><a class="reference internal" href="#variables-specific-to-cpack-productbuild-generator">Variables specific to CPack productbuild generator</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="packagemaker.html"
+                        title="previous chapter">CPack PackageMaker Generator</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="rpm.html"
+                        title="next chapter">CPack RPM Generator</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cpack_gen/productbuild.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="rpm.html" title="CPack RPM Generator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="packagemaker.html" title="CPack PackageMaker Generator"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" >cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack productbuild Generator</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

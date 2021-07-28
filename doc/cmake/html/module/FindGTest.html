@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindGTest &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindGTK" href="FindGTK.html" />
+    <link rel="prev" title="FindGSL" href="FindGSL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindGTK.html" title="FindGTK"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindGSL.html" title="FindGSL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGTest</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findgtest">
+<span id="module:FindGTest"></span><h1>FindGTest<a class="headerlink" href="#findgtest" title="Permalink to this headline">¶</a></h1>
+<p>Locate the Google C++ Testing Framework.</p>
+<div class="section" id="imported-targets">
+<h2>Imported targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GTest::GTest</span></code></dt><dd><p>The Google Test <code class="docutils literal notranslate"><span class="pre">gtest</span></code> library, if found; adds Thread::Thread
+automatically</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GTest::Main</span></code></dt><dd><p>The Google Test <code class="docutils literal notranslate"><span class="pre">gtest_main</span></code> library, if found</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_FOUND</span></code></dt><dd><p>Found the Google Testing framework</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_INCLUDE_DIRS</span></code></dt><dd><p>the directory containing the Google Test headers</p>
+</dd>
+</dl>
+<p>The library variables below are set as normal variables.  These
+contain debug/optimized keywords when a debugging library is found.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_LIBRARIES</span></code></dt><dd><p>The Google Test <code class="docutils literal notranslate"><span class="pre">gtest</span></code> library; note it also requires linking
+with an appropriate thread library</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_MAIN_LIBRARIES</span></code></dt><dd><p>The Google Test <code class="docutils literal notranslate"><span class="pre">gtest_main</span></code> library</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_BOTH_LIBRARIES</span></code></dt><dd><p>Both <code class="docutils literal notranslate"><span class="pre">gtest</span></code> and <code class="docutils literal notranslate"><span class="pre">gtest_main</span></code></p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following cache variables may also be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_ROOT</span></code></dt><dd><p>The root directory of the Google Test installation (may also be
+set as an environment variable)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GTEST_MSVC_SEARCH</span></code></dt><dd><p>If compiling with MSVC, this variable can be set to <code class="docutils literal notranslate"><span class="pre">MT</span></code> or
+<code class="docutils literal notranslate"><span class="pre">MD</span></code> (the default) to enable searching a GTest build tree</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>enable_testing()
+find_package(GTest REQUIRED)
+
+add_executable(foo foo.cc)
+target_link_libraries(foo GTest::GTest GTest::Main)
+
+add_test(AllTestsInFoo foo)
+</pre></div>
+</div>
+</div>
+<div class="section" id="deeper-integration-with-ctest">
+<h2>Deeper integration with CTest<a class="headerlink" href="#deeper-integration-with-ctest" title="Permalink to this headline">¶</a></h2>
+<p>See <span class="target" id="index-0-module:GoogleTest"></span><a class="reference internal" href="GoogleTest.html#module:GoogleTest" title="GoogleTest"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">GoogleTest</span></code></a> for information on the <span class="target" id="index-0-command:gtest_add_tests"></span><a class="reference internal" href="GoogleTest.html#command:gtest_add_tests" title="gtest_add_tests"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">gtest_add_tests()</span></code></a>
+and <span class="target" id="index-0-command:gtest_discover_tests"></span><a class="reference internal" href="GoogleTest.html#command:gtest_discover_tests" title="gtest_discover_tests"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">gtest_discover_tests()</span></code></a> commands.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindGTest</a><ul>
+<li><a class="reference internal" href="#imported-targets">Imported targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache variables</a></li>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#deeper-integration-with-ctest">Deeper integration with CTest</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindGSL.html"
+                        title="previous chapter">FindGSL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindGTK.html"
+                        title="next chapter">FindGTK</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindGTest.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindGTK.html" title="FindGTK"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindGSL.html" title="FindGSL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGTest</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

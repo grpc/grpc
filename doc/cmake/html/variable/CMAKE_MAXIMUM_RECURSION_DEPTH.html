@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_MAXIMUM_RECURSION_DEPTH &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_MESSAGE_CONTEXT" href="CMAKE_MESSAGE_CONTEXT.html" />
+    <link rel="prev" title="CMAKE_MFC_FLAG" href="CMAKE_MFC_FLAG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_MESSAGE_CONTEXT.html" title="CMAKE_MESSAGE_CONTEXT"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_MFC_FLAG.html" title="CMAKE_MFC_FLAG"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_MAXIMUM_RECURSION_DEPTH</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-maximum-recursion-depth">
+<span id="variable:CMAKE_MAXIMUM_RECURSION_DEPTH"></span><h1>CMAKE_MAXIMUM_RECURSION_DEPTH<a class="headerlink" href="#cmake-maximum-recursion-depth" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.14.</span></p>
+</div>
+<p>Maximum recursion depth for CMake scripts. It is intended to be set on the
+command line with <code class="docutils literal notranslate"><span class="pre">-DCMAKE_MAXIMUM_RECURSION_DEPTH=&lt;x&gt;</span></code>, or within
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> by projects that require a large recursion depth. Projects
+that set this variable should provide the user with a way to override it. For
+example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># About to perform deeply recursive actions</span>
+<span class="nf">if(</span><span class="no">NOT</span><span class="w"> </span><span class="no">CMAKE_MAXIMUM_RECURSION_DEPTH</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="no">CMAKE_MAXIMUM_RECURSION_DEPTH</span><span class="w"> </span><span class="m">2000</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If it is not set, or is set to a non-integer value, a sensible default limit is
+used. If the recursion limit is reached, the script terminates immediately with
+a fatal error.</p>
+<p>Calling any of the following commands increases the recursion depth:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-command:include"></span><a class="reference internal" href="../command/include.html#command:include" title="include"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:add_subdirectory"></span><a class="reference internal" href="../command/add_subdirectory.html#command:add_subdirectory" title="add_subdirectory"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_subdirectory()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:ctest_read_custom_files"></span><a class="reference internal" href="../command/ctest_read_custom_files.html#command:ctest_read_custom_files" title="ctest_read_custom_files"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_read_custom_files()</span></code></a></p></li>
+<li><p><span class="target" id="index-0-command:ctest_run_script"></span><a class="reference internal" href="../command/ctest_run_script.html#command:ctest_run_script" title="ctest_run_script"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_run_script()</span></code></a> (unless <code class="docutils literal notranslate"><span class="pre">NEW_PROCESS</span></code> is specified)</p></li>
+<li><p>User-defined <span class="target" id="index-0-command:function"></span><a class="reference internal" href="../command/function.html#command:function" title="function"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">function()</span></code></a>’s and <span class="target" id="index-0-command:macro"></span><a class="reference internal" href="../command/macro.html#command:macro" title="macro"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">macro()</span></code></a>’s (note that
+<span class="target" id="index-1-command:function"></span><a class="reference internal" href="../command/function.html#command:function" title="function"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">function()</span></code></a> and <span class="target" id="index-1-command:macro"></span><a class="reference internal" href="../command/macro.html#command:macro" title="macro"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">macro()</span></code></a> themselves don’t increase recursion
+depth)</p></li>
+<li><p>Reading or writing variables that are being watched by a
+<span class="target" id="index-0-command:variable_watch"></span><a class="reference internal" href="../command/variable_watch.html#command:variable_watch" title="variable_watch"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">variable_watch()</span></code></a></p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_MFC_FLAG.html"
+                        title="previous chapter">CMAKE_MFC_FLAG</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_MESSAGE_CONTEXT.html"
+                        title="next chapter">CMAKE_MESSAGE_CONTEXT</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_MAXIMUM_RECURSION_DEPTH.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_MESSAGE_CONTEXT.html" title="CMAKE_MESSAGE_CONTEXT"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_MFC_FLAG.html" title="CMAKE_MFC_FLAG"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_MAXIMUM_RECURSION_DEPTH</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

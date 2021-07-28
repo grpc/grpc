@@ -1,0 +1,912 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Interaction Guide &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Using Dependencies Guide" href="../using-dependencies/index.html" />
+    <link rel="prev" title="CMake Tutorial" href="../tutorial/index.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../using-dependencies/index.html" title="Using Dependencies Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../tutorial/index.html" title="CMake Tutorial"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">User Interaction Guide</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="user-interaction-guide">
+<span id="guide:User Interaction Guide"></span><h1><a class="toc-backref" href="#id2">User Interaction Guide</a><a class="headerlink" href="#user-interaction-guide" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#user-interaction-guide" id="id2">User Interaction Guide</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id3">Introduction</a></p>
+<ul>
+<li><p><a class="reference internal" href="#command-line-cmake-tool" id="id4">Command Line cmake tool</a></p></li>
+<li><p><a class="reference internal" href="#cmake-gui-tool" id="id5">cmake-gui tool</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#generating-a-buildsystem" id="id6">Generating a Buildsystem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#command-line-environment" id="id7">Command line environment</a></p></li>
+<li><p><a class="reference internal" href="#command-line-g-option" id="id8">Command line <code class="docutils literal notranslate"><span class="pre">-G</span></code> option</a></p></li>
+<li><p><a class="reference internal" href="#choosing-a-generator-in-cmake-gui" id="id9">Choosing a generator in cmake-gui</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#setting-build-variables" id="id10">Setting Build Variables</a></p>
+<ul>
+<li><p><a class="reference internal" href="#setting-variables-on-the-command-line" id="id11">Setting variables on the command line</a></p></li>
+<li><p><a class="reference internal" href="#setting-variables-with-cmake-gui" id="id12">Setting variables with cmake-gui</a></p></li>
+<li><p><a class="reference internal" href="#the-cmake-cache" id="id13">The CMake Cache</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#presets" id="id14">Presets</a></p>
+<ul>
+<li><p><a class="reference internal" href="#using-presets-on-the-command-line" id="id15">Using presets on the command-line</a></p></li>
+<li><p><a class="reference internal" href="#using-presets-in-cmake-gui" id="id16">Using presets in cmake-gui</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#invoking-the-buildsystem" id="id17">Invoking the Buildsystem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#selecting-a-target" id="id18">Selecting a Target</a></p></li>
+<li><p><a class="reference internal" href="#specifying-a-build-program" id="id19">Specifying a Build Program</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#software-installation" id="id20">Software Installation</a></p></li>
+<li><p><a class="reference internal" href="#running-tests" id="id21">Running Tests</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id3">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Where a software package supplies a CMake-based buildsystem
+with the source of their software, the consumer of the
+software is required to run a CMake user interaction tool
+in order to build it.</p>
+<p>Well-behaved CMake-based buildsystems do not create any
+output in the source directory, so typically, the user
+performs an out-of-source build and performs the build
+there.  First, CMake must be instructed to generate a
+suitable buildsystem, then the user invokes a build tool
+to process that generated buildsystem.  The generated
+buildsystem is specific to the machine used to generate
+it and is not redistributable.  Each consumer of a provided
+source software package is required to use CMake to
+generate a buildsystem specific to their system.</p>
+<p>Generated buildsystems should generally be treated as
+read-only. The CMake files as a primary artifact should
+completely specify the buildsystem and there should be no
+reason to populate properties manually in an IDE for
+example after generating the buildsystem.  CMake will
+periodically rewrite the generated buildsystem, so
+modifications by users will be overwritten.</p>
+<p>The features and user interfaces described in this manual
+are available for all CMake-based build systems by virtue
+of providing CMake files.</p>
+<p>The CMake tooling may report errors to the user when
+processing provided CMake files, such as reporting that
+the compiler is not supported, or the compiler does not
+support a required compile option, or a dependency can
+not be found.  These errors must be resolved by the user
+by choosing a different compiler,
+<span class="target" id="index-0-guide:Using Dependencies Guide"></span><a class="reference internal" href="../using-dependencies/index.html#guide:Using Dependencies Guide" title="Using Dependencies Guide"><code class="xref cmake cmake-guide docutils literal notranslate"><span class="pre">installing</span> <span class="pre">dependencies</span></code></a>,
+or instructing CMake where to find them, etc.</p>
+<div class="section" id="command-line-cmake-tool">
+<h3><a class="toc-backref" href="#id4">Command Line cmake tool</a><a class="headerlink" href="#command-line-cmake-tool" title="Permalink to this headline">¶</a></h3>
+<p>A simple but typical use of <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> with a fresh
+copy of software source code is to create a build directory
+and invoke cmake there:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> some_software-1.4.2
+<span class="gp">$</span> mkdir build
+<span class="gp">$</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake .. -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/opt/the/prefix
+<span class="gp">$</span> cmake --build .
+<span class="gp">$</span> cmake --build . --target install
+</pre></div>
+</div>
+<p>It is recommended to build in a separate directory to the
+source because that keeps the source directory pristine,
+allows for building a single source with multiple
+toolchains, and allows easy clearing of build artifacts by
+simply deleting the build directory.</p>
+<p>The CMake tooling may report warnings which are intended
+for the provider of the software, not intended for the
+consumer of the software.  Such warnings end with “This
+warning is for project developers”.  Users may disable
+such warnings by passing the <code class="docutils literal notranslate"><span class="pre">-Wno-dev</span></code> flag to
+<span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>.</p>
+</div>
+<div class="section" id="cmake-gui-tool">
+<h3><a class="toc-backref" href="#id5">cmake-gui tool</a><a class="headerlink" href="#cmake-gui-tool" title="Permalink to this headline">¶</a></h3>
+<p>Users more accustomed to GUI interfaces may use the
+<span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> tool to invoke CMake and generate
+a buildsystem.</p>
+<p>The source and binary directories must first be
+populated.  It is always advised to use different
+directories for the source and the build.</p>
+<img alt="Choosing source and binary directories" src="../../_images/GUI-Source-Binary.png" />
+</div>
+</div>
+<div class="section" id="generating-a-buildsystem">
+<h2><a class="toc-backref" href="#id6">Generating a Buildsystem</a><a class="headerlink" href="#generating-a-buildsystem" title="Permalink to this headline">¶</a></h2>
+<p>There are several user interface tools which may be used
+to generate a buildsystem from CMake files.  The
+<span class="target" id="index-0-manual:ccmake(1)"></span><a class="reference internal" href="../../manual/ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ccmake(1)</span></code></a> and <span class="target" id="index-1-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> tools guide
+the user through setting the various necessary options.
+The <span class="target" id="index-2-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> tool can be invoked to specify
+options on the command line.  This manual describes options
+which may be set using any of the user interface tools,
+though the mode of setting an option is different for each
+tool.</p>
+<div class="section" id="command-line-environment">
+<h3><a class="toc-backref" href="#id7">Command line environment</a><a class="headerlink" href="#command-line-environment" title="Permalink to this headline">¶</a></h3>
+<p>When invoking <span class="target" id="index-3-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> with a command line
+buildsystem such as <code class="docutils literal notranslate"><span class="pre">Makefiles</span></code> or <code class="docutils literal notranslate"><span class="pre">Ninja</span></code>, it is
+necessary to use the correct build environment to
+ensure that build tools are available. CMake must be
+able to find the appropriate
+<span class="target" id="index-0-variable:CMAKE_MAKE_PROGRAM"></span><a class="reference internal" href="../../variable/CMAKE_MAKE_PROGRAM.html#variable:CMAKE_MAKE_PROGRAM" title="CMAKE_MAKE_PROGRAM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">build</span> <span class="pre">tool</span></code></a>,
+compiler, linker and other tools as needed.</p>
+<p>On Linux systems, the appropriate tools are often
+provided in system-wide locations and may be readily
+installed through the system package manager. Other
+toolchains provided by the user or installed in
+non-default locations can also be used.</p>
+<p>When cross-compiling, some platforms may require
+environment variables to be set or may provide
+scripts to set the environment.</p>
+<p>Visual Studio ships multiple command prompts and
+<code class="docutils literal notranslate"><span class="pre">vcvarsall.bat</span></code> scripts for setting up the
+correct environments for command line buildsystems. While
+not strictly necessary to use a corresponding
+command line environment when using a Visual Studio
+generator, doing so has no disadvantages.</p>
+<p>When using Xcode, there can be more than one Xcode
+version installed.  Which one to use can be selected
+in a number of different ways, but the most common
+methods are:</p>
+<ul class="simple">
+<li><p>Setting the default version in the preferences
+of the Xcode IDE.</p></li>
+<li><p>Setting the default version via the <code class="docutils literal notranslate"><span class="pre">xcode-select</span></code>
+command line tool.</p></li>
+<li><p>Overriding the default version by setting the
+<code class="docutils literal notranslate"><span class="pre">DEVELOPER_DIR</span></code> environment variable when running
+CMake and the build tool.</p></li>
+</ul>
+<p>For convenience, <span class="target" id="index-2-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> provides an
+environment variable editor.</p>
+</div>
+<div class="section" id="command-line-g-option">
+<h3><a class="toc-backref" href="#id8">Command line <code class="docutils literal notranslate"><span class="pre">-G</span></code> option</a><a class="headerlink" href="#command-line-g-option" title="Permalink to this headline">¶</a></h3>
+<p>CMake chooses a generator by default based on the
+platform.  Usually, the default generator is sufficient
+to allow the user to proceed to build the software.</p>
+<p>The user may override the default generator with
+the <code class="docutils literal notranslate"><span class="pre">-G</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake .. -G Ninja
+</pre></div>
+</div>
+<p>The output of <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--help</span></code> includes a list of
+<span class="target" id="index-0-manual:cmake-generators(7)"></span><a class="reference internal" href="../../manual/cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generators</span></code></a> available
+for the user to choose from.  Note that generator
+names are case sensitive.</p>
+<p>On Unix-like systems (including Mac OS X), the
+<span class="target" id="index-0-generator:Unix Makefiles"></span><a class="reference internal" href="../../generator/Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a> generator is used by
+default.  A variant of that generator can also be used
+on Windows in various environments, such as the
+<span class="target" id="index-0-generator:NMake Makefiles"></span><a class="reference internal" href="../../generator/NMake%20Makefiles.html#generator:NMake Makefiles" title="NMake Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span></code></a> and
+<span class="target" id="index-0-generator:MinGW Makefiles"></span><a class="reference internal" href="../../generator/MinGW%20Makefiles.html#generator:MinGW Makefiles" title="MinGW Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">MinGW</span> <span class="pre">Makefiles</span></code></a> generator.  These generators
+generate a <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> variant which can be executed
+with <code class="docutils literal notranslate"><span class="pre">make</span></code>, <code class="docutils literal notranslate"><span class="pre">gmake</span></code>, <code class="docutils literal notranslate"><span class="pre">nmake</span></code> or similar tools.
+See the individual generator documentation for more
+information on targeted environments and tools.</p>
+<p>The <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator is available on all
+major platforms. <code class="docutils literal notranslate"><span class="pre">ninja</span></code> is a build tool similar
+in use-cases to <code class="docutils literal notranslate"><span class="pre">make</span></code>, but with a focus on
+performance and efficiency.</p>
+<p>On Windows, <span class="target" id="index-4-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> can be used to generate
+solutions for the Visual Studio IDE.  Visual Studio
+versions may be specified by the product name of the
+IDE, which includes a four-digit year.  Aliases are
+provided for other means by which Visual Studio
+versions are sometimes referred to, such as two
+digits which correspond to the product version of the
+VisualC++ compiler, or a combination of the two:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake .. -G <span class="s2">&quot;Visual Studio 2019&quot;</span>
+<span class="gp">$</span> cmake .. -G <span class="s2">&quot;Visual Studio 16&quot;</span>
+<span class="gp">$</span> cmake .. -G <span class="s2">&quot;Visual Studio 16 2019&quot;</span>
+</pre></div>
+</div>
+<p>Visual Studio generators can target different architectures.
+One can specify the target architecture using the <cite>-A</cite> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake .. -G &quot;Visual Studio 2019&quot; -A x64</span>
+<span class="go">cmake .. -G &quot;Visual Studio 16&quot; -A ARM</span>
+<span class="go">cmake .. -G &quot;Visual Studio 16 2019&quot; -A ARM64</span>
+</pre></div>
+</div>
+<p>On Apple, the <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator may be used to
+generate project files for the Xcode IDE.</p>
+<p>Some IDEs such as KDevelop4, QtCreator and CLion have
+native support for CMake-based buildsystems.  Those IDEs
+provide user interface for selecting an underlying
+generator to use, typically a choice between a <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>
+or a <code class="docutils literal notranslate"><span class="pre">Ninja</span></code> based generator.</p>
+<p>Note that it is not possible to change the generator
+with <code class="docutils literal notranslate"><span class="pre">-G</span></code> after the first invocation of CMake.  To
+change the generator, the build directory must be
+deleted and the build must be started from scratch.</p>
+<p>When generating Visual Studio project and solutions
+files several other options are available to use when
+initially running <span class="target" id="index-5-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>.</p>
+<p>The Visual Studio toolset can be specified with the
+<code class="docutils literal notranslate"><span class="pre">-T</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="c1"># Build with the clang-cl toolset</span>
+<span class="gp">$</span> cmake.exe .. -G <span class="s2">&quot;Visual Studio 16 2019&quot;</span> -A x64 -T LLVM
+<span class="gp">$</span> <span class="c1"># Build targeting Windows XP</span>
+<span class="gp">$</span> cmake.exe .. -G <span class="s2">&quot;Visual Studio 16 2019&quot;</span> -A x64 -T v120_xp
+</pre></div>
+</div>
+<p>Whereas the <code class="docutils literal notranslate"><span class="pre">-A</span></code> option specifies the _target_
+architecture, the <code class="docutils literal notranslate"><span class="pre">-T</span></code> option can be used to specify
+details of the toolchain used.  For example, <cite>-Thost=x64</cite>
+can be given to select the 64-bit version of the host
+tools.  The following demonstrates how to use 64-bit
+tools and also build for a 64-bit target architecture:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake .. -G <span class="s2">&quot;Visual Studio 16 2019&quot;</span> -A x64 -Thost<span class="o">=</span>x64
+</pre></div>
+</div>
+</div>
+<div class="section" id="choosing-a-generator-in-cmake-gui">
+<h3><a class="toc-backref" href="#id9">Choosing a generator in cmake-gui</a><a class="headerlink" href="#choosing-a-generator-in-cmake-gui" title="Permalink to this headline">¶</a></h3>
+<p>The “Configure” button triggers a new dialog to
+select the CMake generator to use.</p>
+<img alt="Configuring a generator" src="../../_images/GUI-Configure-Dialog.png" />
+<p>All generators available on the command line are also
+available in <span class="target" id="index-3-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a>.</p>
+<img alt="Choosing a generator" src="../../_images/GUI-Choose-Generator.png" />
+<p>When choosing a Visual Studio generator, further options
+are available to set an architecture to generate for.</p>
+<img alt="Choosing an architecture for Visual Studio generators" src="../../_images/VS-Choose-Arch.png" />
+</div>
+</div>
+<div class="section" id="setting-build-variables">
+<span id="id1"></span><h2><a class="toc-backref" href="#id10">Setting Build Variables</a><a class="headerlink" href="#setting-build-variables" title="Permalink to this headline">¶</a></h2>
+<p>Software projects often require variables to be
+set on the command line when invoking CMake.  Some of
+the most commonly used CMake variables are listed in
+the table below:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 59%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="target" id="index-0-variable:CMAKE_PREFIX_PATH"></span><a class="reference internal" href="../../variable/CMAKE_PREFIX_PATH.html#variable:CMAKE_PREFIX_PATH" title="CMAKE_PREFIX_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code></a></p></td>
+<td><p>Path to search for
+<span class="target" id="index-1-guide:Using Dependencies Guide"></span><a class="reference internal" href="../using-dependencies/index.html#guide:Using Dependencies Guide" title="Using Dependencies Guide"><code class="xref cmake cmake-guide docutils literal notranslate"><span class="pre">dependent</span> <span class="pre">packages</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="index-0-variable:CMAKE_MODULE_PATH"></span><a class="reference internal" href="../../variable/CMAKE_MODULE_PATH.html#variable:CMAKE_MODULE_PATH" title="CMAKE_MODULE_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code></a></p></td>
+<td><p>Path to search for additional CMake modules</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a></p></td>
+<td><p>Build configuration, such as
+<code class="docutils literal notranslate"><span class="pre">Debug</span></code> or <code class="docutils literal notranslate"><span class="pre">Release</span></code>, determining
+debug/optimization flags.  This is only
+relevant for single-configuration buildsystems such
+as <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and <code class="docutils literal notranslate"><span class="pre">Ninja</span></code>.  Multi-configuration
+buildsystems such as those for Visual Studio and Xcode
+ignore this setting.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a></p></td>
+<td><p>Location to install the
+software to with the
+<code class="docutils literal notranslate"><span class="pre">install</span></code> build target</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="index-0-variable:CMAKE_TOOLCHAIN_FILE"></span><a class="reference internal" href="../../variable/CMAKE_TOOLCHAIN_FILE.html#variable:CMAKE_TOOLCHAIN_FILE" title="CMAKE_TOOLCHAIN_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TOOLCHAIN_FILE</span></code></a></p></td>
+<td><p>File containing cross-compiling
+data such as
+<span class="target" id="index-0-manual:cmake-toolchains(7)"></span><a class="reference internal" href="../../manual/cmake-toolchains.7.html#manual:cmake-toolchains(7)" title="cmake-toolchains(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">toolchains</span> <span class="pre">and</span> <span class="pre">sysroots</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="index-0-variable:BUILD_SHARED_LIBS"></span><a class="reference internal" href="../../variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS" title="BUILD_SHARED_LIBS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></a></p></td>
+<td><p>Whether to build shared
+instead of static libraries
+for <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>
+commands used without a type</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="index-0-variable:CMAKE_EXPORT_COMPILE_COMMANDS"></span><a class="reference internal" href="../../variable/CMAKE_EXPORT_COMPILE_COMMANDS.html#variable:CMAKE_EXPORT_COMPILE_COMMANDS" title="CMAKE_EXPORT_COMPILE_COMMANDS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_EXPORT_COMPILE_COMMANDS</span></code></a></p></td>
+<td><p>Generate a <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code>
+file for use with clang-based tools</p></td>
+</tr>
+</tbody>
+</table>
+<p>Other project-specific variables may be available
+to control builds, such as enabling or disabling
+components of the project.</p>
+<p>There is no convention provided by CMake for how
+such variables are named between different
+provided buildsystems, except that variables with
+the prefix <code class="docutils literal notranslate"><span class="pre">CMAKE_</span></code> usually refer to options
+provided by CMake itself and should not be used
+in third-party options, which should use
+their own prefix instead.  The
+<span class="target" id="index-4-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> tool can display options
+in groups defined by their prefix, so it makes
+sense for third parties to ensure that they use a
+self-consistent prefix.</p>
+<div class="section" id="setting-variables-on-the-command-line">
+<h3><a class="toc-backref" href="#id11">Setting variables on the command line</a><a class="headerlink" href="#setting-variables-on-the-command-line" title="Permalink to this headline">¶</a></h3>
+<p>CMake variables can be set on the command line either
+when creating the initial build:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> mkdir build
+<span class="gp">$</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake .. -G Ninja -DCMAKE_BUILD_TYPE<span class="o">=</span>Debug
+</pre></div>
+</div>
+<p>or later on a subsequent invocation of
+<span class="target" id="index-6-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake . -DCMAKE_BUILD_TYPE<span class="o">=</span>Debug
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">-U</span></code> flag may be used to unset variables
+on the <span class="target" id="index-7-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> command line:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake . -UMyPackage_DIR
+</pre></div>
+</div>
+<p>A CMake buildsystem which was initially created
+on the command line can be modified using the
+<span class="target" id="index-5-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> and vice-versa.</p>
+<p>The <span class="target" id="index-8-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> tool allows specifying a
+file to use to populate the initial cache using
+the <code class="docutils literal notranslate"><span class="pre">-C</span></code> option.  This can be useful to simplify
+commands and scripts which repeatedly require the
+same cache entries.</p>
+</div>
+<div class="section" id="setting-variables-with-cmake-gui">
+<h3><a class="toc-backref" href="#id12">Setting variables with cmake-gui</a><a class="headerlink" href="#setting-variables-with-cmake-gui" title="Permalink to this headline">¶</a></h3>
+<p>Variables may be set in the cmake-gui using the “Add Entry”
+button.  This triggers a new dialog to set the value of
+the variable.</p>
+<img alt="Editing a cache entry" src="../../_images/GUI-Add-Entry.png" />
+<p>The main view of the <span class="target" id="index-6-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> user interface
+can be used to edit existing variables.</p>
+</div>
+<div class="section" id="the-cmake-cache">
+<h3><a class="toc-backref" href="#id13">The CMake Cache</a><a class="headerlink" href="#the-cmake-cache" title="Permalink to this headline">¶</a></h3>
+<p>When CMake is executed, it needs to find the locations of
+compilers, tools and dependencies.  It also needs to be
+able to consistently re-generate a buildsystem to use the
+same compile/link flags and paths to dependencies.  Such
+parameters are also required to be configurable by the
+user because they are paths and options specific to the
+users system.</p>
+<p>When it is first executed, CMake generates a
+<code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file in the build directory containing
+key-value pairs for such artifacts.  The cache file can be
+viewed or edited by the user by running the
+<span class="target" id="index-7-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> or <span class="target" id="index-1-manual:ccmake(1)"></span><a class="reference internal" href="../../manual/ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ccmake(1)</span></code></a> tool.  The
+tools provide an interactive interface for re-configuring
+the provided software and re-generating the buildsystem,
+as is needed after editing cached values.  Each cache
+entry may have an associated short help text which is
+displayed in the user interface tools.</p>
+<p>The cache entries may also have a type to signify how it
+should be presented in the user interface.  For example,
+a cache entry of type <code class="docutils literal notranslate"><span class="pre">BOOL</span></code> can be edited by a
+checkbox in a user interface, a <code class="docutils literal notranslate"><span class="pre">STRING</span></code> can be edited
+in a text field, and a <code class="docutils literal notranslate"><span class="pre">FILEPATH</span></code> while similar to a
+<code class="docutils literal notranslate"><span class="pre">STRING</span></code> should also provide a way to locate filesystem
+paths using a file dialog.  An entry of type <code class="docutils literal notranslate"><span class="pre">STRING</span></code>
+may provide a restricted list of allowed values which are
+then provided in a drop-down menu in the
+<span class="target" id="index-8-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> user interface (see the
+<span class="target" id="index-0-prop_cache:STRINGS"></span><a class="reference internal" href="../../prop_cache/STRINGS.html#prop_cache:STRINGS" title="STRINGS"><code class="xref cmake cmake-prop_cache docutils literal notranslate"><span class="pre">STRINGS</span></code></a> cache property).</p>
+<p>The CMake files shipped with a software package may also
+define boolean toggle options using the <span class="target" id="index-0-command:option"></span><a class="reference internal" href="../../command/option.html#command:option" title="option"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">option()</span></code></a>
+command.  The command creates a cache entry which has a
+help text and a default value.  Such cache entries are
+typically specific to the provided software and affect
+the configuration of the build, such as whether tests
+and examples are built, whether to build with exceptions
+enabled etc.</p>
+</div>
+</div>
+<div class="section" id="presets">
+<h2><a class="toc-backref" href="#id14">Presets</a><a class="headerlink" href="#presets" title="Permalink to this headline">¶</a></h2>
+<p>CMake understands a file, <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code>, and its
+user-specific counterpart, <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>, for
+saving presets for commonly-used configure settings. These
+presets can set the build directory, generator, cache
+variables, environment variables, and other command-line
+options. All of these options can be overridden by the
+user. The full details of the <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> format
+are listed in the <span class="target" id="index-0-manual:cmake-presets(7)"></span><a class="reference internal" href="../../manual/cmake-presets.7.html#manual:cmake-presets(7)" title="cmake-presets(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-presets(7)</span></code></a> manual.</p>
+<div class="section" id="using-presets-on-the-command-line">
+<h3><a class="toc-backref" href="#id15">Using presets on the command-line</a><a class="headerlink" href="#using-presets-on-the-command-line" title="Permalink to this headline">¶</a></h3>
+<p>When using the <span class="target" id="index-9-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> command line tool, a
+preset can be invoked by using the <code class="docutils literal notranslate"><span class="pre">--preset</span></code> option. If
+<code class="docutils literal notranslate"><span class="pre">--preset</span></code> is specified, the generator and build
+directory are not required, but can be specified to
+override them. For example, if you have the following
+<code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> file:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;configurePresets&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ninja-release&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;binaryDir&quot;</span><span class="p">:</span> <span class="s2">&quot;${sourceDir}/build/${presetName}&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;generator&quot;</span><span class="p">:</span> <span class="s2">&quot;Ninja&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;cacheVariables&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;CMAKE_BUILD_TYPE&quot;</span><span class="p">:</span> <span class="s2">&quot;Release&quot;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and you run the following:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake -S /path/to/source --preset=ninja-release</span>
+</pre></div>
+</div>
+<p>This will generate a build directory in
+<code class="docutils literal notranslate"><span class="pre">/path/to/source/build/ninja-release</span></code> with the
+<span class="target" id="index-1-generator:Ninja"></span><a class="reference internal" href="../../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator, and with
+<span class="target" id="index-1-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> set to <code class="docutils literal notranslate"><span class="pre">Release</span></code>.</p>
+<p>If you want to see the list of available presets, you can
+run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake -S /path/to/source --list-presets</span>
+</pre></div>
+</div>
+<p>This will list the presets available in
+<code class="docutils literal notranslate"><span class="pre">/path/to/source/CMakePresets.json</span></code> and
+<code class="docutils literal notranslate"><span class="pre">/path/to/source/CMakeUsersPresets.json</span></code> without
+generating a build tree.</p>
+</div>
+<div class="section" id="using-presets-in-cmake-gui">
+<h3><a class="toc-backref" href="#id16">Using presets in cmake-gui</a><a class="headerlink" href="#using-presets-in-cmake-gui" title="Permalink to this headline">¶</a></h3>
+<p>If a project has presets available, either through
+<code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> or <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>, the
+list of presets will appear in a drop-down menu in
+<span class="target" id="index-9-manual:cmake-gui(1)"></span><a class="reference internal" href="../../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> between the source directory and
+the binary directory. Choosing a preset sets the binary
+directory, generator, environment variables, and cache
+variables, but all of these options can be overridden after
+a preset is selected.</p>
+</div>
+</div>
+<div class="section" id="invoking-the-buildsystem">
+<h2><a class="toc-backref" href="#id17">Invoking the Buildsystem</a><a class="headerlink" href="#invoking-the-buildsystem" title="Permalink to this headline">¶</a></h2>
+<p>After generating the buildsystem, the software can be
+built by invoking the particular build tool.  In the
+case of the IDE generators, this can involve loading
+the generated project file into the IDE to invoke the
+build.</p>
+<p>CMake is aware of the specific build tool needed to invoke
+a build so in general, to build a buildsystem or project
+from the command line after generating, the following
+command may be invoked in the build directory:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build .
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--build</span></code> flag enables a particular mode of
+operation for the <span class="target" id="index-10-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> tool.  It invokes
+the  <span class="target" id="index-1-variable:CMAKE_MAKE_PROGRAM"></span><a class="reference internal" href="../../variable/CMAKE_MAKE_PROGRAM.html#variable:CMAKE_MAKE_PROGRAM" title="CMAKE_MAKE_PROGRAM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAKE_PROGRAM</span></code></a> command associated
+with the <span class="target" id="index-1-manual:cmake-generators(7)"></span><a class="reference internal" href="../../manual/cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span></code></a>, or
+the build tool configured by the user.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--build</span></code> mode also accepts the parameter
+<code class="docutils literal notranslate"><span class="pre">--target</span></code> to specify a particular target to build,
+for example a particular library, executable or
+custom target, or a particular special target like
+<code class="docutils literal notranslate"><span class="pre">install</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build . --target myexe
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--build</span></code> mode also accepts a <code class="docutils literal notranslate"><span class="pre">--config</span></code> parameter
+in the case of multi-config generators to specify which
+particular configuration to build:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build . --target myexe --config Release
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--config</span></code> option has no effect if the generator
+generates a buildsystem specific to a configuration which
+is chosen when invoking cmake with the
+<span class="target" id="index-2-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> variable.</p>
+<p>Some buildsystems omit details of command lines invoked
+during the build.  The <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> flag can be used to
+cause those command lines to be shown:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake --build . --target myexe --verbose
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--build</span></code> mode can also pass particular command
+line options to the underlying build tool by listing
+them after <code class="docutils literal notranslate"><span class="pre">--</span></code>.  This can be useful to specify
+options to the build tool, such as to continue the
+build after a failed job, where CMake does not
+provide a high-level user interface.</p>
+<p>For all generators, it is possible to run the underlying
+build tool after invoking CMake.  For example, <code class="docutils literal notranslate"><span class="pre">make</span></code>
+may be executed after generating with the
+<span class="target" id="index-1-generator:Unix Makefiles"></span><a class="reference internal" href="../../generator/Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a> generator to invoke the build,
+or <code class="docutils literal notranslate"><span class="pre">ninja</span></code> after generating with the <span class="target" id="index-2-generator:Ninja"></span><a class="reference internal" href="../../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>
+generator etc.  The IDE buildsystems usually provide
+command line tooling for building a project which can
+also be invoked.</p>
+<div class="section" id="selecting-a-target">
+<h3><a class="toc-backref" href="#id18">Selecting a Target</a><a class="headerlink" href="#selecting-a-target" title="Permalink to this headline">¶</a></h3>
+<p>Each executable and library described in the CMake files
+is a build target, and the buildsystem may describe
+custom targets, either for internal use, or for user
+consumption, for example to create documentation.</p>
+<p>CMake provides some built-in targets for all buildsystems
+providing CMake files.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">all</span></code></dt><dd><p>The default target used by <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and <code class="docutils literal notranslate"><span class="pre">Ninja</span></code>
+generators.  Builds all targets in the buildsystem,
+except those which are excluded by their
+<span class="target" id="index-0-prop_tgt:EXCLUDE_FROM_ALL"></span><a class="reference internal" href="../../prop_tgt/EXCLUDE_FROM_ALL.html#prop_tgt:EXCLUDE_FROM_ALL" title="EXCLUDE_FROM_ALL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></a> target property or
+<span class="target" id="index-0-prop_dir:EXCLUDE_FROM_ALL"></span><a class="reference internal" href="../../prop_dir/EXCLUDE_FROM_ALL.html#prop_dir:EXCLUDE_FROM_ALL" title="EXCLUDE_FROM_ALL"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></a> directory property.  The
+name <code class="docutils literal notranslate"><span class="pre">ALL_BUILD</span></code> is used for this purpose for the
+Xcode and Visual Studio generators.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">help</span></code></dt><dd><p>Lists the targets available for build.  This target is
+available when using the <span class="target" id="index-2-generator:Unix Makefiles"></span><a class="reference internal" href="../../generator/Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a> or
+<span class="target" id="index-3-generator:Ninja"></span><a class="reference internal" href="../../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator, and the exact output is
+tool-specific.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">clean</span></code></dt><dd><p>Delete built object files and other output files.  The
+<code class="docutils literal notranslate"><span class="pre">Makefile</span></code> based generators create a <code class="docutils literal notranslate"><span class="pre">clean</span></code> target
+per directory, so that an individual directory can be
+cleaned.  The <code class="docutils literal notranslate"><span class="pre">Ninja</span></code> tool provides its own granular
+<code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">clean</span></code> system.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">test</span></code></dt><dd><p>Runs tests.  This target is only automatically available
+if the CMake files provide CTest-based tests.  See also
+<a class="reference internal" href="#running-tests">Running Tests</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">install</span></code></dt><dd><p>Installs the software.  This target is only automatically
+available if the software defines install rules with the
+<span class="target" id="index-0-command:install"></span><a class="reference internal" href="../../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command.  See also
+<a class="reference internal" href="#software-installation">Software Installation</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">package</span></code></dt><dd><p>Creates a binary package.  This target is only
+automatically available if the CMake files provide
+CPack-based packages.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">package_source</span></code></dt><dd><p>Creates a source package.  This target is only
+automatically available if the CMake files provide
+CPack-based packages.</p>
+</dd>
+</dl>
+<p>For <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> based systems, <code class="docutils literal notranslate"><span class="pre">/fast</span></code> variants of binary
+build targets are provided. The <code class="docutils literal notranslate"><span class="pre">/fast</span></code> variants are used
+to build the specified target without regard for its
+dependencies.  The dependencies are not checked and
+are not rebuilt if out of date.  The <span class="target" id="index-4-generator:Ninja"></span><a class="reference internal" href="../../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>
+generator is sufficiently fast at dependency checking that
+such targets are not provided for that generator.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Makefile</span></code> based systems also provide build-targets to
+preprocess, assemble and compile individual files in a
+particular directory.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> make foo.cpp.i
+<span class="gp">$</span> make foo.cpp.s
+<span class="gp">$</span> make foo.cpp.o
+</pre></div>
+</div>
+<p>The file extension is built into the name of the target
+because another file with the same name but a different
+extension may exist.  However, build-targets without the
+file extension are also provided.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> make foo.i
+<span class="gp">$</span> make foo.s
+<span class="gp">$</span> make foo.o
+</pre></div>
+</div>
+<p>In buildsystems which contain <code class="docutils literal notranslate"><span class="pre">foo.c</span></code> and <code class="docutils literal notranslate"><span class="pre">foo.cpp</span></code>,
+building the <code class="docutils literal notranslate"><span class="pre">foo.i</span></code> target will preprocess both files.</p>
+</div>
+<div class="section" id="specifying-a-build-program">
+<h3><a class="toc-backref" href="#id19">Specifying a Build Program</a><a class="headerlink" href="#specifying-a-build-program" title="Permalink to this headline">¶</a></h3>
+<p>The program invoked by the <code class="docutils literal notranslate"><span class="pre">--build</span></code> mode is determined
+by the <span class="target" id="index-2-variable:CMAKE_MAKE_PROGRAM"></span><a class="reference internal" href="../../variable/CMAKE_MAKE_PROGRAM.html#variable:CMAKE_MAKE_PROGRAM" title="CMAKE_MAKE_PROGRAM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAKE_PROGRAM</span></code></a> variable.  For most
+generators, the particular program does not need to be
+configured.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 36%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Generator</p></th>
+<th class="head"><p>Default make program</p></th>
+<th class="head"><p>Alternatives</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>XCode</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">xcodebuild</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Unix Makefiles</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">make</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>NMake Makefiles</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nmake</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jom</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>NMake Makefiles JOM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jom</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nmake</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>MinGW Makefiles</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mingw32-make</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>MSYS Makefiles</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">make</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Ninja</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ninja</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Visual Studio</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msbuild</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Watcom WMake</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wmake</span></code></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">jom</span></code> tool is capable of reading makefiles of the
+<code class="docutils literal notranslate"><span class="pre">NMake</span></code> flavor and building in parallel, while the
+<code class="docutils literal notranslate"><span class="pre">nmake</span></code> tool always builds serially.  After generating
+with the <span class="target" id="index-1-generator:NMake Makefiles"></span><a class="reference internal" href="../../generator/NMake%20Makefiles.html#generator:NMake Makefiles" title="NMake Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span></code></a> generator a user
+can run <code class="docutils literal notranslate"><span class="pre">jom</span></code> instead of <code class="docutils literal notranslate"><span class="pre">nmake</span></code>.  The <code class="docutils literal notranslate"><span class="pre">--build</span></code>
+mode would also use <code class="docutils literal notranslate"><span class="pre">jom</span></code> if the
+<span class="target" id="index-3-variable:CMAKE_MAKE_PROGRAM"></span><a class="reference internal" href="../../variable/CMAKE_MAKE_PROGRAM.html#variable:CMAKE_MAKE_PROGRAM" title="CMAKE_MAKE_PROGRAM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAKE_PROGRAM</span></code></a> was set to <code class="docutils literal notranslate"><span class="pre">jom</span></code> while
+using the <span class="target" id="index-2-generator:NMake Makefiles"></span><a class="reference internal" href="../../generator/NMake%20Makefiles.html#generator:NMake Makefiles" title="NMake Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span></code></a> generator, and
+as a convenience, the <span class="target" id="index-0-generator:NMake Makefiles JOM"></span><a class="reference internal" href="../../generator/NMake%20Makefiles%20JOM.html#generator:NMake Makefiles JOM" title="NMake Makefiles JOM"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span> <span class="pre">JOM</span></code></a>
+generator is provided to find <code class="docutils literal notranslate"><span class="pre">jom</span></code> in the normal way
+and use it as the <span class="target" id="index-4-variable:CMAKE_MAKE_PROGRAM"></span><a class="reference internal" href="../../variable/CMAKE_MAKE_PROGRAM.html#variable:CMAKE_MAKE_PROGRAM" title="CMAKE_MAKE_PROGRAM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAKE_PROGRAM</span></code></a>. For
+completeness, <code class="docutils literal notranslate"><span class="pre">nmake</span></code> is an alternative tool which
+can process the output of the
+<span class="target" id="index-1-generator:NMake Makefiles JOM"></span><a class="reference internal" href="../../generator/NMake%20Makefiles%20JOM.html#generator:NMake Makefiles JOM" title="NMake Makefiles JOM"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span> <span class="pre">JOM</span></code></a> generator, but doing
+so would be a pessimisation.</p>
+</div>
+</div>
+<div class="section" id="software-installation">
+<h2><a class="toc-backref" href="#id20">Software Installation</a><a class="headerlink" href="#software-installation" title="Permalink to this headline">¶</a></h2>
+<p>The <span class="target" id="index-1-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> variable can be
+set in the CMake cache to specify where to install the
+provided software.  If the provided software has install
+rules, specified using the <span class="target" id="index-1-command:install"></span><a class="reference internal" href="../../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command,
+they will install artifacts into that prefix.  On Windows,
+the default installation location corresponds to the
+<code class="docutils literal notranslate"><span class="pre">ProgramFiles</span></code> system directory which may be
+architecture specific.  On Unix hosts, <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> is
+the default installation location.</p>
+<p>The <span class="target" id="index-2-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> variable always
+refers to the installation prefix on the target
+filesystem.</p>
+<p>In cross-compiling or packaging scenarios where the
+sysroot is read-only or where the sysroot should otherwise
+remain pristine, the <span class="target" id="index-0-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="../../variable/CMAKE_STAGING_PREFIX.html#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a>
+variable can be set to a location to actually install
+the files.</p>
+<p>The commands:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake .. -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/usr/local <span class="se">\</span>
+  -DCMAKE_SYSROOT<span class="o">=</span><span class="nv">$HOME</span>/root <span class="se">\</span>
+  -DCMAKE_STAGING_PREFIX<span class="o">=</span>/tmp/package
+<span class="gp">$</span> cmake --build .
+<span class="gp">$</span> cmake --build . --target install
+</pre></div>
+</div>
+<p>result in files being installed to paths such
+as <code class="docutils literal notranslate"><span class="pre">/tmp/package/lib/libfoo.so</span></code> on the host machine.
+The <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> location on the host machine is
+not affected.</p>
+<p>Some provided software may specify <code class="docutils literal notranslate"><span class="pre">uninstall</span></code> rules,
+but CMake does not generate such rules by default itself.</p>
+</div>
+<div class="section" id="running-tests">
+<h2><a class="toc-backref" href="#id21">Running Tests</a><a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h2>
+<p>The <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> tool is shipped with the CMake
+distribution to execute provided tests and report
+results.  The <code class="docutils literal notranslate"><span class="pre">test</span></code> build-target is provided to run
+all available tests, but the <span class="target" id="index-1-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> tool
+allows granular control over which tests to run, how to
+run them, and how to report results.  Executing
+<span class="target" id="index-2-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> in the build directory is equivalent
+to running the <code class="docutils literal notranslate"><span class="pre">test</span></code> target:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ctest
+</pre></div>
+</div>
+<p>A regular expression can be passed to run only tests
+which match the expression.  To run only tests with
+<code class="docutils literal notranslate"><span class="pre">Qt</span></code> in their name:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ctest -R Qt
+</pre></div>
+</div>
+<p>Tests can be excluded by regular expression too.  To
+run only tests without <code class="docutils literal notranslate"><span class="pre">Qt</span></code> in their name:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ctest -E Qt
+</pre></div>
+</div>
+<p>Tests can be run in parallel by passing <code class="docutils literal notranslate"><span class="pre">-j</span></code> arguments
+to <span class="target" id="index-3-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ctest -R Qt -j8
+</pre></div>
+</div>
+<p>The environment variable <span class="target" id="index-0-envvar:CTEST_PARALLEL_LEVEL"></span><a class="reference internal" href="../../envvar/CTEST_PARALLEL_LEVEL.html#envvar:CTEST_PARALLEL_LEVEL" title="CTEST_PARALLEL_LEVEL"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CTEST_PARALLEL_LEVEL</span></code></a>
+can alternatively be set to avoid the need to pass
+<code class="docutils literal notranslate"><span class="pre">-j</span></code>.</p>
+<p>By default <span class="target" id="index-4-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> does not print the output
+from the tests. The command line argument <code class="docutils literal notranslate"><span class="pre">-V</span></code> (or
+<code class="docutils literal notranslate"><span class="pre">--verbose</span></code>) enables verbose mode to print the
+output from all tests.
+The <code class="docutils literal notranslate"><span class="pre">--output-on-failure</span></code> option prints the test
+output for failing tests only.  The environment variable
+<span class="target" id="index-0-envvar:CTEST_OUTPUT_ON_FAILURE"></span><a class="reference internal" href="../../envvar/CTEST_OUTPUT_ON_FAILURE.html#envvar:CTEST_OUTPUT_ON_FAILURE" title="CTEST_OUTPUT_ON_FAILURE"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CTEST_OUTPUT_ON_FAILURE</span></code></a>
+can be set to <code class="docutils literal notranslate"><span class="pre">1</span></code> as an alternative to passing the
+<code class="docutils literal notranslate"><span class="pre">--output-on-failure</span></code> option to <span class="target" id="index-5-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a>.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">User Interaction Guide</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#command-line-cmake-tool">Command Line cmake tool</a></li>
+<li><a class="reference internal" href="#cmake-gui-tool">cmake-gui tool</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#generating-a-buildsystem">Generating a Buildsystem</a><ul>
+<li><a class="reference internal" href="#command-line-environment">Command line environment</a></li>
+<li><a class="reference internal" href="#command-line-g-option">Command line <code class="docutils literal notranslate"><span class="pre">-G</span></code> option</a></li>
+<li><a class="reference internal" href="#choosing-a-generator-in-cmake-gui">Choosing a generator in cmake-gui</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setting-build-variables">Setting Build Variables</a><ul>
+<li><a class="reference internal" href="#setting-variables-on-the-command-line">Setting variables on the command line</a></li>
+<li><a class="reference internal" href="#setting-variables-with-cmake-gui">Setting variables with cmake-gui</a></li>
+<li><a class="reference internal" href="#the-cmake-cache">The CMake Cache</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#presets">Presets</a><ul>
+<li><a class="reference internal" href="#using-presets-on-the-command-line">Using presets on the command-line</a></li>
+<li><a class="reference internal" href="#using-presets-in-cmake-gui">Using presets in cmake-gui</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#invoking-the-buildsystem">Invoking the Buildsystem</a><ul>
+<li><a class="reference internal" href="#selecting-a-target">Selecting a Target</a></li>
+<li><a class="reference internal" href="#specifying-a-build-program">Specifying a Build Program</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#software-installation">Software Installation</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../tutorial/index.html"
+                        title="previous chapter">CMake Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../using-dependencies/index.html"
+                        title="next chapter">Using Dependencies Guide</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/guide/user-interaction/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../using-dependencies/index.html" title="Using Dependencies Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../tutorial/index.html" title="CMake Tutorial"
+             >previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">User Interaction Guide</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

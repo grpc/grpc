@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindSWIG &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindTCL" href="FindTCL.html" />
+    <link rel="prev" title="FindSubversion" href="FindSubversion.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindTCL.html" title="FindTCL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindSubversion.html" title="FindSubversion"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSWIG</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findswig">
+<span id="module:FindSWIG"></span><h1>FindSWIG<a class="headerlink" href="#findswig" title="Permalink to this headline">¶</a></h1>
+<p>Find the Simplified Wrapper and Interface Generator (<a class="reference external" href="http://swig.org">SWIG</a>) executable.</p>
+<p>This module finds an installed SWIG and determines its version. If a
+<code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> or <code class="docutils literal notranslate"><span class="pre">OPTIONAL_COMPONENTS</span></code> argument is given to the
+<span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command, it will also determine supported target
+languages.</p>
+<p>When a version is requested, it can be specified as a simple value or as a
+range. For a detailed description of version range usage and capabilities,
+refer to the <span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command.</p>
+<p>The module defines the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">SWIG_FOUND</span></code></dt><dd><p>Whether SWIG and any required components were found on the system.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SWIG_EXECUTABLE</span></code></dt><dd><p>Path to the SWIG executable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SWIG_DIR</span></code></dt><dd><p>Path to the installed SWIG <code class="docutils literal notranslate"><span class="pre">Lib</span></code> directory (result of <code class="docutils literal notranslate"><span class="pre">swig</span> <span class="pre">-swiglib</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SWIG_VERSION</span></code></dt><dd><p>SWIG executable version (result of <code class="docutils literal notranslate"><span class="pre">swig</span> <span class="pre">-version</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SWIG_&lt;lang&gt;_FOUND</span></code></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> or <code class="docutils literal notranslate"><span class="pre">OPTIONAL_COMPONENTS</span></code> are requested, each available
+target language <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> (lowercase) will be set to TRUE.</p>
+</dd>
+</dl>
+<p>Any <code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> given to <code class="docutils literal notranslate"><span class="pre">find_package</span></code> should be the names of supported
+target languages as provided to the LANGUAGE argument of <code class="docutils literal notranslate"><span class="pre">swig_add_library</span></code>,
+such as <code class="docutils literal notranslate"><span class="pre">python</span></code> or <code class="docutils literal notranslate"><span class="pre">perl5</span></code>. Language names <em>must</em> be lowercase.</p>
+<p>All information is collected from the <code class="docutils literal notranslate"><span class="pre">SWIG_EXECUTABLE</span></code>, so the version
+to be found can be changed from the command line by means of setting
+<code class="docutils literal notranslate"><span class="pre">SWIG_EXECUTABLE</span></code>.</p>
+<p>Example usage requiring SWIG 4.0 or higher and Python language support, with
+optional Fortran support:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_package(</span><span class="no">SWIG</span><span class="w"> </span><span class="m">4.0</span><span class="w"> </span><span class="no">COMPONENTS</span><span class="w"> </span><span class="nb">python</span><span class="w"> </span><span class="no">OPTIONAL_COMPONENTS</span><span class="w"> </span><span class="nb">fortran</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">SWIG_FOUND</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="s">&quot;SWIG found: ${SWIG_EXECUTABLE}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">if(</span><span class="no">NOT</span><span class="w"> </span><span class="nb">SWIG_fortran_FOUND</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">message(</span><span class="no">WARNING</span><span class="w"> </span><span class="s">&quot;SWIG Fortran bindings cannot be generated&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">endif()</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindSubversion.html"
+                        title="previous chapter">FindSubversion</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindTCL.html"
+                        title="next chapter">FindTCL</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindSWIG.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindTCL.html" title="FindTCL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindSubversion.html" title="FindSubversion"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSWIG</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

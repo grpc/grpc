@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XCODE_GENERATE_SCHEME &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XCODE_LINK_BUILD_PHASE_MODE" href="XCODE_LINK_BUILD_PHASE_MODE.html" />
+    <link rel="prev" title="XCODE_EXPLICIT_FILE_TYPE" href="XCODE_EXPLICIT_FILE_TYPE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="XCODE_LINK_BUILD_PHASE_MODE.html" title="XCODE_LINK_BUILD_PHASE_MODE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="XCODE_EXPLICIT_FILE_TYPE.html" title="XCODE_EXPLICIT_FILE_TYPE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">XCODE_GENERATE_SCHEME</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="xcode-generate-scheme">
+<span id="prop_tgt:XCODE_GENERATE_SCHEME"></span><h1>XCODE_GENERATE_SCHEME<a class="headerlink" href="#xcode-generate-scheme" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.15.</span></p>
+</div>
+<p>If enabled, the <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator will generate schema files.  These
+are useful to invoke analyze, archive, build-for-testing and test
+actions from the command line.</p>
+<p>This property is initialized by the value of the variable
+<span class="target" id="index-0-variable:CMAKE_XCODE_GENERATE_SCHEME"></span><a class="reference internal" href="../variable/CMAKE_XCODE_GENERATE_SCHEME.html#variable:CMAKE_XCODE_GENERATE_SCHEME" title="CMAKE_XCODE_GENERATE_SCHEME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_XCODE_GENERATE_SCHEME</span></code></a> if it is set when a target
+is created.</p>
+<p>The following target properties overwrite the default of the
+corresponding settings on the “Diagnostic” tab for each schema file.
+Each of those is initialized by the respective <code class="docutils literal notranslate"><span class="pre">CMAKE_</span></code> variable
+at target creation time.</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_ADDRESS_SANITIZER"></span><a class="reference internal" href="XCODE_SCHEME_ADDRESS_SANITIZER.html#prop_tgt:XCODE_SCHEME_ADDRESS_SANITIZER" title="XCODE_SCHEME_ADDRESS_SANITIZER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_ADDRESS_SANITIZER</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_ADDRESS_SANITIZER_USE_AFTER_RETURN"></span><a class="reference internal" href="XCODE_SCHEME_ADDRESS_SANITIZER_USE_AFTER_RETURN.html#prop_tgt:XCODE_SCHEME_ADDRESS_SANITIZER_USE_AFTER_RETURN" title="XCODE_SCHEME_ADDRESS_SANITIZER_USE_AFTER_RETURN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_ADDRESS_SANITIZER_USE_AFTER_RETURN</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_DISABLE_MAIN_THREAD_CHECKER"></span><a class="reference internal" href="XCODE_SCHEME_DISABLE_MAIN_THREAD_CHECKER.html#prop_tgt:XCODE_SCHEME_DISABLE_MAIN_THREAD_CHECKER" title="XCODE_SCHEME_DISABLE_MAIN_THREAD_CHECKER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_DISABLE_MAIN_THREAD_CHECKER</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_DYNAMIC_LIBRARY_LOADS"></span><a class="reference internal" href="XCODE_SCHEME_DYNAMIC_LIBRARY_LOADS.html#prop_tgt:XCODE_SCHEME_DYNAMIC_LIBRARY_LOADS" title="XCODE_SCHEME_DYNAMIC_LIBRARY_LOADS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_DYNAMIC_LIBRARY_LOADS</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_DYNAMIC_LINKER_API_USAGE"></span><a class="reference internal" href="XCODE_SCHEME_DYNAMIC_LINKER_API_USAGE.html#prop_tgt:XCODE_SCHEME_DYNAMIC_LINKER_API_USAGE" title="XCODE_SCHEME_DYNAMIC_LINKER_API_USAGE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_DYNAMIC_LINKER_API_USAGE</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_GUARD_MALLOC"></span><a class="reference internal" href="XCODE_SCHEME_GUARD_MALLOC.html#prop_tgt:XCODE_SCHEME_GUARD_MALLOC" title="XCODE_SCHEME_GUARD_MALLOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_GUARD_MALLOC</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_MAIN_THREAD_CHECKER_STOP"></span><a class="reference internal" href="XCODE_SCHEME_MAIN_THREAD_CHECKER_STOP.html#prop_tgt:XCODE_SCHEME_MAIN_THREAD_CHECKER_STOP" title="XCODE_SCHEME_MAIN_THREAD_CHECKER_STOP"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_MAIN_THREAD_CHECKER_STOP</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_MALLOC_GUARD_EDGES"></span><a class="reference internal" href="XCODE_SCHEME_MALLOC_GUARD_EDGES.html#prop_tgt:XCODE_SCHEME_MALLOC_GUARD_EDGES" title="XCODE_SCHEME_MALLOC_GUARD_EDGES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_MALLOC_GUARD_EDGES</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_MALLOC_SCRIBBLE"></span><a class="reference internal" href="XCODE_SCHEME_MALLOC_SCRIBBLE.html#prop_tgt:XCODE_SCHEME_MALLOC_SCRIBBLE" title="XCODE_SCHEME_MALLOC_SCRIBBLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_MALLOC_SCRIBBLE</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_MALLOC_STACK"></span><a class="reference internal" href="XCODE_SCHEME_MALLOC_STACK.html#prop_tgt:XCODE_SCHEME_MALLOC_STACK" title="XCODE_SCHEME_MALLOC_STACK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_MALLOC_STACK</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_THREAD_SANITIZER"></span><a class="reference internal" href="XCODE_SCHEME_THREAD_SANITIZER.html#prop_tgt:XCODE_SCHEME_THREAD_SANITIZER" title="XCODE_SCHEME_THREAD_SANITIZER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_THREAD_SANITIZER</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_THREAD_SANITIZER_STOP"></span><a class="reference internal" href="XCODE_SCHEME_THREAD_SANITIZER_STOP.html#prop_tgt:XCODE_SCHEME_THREAD_SANITIZER_STOP" title="XCODE_SCHEME_THREAD_SANITIZER_STOP"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_THREAD_SANITIZER_STOP</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER"></span><a class="reference internal" href="XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER.html#prop_tgt:XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER" title="XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER_STOP"></span><a class="reference internal" href="XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER_STOP.html#prop_tgt:XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER_STOP" title="XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER_STOP"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_UNDEFINED_BEHAVIOUR_SANITIZER_STOP</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_ZOMBIE_OBJECTS"></span><a class="reference internal" href="XCODE_SCHEME_ZOMBIE_OBJECTS.html#prop_tgt:XCODE_SCHEME_ZOMBIE_OBJECTS" title="XCODE_SCHEME_ZOMBIE_OBJECTS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_ZOMBIE_OBJECTS</span></code></a></p></li>
+</ul>
+<p>The following target properties will be applied on the
+“Info”, “Arguments”, and “Options” tab:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_ARGUMENTS"></span><a class="reference internal" href="XCODE_SCHEME_ARGUMENTS.html#prop_tgt:XCODE_SCHEME_ARGUMENTS" title="XCODE_SCHEME_ARGUMENTS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_ARGUMENTS</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_DEBUG_AS_ROOT"></span><a class="reference internal" href="XCODE_SCHEME_DEBUG_AS_ROOT.html#prop_tgt:XCODE_SCHEME_DEBUG_AS_ROOT" title="XCODE_SCHEME_DEBUG_AS_ROOT"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_DEBUG_AS_ROOT</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_DEBUG_DOCUMENT_VERSIONING"></span><a class="reference internal" href="XCODE_SCHEME_DEBUG_DOCUMENT_VERSIONING.html#prop_tgt:XCODE_SCHEME_DEBUG_DOCUMENT_VERSIONING" title="XCODE_SCHEME_DEBUG_DOCUMENT_VERSIONING"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_DEBUG_DOCUMENT_VERSIONING</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_ENVIRONMENT"></span><a class="reference internal" href="XCODE_SCHEME_ENVIRONMENT.html#prop_tgt:XCODE_SCHEME_ENVIRONMENT" title="XCODE_SCHEME_ENVIRONMENT"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_ENVIRONMENT</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_EXECUTABLE"></span><a class="reference internal" href="XCODE_SCHEME_EXECUTABLE.html#prop_tgt:XCODE_SCHEME_EXECUTABLE" title="XCODE_SCHEME_EXECUTABLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_EXECUTABLE</span></code></a></p></li>
+<li><p><span class="target" id="index-0-prop_tgt:XCODE_SCHEME_WORKING_DIRECTORY"></span><a class="reference internal" href="XCODE_SCHEME_WORKING_DIRECTORY.html#prop_tgt:XCODE_SCHEME_WORKING_DIRECTORY" title="XCODE_SCHEME_WORKING_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_SCHEME_WORKING_DIRECTORY</span></code></a></p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="XCODE_EXPLICIT_FILE_TYPE.html"
+                        title="previous chapter">XCODE_EXPLICIT_FILE_TYPE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="XCODE_LINK_BUILD_PHASE_MODE.html"
+                        title="next chapter">XCODE_LINK_BUILD_PHASE_MODE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/XCODE_GENERATE_SCHEME.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="XCODE_LINK_BUILD_PHASE_MODE.html" title="XCODE_LINK_BUILD_PHASE_MODE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="XCODE_EXPLICIT_FILE_TYPE.html" title="XCODE_EXPLICIT_FILE_TYPE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">XCODE_GENERATE_SCHEME</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

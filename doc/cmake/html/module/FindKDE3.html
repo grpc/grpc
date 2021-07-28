@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindKDE3 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindKDE4" href="FindKDE4.html" />
+    <link rel="prev" title="FindJPEG" href="FindJPEG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindKDE4.html" title="FindKDE4"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindJPEG.html" title="FindJPEG"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindKDE3</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findkde3">
+<span id="module:FindKDE3"></span><h1>FindKDE3<a class="headerlink" href="#findkde3" title="Permalink to this headline">¶</a></h1>
+<p>Find the KDE3 include and library dirs, KDE preprocessors and define a some macros</p>
+<p>This module defines the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_DEFINITIONS</span></code></dt><dd><p>compiler definitions required for compiling KDE software</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_INCLUDE_DIR</span></code></dt><dd><p>the KDE include directory</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_INCLUDE_DIRS</span></code></dt><dd><p>the KDE and the Qt include directory, for use with include_directories()</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_LIB_DIR</span></code></dt><dd><p>the directory where the KDE libraries are installed, for use with link_directories()</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QT_AND_KDECORE_LIBS</span></code></dt><dd><p>this contains both the Qt and the kdecore library</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_DCOPIDL_EXECUTABLE</span></code></dt><dd><p>the dcopidl executable</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_DCOPIDL2CPP_EXECUTABLE</span></code></dt><dd><p>the dcopidl2cpp executable</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_KCFGC_EXECUTABLE</span></code></dt><dd><p>the kconfig_compiler executable</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_FOUND</span></code></dt><dd><p>set to TRUE if all of the above has been found</p>
+</dd>
+</dl>
+<p>The following user adjustable options are provided:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">KDE3_BUILD_TESTS</span></code></dt><dd><p>enable this to build KDE testcases</p>
+</dd>
+</dl>
+<p>It also adds the following macros (from <code class="docutils literal notranslate"><span class="pre">KDE3Macros.cmake</span></code>) <code class="docutils literal notranslate"><span class="pre">SRCS_VAR</span></code> is
+always the variable which contains the list of source files for your
+application or library.</p>
+<p>KDE3_AUTOMOC(file1 …  fileN)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Call this if you want to have automatic moc file handling.
+This means if you include &quot;foo.moc&quot; in the source file foo.cpp
+a moc file for the header foo.h will be created automatically.
+You can set the property SKIP_AUTOMAKE using set_source_files_properties()
+to exclude some files in the list from being processed.
+</pre></div>
+</div>
+<p>KDE3_ADD_MOC_FILES(SRCS_VAR file1 …  fileN )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>If you don&#39;t use the KDE3_AUTOMOC() macro, for the files
+listed here moc files will be created (named &quot;foo.moc.cpp&quot;)
+</pre></div>
+</div>
+<p>KDE3_ADD_DCOP_SKELS(SRCS_VAR header1.h …  headerN.h )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Use this to generate DCOP skeletions from the listed headers.
+</pre></div>
+</div>
+<p>KDE3_ADD_DCOP_STUBS(SRCS_VAR header1.h …  headerN.h )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Use this to generate DCOP stubs from the listed headers.
+</pre></div>
+</div>
+<p>KDE3_ADD_UI_FILES(SRCS_VAR file1.ui …  fileN.ui )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Use this to add the Qt designer ui files to your application/library.
+</pre></div>
+</div>
+<p>KDE3_ADD_KCFG_FILES(SRCS_VAR file1.kcfgc …  fileN.kcfgc )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Use this to add KDE kconfig compiler files to your application/library.
+</pre></div>
+</div>
+<p>KDE3_INSTALL_LIBTOOL_FILE(target)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>This will create and install a simple libtool file for the given target.
+</pre></div>
+</div>
+<p>KDE3_ADD_EXECUTABLE(name file1 …  fileN )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Currently identical to add_executable(), may provide some advanced
+features in the future.
+</pre></div>
+</div>
+<p>KDE3_ADD_KPART(name [WITH_PREFIX] file1 …  fileN )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Create a KDE plugin (KPart, kioslave, etc.) from the given source files.
+If WITH_PREFIX is given, the resulting plugin will have the prefix &quot;lib&quot;,
+otherwise it won&#39;t.
+It creates and installs an appropriate libtool la-file.
+</pre></div>
+</div>
+<p>KDE3_ADD_KDEINIT_EXECUTABLE(name file1 …  fileN )</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Create a KDE application in the form of a module loadable via kdeinit.
+A library named kdeinit_&lt;name&gt; will be created and a small executable
+which links to it.
+</pre></div>
+</div>
+<p>The option KDE3_ENABLE_FINAL to enable all-in-one compilation is no
+longer supported.</p>
+<p>Author: Alexander Neundorf &lt;<a class="reference external" href="mailto:neundorf&#37;&#52;&#48;kde&#46;org">neundorf<span>&#64;</span>kde<span>&#46;</span>org</a>&gt;</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindJPEG.html"
+                        title="previous chapter">FindJPEG</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindKDE4.html"
+                        title="next chapter">FindKDE4</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindKDE3.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindKDE4.html" title="FindKDE4"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindJPEG.html" title="FindJPEG"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindKDE3</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

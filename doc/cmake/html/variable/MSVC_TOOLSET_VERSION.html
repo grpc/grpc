@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSVC_TOOLSET_VERSION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MSVC_VERSION" href="MSVC_VERSION.html" />
+    <link rel="prev" title="MSVC_IDE" href="MSVC_IDE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="MSVC_VERSION.html" title="MSVC_VERSION"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MSVC_IDE.html" title="MSVC_IDE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MSVC_TOOLSET_VERSION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="msvc-toolset-version">
+<span id="variable:MSVC_TOOLSET_VERSION"></span><h1>MSVC_TOOLSET_VERSION<a class="headerlink" href="#msvc-toolset-version" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.12.</span></p>
+</div>
+<p>The toolset version of Microsoft Visual C/C++ being used if any.
+If MSVC-like is being used, this variable is set based on the version
+of the compiler as given by the <span class="target" id="index-0-variable:MSVC_VERSION"></span><a class="reference internal" href="MSVC_VERSION.html#variable:MSVC_VERSION" title="MSVC_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MSVC_VERSION</span></code></a> variable.</p>
+<p>Known toolset version numbers are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>80        = VS 2005 (8.0)
+90        = VS 2008 (9.0)
+100       = VS 2010 (10.0)
+110       = VS 2012 (11.0)
+120       = VS 2013 (12.0)
+140       = VS 2015 (14.0)
+141       = VS 2017 (15.0)
+142       = VS 2019 (16.0)
+</pre></div>
+</div>
+<p>Compiler versions newer than those known to CMake will be reported
+as the latest known toolset version.</p>
+<p>See also the <span class="target" id="index-1-variable:MSVC_VERSION"></span><a class="reference internal" href="MSVC_VERSION.html#variable:MSVC_VERSION" title="MSVC_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MSVC_VERSION</span></code></a> variable.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MSVC_IDE.html"
+                        title="previous chapter">MSVC_IDE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MSVC_VERSION.html"
+                        title="next chapter">MSVC_VERSION</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/MSVC_TOOLSET_VERSION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="MSVC_VERSION.html" title="MSVC_VERSION"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MSVC_IDE.html" title="MSVC_IDE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MSVC_TOOLSET_VERSION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

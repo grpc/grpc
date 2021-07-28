@@ -1,0 +1,136 @@
+.. |file| replace:: The help is printed to a named <f>ile if given.
+
+``--help,-help,-usage,-h,-H,/?``
+ Print usage information and exit.
+
+ Usage describes the basic command line interface and its options.
+
+``--version,-version,/V [<f>]``
+ Show program name/version banner and exit.
+
+ If a file is specified, the version is written into it.
+ |file|
+
+``--help-full [<f>]``
+ Print all help manuals and exit.
+
+ All manuals are printed in a human-readable text format.
+ |file|
+
+``--help-manual <man> [<f>]``
+ Print one help manual and exit.
+
+ The specified manual is printed in a human-readable text format.
+ |file|
+
+``--help-manual-list [<f>]``
+ List help manuals available and exit.
+
+ The list contains all manuals for which help may be obtained by
+ using the ``--help-manual`` option followed by a manual name.
+ |file|
+
+``--help-command <cmd> [<f>]``
+ Print help for one command and exit.
+
+ The :manual:`cmake-commands(7)` manual entry for ``<cmd>`` is
+ printed in a human-readable text format.
+ |file|
+
+``--help-command-list [<f>]``
+ List commands with help available and exit.
+
+ The list contains all commands for which help may be obtained by
+ using the ``--help-command`` option followed by a command name.
+ |file|
+
+``--help-commands [<f>]``
+ Print cmake-commands manual and exit.
+
+ The :manual:`cmake-commands(7)` manual is printed in a
+ human-readable text format.
+ |file|
+
+``--help-module <mod> [<f>]``
+ Print help for one module and exit.
+
+ The :manual:`cmake-modules(7)` manual entry for ``<mod>`` is printed
+ in a human-readable text format.
+ |file|
+
+``--help-module-list [<f>]``
+ List modules with help available and exit.
+
+ The list contains all modules for which help may be obtained by
+ using the ``--help-module`` option followed by a module name.
+ |file|
+
+``--help-modules [<f>]``
+ Print cmake-modules manual and exit.
+
+ The :manual:`cmake-modules(7)` manual is printed in a human-readable
+ text format.
+ |file|
+
+``--help-policy <cmp> [<f>]``
+ Print help for one policy and exit.
+
+ The :manual:`cmake-policies(7)` manual entry for ``<cmp>`` is
+ printed in a human-readable text format.
+ |file|
+
+``--help-policy-list [<f>]``
+ List policies with help available and exit.
+
+ The list contains all policies for which help may be obtained by
+ using the ``--help-policy`` option followed by a policy name.
+ |file|
+
+``--help-policies [<f>]``
+ Print cmake-policies manual and exit.
+
+ The :manual:`cmake-policies(7)` manual is printed in a
+ human-readable text format.
+ |file|
+
+``--help-property <prop> [<f>]``
+ Print help for one property and exit.
+
+ The :manual:`cmake-properties(7)` manual entries for ``<prop>`` are
+ printed in a human-readable text format.
+ |file|
+
+``--help-property-list [<f>]``
+ List properties with help available and exit.
+
+ The list contains all properties for which help may be obtained by
+ using the ``--help-property`` option followed by a property name.
+ |file|
+
+``--help-properties [<f>]``
+ Print cmake-properties manual and exit.
+
+ The :manual:`cmake-properties(7)` manual is printed in a
+ human-readable text format.
+ |file|
+
+``--help-variable <var> [<f>]``
+ Print help for one variable and exit.
+
+ The :manual:`cmake-variables(7)` manual entry for ``<var>`` is
+ printed in a human-readable text format.
+ |file|
+
+``--help-variable-list [<f>]``
+ List variables with help available and exit.
+
+ The list contains all variables for which help may be obtained by
+ using the ``--help-variable`` option followed by a variable name.
+ |file|
+
+``--help-variables [<f>]``
+ Print cmake-variables manual and exit.
+
+ The :manual:`cmake-variables(7)` manual is printed in a
+ human-readable text format.
+ |file|

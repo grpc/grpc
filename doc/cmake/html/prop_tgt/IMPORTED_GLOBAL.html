@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IMPORTED_GLOBAL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="IMPORTED_IMPLIB" href="IMPORTED_IMPLIB.html" />
+    <link rel="prev" title="IMPORTED_CONFIGURATIONS" href="IMPORTED_CONFIGURATIONS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="IMPORTED_IMPLIB.html" title="IMPORTED_IMPLIB"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="IMPORTED_CONFIGURATIONS.html" title="IMPORTED_CONFIGURATIONS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">IMPORTED_GLOBAL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="imported-global">
+<span id="prop_tgt:IMPORTED_GLOBAL"></span><h1>IMPORTED_GLOBAL<a class="headerlink" href="#imported-global" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.11.</span></p>
+</div>
+<p>Indication of whether an <a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">IMPORTED target</span></a> is
+globally visible.</p>
+<p>The boolean value of this property is True for targets created with the
+<code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> options to <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> or
+<span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>. It is always False for targets built within the
+project.</p>
+<p>For targets created with the <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> option to
+<span class="target" id="index-1-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> or <span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> but without the
+additional option <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> this is False, too. However, setting this
+property for such a locally <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> target to True promotes that
+target to global scope. This promotion can only be done in the same
+directory where that <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> target was created in the first place.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Once an imported target has been made global, it cannot be changed back to
+non-global. Therefore, if a project sets this property, it may only
+provide a value of True. CMake will issue an error if the project tries to
+set the property to a non-True value, even if the value was already False.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Local <a class="reference internal" href="../manual/cmake-buildsystem.7.html#alias-targets"><span class="std std-ref">ALIAS targets</span></a> created before promoting an
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">IMPORTED target</span></a> from <code class="docutils literal notranslate"><span class="pre">LOCAL</span></code> to <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code>, keep
+their initial scope (see <span class="target" id="index-0-prop_tgt:ALIAS_GLOBAL"></span><a class="reference internal" href="ALIAS_GLOBAL.html#prop_tgt:ALIAS_GLOBAL" title="ALIAS_GLOBAL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ALIAS_GLOBAL</span></code></a> target property).</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="IMPORTED_CONFIGURATIONS.html"
+                        title="previous chapter">IMPORTED_CONFIGURATIONS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="IMPORTED_IMPLIB.html"
+                        title="next chapter">IMPORTED_IMPLIB</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/IMPORTED_GLOBAL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="IMPORTED_IMPLIB.html" title="IMPORTED_IMPLIB"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="IMPORTED_CONFIGURATIONS.html" title="IMPORTED_CONFIGURATIONS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">IMPORTED_GLOBAL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

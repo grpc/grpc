@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Studio 16 2019 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Green Hills MULTI" href="Green%20Hills%20MULTI.html" />
+    <link rel="prev" title="Visual Studio 15 2017" href="Visual%20Studio%2015%202017.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Green%20Hills%20MULTI.html" title="Green Hills MULTI"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Visual%20Studio%2015%202017.html" title="Visual Studio 15 2017"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" accesskey="U">cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visual Studio 16 2019</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="visual-studio-16-2019">
+<span id="generator:Visual Studio 16 2019"></span><h1>Visual Studio 16 2019<a class="headerlink" href="#visual-studio-16-2019" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.14.</span></p>
+</div>
+<p>Generates Visual Studio 16 (VS 2019) project files.</p>
+<div class="section" id="project-types">
+<h2>Project Types<a class="headerlink" href="#project-types" title="Permalink to this headline">¶</a></h2>
+<p>Only Visual C++ and C# projects may be generated.  Other types of
+projects (JavaScript, Powershell, Python, etc.) are not supported.</p>
+</div>
+<div class="section" id="instance-selection">
+<h2>Instance Selection<a class="headerlink" href="#instance-selection" title="Permalink to this headline">¶</a></h2>
+<p>VS 2019 supports multiple installations on the same machine.
+The <span class="target" id="index-0-variable:CMAKE_GENERATOR_INSTANCE"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_INSTANCE.html#variable:CMAKE_GENERATOR_INSTANCE" title="CMAKE_GENERATOR_INSTANCE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_INSTANCE</span></code></a> variable may be set as a
+cache entry containing the absolute path to a Visual Studio instance.
+If the value is not specified explicitly by the user or a toolchain file,
+CMake queries the Visual Studio Installer to locate VS instances, chooses
+one, and sets the variable as a cache entry to hold the value persistently.</p>
+<p>When CMake first chooses an instance, if the <code class="docutils literal notranslate"><span class="pre">VS160COMNTOOLS</span></code> environment
+variable is set and points to the <code class="docutils literal notranslate"><span class="pre">Common7/Tools</span></code> directory within
+one of the instances, that instance will be used.  Otherwise, if more
+than one instance is installed we do not define which one is chosen
+by default.</p>
+</div>
+<div class="section" id="platform-selection">
+<h2>Platform Selection<a class="headerlink" href="#platform-selection" title="Permalink to this headline">¶</a></h2>
+<p>The default target platform name (architecture) is that of the host
+and is provided in the <span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_NAME_DEFAULT"></span><a class="reference internal" href="../variable/CMAKE_VS_PLATFORM_NAME_DEFAULT.html#variable:CMAKE_VS_PLATFORM_NAME_DEFAULT" title="CMAKE_VS_PLATFORM_NAME_DEFAULT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_NAME_DEFAULT</span></code></a> variable.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a> variable may be set, perhaps
+via the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-A</span></code> option, to specify a target platform
+name (architecture).  For example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">16</span> <span class="pre">2019&quot;</span> <span class="pre">-A</span> <span class="pre">Win32</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">16</span> <span class="pre">2019&quot;</span> <span class="pre">-A</span> <span class="pre">x64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">16</span> <span class="pre">2019&quot;</span> <span class="pre">-A</span> <span class="pre">ARM</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-G</span> <span class="pre">&quot;Visual</span> <span class="pre">Studio</span> <span class="pre">16</span> <span class="pre">2019&quot;</span> <span class="pre">-A</span> <span class="pre">ARM64</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="toolset-selection">
+<h2>Toolset Selection<a class="headerlink" href="#toolset-selection" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">v142</span></code> toolset that comes with Visual Studio 16 2019 is selected by
+default.  The <span class="target" id="index-0-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> option may be set, perhaps
+via the <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-T</span></code> option, to specify another toolset.</p>
+<p>For each toolset that comes with this version of Visual Studio, there are
+variants that are themselves compiled for 32-bit (<code class="docutils literal notranslate"><span class="pre">x86</span></code>) and
+64-bit (<code class="docutils literal notranslate"><span class="pre">x64</span></code>) hosts (independent of the architecture they target).
+By default this generator uses the 64-bit variant on x64 hosts and
+the 32-bit variant otherwise.
+One may explicitly request use of either the 32-bit or 64-bit host tools
+by adding either <code class="docutils literal notranslate"><span class="pre">host=x86</span></code> or <code class="docutils literal notranslate"><span class="pre">host=x64</span></code> to the toolset specification.
+See the <span class="target" id="index-1-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> variable for details.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Visual Studio 16 2019</a><ul>
+<li><a class="reference internal" href="#project-types">Project Types</a></li>
+<li><a class="reference internal" href="#instance-selection">Instance Selection</a></li>
+<li><a class="reference internal" href="#platform-selection">Platform Selection</a></li>
+<li><a class="reference internal" href="#toolset-selection">Toolset Selection</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Visual%20Studio%2015%202017.html"
+                        title="previous chapter">Visual Studio 15 2017</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Green%20Hills%20MULTI.html"
+                        title="next chapter">Green Hills MULTI</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generator/Visual Studio 16 2019.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Green%20Hills%20MULTI.html" title="Green Hills MULTI"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Visual%20Studio%2015%202017.html" title="Visual Studio 15 2017"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-generators.7.html" >cmake-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visual Studio 16 2019</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

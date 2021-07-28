@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CheckOBJCXXSourceRuns &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CheckPIESupported" href="CheckPIESupported.html" />
+    <link rel="prev" title="CheckOBJCXXSourceCompiles" href="CheckOBJCXXSourceCompiles.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CheckPIESupported.html" title="CheckPIESupported"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CheckOBJCXXSourceCompiles.html" title="CheckOBJCXXSourceCompiles"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckOBJCXXSourceRuns</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="checkobjcxxsourceruns">
+<span id="module:CheckOBJCXXSourceRuns"></span><h1>CheckOBJCXXSourceRuns<a class="headerlink" href="#checkobjcxxsourceruns" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.16.</span></p>
+</div>
+<p>Check if given Objective-C++ source compiles and links into an executable and can
+subsequently be run.</p>
+<dl class="cmake command">
+<dt id="command:check_objcxx_source_runs">
+<code class="sig-name descname">check_objcxx_source_runs</code><a class="headerlink" href="#command:check_objcxx_source_runs" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">check_objcxx_source_runs(</span><span class="nv">&lt;code&gt;</span><span class="w"> </span><span class="nv">&lt;resultVar&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Check that the source supplied in <code class="docutils literal notranslate"><span class="pre">&lt;code&gt;</span></code> can be compiled as a Objective-C++ source
+file, linked as an executable and then run. The <code class="docutils literal notranslate"><span class="pre">&lt;code&gt;</span></code> must contain at
+least a <code class="docutils literal notranslate"><span class="pre">main()</span></code> function. If the <code class="docutils literal notranslate"><span class="pre">&lt;code&gt;</span></code> could be built and run
+successfully, the internal cache variable specified by <code class="docutils literal notranslate"><span class="pre">&lt;resultVar&gt;</span></code> will
+be set to 1, otherwise it will be set to an value that evaluates to boolean
+false (e.g. an empty string or an error message).</p>
+<p>The underlying check is performed by the <span class="target" id="index-0-command:try_run"></span><a class="reference internal" href="../command/try_run.html#command:try_run" title="try_run"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_run()</span></code></a> command. The
+compile and link commands can be influenced by setting any of the following
+variables prior to calling <code class="docutils literal notranslate"><span class="pre">check_objcxx_source_runs()</span></code>:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_FLAGS</span></code></dt><dd><p>Additional flags to pass to the compiler. Note that the contents of
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS"></span><a class="reference internal" href="../variable/CMAKE_LANG_FLAGS.html#variable:CMAKE_&lt;LANG&gt;_FLAGS" title="CMAKE_&lt;LANG&gt;_FLAGS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_OBJCXX_FLAGS</span></code></a> and its associated
+configuration-specific variable are automatically added to the compiler
+command before the contents of <code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_FLAGS</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_DEFINITIONS</span></code></dt><dd><p>A <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of compiler definitions of the form
+<code class="docutils literal notranslate"><span class="pre">-DFOO</span></code> or <code class="docutils literal notranslate"><span class="pre">-DFOO=bar</span></code>. A definition for the name specified by
+<code class="docutils literal notranslate"><span class="pre">&lt;resultVar&gt;</span></code> will also be added automatically.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_INCLUDES</span></code></dt><dd><p>A <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of header search paths to pass to
+the compiler. These will be the only header search paths used by
+<code class="docutils literal notranslate"><span class="pre">try_run()</span></code>, i.e. the contents of the <span class="target" id="index-0-prop_dir:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_dir/INCLUDE_DIRECTORIES.html#prop_dir:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>
+directory property will be ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_LINK_OPTIONS</span></code></dt><dd><p>A <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of options to add to the link
+command (see <span class="target" id="index-1-command:try_run"></span><a class="reference internal" href="../command/try_run.html#command:try_run" title="try_run"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_run()</span></code></a> for further details).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_LIBRARIES</span></code></dt><dd><p>A <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of libraries to add to the link
+command. These can be the name of system libraries or they can be
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">Imported Targets</span></a> (see <span class="target" id="index-2-command:try_run"></span><a class="reference internal" href="../command/try_run.html#command:try_run" title="try_run"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_run()</span></code></a> for
+further details).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_QUIET</span></code></dt><dd><p>If this variable evaluates to a boolean true value, all status messages
+associated with the check will be suppressed.</p>
+</dd>
+</dl>
+<p>The check is only performed once, with the result cached in the variable
+named by <code class="docutils literal notranslate"><span class="pre">&lt;resultVar&gt;</span></code>. Every subsequent CMake run will re-use this cached
+value rather than performing the check again, even if the <code class="docutils literal notranslate"><span class="pre">&lt;code&gt;</span></code> changes.
+In order to force the check to be re-evaluated, the variable named by
+<code class="docutils literal notranslate"><span class="pre">&lt;resultVar&gt;</span></code> must be manually removed from the cache.</p>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CheckOBJCXXSourceCompiles.html"
+                        title="previous chapter">CheckOBJCXXSourceCompiles</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CheckPIESupported.html"
+                        title="next chapter">CheckPIESupported</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CheckOBJCXXSourceRuns.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CheckPIESupported.html" title="CheckPIESupported"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CheckOBJCXXSourceCompiles.html" title="CheckOBJCXXSourceCompiles"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckOBJCXXSourceRuns</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

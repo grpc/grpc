@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>configure_file &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="continue" href="continue.html" />
+    <link rel="prev" title="cmake_policy" href="cmake_policy.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="continue.html" title="continue"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake_policy.html" title="cmake_policy"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">configure_file</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="configure-file">
+<span id="command:configure_file"></span><h1>configure_file<a class="headerlink" href="#configure-file" title="Permalink to this headline">¶</a></h1>
+<p>Copy a file to another location and modify its contents.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">configure_file(</span><span class="nv">&lt;input&gt;</span><span class="w"> </span><span class="nv">&lt;output&gt;</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">COPYONLY</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">ESCAPE_QUOTES</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">@ONLY</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">NO_SOURCE_PERMISSIONS</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">NEWLINE_STYLE</span><span class="w"> </span><span class="p">[</span><span class="no">UNIX</span><span class="p">|</span><span class="no">DOS</span><span class="p">|</span><span class="no">WIN32</span><span class="p">|</span><span class="no">LF</span><span class="p">|</span><span class="no">CRLF</span><span class="p">]</span><span class="w"> </span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Copies an <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> file to an <code class="docutils literal notranslate"><span class="pre">&lt;output&gt;</span></code> file and substitutes
+variable values referenced as <code class="docutils literal notranslate"><span class="pre">&#64;VAR&#64;</span></code> or <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> in the input
+file content.  Each variable reference will be replaced with the
+current value of the variable, or the empty string if the variable
+is not defined.  Furthermore, input lines of the form</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#cmakedefine VAR ...</span>
+</pre></div>
+</div>
+<p>will be replaced with either</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#define VAR ...</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* #undef VAR */</span>
+</pre></div>
+</div>
+<p>depending on whether <code class="docutils literal notranslate"><span class="pre">VAR</span></code> is set in CMake to any value not considered
+a false constant by the <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if()</span></code></a> command.  The “…” content on the
+line after the variable name, if any, is processed as above.
+Input file lines of the form <code class="docutils literal notranslate"><span class="pre">#cmakedefine01</span> <span class="pre">VAR</span></code> will be replaced with
+either <code class="docutils literal notranslate"><span class="pre">#define</span> <span class="pre">VAR</span> <span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">#define</span> <span class="pre">VAR</span> <span class="pre">0</span></code> similarly.
+The result lines (with the exception of the <code class="docutils literal notranslate"><span class="pre">#undef</span></code> comments) can be
+indented using spaces and/or tabs between the <code class="docutils literal notranslate"><span class="pre">#</span></code> character
+and the <code class="docutils literal notranslate"><span class="pre">cmakedefine</span></code> or <code class="docutils literal notranslate"><span class="pre">cmakedefine01</span></code> words. This whitespace
+indentation will be preserved in the output lines:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#  cmakedefine VAR</span>
+<span class="cp">#  cmakedefine01 VAR</span>
+</pre></div>
+</div>
+<p>will be replaced, if <code class="docutils literal notranslate"><span class="pre">VAR</span></code> is defined, with</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#  define VAR</span>
+<span class="cp">#  define VAR 1</span>
+</pre></div>
+</div>
+<p>If the input file is modified the build system will re-run CMake to
+re-configure the file and generate the build system again.
+The generated file is modified and its timestamp updated on subsequent
+cmake runs only if its content is changed.</p>
+<p>The arguments are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code></dt><dd><p>Path to the input file.  A relative path is treated with respect to
+the value of <span class="target" id="index-0-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>.  The input path
+must be a file, not a directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;output&gt;</span></code></dt><dd><p>Path to the output file or directory.  A relative path is treated
+with respect to the value of <span class="target" id="index-0-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a>.
+If the path names an existing directory the output file is placed
+in that directory with the same file name as the input file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COPYONLY</span></code></dt><dd><p>Copy the file without replacing any variable references or other
+content.  This option may not be used with <code class="docutils literal notranslate"><span class="pre">NEWLINE_STYLE</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ESCAPE_QUOTES</span></code></dt><dd><p>Escape any substituted quotes with backslashes (C-style).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&#64;ONLY</span></code></dt><dd><p>Restrict variable replacement to references of the form <code class="docutils literal notranslate"><span class="pre">&#64;VAR&#64;</span></code>.
+This is useful for configuring scripts that use <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> syntax.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NO_SOURCE_PERMISSIONS</span></code></dt><dd><p>Does not transfer the file permissions of the original file to the copy.
+The copied file permissions default to the standard 644 value
+(-rw-r–r–).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NEWLINE_STYLE</span> <span class="pre">&lt;style&gt;</span></code></dt><dd><p>Specify the newline style for the output file.  Specify
+<code class="docutils literal notranslate"><span class="pre">UNIX</span></code> or <code class="docutils literal notranslate"><span class="pre">LF</span></code> for <code class="docutils literal notranslate"><span class="pre">\n</span></code> newlines, or specify
+<code class="docutils literal notranslate"><span class="pre">DOS</span></code>, <code class="docutils literal notranslate"><span class="pre">WIN32</span></code>, or <code class="docutils literal notranslate"><span class="pre">CRLF</span></code> for <code class="docutils literal notranslate"><span class="pre">\r\n</span></code> newlines.
+This option may not be used with <code class="docutils literal notranslate"><span class="pre">COPYONLY</span></code>.</p>
+</dd>
+</dl>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Consider a source tree containing a <code class="docutils literal notranslate"><span class="pre">foo.h.in</span></code> file:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#cmakedefine FOO_ENABLE</span>
+<span class="cp">#cmakedefine FOO_STRING &quot;@FOO_STRING@&quot;</span>
+</pre></div>
+</div>
+<p>An adjacent <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> may use <code class="docutils literal notranslate"><span class="pre">configure_file</span></code> to
+configure the header:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">option(</span><span class="no">FOO_ENABLE</span><span class="w"> </span><span class="s">&quot;Enable Foo&quot;</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="no">FOO_ENABLE</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="no">FOO_STRING</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">configure_file(</span><span class="nb">foo.h.in</span><span class="w"> </span><span class="nb">foo.h</span><span class="w"> </span><span class="no">@ONLY</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This creates a <code class="docutils literal notranslate"><span class="pre">foo.h</span></code> in the build directory corresponding to
+this source directory.  If the <code class="docutils literal notranslate"><span class="pre">FOO_ENABLE</span></code> option is on, the
+configured file will contain:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#define FOO_ENABLE</span>
+<span class="cp">#define FOO_STRING &quot;foo&quot;</span>
+</pre></div>
+</div>
+<p>Otherwise it will contain:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* #undef FOO_ENABLE */</span>
+<span class="cm">/* #undef FOO_STRING */</span>
+</pre></div>
+</div>
+<p>One may then use the <span class="target" id="index-0-command:include_directories"></span><a class="reference internal" href="include_directories.html#command:include_directories" title="include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include_directories()</span></code></a> command to
+specify the output directory as an include directory:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include_directories(</span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>so that sources may include the header as <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;foo.h&gt;</span></code>.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">configure_file</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake_policy.html"
+                        title="previous chapter">cmake_policy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="continue.html"
+                        title="next chapter">continue</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/configure_file.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="continue.html" title="continue"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake_policy.html" title="cmake_policy"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">configure_file</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

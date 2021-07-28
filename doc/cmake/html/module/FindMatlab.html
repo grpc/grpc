@@ -1,0 +1,587 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindMatlab &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindMFC" href="FindMFC.html" />
+    <link rel="prev" title="FindLua51" href="FindLua51.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindMFC.html" title="FindMFC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindLua51.html" title="FindLua51"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindMatlab</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findmatlab">
+<span id="module:FindMatlab"></span><h1>FindMatlab<a class="headerlink" href="#findmatlab" title="Permalink to this headline">¶</a></h1>
+<p>Finds Matlab or Matlab Compiler Runtime (MCR) and provides Matlab tools,
+libraries and compilers to CMake.</p>
+<p>This package primary purpose is to find the libraries associated with Matlab
+or the MCR in order to be able to build Matlab extensions (mex files). It
+can also be used:</p>
+<ul class="simple">
+<li><p>to run specific commands in Matlab in case Matlab is available</p></li>
+<li><p>for declaring Matlab unit test</p></li>
+<li><p>to retrieve various information from Matlab (mex extensions, versions and
+release queries, …)</p></li>
+</ul>
+<p>The module supports the following components:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ENG_LIBRARY</span></code> and <code class="docutils literal notranslate"><span class="pre">MAT_LIBRARY</span></code>: respectively the <code class="docutils literal notranslate"><span class="pre">ENG</span></code> and <code class="docutils literal notranslate"><span class="pre">MAT</span></code>
+libraries of Matlab</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAIN_PROGRAM</span></code> the Matlab binary program. Note that this component is not
+available on the MCR version, and will yield an error if the MCR is found
+instead of the regular Matlab installation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MEX_COMPILER</span></code> the MEX compiler.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MCC_COMPILER</span></code> the MCC compiler, included with the Matlab Compiler add-on.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SIMULINK</span></code> the Simulink environment.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The version given to the <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> directive is the Matlab
+<strong>version</strong>, which should not be confused with the Matlab <em>release</em> name
+(eg. <cite>R2014</cite>).
+The <span class="target" id="index-0-command:matlab_get_version_from_release_name"></span><a class="reference internal" href="#command:matlab_get_version_from_release_name" title="matlab_get_version_from_release_name"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_version_from_release_name()</span></code></a> and
+<span class="target" id="index-0-command:matlab_get_release_name_from_version"></span><a class="reference internal" href="#command:matlab_get_release_name_from_version" title="matlab_get_release_name_from_version"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_release_name_from_version()</span></code></a> provide a mapping
+between the release name and the version.</p>
+</div>
+<p>The variable <span class="target" id="index-0-variable:Matlab_ROOT_DIR"></span><a class="reference internal" href="#variable:Matlab_ROOT_DIR" title="Matlab_ROOT_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">Matlab_ROOT_DIR</span></code></a> may be specified in order to give
+the path of the desired Matlab version. Otherwise, the behaviour is platform
+specific:</p>
+<ul class="simple">
+<li><p>Windows: The installed versions of Matlab/MCR are retrieved from the
+Windows registry</p></li>
+<li><p>OS X: The installed versions of Matlab/MCR are given by the MATLAB
+default installation paths in <code class="docutils literal notranslate"><span class="pre">/Application</span></code>. If no such application is
+found, it falls back to the one that might be accessible from the <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p></li>
+<li><p>Unix: The desired Matlab should be accessible from the <code class="docutils literal notranslate"><span class="pre">PATH</span></code>. This does
+not work for MCR installation and <span class="target" id="index-1-variable:Matlab_ROOT_DIR"></span><a class="reference internal" href="#variable:Matlab_ROOT_DIR" title="Matlab_ROOT_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">Matlab_ROOT_DIR</span></code></a> should be
+specified on this platform.</p></li>
+</ul>
+<p>Additional information is provided when <span class="target" id="index-0-variable:MATLAB_FIND_DEBUG"></span><a class="reference internal" href="#variable:MATLAB_FIND_DEBUG" title="MATLAB_FIND_DEBUG"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MATLAB_FIND_DEBUG</span></code></a> is set.
+When a Matlab/MCR installation is found automatically and the <code class="docutils literal notranslate"><span class="pre">MATLAB_VERSION</span></code>
+is not given, the version is queried from Matlab directly (on Windows this
+may pop up a Matlab window) or from the MCR installation.</p>
+<p>The mapping of the release names and the version of Matlab is performed by
+defining pairs (name, version).  The variable
+<span class="target" id="index-0-variable:MATLAB_ADDITIONAL_VERSIONS"></span><a class="reference internal" href="#variable:MATLAB_ADDITIONAL_VERSIONS" title="MATLAB_ADDITIONAL_VERSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MATLAB_ADDITIONAL_VERSIONS</span></code></a> may be provided before the call to
+the <span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> in order to handle additional versions.</p>
+<p>A Matlab scripts can be added to the set of tests using the
+<span class="target" id="index-0-command:matlab_add_unit_test"></span><a class="reference internal" href="#command:matlab_add_unit_test" title="matlab_add_unit_test"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_add_unit_test()</span></code></a>. By default, the Matlab unit test framework
+will be used (&gt;= 2013a) to run this script, but regular <code class="docutils literal notranslate"><span class="pre">.m</span></code> files
+returning an exit code can be used as well (0 indicating a success).</p>
+<div class="section" id="module-input-variables">
+<h2>Module Input Variables<a class="headerlink" href="#module-input-variables" title="Permalink to this headline">¶</a></h2>
+<p>Users or projects may set the following variables to configure the module
+behaviour:</p>
+<dl class="simple">
+<dt><span class="target" id="index-2-variable:Matlab_ROOT_DIR"></span><a class="reference internal" href="#variable:Matlab_ROOT_DIR" title="Matlab_ROOT_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">Matlab_ROOT_DIR</span></code></a></dt><dd><p>the root of the Matlab installation.</p>
+</dd>
+<dt><span class="target" id="index-1-variable:MATLAB_FIND_DEBUG"></span><a class="reference internal" href="#variable:MATLAB_FIND_DEBUG" title="MATLAB_FIND_DEBUG"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MATLAB_FIND_DEBUG</span></code></a></dt><dd><p>outputs debug information</p>
+</dd>
+<dt><span class="target" id="index-1-variable:MATLAB_ADDITIONAL_VERSIONS"></span><a class="reference internal" href="#variable:MATLAB_ADDITIONAL_VERSIONS" title="MATLAB_ADDITIONAL_VERSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">MATLAB_ADDITIONAL_VERSIONS</span></code></a></dt><dd><p>additional versions of Matlab for the automatic retrieval of the installed
+versions.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="variables-defined-by-the-module">
+<h2>Variables defined by the module<a class="headerlink" href="#variables-defined-by-the-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="result-variables">
+<h3>Result variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_FOUND</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">TRUE</span></code> if the Matlab installation is found, <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>
+otherwise. All variable below are defined if Matlab is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_ROOT_DIR</span></code></dt><dd><p>the final root of the Matlab installation determined by the FindMatlab
+module.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MAIN_PROGRAM</span></code></dt><dd><p>the Matlab binary program. Available only if the component <code class="docutils literal notranslate"><span class="pre">MAIN_PROGRAM</span></code>
+is given in the <span class="target" id="index-2-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> directive.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_INCLUDE_DIRS</span></code></dt><dd><p>the path of the Matlab libraries headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MEX_LIBRARY</span></code></dt><dd><p>library for mex, always available.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MX_LIBRARY</span></code></dt><dd><p>mx library of Matlab (arrays), always available.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_ENG_LIBRARY</span></code></dt><dd><p>Matlab engine library. Available only if the component <code class="docutils literal notranslate"><span class="pre">ENG_LIBRARY</span></code>
+is requested.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MAT_LIBRARY</span></code></dt><dd><p>Matlab matrix library. Available only if the component <code class="docutils literal notranslate"><span class="pre">MAT_LIBRARY</span></code>
+is requested.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_ENGINE_LIBRARY</span></code></dt><dd><p>Matlab C++ engine library, always available for R2018a and newer.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_DATAARRAY_LIBRARY</span></code></dt><dd><p>Matlab C++ data array library, always available for R2018a and newer.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_LIBRARIES</span></code></dt><dd><p>the whole set of libraries of Matlab</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MEX_COMPILER</span></code></dt><dd><p>the mex compiler of Matlab. Currently not used.
+Available only if the component <code class="docutils literal notranslate"><span class="pre">MEX_COMPILER</span></code> is requested.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MCC_COMPILER</span></code></dt><dd><p>the mcc compiler of Matlab. Included with the Matlab Compiler add-on.
+Available only if the component <code class="docutils literal notranslate"><span class="pre">MCC_COMPILER</span></code> is requested.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cached-variables">
+<h3>Cached variables<a class="headerlink" href="#cached-variables" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_MEX_EXTENSION</span></code></dt><dd><p>the extension of the mex files for the current platform (given by Matlab).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Matlab_ROOT_DIR</span></code></dt><dd><p>the location of the root of the Matlab installation found. If this value
+is changed by the user, the result variables are recomputed.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="provided-macros">
+<h2>Provided macros<a class="headerlink" href="#provided-macros" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt><span class="target" id="index-1-command:matlab_get_version_from_release_name"></span><a class="reference internal" href="#command:matlab_get_version_from_release_name" title="matlab_get_version_from_release_name"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_version_from_release_name()</span></code></a></dt><dd><p>returns the version from the release name</p>
+</dd>
+<dt><span class="target" id="index-1-command:matlab_get_release_name_from_version"></span><a class="reference internal" href="#command:matlab_get_release_name_from_version" title="matlab_get_release_name_from_version"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_release_name_from_version()</span></code></a></dt><dd><p>returns the release name from the Matlab version</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="provided-functions">
+<h2>Provided functions<a class="headerlink" href="#provided-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt><span class="target" id="index-0-command:matlab_add_mex"></span><a class="reference internal" href="#command:matlab_add_mex" title="matlab_add_mex"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_add_mex()</span></code></a></dt><dd><p>adds a target compiling a MEX file.</p>
+</dd>
+<dt><span class="target" id="index-1-command:matlab_add_unit_test"></span><a class="reference internal" href="#command:matlab_add_unit_test" title="matlab_add_unit_test"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_add_unit_test()</span></code></a></dt><dd><p>adds a Matlab unit test file as a test to the project.</p>
+</dd>
+<dt><span class="target" id="index-0-command:matlab_extract_all_installed_versions_from_registry"></span><a class="reference internal" href="#command:matlab_extract_all_installed_versions_from_registry" title="matlab_extract_all_installed_versions_from_registry"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_extract_all_installed_versions_from_registry()</span></code></a></dt><dd><p>parses the registry for all Matlab versions. Available on Windows only.
+The part of the registry parsed is dependent on the host processor</p>
+</dd>
+<dt><span class="target" id="index-0-command:matlab_get_all_valid_matlab_roots_from_registry"></span><a class="reference internal" href="#command:matlab_get_all_valid_matlab_roots_from_registry" title="matlab_get_all_valid_matlab_roots_from_registry"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_all_valid_matlab_roots_from_registry()</span></code></a></dt><dd><p>returns all the possible Matlab or MCR paths, according to a previously
+given list. Only the existing/accessible paths are kept. This is mainly
+useful for the searching all possible Matlab installation.</p>
+</dd>
+<dt><span class="target" id="index-0-command:matlab_get_mex_suffix"></span><a class="reference internal" href="#command:matlab_get_mex_suffix" title="matlab_get_mex_suffix"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_mex_suffix()</span></code></a></dt><dd><p>returns the suffix to be used for the mex files
+(platform/architecture dependent)</p>
+</dd>
+<dt><span class="target" id="index-0-command:matlab_get_version_from_matlab_run"></span><a class="reference internal" href="#command:matlab_get_version_from_matlab_run" title="matlab_get_version_from_matlab_run"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_get_version_from_matlab_run()</span></code></a></dt><dd><p>returns the version of Matlab/MCR, given the full directory of the Matlab/MCR
+installation path.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="known-issues">
+<h2>Known issues<a class="headerlink" href="#known-issues" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><strong>Symbol clash in a MEX target</strong></dt><dd><p>By default, every symbols inside a MEX
+file defined with the command <span class="target" id="index-1-command:matlab_add_mex"></span><a class="reference internal" href="#command:matlab_add_mex" title="matlab_add_mex"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">matlab_add_mex()</span></code></a> have hidden
+visibility, except for the entry point. This is the default behaviour of
+the MEX compiler, which lowers the risk of symbol collision between the
+libraries shipped with Matlab, and the libraries to which the MEX file is
+linking to. This is also the default on Windows platforms.</p>
+<p>However, this is not sufficient in certain case, where for instance your
+MEX file is linking against libraries that are already loaded by Matlab,
+even if those libraries have different SONAMES.
+A possible solution is to hide the symbols of the libraries to which the
+MEX target is linking to. This can be achieved in GNU GCC compilers with
+the linker option <code class="docutils literal notranslate"><span class="pre">-Wl,--exclude-libs,ALL</span></code>.</p>
+</dd>
+<dt><strong>Tests using GPU resources</strong></dt><dd><p>in case your MEX file is using the GPU and
+in order to be able to run unit tests on this MEX file, the GPU resources
+should be properly released by Matlab. A possible solution is to make
+Matlab aware of the use of the GPU resources in the session, which can be
+performed by a command such as <code class="docutils literal notranslate"><span class="pre">D</span> <span class="pre">=</span> <span class="pre">gpuDevice()</span></code> at the beginning of
+the test script (or via a fixture).</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake variable">
+<dt id="variable:Matlab_ROOT_DIR">
+<code class="sig-name descname">Matlab_ROOT_DIR</code><a class="headerlink" href="#variable:Matlab_ROOT_DIR" title="Permalink to this definition">¶</a></dt>
+<dd><p>The root folder of the Matlab installation. If set before the call to
+<span class="target" id="index-3-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a>, the module will look for the components in that
+path. If not set, then an automatic search of Matlab
+will be performed. If set, it should point to a valid version of Matlab.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:MATLAB_FIND_DEBUG">
+<code class="sig-name descname">MATLAB_FIND_DEBUG</code><a class="headerlink" href="#variable:MATLAB_FIND_DEBUG" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set, the lookup of Matlab and the intermediate configuration steps are
+outputted to the console.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:MATLAB_ADDITIONAL_VERSIONS">
+<code class="sig-name descname">MATLAB_ADDITIONAL_VERSIONS</code><a class="headerlink" href="#variable:MATLAB_ADDITIONAL_VERSIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set, specifies additional versions of Matlab that may be looked for.
+The variable should be a list of strings, organised by pairs of release
+name and versions, such as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(MATLAB_ADDITIONAL_VERSIONS
+    &quot;release_name1=corresponding_version1&quot;
+    &quot;release_name2=corresponding_version2&quot;
+    ...
+    )
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(MATLAB_ADDITIONAL_VERSIONS
+    &quot;R2013b=8.2&quot;
+    &quot;R2013a=8.1&quot;
+    &quot;R2012b=8.0&quot;)
+</pre></div>
+</div>
+<p>The order of entries in this list matters when several versions of
+Matlab are installed. The priority is set according to the ordering in
+this list.</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_get_version_from_release_name">
+<code class="sig-name descname">matlab_get_version_from_release_name</code><a class="headerlink" href="#command:matlab_get_version_from_release_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the version of Matlab (17.58) from a release name (R2017k)</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_get_release_name_from_version">
+<code class="sig-name descname">matlab_get_release_name_from_version</code><a class="headerlink" href="#command:matlab_get_release_name_from_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the release name (R2017k) from the version of Matlab (17.58)</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_extract_all_installed_versions_from_registry">
+<code class="sig-name descname">matlab_extract_all_installed_versions_from_registry</code><a class="headerlink" href="#command:matlab_extract_all_installed_versions_from_registry" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function parses the registry and founds the Matlab versions that are
+installed. The found versions are returned in <cite>matlab_versions</cite>.
+Set <cite>win64</cite> to <cite>TRUE</cite> if the 64 bit version of Matlab should be looked for
+The returned list contains all versions under
+<code class="docutils literal notranslate"><span class="pre">HKLM\\SOFTWARE\\Mathworks\\MATLAB</span></code> and
+<code class="docutils literal notranslate"><span class="pre">HKLM\\SOFTWARE\\Mathworks\\MATLAB</span> <span class="pre">Runtime</span></code> or an empty list in case an
+error occurred (or nothing found).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only the versions are provided. No check is made over the existence of the
+installation referenced in the registry,</p>
+</div>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_get_all_valid_matlab_roots_from_registry">
+<code class="sig-name descname">matlab_get_all_valid_matlab_roots_from_registry</code><a class="headerlink" href="#command:matlab_get_all_valid_matlab_roots_from_registry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populates the Matlab root with valid versions of Matlab or
+Matlab Runtime (MCR).
+The returned matlab_roots is organized in triplets
+<code class="docutils literal notranslate"><span class="pre">(type,version_number,matlab_root_path)</span></code>, where <code class="docutils literal notranslate"><span class="pre">type</span></code>
+indicates either <code class="docutils literal notranslate"><span class="pre">MATLAB</span></code> or <code class="docutils literal notranslate"><span class="pre">MCR</span></code>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>matlab_get_all_valid_matlab_roots_from_registry(
+    matlab_versions
+    matlab_roots)
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">matlab_versions</span></code></dt><dd><p>the versions of each of the Matlab or MCR installations</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">matlab_roots</span></code></dt><dd><p>the location of each of the Matlab or MCR installations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_get_mex_suffix">
+<code class="sig-name descname">matlab_get_mex_suffix</code><a class="headerlink" href="#command:matlab_get_mex_suffix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the extension of the mex files (the suffixes).
+This function should not be called before the appropriate Matlab root has
+been found.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>matlab_get_mex_suffix(
+    matlab_root
+    mex_suffix)
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">matlab_root</span></code></dt><dd><p>the root of the Matlab/MCR installation</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">mex_suffix</span></code></dt><dd><p>the variable name in which the suffix will be returned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_get_version_from_matlab_run">
+<code class="sig-name descname">matlab_get_version_from_matlab_run</code><a class="headerlink" href="#command:matlab_get_version_from_matlab_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function runs Matlab program specified on arguments and extracts its
+version. If the path provided for the Matlab installation points to an MCR
+installation, the version is extracted from the installed files.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>matlab_get_version_from_matlab_run(
+    matlab_binary_path
+    matlab_list_versions)
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">matlab_binary_path</span></code></dt><dd><p>the location of the <cite>matlab</cite> binary executable</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">matlab_list_versions</span></code></dt><dd><p>the version extracted from Matlab</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_add_unit_test">
+<code class="sig-name descname">matlab_add_unit_test</code><a class="headerlink" href="#command:matlab_add_unit_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Matlab unit test to the test set of cmake/ctest.
+This command requires the component <code class="docutils literal notranslate"><span class="pre">MAIN_PROGRAM</span></code> and hence is not
+available for an MCR installation.</p>
+<p>The unit test uses the Matlab unittest framework (default, available
+starting Matlab 2013b+) except if the option <code class="docutils literal notranslate"><span class="pre">NO_UNITTEST_FRAMEWORK</span></code>
+is given.</p>
+<p>The function expects one Matlab test script file to be given.
+In the case <code class="docutils literal notranslate"><span class="pre">NO_UNITTEST_FRAMEWORK</span></code> is given, the unittest script file
+should contain the script to be run, plus an exit command with the exit
+value. This exit value will be passed to the ctest framework (0 success,
+non 0 failure). Additional arguments accepted by <span class="target" id="index-0-command:add_test"></span><a class="reference internal" href="../command/add_test.html#command:add_test" title="add_test"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_test()</span></code></a> can be
+passed through <code class="docutils literal notranslate"><span class="pre">TEST_ARGS</span></code> (eg. <code class="docutils literal notranslate"><span class="pre">CONFIGURATION</span> <span class="pre">&lt;config&gt;</span> <span class="pre">...</span></code>).</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>matlab_add_unit_test(
+    NAME &lt;name&gt;
+    UNITTEST_FILE matlab_file_containing_unittest.m
+    [CUSTOM_TEST_COMMAND matlab_command_to_run_as_test]
+    [UNITTEST_PRECOMMAND matlab_command_to_run]
+    [TIMEOUT timeout]
+    [ADDITIONAL_PATH path1 [path2 ...]]
+    [MATLAB_ADDITIONAL_STARTUP_OPTIONS option1 [option2 ...]]
+    [TEST_ARGS arg1 [arg2 ...]]
+    [NO_UNITTEST_FRAMEWORK]
+    )
+</pre></div>
+</div>
+<p>The function arguments are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>name of the unittest in ctest.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UNITTEST_FILE</span></code></dt><dd><p>the matlab unittest file. Its path will be automatically
+added to the Matlab path.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CUSTOM_TEST_COMMAND</span></code></dt><dd><p>Matlab script command to run as the test.
+If this is not set, then the following is run:
+<code class="docutils literal notranslate"><span class="pre">runtests('matlab_file_name'),</span> <span class="pre">exit(max([ans(1,:).Failed]))</span></code>
+where <code class="docutils literal notranslate"><span class="pre">matlab_file_name</span></code> is the <code class="docutils literal notranslate"><span class="pre">UNITTEST_FILE</span></code> without the extension.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UNITTEST_PRECOMMAND</span></code></dt><dd><p>Matlab script command to be ran before the file
+containing the test (eg. GPU device initialisation based on CMake
+variables).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code></dt><dd><p>the test timeout in seconds. Defaults to 180 seconds as the
+Matlab unit test may hang.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ADDITIONAL_PATH</span></code></dt><dd><p>a list of paths to add to the Matlab path prior to
+running the unit test.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MATLAB_ADDITIONAL_STARTUP_OPTIONS</span></code></dt><dd><p>a list of additional option in order
+to run Matlab from the command line.
+<code class="docutils literal notranslate"><span class="pre">-nosplash</span> <span class="pre">-nodesktop</span> <span class="pre">-nodisplay</span></code> are always added.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_ARGS</span></code></dt><dd><p>Additional options provided to the add_test command. These
+options are added to the default options (eg. “CONFIGURATIONS Release”)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NO_UNITTEST_FRAMEWORK</span></code></dt><dd><p>when set, indicates that the test should not
+use the unittest framework of Matlab (available for versions &gt;= R2013a).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code></dt><dd><p>This will be the working directory for the test. If specified it will
+also be the output directory used for the log file of the test run.
+If not specified the temporary directory <code class="docutils literal notranslate"><span class="pre">${CMAKE_BINARY_DIR}/Matlab</span></code> will
+be used as the working directory and the log location.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:matlab_add_mex">
+<code class="sig-name descname">matlab_add_mex</code><a class="headerlink" href="#command:matlab_add_mex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Matlab MEX target.
+This commands compiles the given sources with the current tool-chain in
+order to produce a MEX file. The final name of the produced output may be
+specified, as well as additional link libraries, and a documentation entry
+for the MEX file. Remaining arguments of the call are passed to the
+<span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> or <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>matlab_add_mex(
+    NAME &lt;name&gt;
+    [EXECUTABLE | MODULE | SHARED]
+    SRC src1 [src2 ...]
+    [OUTPUT_NAME output_name]
+    [DOCUMENTATION file.txt]
+    [LINK_TO target1 target2 ...]
+    [R2017b | R2018a]
+    [EXCLUDE_FROM_ALL]
+    [...]
+)
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>name of the target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SRC</span></code></dt><dd><p>list of source files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LINK_TO</span></code></dt><dd><p>a list of additional link dependencies.  The target links to <code class="docutils literal notranslate"><span class="pre">libmex</span></code>
+and <code class="docutils literal notranslate"><span class="pre">libmx</span></code> by default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_NAME</span></code></dt><dd><p>if given, overrides the default name. The default name is
+the name of the target without any prefix and
+with <code class="docutils literal notranslate"><span class="pre">Matlab_MEX_EXTENSION</span></code> suffix.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOCUMENTATION</span></code></dt><dd><p>if given, the file <code class="docutils literal notranslate"><span class="pre">file.txt</span></code> will be considered as
+being the documentation file for the MEX file. This file is copied into
+the same folder without any processing, with the same name as the final
+mex file, and with extension <cite>.m</cite>. In that case, typing <code class="docutils literal notranslate"><span class="pre">help</span> <span class="pre">&lt;name&gt;</span></code>
+in Matlab prints the documentation contained in this file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">R2017b</span></code> or <code class="docutils literal notranslate"><span class="pre">R2018a</span></code> may be given to specify the version of the C API</dt><dd><p>to use: <code class="docutils literal notranslate"><span class="pre">R2017b</span></code> specifies the traditional (separate complex) C API,
+and corresponds to the <code class="docutils literal notranslate"><span class="pre">-R2017b</span></code> flag for the <cite>mex</cite> command. <code class="docutils literal notranslate"><span class="pre">R2018a</span></code>
+specifies the new interleaved complex C API, and corresponds to the
+<code class="docutils literal notranslate"><span class="pre">-R2018a</span></code> flag for the <cite>mex</cite> command. Ignored if MATLAB version prior
+to R2018a. Defaults to <code class="docutils literal notranslate"><span class="pre">R2017b</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MODULE</span></code> or <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> may be given to specify the type of library to be</dt><dd><p>created. <code class="docutils literal notranslate"><span class="pre">EXECUTABLE</span></code> may be given to create an executable instead of
+a library. If no type is given explicitly, the type is <code class="docutils literal notranslate"><span class="pre">SHARED</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></dt><dd><p>This option has the same meaning as for <span class="target" id="index-0-prop_tgt:EXCLUDE_FROM_ALL"></span><a class="reference internal" href="../prop_tgt/EXCLUDE_FROM_ALL.html#prop_tgt:EXCLUDE_FROM_ALL" title="EXCLUDE_FROM_ALL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></a> and
+is forwarded to <span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> or <span class="target" id="index-1-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>
+commands.</p>
+</dd>
+</dl>
+<p>The documentation file is not processed and should be in the following
+format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>% This is the documentation
+function ret = mex_target_output_name(input1)
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindMatlab</a><ul>
+<li><a class="reference internal" href="#module-input-variables">Module Input Variables</a></li>
+<li><a class="reference internal" href="#variables-defined-by-the-module">Variables defined by the module</a><ul>
+<li><a class="reference internal" href="#result-variables">Result variables</a></li>
+<li><a class="reference internal" href="#cached-variables">Cached variables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#provided-macros">Provided macros</a></li>
+<li><a class="reference internal" href="#provided-functions">Provided functions</a></li>
+<li><a class="reference internal" href="#known-issues">Known issues</a></li>
+<li><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindLua51.html"
+                        title="previous chapter">FindLua51</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindMFC.html"
+                        title="next chapter">FindMFC</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindMatlab.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindMFC.html" title="FindMFC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindLua51.html" title="FindLua51"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindMatlab</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

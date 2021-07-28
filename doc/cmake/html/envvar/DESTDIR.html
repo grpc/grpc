@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DESTDIR &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LDFLAGS" href="LDFLAGS.html" />
+    <link rel="prev" title="CMAKE_OSX_ARCHITECTURES" href="CMAKE_OSX_ARCHITECTURES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="LDFLAGS.html" title="LDFLAGS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_OSX_ARCHITECTURES.html" title="CMAKE_OSX_ARCHITECTURES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-env-variables.7.html" accesskey="U">cmake-env-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DESTDIR</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="destdir">
+<span id="envvar:DESTDIR"></span><h1>DESTDIR<a class="headerlink" href="#destdir" title="Permalink to this headline">¶</a></h1>
+<p>This is a CMake <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-environment-variables"><span class="std std-ref">Environment Variable</span></a>. Its initial value is taken from
+the calling process environment.</p>
+<p>On UNIX one can use the <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> mechanism in order to relocate the
+whole installation.  <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> means DESTination DIRectory.  It is
+commonly used by makefile users in order to install software at
+non-default location.  It is usually invoked like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>make DESTDIR=/home/john install
+</pre></div>
+</div>
+<p>which will install the concerned software using the installation
+prefix, e.g.  <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> prepended with the <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> value which
+finally gives <code class="docutils literal notranslate"><span class="pre">/home/john/usr/local</span></code>.</p>
+<p>WARNING: <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> may not be used on Windows because installation
+prefix usually contains a drive letter like in <code class="docutils literal notranslate"><span class="pre">C:/Program</span> <span class="pre">Files</span></code>
+which cannot be prepended with some other prefix.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_OSX_ARCHITECTURES.html"
+                        title="previous chapter">CMAKE_OSX_ARCHITECTURES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="LDFLAGS.html"
+                        title="next chapter">LDFLAGS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/envvar/DESTDIR.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="LDFLAGS.html" title="LDFLAGS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_OSX_ARCHITECTURES.html" title="CMAKE_OSX_ARCHITECTURES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-env-variables.7.html" >cmake-env-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DESTDIR</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

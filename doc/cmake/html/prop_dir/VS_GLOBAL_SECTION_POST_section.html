@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS_GLOBAL_SECTION_POST_&lt;section&gt; &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VS_GLOBAL_SECTION_PRE_&lt;section&gt;" href="VS_GLOBAL_SECTION_PRE_section.html" />
+    <link rel="prev" title="VARIABLES" href="VARIABLES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="VS_GLOBAL_SECTION_PRE_section.html" title="VS_GLOBAL_SECTION_PRE_&lt;section&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="VARIABLES.html" title="VARIABLES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_GLOBAL_SECTION_POST_&lt;section&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="vs-global-section-post-section">
+<span id="prop_dir:VS_GLOBAL_SECTION_POST_<section>"></span><h1>VS_GLOBAL_SECTION_POST_&lt;section&gt;<a class="headerlink" href="#vs-global-section-post-section" title="Permalink to this headline">¶</a></h1>
+<p>Specify a postSolution global section in Visual Studio.</p>
+<p>Setting a property like this generates an entry of the following form
+in the solution file:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GlobalSection(&lt;section&gt;) = postSolution
+  &lt;contents based on property value&gt;
+EndGlobalSection
+</pre></div>
+</div>
+<p>The property must be set to a semicolon-separated list of <code class="docutils literal notranslate"><span class="pre">key=value</span></code>
+pairs.  Each such pair will be transformed into an entry in the
+solution global section.  Whitespace around key and value is ignored.
+List elements which do not contain an equal sign are skipped.</p>
+<p>This property only works for Visual Studio 9 and above; it is ignored
+on other generators.  The property only applies when set on a
+directory whose <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> contains a <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command.</p>
+<p>Note that CMake generates postSolution sections <code class="docutils literal notranslate"><span class="pre">ExtensibilityGlobals</span></code>
+and <code class="docutils literal notranslate"><span class="pre">ExtensibilityAddIns</span></code> by default.  If you set the corresponding
+property, it will override the default section.  For example, setting
+<code class="docutils literal notranslate"><span class="pre">VS_GLOBAL_SECTION_POST_ExtensibilityGlobals</span></code> will override the default
+contents of the <code class="docutils literal notranslate"><span class="pre">ExtensibilityGlobals</span></code> section, while keeping
+ExtensibilityAddIns on its default.  However, CMake will always
+add a <code class="docutils literal notranslate"><span class="pre">SolutionGuid</span></code> to the <code class="docutils literal notranslate"><span class="pre">ExtensibilityGlobals</span></code> section
+if it is not specified explicitly.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VARIABLES.html"
+                        title="previous chapter">VARIABLES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="VS_GLOBAL_SECTION_PRE_section.html"
+                        title="next chapter">VS_GLOBAL_SECTION_PRE_&lt;section&gt;</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_dir/VS_GLOBAL_SECTION_POST_section.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="VS_GLOBAL_SECTION_PRE_section.html" title="VS_GLOBAL_SECTION_PRE_&lt;section&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="VARIABLES.html" title="VARIABLES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_GLOBAL_SECTION_POST_&lt;section&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

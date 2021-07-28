@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XCODE_EMIT_EFFECTIVE_PLATFORM_NAME &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ADDITIONAL_CLEAN_FILES" href="../prop_dir/ADDITIONAL_CLEAN_FILES.html" />
+    <link rel="prev" title="USE_FOLDERS" href="USE_FOLDERS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../prop_dir/ADDITIONAL_CLEAN_FILES.html" title="ADDITIONAL_CLEAN_FILES"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="USE_FOLDERS.html" title="USE_FOLDERS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">XCODE_EMIT_EFFECTIVE_PLATFORM_NAME</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="xcode-emit-effective-platform-name">
+<span id="prop_gbl:XCODE_EMIT_EFFECTIVE_PLATFORM_NAME"></span><h1>XCODE_EMIT_EFFECTIVE_PLATFORM_NAME<a class="headerlink" href="#xcode-emit-effective-platform-name" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.8.</span></p>
+</div>
+<p>Control emission of <code class="docutils literal notranslate"><span class="pre">EFFECTIVE_PLATFORM_NAME</span></code> by the <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a>
+generator.</p>
+<p>It is required for building the same target with multiple SDKs. A
+common use case is the parallel use of <code class="docutils literal notranslate"><span class="pre">iphoneos</span></code> and
+<code class="docutils literal notranslate"><span class="pre">iphonesimulator</span></code> SDKs.</p>
+<p>Three different states possible that control when the <span class="target" id="index-1-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a>
+generator emits the <code class="docutils literal notranslate"><span class="pre">EFFECTIVE_PLATFORM_NAME</span></code> variable:</p>
+<ul class="simple">
+<li><p>If set to <code class="docutils literal notranslate"><span class="pre">ON</span></code> it will always be emitted</p></li>
+<li><p>If set to <code class="docutils literal notranslate"><span class="pre">OFF</span></code> it will never be emitted</p></li>
+<li><p>If unset (the default) it will only be emitted when the project was
+configured for an embedded Xcode SDK like iOS, tvOS, watchOS or any
+of the simulators.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When this behavior is enable for generated Xcode projects, the
+<code class="docutils literal notranslate"><span class="pre">EFFECTIVE_PLATFORM_NAME</span></code> variable will leak into
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Generator</span> <span class="pre">expressions</span></code></a>
+like <code class="docutils literal notranslate"><span class="pre">TARGET_FILE</span></code> and will render those mostly unusable.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="USE_FOLDERS.html"
+                        title="previous chapter">USE_FOLDERS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../prop_dir/ADDITIONAL_CLEAN_FILES.html"
+                        title="next chapter">ADDITIONAL_CLEAN_FILES</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_gbl/XCODE_EMIT_EFFECTIVE_PLATFORM_NAME.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../prop_dir/ADDITIONAL_CLEAN_FILES.html" title="ADDITIONAL_CLEAN_FILES"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="USE_FOLDERS.html" title="USE_FOLDERS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">XCODE_EMIT_EFFECTIVE_PLATFORM_NAME</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

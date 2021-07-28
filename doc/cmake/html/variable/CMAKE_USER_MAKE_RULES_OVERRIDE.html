@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_USER_MAKE_RULES_OVERRIDE &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_WARN_DEPRECATED" href="CMAKE_WARN_DEPRECATED.html" />
+    <link rel="prev" title="CMAKE_SYSTEM_PROGRAM_PATH" href="CMAKE_SYSTEM_PROGRAM_PATH.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_WARN_DEPRECATED.html" title="CMAKE_WARN_DEPRECATED"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_SYSTEM_PROGRAM_PATH.html" title="CMAKE_SYSTEM_PROGRAM_PATH"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_USER_MAKE_RULES_OVERRIDE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-user-make-rules-override">
+<span id="variable:CMAKE_USER_MAKE_RULES_OVERRIDE"></span><h1>CMAKE_USER_MAKE_RULES_OVERRIDE<a class="headerlink" href="#cmake-user-make-rules-override" title="Permalink to this headline">¶</a></h1>
+<p>Specify a CMake file that overrides platform information.</p>
+<p>CMake loads the specified file while enabling support for each
+language from either the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> or <span class="target" id="index-0-command:enable_language"></span><a class="reference internal" href="../command/enable_language.html#command:enable_language" title="enable_language"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">enable_language()</span></code></a>
+commands.  It is loaded after CMake’s builtin compiler and platform information
+modules have been loaded but before the information is used.  The file
+may set platform information variables to override CMake’s defaults.</p>
+<p>This feature is intended for use only in overriding information
+variables that must be set before CMake builds its first test project
+to check that the compiler for a language works.  It should not be
+used to load a file in cases that a normal <span class="target" id="index-0-command:include"></span><a class="reference internal" href="../command/include.html#command:include" title="include"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include()</span></code></a> will work.  Use
+it only as a last resort for behavior that cannot be achieved any
+other way.  For example, one may set the
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS_INIT"></span><a class="reference internal" href="CMAKE_LANG_FLAGS_INIT.html#variable:CMAKE_&lt;LANG&gt;_FLAGS_INIT" title="CMAKE_&lt;LANG&gt;_FLAGS_INIT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS_INIT</span></code></a> variable
+to change the default value used to initialize the
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS"></span><a class="reference internal" href="CMAKE_LANG_FLAGS.html#variable:CMAKE_&lt;LANG&gt;_FLAGS" title="CMAKE_&lt;LANG&gt;_FLAGS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS</span></code></a> variable
+before it is cached.  The override file should NOT be used to set anything
+that could be set after languages are enabled, such as variables like
+<span class="target" id="index-0-variable:CMAKE_RUNTIME_OUTPUT_DIRECTORY"></span><a class="reference internal" href="CMAKE_RUNTIME_OUTPUT_DIRECTORY.html#variable:CMAKE_RUNTIME_OUTPUT_DIRECTORY" title="CMAKE_RUNTIME_OUTPUT_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_RUNTIME_OUTPUT_DIRECTORY</span></code></a> that affect the placement of
+binaries.  Information set in the file will be used for <span class="target" id="index-0-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a>
+and <span class="target" id="index-0-command:try_run"></span><a class="reference internal" href="../command/try_run.html#command:try_run" title="try_run"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_run()</span></code></a> builds too.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_SYSTEM_PROGRAM_PATH.html"
+                        title="previous chapter">CMAKE_SYSTEM_PROGRAM_PATH</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_WARN_DEPRECATED.html"
+                        title="next chapter">CMAKE_WARN_DEPRECATED</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_USER_MAKE_RULES_OVERRIDE.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_WARN_DEPRECATED.html" title="CMAKE_WARN_DEPRECATED"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_SYSTEM_PROGRAM_PATH.html" title="CMAKE_SYSTEM_PROGRAM_PATH"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_USER_MAKE_RULES_OVERRIDE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

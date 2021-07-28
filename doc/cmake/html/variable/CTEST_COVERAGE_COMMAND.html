@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTEST_COVERAGE_COMMAND &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CTEST_COVERAGE_EXTRA_FLAGS" href="CTEST_COVERAGE_EXTRA_FLAGS.html" />
+    <link rel="prev" title="CTEST_CONFIGURE_COMMAND" href="CTEST_CONFIGURE_COMMAND.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CTEST_COVERAGE_EXTRA_FLAGS.html" title="CTEST_COVERAGE_EXTRA_FLAGS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CTEST_CONFIGURE_COMMAND.html" title="CTEST_CONFIGURE_COMMAND"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTEST_COVERAGE_COMMAND</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctest-coverage-command">
+<span id="variable:CTEST_COVERAGE_COMMAND"></span><h1>CTEST_COVERAGE_COMMAND<a class="headerlink" href="#ctest-coverage-command" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.1.</span></p>
+</div>
+<p>Specify the CTest <code class="docutils literal notranslate"><span class="pre">CoverageCommand</span></code> setting
+in a <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> dashboard client script.</p>
+<div class="section" id="cobertura">
+<h2>Cobertura<a class="headerlink" href="#cobertura" title="Permalink to this headline">¶</a></h2>
+<p>Using <a class="reference external" href="http://cobertura.github.io/cobertura/">Cobertura</a> as the coverage generation within your multi-module
+Java project can generate a series of XML files.</p>
+<p>The Cobertura Coverage parser expects to read the coverage data from a
+single XML file which contains the coverage data for all modules.
+Cobertura has a program with the ability to merge given <code class="docutils literal notranslate"><span class="pre">cobertura.ser</span></code> files
+and then another program to generate a combined XML file from the previous
+merged file.  For command line testing, this can be done by hand prior to
+CTest looking for the coverage files. For script builds,
+set the <code class="docutils literal notranslate"><span class="pre">CTEST_COVERAGE_COMMAND</span></code> variable to point to a file which will
+perform these same steps, such as a <code class="docutils literal notranslate"><span class="pre">.sh</span></code> or <code class="docutils literal notranslate"><span class="pre">.bat</span></code> file.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CTEST_COVERAGE_COMMAND</span><span class="w"> </span><span class="p">...</span><span class="na">/run-coverage-and-consolidate.sh</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">run-coverage-and-consolidate.sh</span></code> script is perhaps created by
+the <span class="target" id="index-0-command:configure_file"></span><a class="reference internal" href="../command/configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> command and might contain the following code:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env bash</span>
+<span class="nv">CoberturaFiles</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>find <span class="s2">&quot;/path/to/source&quot;</span> -name <span class="s2">&quot;cobertura.ser&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
+<span class="nv">SourceDirs</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>find <span class="s2">&quot;/path/to/source&quot;</span> -name <span class="s2">&quot;java&quot;</span> -type d<span class="k">)</span><span class="s2">&quot;</span>
+cobertura-merge --datafile coberturamerge.ser <span class="nv">$CoberturaFiles</span>
+cobertura-report --datafile coberturamerge.ser --destination . <span class="se">\</span>
+                 --format xml <span class="nv">$SourceDirs</span>
+</pre></div>
+</div>
+<p>The script uses <code class="docutils literal notranslate"><span class="pre">find</span></code> to capture the paths to all of the <code class="docutils literal notranslate"><span class="pre">cobertura.ser</span></code>
+files found below the project’s source directory.  It keeps the list of files
+and supplies it as an argument to the <code class="docutils literal notranslate"><span class="pre">cobertura-merge</span></code> program. The
+<code class="docutils literal notranslate"><span class="pre">--datafile</span></code> argument signifies where the result of the merge will be kept.</p>
+<p>The combined <code class="docutils literal notranslate"><span class="pre">coberturamerge.ser</span></code> file is then used to generate the XML report
+using the <code class="docutils literal notranslate"><span class="pre">cobertura-report</span></code> program.  The call to the cobertura-report
+program requires some named arguments.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--datafila</span></code></dt><dd><p>path to the merged <code class="docutils literal notranslate"><span class="pre">.ser</span></code> file</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--destination</span></code></dt><dd><p>path to put the output files(s)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format</span></code></dt><dd><p>file format to write output in: xml or html</p>
+</dd>
+</dl>
+<p>The rest of the supplied arguments consist of the full paths to the
+<code class="docutils literal notranslate"><span class="pre">/src/main/java</span></code> directories of each module within the source tree. These
+directories are needed and should not be forgotten.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CTEST_COVERAGE_COMMAND</a><ul>
+<li><a class="reference internal" href="#cobertura">Cobertura</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CTEST_CONFIGURE_COMMAND.html"
+                        title="previous chapter">CTEST_CONFIGURE_COMMAND</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CTEST_COVERAGE_EXTRA_FLAGS.html"
+                        title="next chapter">CTEST_COVERAGE_EXTRA_FLAGS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CTEST_COVERAGE_COMMAND.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CTEST_COVERAGE_EXTRA_FLAGS.html" title="CTEST_COVERAGE_EXTRA_FLAGS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CTEST_CONFIGURE_COMMAND.html" title="CTEST_CONFIGURE_COMMAND"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTEST_COVERAGE_COMMAND</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

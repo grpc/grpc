@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IMPORTED_LOCATION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="IMPORTED_LOCATION_&lt;CONFIG&gt;" href="IMPORTED_LOCATION_CONFIG.html" />
+    <link rel="prev" title="IMPORTED_LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;" href="IMPORTED_LINK_INTERFACE_MULTIPLICITY_CONFIG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="IMPORTED_LOCATION_CONFIG.html" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="IMPORTED_LINK_INTERFACE_MULTIPLICITY_CONFIG.html" title="IMPORTED_LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">IMPORTED_LOCATION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="imported-location">
+<span id="prop_tgt:IMPORTED_LOCATION"></span><h1>IMPORTED_LOCATION<a class="headerlink" href="#imported-location" title="Permalink to this headline">¶</a></h1>
+<p>Full path to the main file on disk for an <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> target.</p>
+<p>Set this to the location of an <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> target file on disk.  For
+executables this is the location of the executable file.  For bundles
+on macOS this is the location of the executable file inside
+<code class="docutils literal notranslate"><span class="pre">Contents/MacOS</span></code> under the application bundle folder.  For <code class="docutils literal notranslate"><span class="pre">STATIC</span></code>
+libraries and modules this is the location of the library or module.
+For <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> libraries on non-DLL platforms this is the location of the
+shared library.  For frameworks on macOS this is the location of the
+library file symlink just inside the framework folder.  For DLLs this
+is the location of the <code class="docutils literal notranslate"><span class="pre">.dll</span></code> part of the library.  For <code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code>
+libraries this is the location of the file to be linked.  Ignored for
+non-imported targets.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">IMPORTED_LOCATION</span></code> target property may be overridden for a
+given configuration <code class="docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;</span></code> by the configuration-specific
+<span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;"></span><a class="reference internal" href="IMPORTED_LOCATION_CONFIG.html#prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION_&lt;CONFIG&gt;</span></code></a> target property.  Furthermore,
+the <span class="target" id="index-0-prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"></span><a class="reference internal" href="MAP_IMPORTED_CONFIG_CONFIG.html#prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;" title="MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</span></code></a> target property may be
+used to map between a project’s configurations and those of an imported
+target.  If none of these is set then the name of any other configuration
+listed in the <span class="target" id="index-0-prop_tgt:IMPORTED_CONFIGURATIONS"></span><a class="reference internal" href="IMPORTED_CONFIGURATIONS.html#prop_tgt:IMPORTED_CONFIGURATIONS" title="IMPORTED_CONFIGURATIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_CONFIGURATIONS</span></code></a> target property may be
+selected and its <span class="target" id="index-1-prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;"></span><a class="reference internal" href="IMPORTED_LOCATION_CONFIG.html#prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION_&lt;CONFIG&gt;</span></code></a> value used.</p>
+<p>To get the location of an imported target read one of the <span class="target" id="index-0-prop_tgt:LOCATION"></span><a class="reference internal" href="LOCATION.html#prop_tgt:LOCATION" title="LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LOCATION</span></code></a>
+or <code class="docutils literal notranslate"><span class="pre">LOCATION_&lt;CONFIG&gt;</span></code> properties.</p>
+<p>For platforms with import libraries (e.g. Windows) see also
+<span class="target" id="index-0-prop_tgt:IMPORTED_IMPLIB"></span><a class="reference internal" href="IMPORTED_IMPLIB.html#prop_tgt:IMPORTED_IMPLIB" title="IMPORTED_IMPLIB"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_IMPLIB</span></code></a>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="IMPORTED_LINK_INTERFACE_MULTIPLICITY_CONFIG.html"
+                        title="previous chapter">IMPORTED_LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="IMPORTED_LOCATION_CONFIG.html"
+                        title="next chapter">IMPORTED_LOCATION_&lt;CONFIG&gt;</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/IMPORTED_LOCATION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="IMPORTED_LOCATION_CONFIG.html" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="IMPORTED_LINK_INTERFACE_MULTIPLICITY_CONFIG.html" title="IMPORTED_LINK_INTERFACE_MULTIPLICITY_&lt;CONFIG&gt;"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">IMPORTED_LOCATION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

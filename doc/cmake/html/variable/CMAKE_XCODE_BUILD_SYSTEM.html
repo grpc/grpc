@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_XCODE_BUILD_SYSTEM &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_XCODE_PLATFORM_TOOLSET" href="CMAKE_XCODE_PLATFORM_TOOLSET.html" />
+    <link rel="prev" title="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM" href="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_XCODE_PLATFORM_TOOLSET.html" title="CMAKE_XCODE_PLATFORM_TOOLSET"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM.html" title="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_XCODE_BUILD_SYSTEM</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-xcode-build-system">
+<span id="variable:CMAKE_XCODE_BUILD_SYSTEM"></span><h1>CMAKE_XCODE_BUILD_SYSTEM<a class="headerlink" href="#cmake-xcode-build-system" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.19.</span></p>
+</div>
+<p>Xcode build system selection.</p>
+<p>The <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator defines this variable to indicate which
+variant of the Xcode build system will be used.  The value is the
+version of Xcode in which the corresponding build system first became
+mature enough for use by CMake.  The possible values are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">1</span></code></dt><dd><p>The original Xcode build system.
+This is the default when using Xcode 11.x or below.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">12</span></code></dt><dd><p>The Xcode “new build system” introduced by Xcode 10.
+It became mature enough for use by CMake in Xcode 12.
+This is the default when using Xcode 12.x or above.</p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">CMAKE_XCODE_BUILD_SYSTEM</span></code> variable is informational and should not
+be modified by project code.  See the <a class="reference internal" href="../generator/Xcode.html#xcode-build-system-selection"><span class="std std-ref">Toolset and Build System Selection</span></a>
+documentation section to select the Xcode build system.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM.html"
+                        title="previous chapter">CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_XCODE_PLATFORM_TOOLSET.html"
+                        title="next chapter">CMAKE_XCODE_PLATFORM_TOOLSET</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_XCODE_BUILD_SYSTEM.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_XCODE_PLATFORM_TOOLSET.html" title="CMAKE_XCODE_PLATFORM_TOOLSET"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM.html" title="CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION_MAXIMUM"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_XCODE_BUILD_SYSTEM</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

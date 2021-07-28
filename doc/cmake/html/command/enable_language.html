@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>enable_language &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="enable_testing" href="enable_testing.html" />
+    <link rel="prev" title="define_property" href="define_property.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="enable_testing.html" title="enable_testing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="define_property.html" title="define_property"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">enable_language</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="enable-language">
+<span id="command:enable_language"></span><h1>enable_language<a class="headerlink" href="#enable-language" title="Permalink to this headline">¶</a></h1>
+<p>Enable a language (CXX/C/OBJC/OBJCXX/Fortran/etc)</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">enable_language(</span><span class="nv">&lt;lang&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">OPTIONAL</span><span class="p">]</span><span class="w"> </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Enables support for the named language in CMake.  This is
+the same as the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command but does not create any of the extra
+variables that are created by the project command.  Example languages
+are <code class="docutils literal notranslate"><span class="pre">CXX</span></code>, <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CUDA</span></code>, <code class="docutils literal notranslate"><span class="pre">OBJC</span></code>, <code class="docutils literal notranslate"><span class="pre">OBJCXX</span></code>, <code class="docutils literal notranslate"><span class="pre">Fortran</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ISPC</span></code>, and <code class="docutils literal notranslate"><span class="pre">ASM</span></code>.</p>
+<p>If enabling <code class="docutils literal notranslate"><span class="pre">ASM</span></code>, enable it last so that CMake can check whether
+compilers for other languages like <code class="docutils literal notranslate"><span class="pre">C</span></code> work for assembly too.</p>
+<p>This command must be called in file scope, not in a function call.
+Furthermore, it must be called in the highest directory common to all
+targets using the named language directly for compiling sources or
+indirectly through link dependencies.  It is simplest to enable all
+needed languages in the top-level directory of a project.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OPTIONAL</span></code> keyword is a placeholder for future implementation and
+does not currently work. Instead you can use the <span class="target" id="index-0-module:CheckLanguage"></span><a class="reference internal" href="../module/CheckLanguage.html#module:CheckLanguage" title="CheckLanguage"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckLanguage</span></code></a>
+module to verify support before enabling.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="define_property.html"
+                        title="previous chapter">define_property</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="enable_testing.html"
+                        title="next chapter">enable_testing</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/enable_language.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="enable_testing.html" title="enable_testing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="define_property.html" title="define_property"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">enable_language</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

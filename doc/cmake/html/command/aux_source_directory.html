@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aux_source_directory &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="build_command" href="build_command.html" />
+    <link rel="prev" title="add_test" href="add_test.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="build_command.html" title="build_command"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_test.html" title="add_test"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">aux_source_directory</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="aux-source-directory">
+<span id="command:aux_source_directory"></span><h1>aux_source_directory<a class="headerlink" href="#aux-source-directory" title="Permalink to this headline">¶</a></h1>
+<p>Find all source files in a directory.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">aux_source_directory(</span><span class="nv">&lt;dir&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Collects the names of all the source files in the specified directory
+and stores the list in the <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> provided.  This command is
+intended to be used by projects that use explicit template
+instantiation.  Template instantiation files can be stored in a
+<code class="docutils literal notranslate"><span class="pre">Templates</span></code> subdirectory and collected automatically using this
+command to avoid manually listing all instantiations.</p>
+<p>It is tempting to use this command to avoid writing the list of source
+files for a library or executable target.  While this seems to work,
+there is no way for CMake to generate a build system that knows when a
+new source file has been added.  Normally the generated build system
+knows when it needs to rerun CMake because the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file is
+modified to add a new source.  When the source is just added to the
+directory without modifying this file, one would have to manually
+rerun CMake to generate a build system incorporating the new file.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_test.html"
+                        title="previous chapter">add_test</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="build_command.html"
+                        title="next chapter">build_command</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/aux_source_directory.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="build_command.html" title="build_command"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_test.html" title="add_test"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">aux_source_directory</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindSquish &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindSQLite3" href="FindSQLite3.html" />
+    <link rel="prev" title="FindSelfPackers" href="FindSelfPackers.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindSQLite3.html" title="FindSQLite3"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindSelfPackers.html" title="FindSelfPackers"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSquish</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findsquish">
+<span id="module:FindSquish"></span><h1>FindSquish<a class="headerlink" href="#findsquish" title="Permalink to this headline">¶</a></h1>
+<p>– Typical Use</p>
+<p>This module can be used to find Squish.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SQUISH_FOUND                    If false, don&#39;t try to use Squish
+SQUISH_VERSION                  The full version of Squish found
+SQUISH_VERSION_MAJOR            The major version of Squish found
+SQUISH_VERSION_MINOR            The minor version of Squish found
+SQUISH_VERSION_PATCH            The patch version of Squish found
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SQUISH_INSTALL_DIR              The Squish installation directory
+                                (containing bin, lib, etc)
+SQUISH_SERVER_EXECUTABLE        The squishserver executable
+SQUISH_CLIENT_EXECUTABLE        The squishrunner executable
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SQUISH_INSTALL_DIR_FOUND        Was the install directory found?
+SQUISH_SERVER_EXECUTABLE_FOUND  Was the server executable found?
+SQUISH_CLIENT_EXECUTABLE_FOUND  Was the client executable found?
+</pre></div>
+</div>
+<p>It provides the function squish_add_test() for adding a squish test
+to cmake using Squish &gt;= 4.x:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>squish_add_test(cmakeTestName
+  AUT targetName SUITE suiteName TEST squishTestName
+  [SETTINGSGROUP group] [PRE_COMMAND command] [POST_COMMAND command] )
+</pre></div>
+</div>
+<p>The arguments have the following meaning:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cmakeTestName</span></code></dt><dd><p>this will be used as the first argument for add_test()</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AUT</span> <span class="pre">targetName</span></code></dt><dd><p>the name of the cmake target which will be used as AUT, i.e. the
+executable which will be tested.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SUITE</span> <span class="pre">suiteName</span></code></dt><dd><p>this is either the full path to the squish suite, or just the
+last directory of the suite, i.e. the suite name. In this case
+the CMakeLists.txt which calls squish_add_test() must be located
+in the parent directory of the suite directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST</span> <span class="pre">squishTestName</span></code></dt><dd><p>the name of the squish test, i.e. the name of the subdirectory
+of the test inside the suite directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SETTINGSGROUP</span> <span class="pre">group</span></code></dt><dd><p>deprecated, this argument will be ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PRE_COMMAND</span> <span class="pre">command</span></code></dt><dd><p>if specified, the given command will be executed before starting the squish test.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">POST_COMMAND</span> <span class="pre">command</span></code></dt><dd><p>same as PRE_COMMAND, but after the squish test has been executed.</p>
+</dd>
+</dl>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>enable_testing()
+find_package(Squish 6.5)
+if (SQUISH_FOUND)
+   squish_add_test(myTestName
+     AUT myApp
+     SUITE ${CMAKE_SOURCE_DIR}/tests/mySuite
+     TEST someSquishTest
+     )
+endif ()
+</pre></div>
+</div>
+<p>For users of Squish version 3.x the macro squish_v3_add_test() is
+provided:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>squish_v3_add_test(testName applicationUnderTest testCase envVars testWrapper)
+Use this macro to add a test using Squish 3.x.
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>enable_testing()
+find_package(Squish 3.0)
+if (SQUISH_FOUND)
+  squish_v3_add_test(myTestName myApplication testCase envVars testWrapper)
+endif ()
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindSelfPackers.html"
+                        title="previous chapter">FindSelfPackers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindSQLite3.html"
+                        title="next chapter">FindSQLite3</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindSquish.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindSQLite3.html" title="FindSQLite3"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindSelfPackers.html" title="FindSelfPackers"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSquish</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUTORCC_OPTIONS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="AUTOUIC" href="AUTOUIC.html" />
+    <link rel="prev" title="AUTORCC_EXECUTABLE" href="AUTORCC_EXECUTABLE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="AUTOUIC.html" title="AUTOUIC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AUTORCC_EXECUTABLE.html" title="AUTORCC_EXECUTABLE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTORCC_OPTIONS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="autorcc-options">
+<span id="prop_tgt:AUTORCC_OPTIONS"></span><h1>AUTORCC_OPTIONS<a class="headerlink" href="#autorcc-options" title="Permalink to this headline">¶</a></h1>
+<p>Additional options for <code class="docutils literal notranslate"><span class="pre">rcc</span></code> when using <span class="target" id="index-0-prop_tgt:AUTORCC"></span><a class="reference internal" href="AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a></p>
+<p>This property holds additional command line options which will be used
+when <code class="docutils literal notranslate"><span class="pre">rcc</span></code> is executed during the build via <span class="target" id="index-1-prop_tgt:AUTORCC"></span><a class="reference internal" href="AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a>,
+i.e. it is equivalent to the optional <code class="docutils literal notranslate"><span class="pre">OPTIONS</span></code> argument of the
+<span class="target" id="index-0-module:FindQt4"></span><a class="reference internal" href="../module/FindQt4.html#module:FindQt4" title="FindQt4"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">qt4_add_resources()</span></code></a> macro.</p>
+<p>This property is initialized by the value of the
+<span class="target" id="index-0-variable:CMAKE_AUTORCC_OPTIONS"></span><a class="reference internal" href="../variable/CMAKE_AUTORCC_OPTIONS.html#variable:CMAKE_AUTORCC_OPTIONS" title="CMAKE_AUTORCC_OPTIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTORCC_OPTIONS</span></code></a> variable if it is set when a target is
+created, or an empty string otherwise.</p>
+<p>The options set on the target may be overridden by <span class="target" id="index-0-prop_sf:AUTORCC_OPTIONS"></span><a class="reference internal" href="../prop_sf/AUTORCC_OPTIONS.html#prop_sf:AUTORCC_OPTIONS" title="AUTORCC_OPTIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">AUTORCC_OPTIONS</span></code></a>
+set on the <code class="docutils literal notranslate"><span class="pre">.qrc</span></code> source file.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-qt(7)"></span><a class="reference internal" href="../manual/cmake-qt.7.html#manual:cmake-qt(7)" title="cmake-qt(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-qt(7)</span></code></a> manual for more information on using CMake
+with Qt.</p>
+<div class="section" id="example">
+<h2>EXAMPLE<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># ...</span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">AUTORCC_OPTIONS</span><span class="w"> </span><span class="s">&quot;--compress;9&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># ...</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">AUTORCC_OPTIONS</a><ul>
+<li><a class="reference internal" href="#example">EXAMPLE</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AUTORCC_EXECUTABLE.html"
+                        title="previous chapter">AUTORCC_EXECUTABLE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="AUTOUIC.html"
+                        title="next chapter">AUTOUIC</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/AUTORCC_OPTIONS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="AUTOUIC.html" title="AUTOUIC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AUTORCC_EXECUTABLE.html" title="AUTORCC_EXECUTABLE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTORCC_OPTIONS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

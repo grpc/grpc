@@ -1,0 +1,28 @@
+CMP0076
+-------
+
+.. versionadded:: 3.13
+
+The :command:`target_sources` command converts relative paths to absolute.
+
+In CMake 3.13 and above, the :command:`target_sources` command now converts
+relative source file paths to absolute paths in the following cases:
+
+* Source files are added to the target's :prop_tgt:`INTERFACE_SOURCES`
+  property.
+* The target's :prop_tgt:`SOURCE_DIR` property differs from
+  :variable:`CMAKE_CURRENT_SOURCE_DIR`.
+
+A path that begins with a generator expression is always left unmodified.
+
+This policy provides compatibility with projects that have not been updated
+to expect this behavior.  The ``OLD`` behavior for this policy is to leave
+all relative source file paths unmodified.  The ``NEW`` behavior of this
+policy is to convert relative paths to absolute according to above rules.
+
+This policy was introduced in CMake version 3.13.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.
+Use the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW``
+explicitly.
+
+.. include:: DEPRECATED.txt

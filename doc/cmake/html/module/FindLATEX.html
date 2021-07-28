@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindLATEX &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindLibArchive" href="FindLibArchive.html" />
+    <link rel="prev" title="FindLAPACK" href="FindLAPACK.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindLibArchive.html" title="FindLibArchive"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindLAPACK.html" title="FindLAPACK"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindLATEX</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findlatex">
+<span id="module:FindLATEX"></span><h1>FindLATEX<a class="headerlink" href="#findlatex" title="Permalink to this headline">¶</a></h1>
+<p>Find LaTeX</p>
+<p>This module finds an installed LaTeX and determines the location
+of the compiler.  Additionally the module looks for Latex-related
+software like BibTeX.</p>
+<p>This module sets the following result variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>LATEX_FOUND:          whether found Latex and requested components
+LATEX_&lt;component&gt;_FOUND:  whether found &lt;component&gt;
+LATEX_COMPILER:       path to the LaTeX compiler
+PDFLATEX_COMPILER:    path to the PdfLaTeX compiler
+XELATEX_COMPILER:     path to the XeLaTeX compiler
+LUALATEX_COMPILER:    path to the LuaLaTeX compiler
+BIBTEX_COMPILER:      path to the BibTeX compiler
+BIBER_COMPILER:       path to the Biber compiler
+MAKEINDEX_COMPILER:   path to the MakeIndex compiler
+XINDY_COMPILER:       path to the xindy compiler
+DVIPS_CONVERTER:      path to the DVIPS converter
+DVIPDF_CONVERTER:     path to the DVIPDF converter
+PS2PDF_CONVERTER:     path to the PS2PDF converter
+PDFTOPS_CONVERTER:    path to the pdftops converter
+LATEX2HTML_CONVERTER: path to the LaTeX2Html converter
+HTLATEX_COMPILER:     path to the htlatex compiler
+</pre></div>
+</div>
+<p>Possible components are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>PDFLATEX
+XELATEX
+LUALATEX
+BIBTEX
+BIBER
+MAKEINDEX
+XINDY
+DVIPS
+DVIPDF
+PS2PDF
+PDFTOPS
+LATEX2HTML
+HTLATEX
+</pre></div>
+</div>
+<p>Example Usages:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find_package(LATEX)
+find_package(LATEX COMPONENTS PDFLATEX)
+find_package(LATEX COMPONENTS BIBTEX PS2PDF)
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindLAPACK.html"
+                        title="previous chapter">FindLAPACK</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindLibArchive.html"
+                        title="next chapter">FindLibArchive</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindLATEX.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindLibArchive.html" title="FindLibArchive"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindLAPACK.html" title="FindLAPACK"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindLATEX</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

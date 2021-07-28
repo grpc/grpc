@@ -1,0 +1,521 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CMAKE-DEVELOPER" "7" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cmake-developer \- CMake Developer Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH INTRODUCTION
+.sp
+This manual is intended for reference by developers working with
+\fBcmake\-language(7)\fP code, whether writing their own modules,
+authoring their own build systems, or working on CMake itself.
+.sp
+See \fI\%https://cmake.org/get\-involved/\fP to get involved in development of
+CMake upstream.  It includes links to contribution instructions, which
+in turn link to developer guides for CMake itself.
+.SH FIND MODULES
+.sp
+A “find module” is a \fBFind<PackageName>.cmake\fP file to be loaded
+by the \fBfind_package()\fP command when invoked for \fB<PackageName>\fP\&.
+.sp
+The primary task of a find module is to determine whether a package
+exists on the system, set the \fB<PackageName>_FOUND\fP variable to reflect
+this and provide any variables, macros and imported targets required to
+use the package.  A find module is useful in cases where an upstream
+library does not provide a
+config file package\&.
+.sp
+The traditional approach is to use variables for everything, including
+libraries and executables: see the \fI\%Standard Variable Names\fP section
+below.  This is what most of the existing find modules provided by CMake
+do.
+.sp
+The more modern approach is to behave as much like
+config file packages files as possible, by
+providing imported target\&.  This has the advantage
+of propagating Target Usage Requirements to consumers.
+.sp
+In either case (or even when providing both variables and imported
+targets), find modules should provide backwards compatibility with old
+versions that had the same name.
+.sp
+A FindFoo.cmake module will typically be loaded by the command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+find_package(Foo [major[.minor[.patch[.tweak]]]]
+             [EXACT] [QUIET] [REQUIRED]
+             [[COMPONENTS] [components...]]
+             [OPTIONAL_COMPONENTS components...]
+             [NO_POLICY_SCOPE])
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+See the \fBfind_package()\fP documentation for details on what
+variables are set for the find module.  Most of these are dealt with by
+using \fBFindPackageHandleStandardArgs\fP\&.
+.sp
+Briefly, the module should only locate versions of the package
+compatible with the requested version, as described by the
+\fBFoo_FIND_VERSION\fP family of variables.  If \fBFoo_FIND_QUIETLY\fP is
+set to true, it should avoid printing messages, including anything
+complaining about the package not being found.  If \fBFoo_FIND_REQUIRED\fP
+is set to true, the module should issue a \fBFATAL_ERROR\fP if the package
+cannot be found.  If neither are set to true, it should print a
+non\-fatal message if it cannot find the package.
+.sp
+Packages that find multiple semi\-independent parts (like bundles of
+libraries) should search for the components listed in
+\fBFoo_FIND_COMPONENTS\fP if it is set , and only set \fBFoo_FOUND\fP to
+true if for each searched\-for component \fB<c>\fP that was not found,
+\fBFoo_FIND_REQUIRED_<c>\fP is not set to true.  The \fBHANDLE_COMPONENTS\fP
+argument of \fBfind_package_handle_standard_args()\fP can be used to
+implement this.
+.sp
+If \fBFoo_FIND_COMPONENTS\fP is not set, which modules are searched for
+and required is up to the find module, but should be documented.
+.sp
+For internal implementation, it is a generally accepted convention that
+variables starting with underscore are for temporary use only.
+.SS Standard Variable Names
+.sp
+For a \fBFindXxx.cmake\fP module that takes the approach of setting
+variables (either instead of or in addition to creating imported
+targets), the following variable names should be used to keep things
+consistent between find modules.  Note that all variables start with
+\fBXxx_\fP to make sure they do not interfere with other find modules; the
+same consideration applies to macros, functions and imported targets.
+.INDENT 0.0
+.TP
+.B \fBXxx_INCLUDE_DIRS\fP
+The final set of include directories listed in one variable for use by
+client code.  This should not be a cache entry.
+.TP
+.B \fBXxx_LIBRARIES\fP
+The libraries to link against to use Xxx. These should include full
+paths.  This should not be a cache entry.
+.TP
+.B \fBXxx_DEFINITIONS\fP
+Definitions to use when compiling code that uses Xxx. This really
+shouldn’t include options such as \fB\-DHAS_JPEG\fP that a client
+source\-code file uses to decide whether to \fB#include <jpeg.h>\fP
+.TP
+.B \fBXxx_EXECUTABLE\fP
+Where to find the Xxx tool.
+.TP
+.B \fBXxx_Yyy_EXECUTABLE\fP
+Where to find the Yyy tool that comes with Xxx.
+.TP
+.B \fBXxx_LIBRARY_DIRS\fP
+Optionally, the final set of library directories listed in one
+variable for use by client code.  This should not be a cache entry.
+.TP
+.B \fBXxx_ROOT_DIR\fP
+Where to find the base directory of Xxx.
+.TP
+.B \fBXxx_VERSION_Yy\fP
+Expect Version Yy if true. Make sure at most one of these is ever true.
+.TP
+.B \fBXxx_WRAP_Yy\fP
+If False, do not try to use the relevant CMake wrapping command.
+.TP
+.B \fBXxx_Yy_FOUND\fP
+If False, optional Yy part of Xxx system is not available.
+.TP
+.B \fBXxx_FOUND\fP
+Set to false, or undefined, if we haven’t found, or don’t want to use
+Xxx.
+.TP
+.B \fBXxx_NOT_FOUND_MESSAGE\fP
+Should be set by config\-files in the case that it has set
+\fBXxx_FOUND\fP to FALSE.  The contained message will be printed by the
+\fBfind_package()\fP command and by
+\fBfind_package_handle_standard_args()\fP to inform the user about the
+problem.
+.TP
+.B \fBXxx_RUNTIME_LIBRARY_DIRS\fP
+Optionally, the runtime library search path for use when running an
+executable linked to shared libraries.  The list should be used by
+user code to create the \fBPATH\fP on windows or \fBLD_LIBRARY_PATH\fP on
+UNIX.  This should not be a cache entry.
+.TP
+.B \fBXxx_VERSION\fP
+The full version string of the package found, if any.  Note that many
+existing modules provide \fBXxx_VERSION_STRING\fP instead.
+.TP
+.B \fBXxx_VERSION_MAJOR\fP
+The major version of the package found, if any.
+.TP
+.B \fBXxx_VERSION_MINOR\fP
+The minor version of the package found, if any.
+.TP
+.B \fBXxx_VERSION_PATCH\fP
+The patch version of the package found, if any.
+.UNINDENT
+.sp
+The following names should not usually be used in CMakeLists.txt files, but
+are typically cache variables for users to edit and control the
+behaviour of find modules (like entering the path to a library manually)
+.INDENT 0.0
+.TP
+.B \fBXxx_LIBRARY\fP
+The path of the Xxx library (as used with \fBfind_library()\fP, for
+example).
+.TP
+.B \fBXxx_Yy_LIBRARY\fP
+The path of the Yy library that is part of the Xxx system. It may or
+may not be required to use Xxx.
+.TP
+.B \fBXxx_INCLUDE_DIR\fP
+Where to find headers for using the Xxx library.
+.TP
+.B \fBXxx_Yy_INCLUDE_DIR\fP
+Where to find headers for using the Yy library of the Xxx system.
+.UNINDENT
+.sp
+To prevent users being overwhelmed with settings to configure, try to
+keep as many options as possible out of the cache, leaving at least one
+option which can be used to disable use of the module, or locate a
+not\-found library (e.g. \fBXxx_ROOT_DIR\fP).  For the same reason, mark
+most cache options as advanced.  For packages which provide both debug
+and release binaries, it is common to create cache variables with a
+\fB_LIBRARY_<CONFIG>\fP suffix, such as \fBFoo_LIBRARY_RELEASE\fP and
+\fBFoo_LIBRARY_DEBUG\fP\&.
+.sp
+While these are the standard variable names, you should provide
+backwards compatibility for any old names that were actually in use.
+Make sure you comment them as deprecated, so that no\-one starts using
+them.
+.SS A Sample Find Module
+.sp
+We will describe how to create a simple find module for a library \fBFoo\fP\&.
+.sp
+The top of the module should begin with a license notice, followed by
+a blank line, and then followed by a Bracket Comment\&.  The comment
+should begin with \fB\&.rst:\fP to indicate that the rest of its content is
+reStructuredText\-format documentation.  For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# Distributed under the OSI\-approved BSD 3\-Clause License.  See accompanying
+# file Copyright.txt or https://cmake.org/licensing for details.
+
+#[=======================================================================[.rst:
+FindFoo
+\-\-\-\-\-\-\-
+
+Finds the Foo library.
+
+Imported Targets
+^^^^^^^^^^^^^^^^
+
+This module provides the following imported targets, if found:
+
+\(ga\(gaFoo::Foo\(ga\(ga
+  The Foo library
+
+Result Variables
+^^^^^^^^^^^^^^^^
+
+This will define the following variables:
+
+\(ga\(gaFoo_FOUND\(ga\(ga
+  True if the system has the Foo library.
+\(ga\(gaFoo_VERSION\(ga\(ga
+  The version of the Foo library which was found.
+\(ga\(gaFoo_INCLUDE_DIRS\(ga\(ga
+  Include directories needed to use Foo.
+\(ga\(gaFoo_LIBRARIES\(ga\(ga
+  Libraries needed to link to Foo.
+
+Cache Variables
+^^^^^^^^^^^^^^^
+
+The following cache variables may also be set:
+
+\(ga\(gaFoo_INCLUDE_DIR\(ga\(ga
+  The directory containing \(ga\(gafoo.h\(ga\(ga.
+\(ga\(gaFoo_LIBRARY\(ga\(ga
+  The path to the Foo library.
+
+#]=======================================================================]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The module documentation consists of:
+.INDENT 0.0
+.IP \(bu 2
+An underlined heading specifying the module name.
+.IP \(bu 2
+A simple description of what the module finds.
+More description may be required for some packages.  If there are
+caveats or other details users of the module should be aware of,
+specify them here.
+.IP \(bu 2
+A section listing imported targets provided by the module, if any.
+.IP \(bu 2
+A section listing result variables provided by the module.
+.IP \(bu 2
+Optionally a section listing cache variables used by the module, if any.
+.UNINDENT
+.sp
+If the package provides any macros or functions, they should be listed in
+an additional section, but can be documented by additional \fB\&.rst:\fP
+comment blocks immediately above where those macros or functions are defined.
+.sp
+The find module implementation may begin below the documentation block.
+Now the actual libraries and so on have to be found.  The code here will
+obviously vary from module to module (dealing with that, after all, is the
+point of find modules), but there tends to be a common pattern for libraries.
+.sp
+First, we try to use \fBpkg\-config\fP to find the library.  Note that we
+cannot rely on this, as it may not be available, but it provides a good
+starting point.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+find_package(PkgConfig)
+pkg_check_modules(PC_Foo QUIET Foo)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This should define some variables starting \fBPC_Foo_\fP that contain the
+information from the \fBFoo.pc\fP file.
+.sp
+Now we need to find the libraries and include files; we use the
+information from \fBpkg\-config\fP to provide hints to CMake about where to
+look.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+find_path(Foo_INCLUDE_DIR
+  NAMES foo.h
+  PATHS ${PC_Foo_INCLUDE_DIRS}
+  PATH_SUFFIXES Foo
+)
+find_library(Foo_LIBRARY
+  NAMES foo
+  PATHS ${PC_Foo_LIBRARY_DIRS}
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If you have a good way of getting the version (from a header file, for
+example), you can use that information to set \fBFoo_VERSION\fP (although
+note that find modules have traditionally used \fBFoo_VERSION_STRING\fP,
+so you may want to set both).  Otherwise, attempt to use the information
+from \fBpkg\-config\fP
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+set(Foo_VERSION ${PC_Foo_VERSION})
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Now we can use \fBFindPackageHandleStandardArgs\fP to do most of the
+rest of the work for us
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Foo
+  FOUND_VAR Foo_FOUND
+  REQUIRED_VARS
+    Foo_LIBRARY
+    Foo_INCLUDE_DIR
+  VERSION_VAR Foo_VERSION
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This will check that the \fBREQUIRED_VARS\fP contain values (that do not
+end in \fB\-NOTFOUND\fP) and set \fBFoo_FOUND\fP appropriately.  It will also
+cache those values.  If \fBFoo_VERSION\fP is set, and a required version
+was passed to \fBfind_package()\fP, it will check the requested version
+against the one in \fBFoo_VERSION\fP\&.  It will also print messages as
+appropriate; note that if the package was found, it will print the
+contents of the first required variable to indicate where it was found.
+.sp
+At this point, we have to provide a way for users of the find module to
+link to the library or libraries that were found.  There are two
+approaches, as discussed in the \fI\%Find Modules\fP section above.  The
+traditional variable approach looks like
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+if(Foo_FOUND)
+  set(Foo_LIBRARIES ${Foo_LIBRARY})
+  set(Foo_INCLUDE_DIRS ${Foo_INCLUDE_DIR})
+  set(Foo_DEFINITIONS ${PC_Foo_CFLAGS_OTHER})
+endif()
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If more than one library was found, all of them should be included in
+these variables (see the \fI\%Standard Variable Names\fP section for more
+information).
+.sp
+When providing imported targets, these should be namespaced (hence the
+\fBFoo::\fP prefix); CMake will recognize that values passed to
+\fBtarget_link_libraries()\fP that contain \fB::\fP in their name are
+supposed to be imported targets (rather than just library names), and
+will produce appropriate diagnostic messages if that target does not
+exist (see policy \fBCMP0028\fP).
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+if(Foo_FOUND AND NOT TARGET Foo::Foo)
+  add_library(Foo::Foo UNKNOWN IMPORTED)
+  set_target_properties(Foo::Foo PROPERTIES
+    IMPORTED_LOCATION "${Foo_LIBRARY}"
+    INTERFACE_COMPILE_OPTIONS "${PC_Foo_CFLAGS_OTHER}"
+    INTERFACE_INCLUDE_DIRECTORIES "${Foo_INCLUDE_DIR}"
+  )
+endif()
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+One thing to note about this is that the \fBINTERFACE_INCLUDE_DIRECTORIES\fP and
+similar properties should only contain information about the target itself, and
+not any of its dependencies.  Instead, those dependencies should also be
+targets, and CMake should be told that they are dependencies of this target.
+CMake will then combine all the necessary information automatically.
+.sp
+The type of the \fBIMPORTED\fP target created in the
+\fBadd_library()\fP command can always be specified as \fBUNKNOWN\fP
+type.  This simplifies the code in cases where static or shared variants may
+be found, and CMake will determine the type by inspecting the files.
+.sp
+If the library is available with multiple configurations, the
+\fBIMPORTED_CONFIGURATIONS\fP target property should also be
+populated:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+if(Foo_FOUND)
+  if (NOT TARGET Foo::Foo)
+    add_library(Foo::Foo UNKNOWN IMPORTED)
+  endif()
+  if (Foo_LIBRARY_RELEASE)
+    set_property(TARGET Foo::Foo APPEND PROPERTY
+      IMPORTED_CONFIGURATIONS RELEASE
+    )
+    set_target_properties(Foo::Foo PROPERTIES
+      IMPORTED_LOCATION_RELEASE "${Foo_LIBRARY_RELEASE}"
+    )
+  endif()
+  if (Foo_LIBRARY_DEBUG)
+    set_property(TARGET Foo::Foo APPEND PROPERTY
+      IMPORTED_CONFIGURATIONS DEBUG
+    )
+    set_target_properties(Foo::Foo PROPERTIES
+      IMPORTED_LOCATION_DEBUG "${Foo_LIBRARY_DEBUG}"
+    )
+  endif()
+  set_target_properties(Foo::Foo PROPERTIES
+    INTERFACE_COMPILE_OPTIONS "${PC_Foo_CFLAGS_OTHER}"
+    INTERFACE_INCLUDE_DIRECTORIES "${Foo_INCLUDE_DIR}"
+  )
+endif()
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The \fBRELEASE\fP variant should be listed first in the property
+so that the variant is chosen if the user uses a configuration which is
+not an exact match for any listed \fBIMPORTED_CONFIGURATIONS\fP\&.
+.sp
+Most of the cache variables should be hidden in the \fBccmake\fP interface unless
+the user explicitly asks to edit them.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mark_as_advanced(
+  Foo_INCLUDE_DIR
+  Foo_LIBRARY
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If this module replaces an older version, you should set compatibility variables
+to cause the least disruption possible.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# compatibility variables
+set(Foo_VERSION_STRING ${Foo_VERSION})
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

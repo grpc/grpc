@@ -204,7 +204,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      absl::StatusOr<bool> perform_reload = true;
+      absl::StatusOr<bool> perform_reload;
       for (int i = 0; i < pem_key_cert_pairs->size(); ++i) {
         perform_reload = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
@@ -466,11 +466,16 @@ void grpc_tls_certificate_provider_release(
   if (provider != nullptr) provider->Unref();
 }
 
-grpc_status_code* grpc_tls_certificate_key_match(
-    const char* private_key, const char* cert_chain){
+bool grpc_tls_certificate_key_match(
+    const char* private_key, const char* cert_chain, grpc_status_code* code, const char** error_details){
   grpc_core::ExecCtx exec_ctx;
   absl::Status match_status = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).status();
-  //bool match_bool = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value();
-  grpc_status_code code = static_cast<grpc_status_code>(match_status.code());
-  return &code;
+  bool match_bool = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value();
+  *code = GRPC_STATUS_OK;
+  *error_details = nullptr;
+  if (!match_status.ok()){
+    *code = static_cast<grpc_status_code>(match_status.code());
+    *error_details = gpr_strdup(std::string(match_status.message()).c_str());
+  }
+  return match_bool;
 }

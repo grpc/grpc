@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INTERFACE_INCLUDE_DIRECTORIES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="INTERFACE_LINK_DEPENDS" href="INTERFACE_LINK_DEPENDS.html" />
+    <link rel="prev" title="INTERFACE_COMPILE_OPTIONS" href="INTERFACE_COMPILE_OPTIONS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="INTERFACE_LINK_DEPENDS.html" title="INTERFACE_LINK_DEPENDS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="INTERFACE_COMPILE_OPTIONS.html" title="INTERFACE_COMPILE_OPTIONS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">INTERFACE_INCLUDE_DIRECTORIES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="interface-include-directories">
+<span id="prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><h1>INTERFACE_INCLUDE_DIRECTORIES<a class="headerlink" href="#interface-include-directories" title="Permalink to this headline">¶</a></h1>
+<p>List of public include directories requirements for a library.</p>
+<p>Targets may populate this property to publish the include directories
+required to compile against the headers for the target.  The <span class="target" id="index-0-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>
+command populates this property with values given to the <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> and
+<code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> keywords.  Projects may also get and set the property directly.</p>
+<p>When target dependencies are specified using <span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a>,
+CMake will read this property from all target dependencies to determine the
+build properties of the consumer.</p>
+<p>Contents of <code class="docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code> may use “generator expressions”
+with the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a>
+manual for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+-manual for more on defining buildsystem properties.</p>
+<p>Include directories usage requirements commonly differ between the build-tree
+and the install-tree.  The <code class="docutils literal notranslate"><span class="pre">BUILD_INTERFACE</span></code> and <code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code>
+generator expressions can be used to describe separate usage requirements
+based on the usage location.  Relative paths are allowed within the
+<code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> expression and are interpreted relative to the
+installation prefix.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_include_directories(</span><span class="nb">mylib</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/include/mylib</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="na">include/mylib</span><span class="o">&gt;</span><span class="w">  </span><span class="c"># &lt;prefix&gt;/include/mylib</span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="section" id="creating-relocatable-packages">
+<h2>Creating Relocatable Packages<a class="headerlink" href="#creating-relocatable-packages" title="Permalink to this headline">¶</a></h2>
+<p>Note that it is not advisable to populate the <code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> of the
+<code class="docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code> of a target with absolute paths to the include
+directories of dependencies.  That would hard-code into installed packages
+the include directory paths for dependencies
+<strong>as found on the machine the package was made on</strong>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> of the <code class="docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code> is only
+suitable for specifying the required include directories for headers
+provided with the target itself, not those provided by the transitive
+dependencies listed in its <span class="target" id="index-0-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a> target
+property.  Those dependencies should themselves be targets that specify
+their own header locations in <code class="docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code>.</p>
+<p>See the <a class="reference internal" href="../manual/cmake-packages.7.html#creating-relocatable-packages"><span class="std std-ref">Creating Relocatable Packages</span></a> section of the
+<span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="../manual/cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual for discussion of additional care
+that must be taken when specifying usage requirements while creating
+packages for redistribution.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">INTERFACE_INCLUDE_DIRECTORIES</a><ul>
+<li><a class="reference internal" href="#creating-relocatable-packages">Creating Relocatable Packages</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="INTERFACE_COMPILE_OPTIONS.html"
+                        title="previous chapter">INTERFACE_COMPILE_OPTIONS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="INTERFACE_LINK_DEPENDS.html"
+                        title="next chapter">INTERFACE_LINK_DEPENDS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="INTERFACE_LINK_DEPENDS.html" title="INTERFACE_LINK_DEPENDS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="INTERFACE_COMPILE_OPTIONS.html" title="INTERFACE_COMPILE_OPTIONS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">INTERFACE_INCLUDE_DIRECTORIES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0113 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0112" href="CMP0112.html" />
+    <link rel="prev" title="CMP0114" href="CMP0114.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0112.html" title="CMP0112"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0114.html" title="CMP0114"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0113</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0113">
+<span id="policy:CMP0113"></span><h1>CMP0113<a class="headerlink" href="#cmp0113" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.19.</span></p>
+</div>
+<p><a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> do not repeat custom commands from target
+dependencies.</p>
+<p>Consider a chain of custom commands split across two dependent targets:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output-not-created</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">SOURCE</span><span class="w"> </span><span class="nb">output-not-created</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">SYMBOLIC</span><span class="w"> </span><span class="m">1</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_custom_command(</span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">output-created</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/output-not-created</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_custom_target(</span><span class="nb">first</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">output-not-created</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_custom_target(</span><span class="nb">second</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">output-created</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_dependencies(</span><span class="nb">second</span><span class="w"> </span><span class="nb">first</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In CMake 3.18 and lower, the Makefile generators put a copy of both custom
+commands in the Makefile for target <code class="docutils literal notranslate"><span class="pre">second</span></code> even though its dependency on
+target <code class="docutils literal notranslate"><span class="pre">first</span></code> ensures that the first custom command runs before the second.
+Running <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">second</span></code> would cause the first custom command to run once in
+the <code class="docutils literal notranslate"><span class="pre">first</span></code> target and then again in the <code class="docutils literal notranslate"><span class="pre">second</span></code> target.</p>
+<p>CMake 3.19 and above prefer to not duplicate custom commands in a target that
+are already generated in other targets on which the target depends (directly or
+indirectly).  This policy provides compatibility for projects that have not
+been updated to expect the new behavior.  In particular, projects that relied
+on the duplicate execution or that did not properly set the <span class="target" id="index-0-prop_sf:SYMBOLIC"></span><a class="reference internal" href="../prop_sf/SYMBOLIC.html#prop_sf:SYMBOLIC" title="SYMBOLIC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SYMBOLIC</span></code></a>
+source file property may be affected.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior for this policy is to duplicate custom commands in
+dependent targets.  The <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior of this policy is to not duplicate
+custom commands in dependent targets.</p>
+<p>This policy was introduced in CMake version 3.19.  Unlike many policies,
+CMake version 3.19.6 does <em>not</em> warn when this policy is not set and
+simply uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0114.html"
+                        title="previous chapter">CMP0114</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0112.html"
+                        title="next chapter">CMP0112</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0113.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0112.html" title="CMP0112"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0114.html" title="CMP0114"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0113</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

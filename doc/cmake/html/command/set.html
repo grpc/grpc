@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>set &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="set_directory_properties" href="set_directory_properties.html" />
+    <link rel="prev" title="separate_arguments" href="separate_arguments.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="set_directory_properties.html" title="set_directory_properties"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="separate_arguments.html" title="separate_arguments"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">set</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="set">
+<span id="command:set"></span><h1>set<a class="headerlink" href="#set" title="Permalink to this headline">¶</a></h1>
+<p>Set a normal, cache, or environment variable to a given value.
+See the <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-variables"><span class="std std-ref">cmake-language(7) variables</span></a>
+documentation for the scopes and interaction of normal variables
+and cache entries.</p>
+<p>Signatures of this command that specify a <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;...</span></code> placeholder
+expect zero or more arguments.  Multiple arguments will be joined as
+a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> to form the actual variable
+value to be set.  Zero arguments will cause normal variables to be
+unset.  See the <span class="target" id="index-0-command:unset"></span><a class="reference internal" href="unset.html#command:unset" title="unset"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">unset()</span></code></a> command to unset variables explicitly.</p>
+<div class="section" id="set-normal-variable">
+<h2>Set Normal Variable<a class="headerlink" href="#set-normal-variable" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="nv">&lt;value&gt;...</span><span class="w"> </span><span class="p">[</span><span class="no">PARENT_SCOPE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets the given <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> in the current function or directory scope.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">PARENT_SCOPE</span></code> option is given the variable will be set in
+the scope above the current scope.  Each new directory or function
+creates a new scope.  This command will set the value of a variable
+into the parent directory or calling function (whichever is applicable
+to the case at hand). The previous state of the variable’s value stays the
+same in the current scope (e.g., if it was undefined before, it is still
+undefined and if it had a value, it is still that value).</p>
+</div>
+<div class="section" id="set-cache-entry">
+<h2>Set Cache Entry<a class="headerlink" href="#set-cache-entry" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="nv">&lt;value&gt;...</span><span class="w"> </span><span class="no">CACHE</span><span class="w"> </span><span class="nv">&lt;type&gt;</span><span class="w"> </span><span class="nv">&lt;docstring&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">FORCE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets the given cache <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> (cache entry).  Since cache entries
+are meant to provide user-settable values this does not overwrite
+existing cache entries by default.  Use the <code class="docutils literal notranslate"><span class="pre">FORCE</span></code> option to
+overwrite existing entries.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;type&gt;</span></code> must be specified as one of:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">BOOL</span></code></dt><dd><p>Boolean <code class="docutils literal notranslate"><span class="pre">ON/OFF</span></code> value.  <span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> offers a checkbox.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILEPATH</span></code></dt><dd><p>Path to a file on disk.  <span class="target" id="index-1-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> offers a file dialog.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH</span></code></dt><dd><p>Path to a directory on disk.  <span class="target" id="index-2-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> offers a file dialog.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STRING</span></code></dt><dd><p>A line of text.  <span class="target" id="index-3-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> offers a text field or a
+drop-down selection if the <span class="target" id="index-0-prop_cache:STRINGS"></span><a class="reference internal" href="../prop_cache/STRINGS.html#prop_cache:STRINGS" title="STRINGS"><code class="xref cmake cmake-prop_cache docutils literal notranslate"><span class="pre">STRINGS</span></code></a> cache entry
+property is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INTERNAL</span></code></dt><dd><p>A line of text.  <span class="target" id="index-4-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> does not show internal entries.
+They may be used to store variables persistently across runs.
+Use of this type implies <code class="docutils literal notranslate"><span class="pre">FORCE</span></code>.</p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;docstring&gt;</span></code> must be specified as a line of text providing
+a quick summary of the option for presentation to <span class="target" id="index-5-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a>
+users.</p>
+<p>If the cache entry does not exist prior to the call or the <code class="docutils literal notranslate"><span class="pre">FORCE</span></code>
+option is given then the cache entry will be set to the given value.
+Furthermore, any normal variable binding in the current scope will
+be removed to expose the newly cached value to any immediately
+following evaluation.</p>
+<p>It is possible for the cache entry to exist prior to the call but
+have no type set if it was created on the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> command
+line by a user through the <code class="docutils literal notranslate"><span class="pre">-D&lt;var&gt;=&lt;value&gt;</span></code> option without
+specifying a type.  In this case the <code class="docutils literal notranslate"><span class="pre">set</span></code> command will add the
+type.  Furthermore, if the <code class="docutils literal notranslate"><span class="pre">&lt;type&gt;</span></code> is <code class="docutils literal notranslate"><span class="pre">PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">FILEPATH</span></code>
+and the <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code> provided on the command line is a relative path,
+then the <code class="docutils literal notranslate"><span class="pre">set</span></code> command will treat the path as relative to the
+current working directory and convert it to an absolute path.</p>
+</div>
+<div class="section" id="set-environment-variable">
+<h2>Set Environment Variable<a class="headerlink" href="#set-environment-variable" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="o">ENV{</span><span class="nt">&lt;variable&gt;</span><span class="o">}</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;value&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets an <span class="target" id="index-0-manual:cmake-env-variables(7)"></span><a class="reference internal" href="../manual/cmake-env-variables.7.html#manual:cmake-env-variables(7)" title="cmake-env-variables(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Environment</span> <span class="pre">Variable</span></code></a>
+to the given value.
+Subsequent calls of <code class="docutils literal notranslate"><span class="pre">$ENV{&lt;variable&gt;}</span></code> will return this new value.</p>
+<p>This command affects only the current CMake process, not the process
+from which CMake was called, nor the system environment at large,
+nor the environment of subsequent build or test processes.</p>
+<p>If no argument is given after <code class="docutils literal notranslate"><span class="pre">ENV{&lt;variable&gt;}</span></code> or if <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code> is
+an empty string, then this command will clear any existing value of the
+environment variable.</p>
+<p>Arguments after <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code> are ignored. If extra arguments are found,
+then an author warning is issued.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">set</a><ul>
+<li><a class="reference internal" href="#set-normal-variable">Set Normal Variable</a></li>
+<li><a class="reference internal" href="#set-cache-entry">Set Cache Entry</a></li>
+<li><a class="reference internal" href="#set-environment-variable">Set Environment Variable</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="separate_arguments.html"
+                        title="previous chapter">separate_arguments</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="set_directory_properties.html"
+                        title="next chapter">set_directory_properties</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/set.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="set_directory_properties.html" title="set_directory_properties"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="separate_arguments.html" title="separate_arguments"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">set</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

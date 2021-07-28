@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindEnvModules &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindEXPAT" href="FindEXPAT.html" />
+    <link rel="prev" title="FindDoxygen" href="FindDoxygen.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindEXPAT.html" title="FindEXPAT"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindDoxygen.html" title="FindDoxygen"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindEnvModules</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findenvmodules">
+<span id="module:FindEnvModules"></span><h1>FindEnvModules<a class="headerlink" href="#findenvmodules" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.15.</span></p>
+</div>
+<p>Locate an environment module implementation and make commands available to
+CMake scripts to use them.  This is compatible with both Lua-based Lmod
+and TCL-based EnvironmentModules.</p>
+<p>This module is intended for the use case of setting up the compiler and library
+environment within a <a class="reference internal" href="../manual/ctest.1.html#ctest-script"><span class="std std-ref">CTest Script</span></a> (<code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-S</span></code>).  It can
+also be used in a <a class="reference internal" href="../manual/cmake.1.html#script-processing-mode"><span class="std std-ref">CMake Script</span></a> (<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-P</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The loaded environment will not survive past the end of the calling process.
+Do not use this module in project code (<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files) to load
+a compiler environment; it will not be available during the build.  Instead
+load the environment manually before running CMake or using the generated
+build system.</p>
+</div>
+<div class="section" id="example-usage">
+<h2>Example Usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CTEST_BUILD_NAME</span><span class="w"> </span><span class="s">&quot;CrayLinux-CrayPE-Cray-dynamic&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_BUILD_CONFIGURATION</span><span class="w"> </span><span class="nb">Release</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_BUILD_FLAGS</span><span class="w"> </span><span class="s">&quot;-k -j8&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CTEST_CMAKE_GENERATOR</span><span class="w"> </span><span class="s">&quot;Unix Makefiles&quot;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="nf">find_package(</span><span class="nb">EnvModules</span><span class="w"> </span><span class="no">REQUIRED</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">env_module(</span><span class="nb">purge</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">modules</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">craype</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">PrgEnv-cray</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">craype-knl</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">cray-mpich</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="nb">load</span><span class="w"> </span><span class="nb">cray-libsci</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="o">ENV{</span><span class="nt">CRAYPE_LINK_TYPE</span><span class="o">}</span><span class="w"> </span><span class="nb">dynamic</span><span class="nf">)</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">EnvModules_FOUND</span></code></dt><dd><p>True if a compatible environment modules framework was found.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache Variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following cache variable will be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">EnvModules_COMMAND</span></code></dt><dd><p>The low level module command to use.  Currently supported
+implementations are the Lua based Lmod and TCL based EnvironmentModules.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="environment-variables">
+<h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">ENV{MODULESHOME}</span></code></dt><dd><p>Usually set by the module environment implementation, used as a hint to
+locate the module command to execute.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="provided-functions">
+<h2>Provided Functions<a class="headerlink" href="#provided-functions" title="Permalink to this headline">¶</a></h2>
+<p>This defines the following CMake functions for interacting with environment
+modules:</p>
+<dl class="cmake command">
+<dt id="command:env_module">
+<code class="sig-name descname">env_module</code><a class="headerlink" href="#command:env_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute an aribitrary module command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">env_module(</span><span class="nb">cmd</span><span class="w"> </span><span class="nb">arg1</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="nb">argN</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">env_module(</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">cmd</span><span class="w"> </span><span class="nb">arg1</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="nb">argN</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">RESULT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;ret-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cmd</span> <span class="pre">arg1</span> <span class="pre">...</span> <span class="pre">argN</span></code></dt><dd><p>The module sub-command and arguments to execute as if they were
+passed directly to the module command in your shell environment.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span> <span class="pre">&lt;out-var&gt;</span></code></dt><dd><p>The standard output from executing the module command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RESULT_VARIABLE</span> <span class="pre">&lt;ret-var&gt;</span></code></dt><dd><p>The return code from executing the module command.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:env_module_swap">
+<code class="sig-name descname">env_module_swap</code><a class="headerlink" href="#command:env_module_swap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Swap one module for another:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">env_module_swap(</span><span class="nb">out_mod</span><span class="w"> </span><span class="nb">in_mod</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">RESULT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;ret-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This is functionally equivalent to the <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">swap</span> <span class="pre">out_mod</span> <span class="pre">in_mod</span></code> shell
+command.  The options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span> <span class="pre">&lt;out-var&gt;</span></code></dt><dd><p>The standard output from executing the module command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RESULT_VARIABLE</span> <span class="pre">&lt;ret-var&gt;</span></code></dt><dd><p>The return code from executing the module command.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:env_module_list">
+<code class="sig-name descname">env_module_list</code><a class="headerlink" href="#command:env_module_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the list of currently loaded modules:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">env_module_list(</span><span class="nv">&lt;out-var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This is functionally equivalent to the <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">list</span></code> shell command.
+The result is stored in <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code> as a properly formatted CMake
+<a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> variable.</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:env_module_avail">
+<code class="sig-name descname">env_module_avail</code><a class="headerlink" href="#command:env_module_avail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the list of available modules:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">env_module_avail(</span><span class="p">[</span><span class="nv">&lt;mod-prefix&gt;</span><span class="p">]</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This is functionally equivalent to the <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">avail</span> <span class="pre">&lt;mod-prefix&gt;</span></code> shell
+command.  The result is stored in <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code> as a properly formatted
+CMake <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> variable.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindEnvModules</a><ul>
+<li><a class="reference internal" href="#example-usage">Example Usage</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache Variables</a></li>
+<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+<li><a class="reference internal" href="#provided-functions">Provided Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindDoxygen.html"
+                        title="previous chapter">FindDoxygen</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindEXPAT.html"
+                        title="next chapter">FindEXPAT</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindEnvModules.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindEXPAT.html" title="FindEXPAT"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindDoxygen.html" title="FindDoxygen"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindEnvModules</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

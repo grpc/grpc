@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GenerateExportHeader &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="GetPrerequisites" href="GetPrerequisites.html" />
+    <link rel="prev" title="FortranCInterface" href="FortranCInterface.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="GetPrerequisites.html" title="GetPrerequisites"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FortranCInterface.html" title="FortranCInterface"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GenerateExportHeader</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="generateexportheader">
+<span id="module:GenerateExportHeader"></span><h1>GenerateExportHeader<a class="headerlink" href="#generateexportheader" title="Permalink to this headline">¶</a></h1>
+<p>Function for generation of export macros for libraries</p>
+<p>This module provides the function <code class="docutils literal notranslate"><span class="pre">GENERATE_EXPORT_HEADER()</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">GENERATE_EXPORT_HEADER</span></code> function can be used to generate a file
+suitable for preprocessor inclusion which contains EXPORT macros to be
+used in library classes:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GENERATE_EXPORT_HEADER( LIBRARY_TARGET
+          [BASE_NAME &lt;base_name&gt;]
+          [EXPORT_MACRO_NAME &lt;export_macro_name&gt;]
+          [EXPORT_FILE_NAME &lt;export_file_name&gt;]
+          [DEPRECATED_MACRO_NAME &lt;deprecated_macro_name&gt;]
+          [NO_EXPORT_MACRO_NAME &lt;no_export_macro_name&gt;]
+          [INCLUDE_GUARD_NAME &lt;include_guard_name&gt;]
+          [STATIC_DEFINE &lt;static_define&gt;]
+          [NO_DEPRECATED_MACRO_NAME &lt;no_deprecated_macro_name&gt;]
+          [DEFINE_NO_DEPRECATED]
+          [PREFIX_NAME &lt;prefix_name&gt;]
+          [CUSTOM_CONTENT_FROM_VARIABLE &lt;variable&gt;]
+)
+</pre></div>
+</div>
+<p>The target properties <span class="target" id="index-0-prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET"></span><a class="reference internal" href="../prop_tgt/LANG_VISIBILITY_PRESET.html#prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET" title="&lt;LANG&gt;_VISIBILITY_PRESET"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CXX_VISIBILITY_PRESET</span></code></a>
+and <span class="target" id="index-0-prop_tgt:VISIBILITY_INLINES_HIDDEN"></span><a class="reference internal" href="../prop_tgt/VISIBILITY_INLINES_HIDDEN.html#prop_tgt:VISIBILITY_INLINES_HIDDEN" title="VISIBILITY_INLINES_HIDDEN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VISIBILITY_INLINES_HIDDEN</span></code></a> can be used to add the appropriate
+compile flags for targets.  See the documentation of those target properties,
+and the convenience variables
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_VISIBILITY_PRESET"></span><a class="reference internal" href="../variable/CMAKE_LANG_VISIBILITY_PRESET.html#variable:CMAKE_&lt;LANG&gt;_VISIBILITY_PRESET" title="CMAKE_&lt;LANG&gt;_VISIBILITY_PRESET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_VISIBILITY_PRESET</span></code></a> and
+<span class="target" id="index-0-variable:CMAKE_VISIBILITY_INLINES_HIDDEN"></span><a class="reference internal" href="../variable/CMAKE_VISIBILITY_INLINES_HIDDEN.html#variable:CMAKE_VISIBILITY_INLINES_HIDDEN" title="CMAKE_VISIBILITY_INLINES_HIDDEN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VISIBILITY_INLINES_HIDDEN</span></code></a>.</p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">GENERATE_EXPORT_HEADER()</span></code> generates macro names in a file
+name determined by the name of the library.  This means that in the
+simplest case, users of <code class="docutils literal notranslate"><span class="pre">GenerateExportHeader</span></code> will be equivalent to:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_CXX_VISIBILITY_PRESET</span><span class="w"> </span><span class="nb">hidden</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CMAKE_VISIBILITY_INLINES_HIDDEN</span><span class="w"> </span><span class="m">1</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">somelib</span><span class="w"> </span><span class="nb">someclass.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">somelib</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="o">${</span><span class="nt">LIBRARY_INSTALL_DIR</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"></span>
+<span class="w"> </span><span class="nb">someclass.h</span><span class="w"></span>
+<span class="w"> </span><span class="o">${</span><span class="nt">PROJECT_BINARY_DIR</span><span class="o">}</span><span class="na">/somelib_export.h</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="o">${</span><span class="nt">INCLUDE_INSTALL_DIR</span><span class="o">}</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And in the ABI header files:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;somelib_export.h&quot;</span><span class="cp"></span>
+<span class="k">class</span> <span class="nc">SOMELIB_EXPORT</span> <span class="n">SomeClass</span> <span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>The CMake fragment will generate a file in the
+<code class="docutils literal notranslate"><span class="pre">${CMAKE_CURRENT_BINARY_DIR}</span></code> called <code class="docutils literal notranslate"><span class="pre">somelib_export.h</span></code> containing the
+macros <code class="docutils literal notranslate"><span class="pre">SOMELIB_EXPORT</span></code>, <code class="docutils literal notranslate"><span class="pre">SOMELIB_NO_EXPORT</span></code>, <code class="docutils literal notranslate"><span class="pre">SOMELIB_DEPRECATED</span></code>,
+<code class="docutils literal notranslate"><span class="pre">SOMELIB_DEPRECATED_EXPORT</span></code> and <code class="docutils literal notranslate"><span class="pre">SOMELIB_DEPRECATED_NO_EXPORT</span></code>.
+They will be followed by content taken from the variable specified by
+the <code class="docutils literal notranslate"><span class="pre">CUSTOM_CONTENT_FROM_VARIABLE</span></code> option, if any.
+The resulting file should be installed with other headers in the library.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BASE_NAME</span></code> argument can be used to override the file name and the
+names used for the macros:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">somelib</span><span class="w"> </span><span class="nb">someclass.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="w"></span>
+<span class="w">  </span><span class="no">BASE_NAME</span><span class="w"> </span><span class="nb">other_name</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generates a file called <code class="docutils literal notranslate"><span class="pre">other_name_export.h</span></code> containing the macros
+<code class="docutils literal notranslate"><span class="pre">OTHER_NAME_EXPORT</span></code>, <code class="docutils literal notranslate"><span class="pre">OTHER_NAME_NO_EXPORT</span></code> and <code class="docutils literal notranslate"><span class="pre">OTHER_NAME_DEPRECATED</span></code>
+etc.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BASE_NAME</span></code> may be overridden by specifying other options in the
+function.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">somelib</span><span class="w"> </span><span class="nb">someclass.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="w"></span>
+<span class="w">  </span><span class="no">EXPORT_MACRO_NAME</span><span class="w"> </span><span class="no">OTHER_NAME_EXPORT</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>creates the macro <code class="docutils literal notranslate"><span class="pre">OTHER_NAME_EXPORT</span></code> instead of <code class="docutils literal notranslate"><span class="pre">SOMELIB_EXPORT</span></code>, but
+other macros and the generated file name is as default:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">somelib</span><span class="w"> </span><span class="nb">someclass.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPRECATED_MACRO_NAME</span><span class="w"> </span><span class="no">KDE_DEPRECATED</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>creates the macro <code class="docutils literal notranslate"><span class="pre">KDE_DEPRECATED</span></code> instead of <code class="docutils literal notranslate"><span class="pre">SOMELIB_DEPRECATED</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">LIBRARY_TARGET</span></code> is a static library, macros are defined without
+values.</p>
+<p>If the same sources are used to create both a shared and a static
+library, the uppercased symbol <code class="docutils literal notranslate"><span class="pre">${BASE_NAME}_STATIC_DEFINE</span></code> should be
+used when building the static library:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">shared_variant</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="o">${</span><span class="nt">lib_SRCS</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">static_variant</span><span class="w"> </span><span class="o">${</span><span class="nt">lib_SRCS</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">shared_variant</span><span class="w"> </span><span class="no">BASE_NAME</span><span class="w"> </span><span class="nb">libshared_and_static</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_target_properties(</span><span class="nb">static_variant</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_FLAGS</span><span class="w"> </span><span class="p">-</span><span class="no">DLIBSHARED_AND_STATIC_STATIC_DEFINE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This will cause the export macros to expand to nothing when building
+the static library.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">DEFINE_NO_DEPRECATED</span></code> is specified, then a macro
+<code class="docutils literal notranslate"><span class="pre">${BASE_NAME}_NO_DEPRECATED</span></code> will be defined This macro can be used to
+remove deprecated code from preprocessor output:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">option(</span><span class="no">EXCLUDE_DEPRECATED</span><span class="w"> </span><span class="s">&quot;Exclude deprecated parts of the library&quot;</span><span class="w"> </span><span class="no">FALSE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if</span> <span class="nf">(</span><span class="no">EXCLUDE_DEPRECATED</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set(</span><span class="no">NO_BUILD_DEPRECATED</span><span class="w"> </span><span class="no">DEFINE_NO_DEPRECATED</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="w"> </span><span class="o">${</span><span class="nt">NO_BUILD_DEPRECATED</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And then in somelib:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SOMELIB_EXPORT</span> <span class="n">SomeClass</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="cp">#ifndef SOMELIB_NO_DEPRECATED</span>
+  <span class="n">SOMELIB_DEPRECATED</span> <span class="kt">void</span> <span class="n">oldMethod</span><span class="p">();</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef SOMELIB_NO_DEPRECATED</span>
+<span class="kt">void</span> <span class="n">SomeClass</span><span class="o">::</span><span class="n">oldMethod</span><span class="p">()</span> <span class="p">{</span>  <span class="p">}</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">PREFIX_NAME</span></code> is specified, the argument will be used as a prefix to
+all generated macros.</p>
+<p>For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">generate_export_header(</span><span class="nb">somelib</span><span class="w"> </span><span class="no">PREFIX_NAME</span><span class="w"> </span><span class="no">VTK_</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generates the macros <code class="docutils literal notranslate"><span class="pre">VTK_SOMELIB_EXPORT</span></code> etc.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ADD_COMPILER_EXPORT_FLAGS( [&lt;output_variable&gt;] )
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ADD_COMPILER_EXPORT_FLAGS</span></code> function adds <code class="docutils literal notranslate"><span class="pre">-fvisibility=hidden</span></code> to
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS"></span><a class="reference internal" href="../variable/CMAKE_LANG_FLAGS.html#variable:CMAKE_&lt;LANG&gt;_FLAGS" title="CMAKE_&lt;LANG&gt;_FLAGS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_FLAGS</span></code></a> if supported, and is a no-op
+on Windows which does not need extra compiler flags for exporting support.
+You may optionally pass a single argument to <code class="docutils literal notranslate"><span class="pre">ADD_COMPILER_EXPORT_FLAGS</span></code>
+that will be populated with the <code class="docutils literal notranslate"><span class="pre">CXX_FLAGS</span></code> required to enable visibility
+support for the compiler/architecture in use.</p>
+<p>This function is deprecated.  Set the target properties
+<span class="target" id="index-1-prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET"></span><a class="reference internal" href="../prop_tgt/LANG_VISIBILITY_PRESET.html#prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET" title="&lt;LANG&gt;_VISIBILITY_PRESET"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CXX_VISIBILITY_PRESET</span></code></a> and
+<span class="target" id="index-1-prop_tgt:VISIBILITY_INLINES_HIDDEN"></span><a class="reference internal" href="../prop_tgt/VISIBILITY_INLINES_HIDDEN.html#prop_tgt:VISIBILITY_INLINES_HIDDEN" title="VISIBILITY_INLINES_HIDDEN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VISIBILITY_INLINES_HIDDEN</span></code></a> instead.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FortranCInterface.html"
+                        title="previous chapter">FortranCInterface</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GetPrerequisites.html"
+                        title="next chapter">GetPrerequisites</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/GenerateExportHeader.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="GetPrerequisites.html" title="GetPrerequisites"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FortranCInterface.html" title="FortranCInterface"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GenerateExportHeader</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

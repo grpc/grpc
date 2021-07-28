@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_CXX_KNOWN_FEATURES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_ROLE" href="CMAKE_ROLE.html" />
+    <link rel="prev" title="CMAKE_CUDA_KNOWN_FEATURES" href="CMAKE_CUDA_KNOWN_FEATURES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_ROLE.html" title="CMAKE_ROLE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CUDA_KNOWN_FEATURES.html" title="CMAKE_CUDA_KNOWN_FEATURES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_CXX_KNOWN_FEATURES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-cxx-known-features">
+<span id="prop_gbl:CMAKE_CXX_KNOWN_FEATURES"></span><h1>CMAKE_CXX_KNOWN_FEATURES<a class="headerlink" href="#cmake-cxx-known-features" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.1.</span></p>
+</div>
+<p>List of C++ features known to this version of CMake.</p>
+<p>The features listed in this global property may be known to be available to the
+C++ compiler.  If the feature is available with the C++ compiler, it will
+be listed in the <span class="target" id="index-0-variable:CMAKE_CXX_COMPILE_FEATURES"></span><a class="reference internal" href="../variable/CMAKE_CXX_COMPILE_FEATURES.html#variable:CMAKE_CXX_COMPILE_FEATURES" title="CMAKE_CXX_COMPILE_FEATURES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILE_FEATURES</span></code></a> variable.</p>
+<p>The features listed here may be used with the <span class="target" id="index-0-command:target_compile_features"></span><a class="reference internal" href="../command/target_compile_features.html#command:target_compile_features" title="target_compile_features"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_features()</span></code></a>
+command.  See the <span class="target" id="index-0-manual:cmake-compile-features(7)"></span><a class="reference internal" href="../manual/cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-compile-features(7)</span></code></a> manual for information on
+compile features and a list of supported compilers.</p>
+<p>The features known to this version of CMake are listed below.</p>
+<div class="section" id="high-level-meta-features-indicating-c-standard-support">
+<h2>High level meta features indicating C++ standard support<a class="headerlink" href="#high-level-meta-features-indicating-c-standard-support" title="Permalink to this headline">¶</a></h2>
+<p>The following meta features indicate general support for the associated
+language standard.  It reflects the language support claimed by the compiler,
+but it does not necessarily imply complete conformance to that standard.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_std_98</span></code></dt><dd><p>Compiler mode is at least C++ 98.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_std_11</span></code></dt><dd><p>Compiler mode is at least C++ 11.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_std_14</span></code></dt><dd><p>Compiler mode is at least C++ 14.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_std_17</span></code></dt><dd><p>Compiler mode is at least C++ 17.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_std_20</span></code></dt><dd><p>Compiler mode is at least C++ 20.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="low-level-individual-compile-features">
+<h2>Low level individual compile features<a class="headerlink" href="#low-level-individual-compile-features" title="Permalink to this headline">¶</a></h2>
+<p>For C++ 11 and C++ 14, compilers were sometimes slow to implement certain
+language features.  CMake provided some individual compile features to help
+projects determine whether specific features were available.  These individual
+features are now less relevant and projects should generally prefer to use the
+high level meta features instead.  Individual compile features are not provided
+for C++ 17 or later.</p>
+<p>See the <span class="target" id="index-1-manual:cmake-compile-features(7)"></span><a class="reference internal" href="../manual/cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-compile-features(7)</span></code></a> manual for further discussion of
+the use of individual compile features.</p>
+<div class="section" id="individual-features-from-c-98">
+<h3>Individual features from C++ 98<a class="headerlink" href="#individual-features-from-c-98" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_template_template_parameters</span></code></dt><dd><p>Template template parameters, as defined in <code class="docutils literal notranslate"><span class="pre">ISO/IEC</span> <span class="pre">14882:1998</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="individual-features-from-c-11">
+<h3>Individual features from C++ 11<a class="headerlink" href="#individual-features-from-c-11" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_alias_templates</span></code></dt><dd><p>Template aliases, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2258.pdf">N2258</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_alignas</span></code></dt><dd><p>Alignment control <code class="docutils literal notranslate"><span class="pre">alignas</span></code>, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">N2341</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_alignof</span></code></dt><dd><p>Alignment control <code class="docutils literal notranslate"><span class="pre">alignof</span></code>, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">N2341</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_attributes</span></code></dt><dd><p>Generic attributes, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf">N2761</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_auto_type</span></code></dt><dd><p>Automatic type deduction, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1984.pdf">N1984</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_constexpr</span></code></dt><dd><p>Constant expressions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_decltype_incomplete_return_types</span></code></dt><dd><p>Decltype on incomplete return types, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3276.pdf">N3276</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_decltype</span></code></dt><dd><p>Decltype, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2343.pdf">N2343</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_default_function_template_args</span></code></dt><dd><p>Default template arguments for function templates, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#226">DR226</a></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_defaulted_functions</span></code></dt><dd><p>Defaulted functions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2346.htm">N2346</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_defaulted_move_initializers</span></code></dt><dd><p>Defaulted move initializers, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3053.html">N3053</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_delegating_constructors</span></code></dt><dd><p>Delegating constructors, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1986.pdf">N1986</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_deleted_functions</span></code></dt><dd><p>Deleted functions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2346.htm">N2346</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_enum_forward_declarations</span></code></dt><dd><p>Enum forward declarations, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2764.pdf">N2764</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_explicit_conversions</span></code></dt><dd><p>Explicit conversion operators, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2437.pdf">N2437</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_extended_friend_declarations</span></code></dt><dd><p>Extended friend declarations, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1791.pdf">N1791</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_extern_templates</span></code></dt><dd><p>Extern templates, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1987.htm">N1987</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_final</span></code></dt><dd><p>Override control <code class="docutils literal notranslate"><span class="pre">final</span></code> keyword, as defined in <a class="reference external" href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">N2928</a>, <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">N3206</a> and <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">N3272</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_func_identifier</span></code></dt><dd><p>Predefined <code class="docutils literal notranslate"><span class="pre">__func__</span></code> identifier, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2340.htm">N2340</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_generalized_initializers</span></code></dt><dd><p>Initializer lists, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm">N2672</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_inheriting_constructors</span></code></dt><dd><p>Inheriting constructors, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm">N2540</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_inline_namespaces</span></code></dt><dd><p>Inline namespaces, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2535.htm">N2535</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_lambdas</span></code></dt><dd><p>Lambda functions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2927.pdf">N2927</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_local_type_template_args</span></code></dt><dd><p>Local and unnamed types as template arguments, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm">N2657</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_long_long_type</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span></code> type, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1811.pdf">N1811</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_noexcept</span></code></dt><dd><p>Exception specifications, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3050.html">N3050</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_nonstatic_member_init</span></code></dt><dd><p>Non-static data member initialization, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2756.htm">N2756</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_nullptr</span></code></dt><dd><p>Null pointer, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">N2431</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_override</span></code></dt><dd><p>Override control <code class="docutils literal notranslate"><span class="pre">override</span></code> keyword, as defined in <a class="reference external" href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">N2928</a>, <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">N3206</a>
+and <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">N3272</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_range_for</span></code></dt><dd><p>Range-based for, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2930.html">N2930</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_raw_string_literals</span></code></dt><dd><p>Raw string literals, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2442.htm">N2442</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_reference_qualified_functions</span></code></dt><dd><p>Reference qualified functions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2439.htm">N2439</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_right_angle_brackets</span></code></dt><dd><p>Right angle bracket parsing, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1757.html">N1757</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_rvalue_references</span></code></dt><dd><p>R-value references, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2118.html">N2118</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_sizeof_member</span></code></dt><dd><p>Size of non-static data members, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2253.html">N2253</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_static_assert</span></code></dt><dd><p>Static assert, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1720.html">N1720</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_strong_enums</span></code></dt><dd><p>Strongly typed enums, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf">N2347</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_thread_local</span></code></dt><dd><p>Thread-local variables, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">N2659</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_trailing_return_types</span></code></dt><dd><p>Automatic function return type, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">N2541</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_unicode_literals</span></code></dt><dd><p>Unicode string literals, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2442.htm">N2442</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_uniform_initialization</span></code></dt><dd><p>Uniform initialization, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2640.pdf">N2640</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_unrestricted_unions</span></code></dt><dd><p>Unrestricted unions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf">N2544</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_user_literals</span></code></dt><dd><p>User-defined literals, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2765.pdf">N2765</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_variadic_macros</span></code></dt><dd><p>Variadic macros, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1653.htm">N1653</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_variadic_templates</span></code></dt><dd><p>Variadic templates, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2242.pdf">N2242</a>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="individual-features-from-c-14">
+<h3>Individual features from C++ 14<a class="headerlink" href="#individual-features-from-c-14" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_aggregate_default_initializers</span></code></dt><dd><p>Aggregate default initializers, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3605.html">N3605</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_attribute_deprecated</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">[[deprecated]]</span></code> attribute, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html">N3760</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_binary_literals</span></code></dt><dd><p>Binary literals, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3472.pdf">N3472</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_contextual_conversions</span></code></dt><dd><p>Contextual conversions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3323.pdf">N3323</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_decltype_auto</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">decltype(auto)</span></code> semantics, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3638.html">N3638</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_digit_separators</span></code></dt><dd><p>Digit separators, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3781.pdf">N3781</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_generic_lambdas</span></code></dt><dd><p>Generic lambdas, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3649.html">N3649</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_lambda_init_captures</span></code></dt><dd><p>Initialized lambda captures, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3648.html">N3648</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_relaxed_constexpr</span></code></dt><dd><p>Relaxed constexpr, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_return_type_deduction</span></code></dt><dd><p>Return type deduction on normal functions, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3386.html">N3386</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cxx_variable_templates</span></code></dt><dd><p>Variable templates, as defined in <a class="reference external" href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3651.pdf">N3651</a>.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMAKE_CXX_KNOWN_FEATURES</a><ul>
+<li><a class="reference internal" href="#high-level-meta-features-indicating-c-standard-support">High level meta features indicating C++ standard support</a></li>
+<li><a class="reference internal" href="#low-level-individual-compile-features">Low level individual compile features</a><ul>
+<li><a class="reference internal" href="#individual-features-from-c-98">Individual features from C++ 98</a></li>
+<li><a class="reference internal" href="#individual-features-from-c-11">Individual features from C++ 11</a></li>
+<li><a class="reference internal" href="#individual-features-from-c-14">Individual features from C++ 14</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_CUDA_KNOWN_FEATURES.html"
+                        title="previous chapter">CMAKE_CUDA_KNOWN_FEATURES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_ROLE.html"
+                        title="next chapter">CMAKE_ROLE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_gbl/CMAKE_CXX_KNOWN_FEATURES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_ROLE.html" title="CMAKE_ROLE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CUDA_KNOWN_FEATURES.html" title="CMAKE_CUDA_KNOWN_FEATURES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_CXX_KNOWN_FEATURES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

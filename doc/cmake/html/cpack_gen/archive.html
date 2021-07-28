@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPack Archive Generator &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPack Bundle Generator" href="bundle.html" />
+    <link rel="prev" title="cpack-generators(7)" href="../manual/cpack-generators.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="bundle.html" title="CPack Bundle Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../manual/cpack-generators.7.html" title="cpack-generators(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" accesskey="U">cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack Archive Generator</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-archive-generator">
+<span id="cpack_gen:CPack Archive Generator"></span><h1>CPack Archive Generator<a class="headerlink" href="#cpack-archive-generator" title="Permalink to this headline">¶</a></h1>
+<p>CPack generator for packaging files into an archive, which can have
+any of the following formats:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>7Z - 7zip - (.7z)</p></li>
+<li><p>TBZ2 (.tar.bz2)</p></li>
+<li><p>TGZ (.tar.gz)</p></li>
+<li><p>TXZ (.tar.xz)</p></li>
+<li><p>TZ (.tar.Z)</p></li>
+<li><p>TZST (.tar.zst)</p></li>
+<li><p>ZIP (.zip)</p></li>
+</ul>
+</div></blockquote>
+<p>When this generator is called from <code class="docutils literal notranslate"><span class="pre">CPackSourceConfig.cmake</span></code> (or through
+the <code class="docutils literal notranslate"><span class="pre">package_source</span></code> target), then the generated archive will contain all
+files in the project directory, except those specified in
+<span class="target" id="index-0-variable:CPACK_SOURCE_IGNORE_FILES"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_SOURCE_IGNORE_FILES" title="CPACK_SOURCE_IGNORE_FILES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_SOURCE_IGNORE_FILES</span></code></a>.  The following is one example of
+packaging all source files of a project:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CPACK_SOURCE_GENERATOR</span><span class="w"> </span><span class="s">&quot;TGZ&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CPACK_SOURCE_IGNORE_FILES</span><span class="w"></span>
+<span class="w">  </span><span class="p">\\.</span><span class="na">git/</span><span class="w"></span>
+<span class="w">  </span><span class="na">build/</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;.*~$&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">CPACK_VERBATIM_VARIABLES</span><span class="w"> </span><span class="no">YES</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">include(</span><span class="nb">CPack</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When this generator is called from <code class="docutils literal notranslate"><span class="pre">CPackConfig.cmake</span></code> (or through the
+<code class="docutils literal notranslate"><span class="pre">package</span></code> target), then the generated archive will contain all files
+that have been installed via CMake’s <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command (and the
+deprecated commands <span class="target" id="index-0-command:install_files"></span><a class="reference internal" href="../command/install_files.html#command:install_files" title="install_files"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install_files()</span></code></a>, <span class="target" id="index-0-command:install_programs"></span><a class="reference internal" href="../command/install_programs.html#command:install_programs" title="install_programs"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install_programs()</span></code></a>,
+and <span class="target" id="index-0-command:install_targets"></span><a class="reference internal" href="../command/install_targets.html#command:install_targets" title="install_targets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install_targets()</span></code></a>).</p>
+<div class="section" id="variables-specific-to-cpack-archive-generator">
+<h2>Variables specific to CPack Archive generator<a class="headerlink" href="#variables-specific-to-cpack-archive-generator" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake variable">
+<dt id="variable:CPACK_ARCHIVE_FILE_NAME">
+<code class="sig-name descname">CPACK_ARCHIVE_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_ARCHIVE_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_ARCHIVE_&lt;component&gt;_FILE_NAME">
+<code class="sig-name descname">CPACK_ARCHIVE_&lt;component&gt;_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_ARCHIVE_<component>_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Package file name without extension. The extension is determined from the
+archive format (see list above) and automatically appended to the file name.
+The default is <code class="docutils literal notranslate"><span class="pre">&lt;CPACK_PACKAGE_FILE_NAME&gt;[-&lt;component&gt;]</span></code>, with spaces
+replaced by ‘-‘.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_ARCHIVE_COMPONENT_INSTALL">
+<code class="sig-name descname">CPACK_ARCHIVE_COMPONENT_INSTALL</code><a class="headerlink" href="#variable:CPACK_ARCHIVE_COMPONENT_INSTALL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable component packaging. If enabled (ON), then the archive generator
+creates  multiple packages. The default is OFF, which means that a single
+package containing files of all components is generated.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="variables-used-by-cpack-archive-generator">
+<h2>Variables used by CPack Archive generator<a class="headerlink" href="#variables-used-by-cpack-archive-generator" title="Permalink to this headline">¶</a></h2>
+<p>These variables are used by the Archive generator, but are also available to
+CPack generators which are essentially archives at their core. These include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="target" id="index-0-cpack_gen:CPack Cygwin Generator"></span><a class="reference internal" href="cygwin.html#cpack_gen:CPack Cygwin Generator" title="CPack Cygwin Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">Cygwin</span> <span class="pre">Generator</span></code></a></p></li>
+<li><p><span class="target" id="index-0-cpack_gen:CPack FreeBSD Generator"></span><a class="reference internal" href="freebsd.html#cpack_gen:CPack FreeBSD Generator" title="CPack FreeBSD Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">FreeBSD</span> <span class="pre">Generator</span></code></a></p></li>
+</ul>
+</div></blockquote>
+<dl class="cmake variable">
+<dt id="variable:CPACK_ARCHIVE_THREADS">
+<code class="sig-name descname">CPACK_ARCHIVE_THREADS</code><a class="headerlink" href="#variable:CPACK_ARCHIVE_THREADS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of threads to use when performing the compression. If set to
+<code class="docutils literal notranslate"><span class="pre">0</span></code>, the number of available cores on the machine will be used instead.
+The default is <code class="docutils literal notranslate"><span class="pre">1</span></code> which limits compression to a single thread. Note that
+not all compression modes support threading in all environments. Currently,
+only the XZ compression may support it.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Official CMake binaries available on <code class="docutils literal notranslate"><span class="pre">cmake.org</span></code> ship with a <code class="docutils literal notranslate"><span class="pre">liblzma</span></code>
+that does not support parallel compression.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPack Archive Generator</a><ul>
+<li><a class="reference internal" href="#variables-specific-to-cpack-archive-generator">Variables specific to CPack Archive generator</a></li>
+<li><a class="reference internal" href="#variables-used-by-cpack-archive-generator">Variables used by CPack Archive generator</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../manual/cpack-generators.7.html"
+                        title="previous chapter">cpack-generators(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="bundle.html"
+                        title="next chapter">CPack Bundle Generator</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cpack_gen/archive.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="bundle.html" title="CPack Bundle Generator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../manual/cpack-generators.7.html" title="cpack-generators(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" >cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack Archive Generator</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

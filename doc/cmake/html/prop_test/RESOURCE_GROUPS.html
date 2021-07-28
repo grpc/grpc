@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESOURCE_GROUPS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RESOURCE_LOCK" href="RESOURCE_LOCK.html" />
+    <link rel="prev" title="REQUIRED_FILES" href="REQUIRED_FILES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="RESOURCE_LOCK.html" title="RESOURCE_LOCK"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="REQUIRED_FILES.html" title="REQUIRED_FILES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">RESOURCE_GROUPS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="resource-groups">
+<span id="prop_test:RESOURCE_GROUPS"></span><h1>RESOURCE_GROUPS<a class="headerlink" href="#resource-groups" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.16.</span></p>
+</div>
+<p>Specify resources required by a test, grouped in a way that is meaningful to
+the test.  See <a class="reference internal" href="../manual/ctest.1.html#ctest-resource-allocation"><span class="std std-ref">resource allocation</span></a>
+for more information on how this property integrates into the CTest resource
+allocation feature.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">RESOURCE_GROUPS</span></code> property is a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a> of group descriptions. Each entry consists of an optional
+number of groups using the description followed by a series of resource
+requirements for those groups. These requirements (and the number of groups)
+are separated by commas. The resource requirements consist of the name of a
+resource type, followed by a colon, followed by an unsigned integer
+specifying the number of slots required on one resource of the given type.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">RESOURCE_GROUPS</span></code> property tells CTest what resources a test expects
+to use grouped in a way meaningful to the test.  The test itself must read
+the <a class="reference internal" href="../manual/ctest.1.html#ctest-resource-environment-variables"><span class="std std-ref">environment variables</span></a> to
+determine which resources have been allocated to each group.  For example,
+each group may correspond to a process the test will spawn when executed.</p>
+<p>Consider the following example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">MyTest</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">MyExe</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TEST</span><span class="w"> </span><span class="nb">MyTest</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">RESOURCE_GROUPS</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;2,gpus:2&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;gpus:4,crypto_chips:2&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this example, there are two group descriptions (implicitly separated by a
+semicolon.) The content of the first description is <code class="docutils literal notranslate"><span class="pre">2,gpus:2</span></code>. This
+description specifies 2 groups, each of which requires 2 slots from a single
+GPU. The content of the second description is <code class="docutils literal notranslate"><span class="pre">gpus:4,crypto_chips:2</span></code>. This
+description does not specify a group count, so a default of 1 is assumed.
+This single group requires 4 slots from a single GPU and 2 slots from a
+single cryptography chip. In total, 3 resource groups are specified for this
+test, each with its own unique requirements.</p>
+<p>Note that the number of slots following the resource type specifies slots from
+a <em>single</em> instance of the resource. If the resource group can tolerate
+receiving slots from different instances of the same resource, it can indicate
+this by splitting the specification into multiple requirements of one slot. For
+example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_test(</span><span class="no">NAME</span><span class="w"> </span><span class="nb">MyTest</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">MyExe</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TEST</span><span class="w"> </span><span class="nb">MyTest</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">RESOURCE_GROUPS</span><span class="w"></span>
+<span class="w">  </span><span class="s">&quot;gpus:1,gpus:1,gpus:1,gpus:1&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this case, the single resource group indicates that it needs four GPU slots,
+all of which may come from separate GPUs (though they don’t have to; CTest may
+still assign slots from the same GPU.)</p>
+<p>When CTest sets the <a class="reference internal" href="../manual/ctest.1.html#ctest-resource-environment-variables"><span class="std std-ref">environment variables</span></a> for a test, it assigns a group number
+based on the group description, starting at 0 on the left and the number of
+groups minus 1 on the right. For example, in the example above, the two
+groups in the first description would have IDs of 0 and 1, and the single
+group in the second description would have an ID of 2.</p>
+<p>Both the <code class="docutils literal notranslate"><span class="pre">RESOURCE_GROUPS</span></code> and <span class="target" id="index-0-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a> properties serve
+similar purposes, but they are distinct and orthogonal. Resources specified by
+<code class="docutils literal notranslate"><span class="pre">RESOURCE_GROUPS</span></code> do not affect <span class="target" id="index-1-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a>, and vice versa.
+Whereas <span class="target" id="index-2-prop_test:RESOURCE_LOCK"></span><a class="reference internal" href="RESOURCE_LOCK.html#prop_test:RESOURCE_LOCK" title="RESOURCE_LOCK"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">RESOURCE_LOCK</span></code></a> is a simpler property that is used for
+locking one global resource, <code class="docutils literal notranslate"><span class="pre">RESOURCE_GROUPS</span></code> is a more advanced property
+that allows multiple tests to simultaneously use multiple resources of the
+same type, specifying their requirements in a fine-grained manner.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="REQUIRED_FILES.html"
+                        title="previous chapter">REQUIRED_FILES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="RESOURCE_LOCK.html"
+                        title="next chapter">RESOURCE_LOCK</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_test/RESOURCE_GROUPS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="RESOURCE_LOCK.html" title="RESOURCE_LOCK"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="REQUIRED_FILES.html" title="REQUIRED_FILES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">RESOURCE_GROUPS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

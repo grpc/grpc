@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUILD_WITH_INSTALL_RPATH &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="BUNDLE" href="BUNDLE.html" />
+    <link rel="prev" title="BUILD_WITH_INSTALL_NAME_DIR" href="BUILD_WITH_INSTALL_NAME_DIR.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="BUNDLE.html" title="BUNDLE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="BUILD_WITH_INSTALL_NAME_DIR.html" title="BUILD_WITH_INSTALL_NAME_DIR"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BUILD_WITH_INSTALL_RPATH</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="build-with-install-rpath">
+<span id="prop_tgt:BUILD_WITH_INSTALL_RPATH"></span><h1>BUILD_WITH_INSTALL_RPATH<a class="headerlink" href="#build-with-install-rpath" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">BUILD_WITH_INSTALL_RPATH</span></code> is a boolean specifying whether to link the target
+in the build tree with the <span class="target" id="index-0-prop_tgt:INSTALL_RPATH"></span><a class="reference internal" href="INSTALL_RPATH.html#prop_tgt:INSTALL_RPATH" title="INSTALL_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_RPATH</span></code></a>.  This takes precedence
+over <span class="target" id="index-0-prop_tgt:SKIP_BUILD_RPATH"></span><a class="reference internal" href="SKIP_BUILD_RPATH.html#prop_tgt:SKIP_BUILD_RPATH" title="SKIP_BUILD_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SKIP_BUILD_RPATH</span></code></a> and avoids the need for relinking before
+installation.</p>
+<p>This property is initialized by the value of the
+<span class="target" id="index-0-variable:CMAKE_BUILD_WITH_INSTALL_RPATH"></span><a class="reference internal" href="../variable/CMAKE_BUILD_WITH_INSTALL_RPATH.html#variable:CMAKE_BUILD_WITH_INSTALL_RPATH" title="CMAKE_BUILD_WITH_INSTALL_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_WITH_INSTALL_RPATH</span></code></a> variable if it is set when a target
+is created.</p>
+<p>If policy <span class="target" id="index-0-policy:CMP0068"></span><a class="reference internal" href="../policy/CMP0068.html#policy:CMP0068" title="CMP0068"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0068</span></code></a> is not <code class="docutils literal notranslate"><span class="pre">NEW</span></code>, this property also controls use of
+<span class="target" id="index-0-prop_tgt:INSTALL_NAME_DIR"></span><a class="reference internal" href="INSTALL_NAME_DIR.html#prop_tgt:INSTALL_NAME_DIR" title="INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_NAME_DIR</span></code></a> in the build tree on macOS.  Either way, the
+<span class="target" id="index-0-prop_tgt:BUILD_WITH_INSTALL_NAME_DIR"></span><a class="reference internal" href="BUILD_WITH_INSTALL_NAME_DIR.html#prop_tgt:BUILD_WITH_INSTALL_NAME_DIR" title="BUILD_WITH_INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUILD_WITH_INSTALL_NAME_DIR</span></code></a> target property takes precedence.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="BUILD_WITH_INSTALL_NAME_DIR.html"
+                        title="previous chapter">BUILD_WITH_INSTALL_NAME_DIR</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BUNDLE.html"
+                        title="next chapter">BUNDLE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/BUILD_WITH_INSTALL_RPATH.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="BUNDLE.html" title="BUNDLE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="BUILD_WITH_INSTALL_NAME_DIR.html" title="BUILD_WITH_INSTALL_NAME_DIR"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BUILD_WITH_INSTALL_RPATH</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

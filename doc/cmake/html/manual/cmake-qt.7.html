@@ -1,0 +1,381 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-qt(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-server(7)" href="cmake-server.7.html" />
+    <link rel="prev" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;" href="../prop_sf/COMPILE_DEFINITIONS_CONFIG.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-server.7.html" title="cmake-server(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../prop_sf/COMPILE_DEFINITIONS_CONFIG.html" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-qt(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-qt(7)"></span><div class="section" id="cmake-qt-7">
+<h1><a class="toc-backref" href="#id1">cmake-qt(7)</a><a class="headerlink" href="#cmake-qt-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-qt-7" id="id1">cmake-qt(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#qt-build-tools" id="id3">Qt Build Tools</a></p>
+<ul>
+<li><p><a class="reference internal" href="#automoc" id="id4">AUTOMOC</a></p></li>
+<li><p><a class="reference internal" href="#autouic" id="id5">AUTOUIC</a></p></li>
+<li><p><a class="reference internal" href="#autorcc" id="id6">AUTORCC</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#the-origin-autogen-target" id="id7">The <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> target</a></p></li>
+<li><p><a class="reference internal" href="#visual-studio-generators" id="id8">Visual Studio Generators</a></p></li>
+<li><p><a class="reference internal" href="#qtmain-lib-on-windows" id="id9">qtmain.lib on Windows</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>CMake can find and use Qt 4 and Qt 5 libraries.  The Qt 4 libraries are found
+by the <span class="target" id="index-0-module:FindQt4"></span><a class="reference internal" href="../module/FindQt4.html#module:FindQt4" title="FindQt4"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindQt4</span></code></a> find-module shipped with CMake, whereas the
+Qt 5 libraries are found using “Config-file Packages” shipped with Qt 5. See
+<span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> for more information about CMake packages, and
+see <a class="reference external" href="http://qt-project.org/doc/qt-5/cmake-manual.html">the Qt cmake manual</a>
+for your Qt version.</p>
+<p>Qt 4 and Qt 5 may be used together in the same
+<span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">buildsystem</span></code></a>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.8.0</span><span class="w"> </span><span class="no">FATAL_ERROR</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">project(</span><span class="nb">Qt4And5</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">CMAKE_AUTOMOC</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">find_package(</span><span class="nb">Qt5</span><span class="w"> </span><span class="no">COMPONENTS</span><span class="w"> </span><span class="nb">Widgets</span><span class="w"> </span><span class="nb">DBus</span><span class="w"> </span><span class="no">REQUIRED</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">publisher</span><span class="w"> </span><span class="nb">publisher.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">publisher</span><span class="w"> </span><span class="nb">Qt5</span><span class="o">::</span><span class="nb">Widgets</span><span class="w"> </span><span class="nb">Qt5</span><span class="o">::</span><span class="nb">DBus</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">find_package(</span><span class="nb">Qt4</span><span class="w"> </span><span class="no">REQUIRED</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">subscriber</span><span class="w"> </span><span class="nb">subscriber.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">subscriber</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtGui</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtDBus</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A CMake target may not link to both Qt 4 and Qt 5.  A diagnostic is issued if
+this is attempted or results from transitive target dependency evaluation.</p>
+</div>
+<div class="section" id="qt-build-tools">
+<h2><a class="toc-backref" href="#id3">Qt Build Tools</a><a class="headerlink" href="#qt-build-tools" title="Permalink to this headline">¶</a></h2>
+<p>Qt relies on some bundled tools for code generation, such as <code class="docutils literal notranslate"><span class="pre">moc</span></code> for
+meta-object code generation, <code class="docutils literal notranslate"><span class="pre">uic</span></code> for widget layout and population,
+and <code class="docutils literal notranslate"><span class="pre">rcc</span></code> for virtual file system content generation.  These tools may be
+automatically invoked by <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> if the appropriate conditions
+are met.  The automatic tool invocation may be used with both Qt 4 and Qt 5.</p>
+<div class="section" id="automoc">
+<h3><a class="toc-backref" href="#id4">AUTOMOC</a><a class="headerlink" href="#automoc" title="Permalink to this headline">¶</a></h3>
+<p>The <span class="target" id="index-0-prop_tgt:AUTOMOC"></span><a class="reference internal" href="../prop_tgt/AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> target property controls whether <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>
+inspects the C++ files in the target to determine if they require <code class="docutils literal notranslate"><span class="pre">moc</span></code> to
+be run, and to create rules to execute <code class="docutils literal notranslate"><span class="pre">moc</span></code> at the appropriate time.</p>
+<p>If a macro from <span class="target" id="index-0-prop_tgt:AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="../prop_tgt/AUTOMOC_MACRO_NAMES.html#prop_tgt:AUTOMOC_MACRO_NAMES" title="AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_MACRO_NAMES</span></code></a> is found in a header file,
+<code class="docutils literal notranslate"><span class="pre">moc</span></code> will be run on the file.  The result will be put into a file named
+according to <code class="docutils literal notranslate"><span class="pre">moc_&lt;basename&gt;.cpp</span></code>.
+If the macro is found in a C++ implementation
+file, the moc output will be put into a file named according to
+<code class="docutils literal notranslate"><span class="pre">&lt;basename&gt;.moc</span></code>, following the Qt conventions.  The <code class="docutils literal notranslate"><span class="pre">&lt;basename&gt;.moc</span></code> must
+be included by the user in the C++ implementation file with a preprocessor
+<code class="docutils literal notranslate"><span class="pre">#include</span></code>.</p>
+<p>Included <code class="docutils literal notranslate"><span class="pre">moc_*.cpp</span></code> and <code class="docutils literal notranslate"><span class="pre">*.moc</span></code> files will be generated in the
+<code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include</span></code> directory which is
+automatically added to the target’s <span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>.</p>
+<ul class="simple">
+<li><p>This differs from CMake 3.7 and below; see their documentation for details.</p></li>
+<li><p>For <span class="target" id="index-0-prop_gbl:GENERATOR_IS_MULTI_CONFIG"></span><a class="reference internal" href="../prop_gbl/GENERATOR_IS_MULTI_CONFIG.html#prop_gbl:GENERATOR_IS_MULTI_CONFIG" title="GENERATOR_IS_MULTI_CONFIG"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">multi</span> <span class="pre">configuration</span> <span class="pre">generators</span></code></a>,
+the include directory is <code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include_&lt;CONFIG&gt;</span></code>.</p></li>
+<li><p>See <span class="target" id="index-0-prop_tgt:AUTOGEN_BUILD_DIR"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_BUILD_DIR.html#prop_tgt:AUTOGEN_BUILD_DIR" title="AUTOGEN_BUILD_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_BUILD_DIR</span></code></a>.</p></li>
+</ul>
+<p>Not included <code class="docutils literal notranslate"><span class="pre">moc_&lt;basename&gt;.cpp</span></code> files will be generated in custom
+folders to avoid name collisions and included in a separate
+<code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/mocs_compilation.cpp</span></code> file which is compiled
+into the target.</p>
+<ul class="simple">
+<li><p>See <span class="target" id="index-1-prop_tgt:AUTOGEN_BUILD_DIR"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_BUILD_DIR.html#prop_tgt:AUTOGEN_BUILD_DIR" title="AUTOGEN_BUILD_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_BUILD_DIR</span></code></a>.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">moc</span></code> command line will consume the <span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> and
+<span class="target" id="index-1-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a> target properties from the target it is being
+invoked for, and for the appropriate build configuration.</p>
+<p>The <span class="target" id="index-1-prop_tgt:AUTOMOC"></span><a class="reference internal" href="../prop_tgt/AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> target property may be pre-set for all
+following targets by setting the <span class="target" id="index-0-variable:CMAKE_AUTOMOC"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC.html#variable:CMAKE_AUTOMOC" title="CMAKE_AUTOMOC"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC</span></code></a> variable.  The
+<span class="target" id="index-0-prop_tgt:AUTOMOC_MOC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTOMOC_MOC_OPTIONS.html#prop_tgt:AUTOMOC_MOC_OPTIONS" title="AUTOMOC_MOC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_MOC_OPTIONS</span></code></a> target property may be populated to set
+options to pass to <code class="docutils literal notranslate"><span class="pre">moc</span></code>. The <span class="target" id="index-0-variable:CMAKE_AUTOMOC_MOC_OPTIONS"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_MOC_OPTIONS.html#variable:CMAKE_AUTOMOC_MOC_OPTIONS" title="CMAKE_AUTOMOC_MOC_OPTIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_MOC_OPTIONS</span></code></a>
+variable may be populated to pre-set the options for all following targets.</p>
+<p>Additional macro names to search for can be added to
+<span class="target" id="index-1-prop_tgt:AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="../prop_tgt/AUTOMOC_MACRO_NAMES.html#prop_tgt:AUTOMOC_MACRO_NAMES" title="AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_MACRO_NAMES</span></code></a>.</p>
+<p>Additional <code class="docutils literal notranslate"><span class="pre">moc</span></code> dependency file names can be extracted from source code
+by using <span class="target" id="index-0-prop_tgt:AUTOMOC_DEPEND_FILTERS"></span><a class="reference internal" href="../prop_tgt/AUTOMOC_DEPEND_FILTERS.html#prop_tgt:AUTOMOC_DEPEND_FILTERS" title="AUTOMOC_DEPEND_FILTERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_DEPEND_FILTERS</span></code></a>.</p>
+<p>Source C++ files can be excluded from <span class="target" id="index-2-prop_tgt:AUTOMOC"></span><a class="reference internal" href="../prop_tgt/AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> processing by
+enabling <span class="target" id="index-0-prop_sf:SKIP_AUTOMOC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOMOC.html#prop_sf:SKIP_AUTOMOC" title="SKIP_AUTOMOC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOMOC</span></code></a> or the broader <span class="target" id="index-0-prop_sf:SKIP_AUTOGEN"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOGEN.html#prop_sf:SKIP_AUTOGEN" title="SKIP_AUTOGEN"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOGEN</span></code></a>.</p>
+</div>
+<div class="section" id="autouic">
+<span id="qt-autouic"></span><h3><a class="toc-backref" href="#id5">AUTOUIC</a><a class="headerlink" href="#autouic" title="Permalink to this headline">¶</a></h3>
+<p>The <span class="target" id="index-0-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> target property controls whether <span class="target" id="index-2-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>
+inspects the C++ files in the target to determine if they require <code class="docutils literal notranslate"><span class="pre">uic</span></code> to
+be run, and to create rules to execute <code class="docutils literal notranslate"><span class="pre">uic</span></code> at the appropriate time.</p>
+<p>If a preprocessor <code class="docutils literal notranslate"><span class="pre">#include</span></code> directive is found which matches
+<code class="docutils literal notranslate"><span class="pre">&lt;path&gt;ui_&lt;basename&gt;.h</span></code>, and a <code class="docutils literal notranslate"><span class="pre">&lt;basename&gt;.ui</span></code> file exists,
+then <code class="docutils literal notranslate"><span class="pre">uic</span></code> will be executed to generate the appropriate file.
+The <code class="docutils literal notranslate"><span class="pre">&lt;basename&gt;.ui</span></code> file is searched for in the following places</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;source_dir&gt;/&lt;basename&gt;.ui</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;source_dir&gt;/&lt;path&gt;&lt;basename&gt;.ui</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;AUTOUIC_SEARCH_PATHS&gt;/&lt;basename&gt;.ui</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;AUTOUIC_SEARCH_PATHS&gt;/&lt;path&gt;&lt;basename&gt;.ui</span></code></p></li>
+</ol>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;source_dir&gt;</span></code> is the directory of the C++ file and
+<span class="target" id="index-0-prop_tgt:AUTOUIC_SEARCH_PATHS"></span><a class="reference internal" href="../prop_tgt/AUTOUIC_SEARCH_PATHS.html#prop_tgt:AUTOUIC_SEARCH_PATHS" title="AUTOUIC_SEARCH_PATHS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_SEARCH_PATHS</span></code></a> is a list of additional search paths.</p>
+<p>The generated generated <code class="docutils literal notranslate"><span class="pre">ui_*.h</span></code> files are placed in the
+<code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include</span></code> directory which is
+automatically added to the target’s <span class="target" id="index-2-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>.</p>
+<ul class="simple">
+<li><p>This differs from CMake 3.7 and below; see their documentation for details.</p></li>
+<li><p>For <span class="target" id="index-1-prop_gbl:GENERATOR_IS_MULTI_CONFIG"></span><a class="reference internal" href="../prop_gbl/GENERATOR_IS_MULTI_CONFIG.html#prop_gbl:GENERATOR_IS_MULTI_CONFIG" title="GENERATOR_IS_MULTI_CONFIG"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">multi</span> <span class="pre">configuration</span> <span class="pre">generators</span></code></a>,
+the include directory is <code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include_&lt;CONFIG&gt;</span></code>.</p></li>
+<li><p>See <span class="target" id="index-2-prop_tgt:AUTOGEN_BUILD_DIR"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_BUILD_DIR.html#prop_tgt:AUTOGEN_BUILD_DIR" title="AUTOGEN_BUILD_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_BUILD_DIR</span></code></a>.</p></li>
+</ul>
+<p>The <span class="target" id="index-1-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> target property may be pre-set for all following
+targets by setting the <span class="target" id="index-0-variable:CMAKE_AUTOUIC"></span><a class="reference internal" href="../variable/CMAKE_AUTOUIC.html#variable:CMAKE_AUTOUIC" title="CMAKE_AUTOUIC"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOUIC</span></code></a> variable.  The
+<span class="target" id="index-0-prop_tgt:AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTOUIC_OPTIONS.html#prop_tgt:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a> target property may be populated to set options
+to pass to <code class="docutils literal notranslate"><span class="pre">uic</span></code>.  The <span class="target" id="index-0-variable:CMAKE_AUTOUIC_OPTIONS"></span><a class="reference internal" href="../variable/CMAKE_AUTOUIC_OPTIONS.html#variable:CMAKE_AUTOUIC_OPTIONS" title="CMAKE_AUTOUIC_OPTIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOUIC_OPTIONS</span></code></a> variable may be
+populated to pre-set the options for all following targets.  The
+<span class="target" id="index-0-prop_sf:AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_sf/AUTOUIC_OPTIONS.html#prop_sf:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a> source file property may be set on the
+<code class="docutils literal notranslate"><span class="pre">&lt;basename&gt;.ui</span></code> file to set particular options for the file.  This
+overrides options from the <span class="target" id="index-1-prop_tgt:AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTOUIC_OPTIONS.html#prop_tgt:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a> target property.</p>
+<p>A target may populate the <span class="target" id="index-0-prop_tgt:INTERFACE_AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_AUTOUIC_OPTIONS.html#prop_tgt:INTERFACE_AUTOUIC_OPTIONS" title="INTERFACE_AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_AUTOUIC_OPTIONS</span></code></a> target
+property with options that should be used when invoking <code class="docutils literal notranslate"><span class="pre">uic</span></code>.  This must be
+consistent with the <span class="target" id="index-2-prop_tgt:AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTOUIC_OPTIONS.html#prop_tgt:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a> target property content of the
+depender target.  The <span class="target" id="index-0-variable:CMAKE_DEBUG_TARGET_PROPERTIES"></span><a class="reference internal" href="../variable/CMAKE_DEBUG_TARGET_PROPERTIES.html#variable:CMAKE_DEBUG_TARGET_PROPERTIES" title="CMAKE_DEBUG_TARGET_PROPERTIES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_DEBUG_TARGET_PROPERTIES</span></code></a> variable may
+be used to track the origin target of such
+<span class="target" id="index-1-prop_tgt:INTERFACE_AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_AUTOUIC_OPTIONS.html#prop_tgt:INTERFACE_AUTOUIC_OPTIONS" title="INTERFACE_AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_AUTOUIC_OPTIONS</span></code></a>.  This means that a library which
+provides an alternative translation system for Qt may specify options which
+should be used when running <code class="docutils literal notranslate"><span class="pre">uic</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">KI18n</span><span class="w"> </span><span class="nb">klocalizedstring.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">KI18n</span><span class="w"> </span><span class="nb">Qt5</span><span class="o">::</span><span class="nb">Core</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># KI18n uses the tr2i18n() function instead of tr().  That function is</span>
+<span class="c"># declared in the klocalizedstring.h header.</span>
+<span class="nf">set(</span><span class="nb">autouic_options</span><span class="w"></span>
+<span class="w">  </span><span class="p">-</span><span class="nb">tr</span><span class="w"> </span><span class="nb">tr2i18n</span><span class="w"></span>
+<span class="w">  </span><span class="p">-</span><span class="nb">include</span><span class="w"> </span><span class="nb">klocalizedstring.h</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">KI18n</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">INTERFACE_AUTOUIC_OPTIONS</span><span class="w"> </span><span class="o">${</span><span class="nt">autouic_options</span><span class="o">}</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A consuming project linking to the target exported from upstream automatically
+uses appropriate options when <code class="docutils literal notranslate"><span class="pre">uic</span></code> is run by <span class="target" id="index-2-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a>, as a
+result of linking with the <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_AUTOUIC</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># Uses a libwidget.ui file:</span>
+<span class="nf">add_library(</span><span class="nb">LibWidget</span><span class="w"> </span><span class="nb">libwidget.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">LibWidget</span><span class="w"></span>
+<span class="w">  </span><span class="no">KF5</span><span class="o">::</span><span class="nb">KI18n</span><span class="w"></span>
+<span class="w">  </span><span class="nb">Qt5</span><span class="o">::</span><span class="nb">Widgets</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Source files can be excluded from <span class="target" id="index-3-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> processing by
+enabling <span class="target" id="index-0-prop_sf:SKIP_AUTOUIC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOUIC.html#prop_sf:SKIP_AUTOUIC" title="SKIP_AUTOUIC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOUIC</span></code></a> or the broader <span class="target" id="index-1-prop_sf:SKIP_AUTOGEN"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOGEN.html#prop_sf:SKIP_AUTOGEN" title="SKIP_AUTOGEN"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOGEN</span></code></a>.</p>
+</div>
+<div class="section" id="autorcc">
+<span id="qt-autorcc"></span><h3><a class="toc-backref" href="#id6">AUTORCC</a><a class="headerlink" href="#autorcc" title="Permalink to this headline">¶</a></h3>
+<p>The <span class="target" id="index-0-prop_tgt:AUTORCC"></span><a class="reference internal" href="../prop_tgt/AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a> target property controls whether <span class="target" id="index-3-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a>
+creates rules to execute <code class="docutils literal notranslate"><span class="pre">rcc</span></code> at the appropriate time on source files
+which have the suffix <code class="docutils literal notranslate"><span class="pre">.qrc</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">myexe</span><span class="w"> </span><span class="nb">main.cpp</span><span class="w"> </span><span class="nb">resource_file.qrc</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-1-prop_tgt:AUTORCC"></span><a class="reference internal" href="../prop_tgt/AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a> target property may be pre-set for all following targets
+by setting the <span class="target" id="index-0-variable:CMAKE_AUTORCC"></span><a class="reference internal" href="../variable/CMAKE_AUTORCC.html#variable:CMAKE_AUTORCC" title="CMAKE_AUTORCC"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTORCC</span></code></a> variable.  The
+<span class="target" id="index-0-prop_tgt:AUTORCC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTORCC_OPTIONS.html#prop_tgt:AUTORCC_OPTIONS" title="AUTORCC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC_OPTIONS</span></code></a> target property may be populated to set options
+to pass to <code class="docutils literal notranslate"><span class="pre">rcc</span></code>.  The <span class="target" id="index-0-variable:CMAKE_AUTORCC_OPTIONS"></span><a class="reference internal" href="../variable/CMAKE_AUTORCC_OPTIONS.html#variable:CMAKE_AUTORCC_OPTIONS" title="CMAKE_AUTORCC_OPTIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTORCC_OPTIONS</span></code></a> variable may be
+populated to pre-set the options for all following targets.  The
+<span class="target" id="index-0-prop_sf:AUTORCC_OPTIONS"></span><a class="reference internal" href="../prop_sf/AUTORCC_OPTIONS.html#prop_sf:AUTORCC_OPTIONS" title="AUTORCC_OPTIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">AUTORCC_OPTIONS</span></code></a> source file property may be set on the
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.qrc</span></code> file to set particular options for the file.  This
+overrides options from the <span class="target" id="index-1-prop_tgt:AUTORCC_OPTIONS"></span><a class="reference internal" href="../prop_tgt/AUTORCC_OPTIONS.html#prop_tgt:AUTORCC_OPTIONS" title="AUTORCC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC_OPTIONS</span></code></a> target property.</p>
+<p>Source files can be excluded from <span class="target" id="index-2-prop_tgt:AUTORCC"></span><a class="reference internal" href="../prop_tgt/AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a> processing by
+enabling <span class="target" id="index-0-prop_sf:SKIP_AUTORCC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTORCC.html#prop_sf:SKIP_AUTORCC" title="SKIP_AUTORCC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTORCC</span></code></a> or the broader <span class="target" id="index-2-prop_sf:SKIP_AUTOGEN"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOGEN.html#prop_sf:SKIP_AUTOGEN" title="SKIP_AUTOGEN"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOGEN</span></code></a>.</p>
+</div>
+</div>
+<div class="section" id="the-origin-autogen-target">
+<h2><a class="toc-backref" href="#id7">The <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> target</a><a class="headerlink" href="#the-origin-autogen-target" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">moc</span></code> and <code class="docutils literal notranslate"><span class="pre">uic</span></code> tools are executed as part of a synthesized
+<code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">custom</span> <span class="pre">target</span></code></a> generated by
+CMake.  By default that <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> target inherits the dependencies
+of the <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;</span></code> target (see <span class="target" id="index-0-prop_tgt:AUTOGEN_ORIGIN_DEPENDS"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_ORIGIN_DEPENDS.html#prop_tgt:AUTOGEN_ORIGIN_DEPENDS" title="AUTOGEN_ORIGIN_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_ORIGIN_DEPENDS</span></code></a>).
+Target dependencies may be added to the <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> target by adding
+them to the <span class="target" id="index-0-prop_tgt:AUTOGEN_TARGET_DEPENDS"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_TARGET_DEPENDS.html#prop_tgt:AUTOGEN_TARGET_DEPENDS" title="AUTOGEN_TARGET_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_TARGET_DEPENDS</span></code></a> target property.</p>
+</div>
+<div class="section" id="visual-studio-generators">
+<h2><a class="toc-backref" href="#id8">Visual Studio Generators</a><a class="headerlink" href="#visual-studio-generators" title="Permalink to this headline">¶</a></h2>
+<p>When using the <span class="target" id="index-0-manual:cmake-generators(7)"></span><a class="reference internal" href="cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">generators</span></code></a>, CMake
+generates a <code class="docutils literal notranslate"><span class="pre">PRE_BUILD</span></code> <span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">custom</span> <span class="pre">command</span></code></a>
+instead of the <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> <span class="target" id="index-1-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">custom</span> <span class="pre">target</span></code></a>
+(for <span class="target" id="index-3-prop_tgt:AUTOMOC"></span><a class="reference internal" href="../prop_tgt/AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> and <span class="target" id="index-4-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a>).
+This isn’t always possible though and
+an <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> <span class="target" id="index-2-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">custom</span> <span class="pre">target</span></code></a> is used,
+when either</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;</span></code> target depends on <span class="target" id="index-0-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a> files which aren’t
+excluded from <span class="target" id="index-4-prop_tgt:AUTOMOC"></span><a class="reference internal" href="../prop_tgt/AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> and <span class="target" id="index-5-prop_tgt:AUTOUIC"></span><a class="reference internal" href="../prop_tgt/AUTOUIC.html#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> by
+<span class="target" id="index-1-prop_sf:SKIP_AUTOMOC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOMOC.html#prop_sf:SKIP_AUTOMOC" title="SKIP_AUTOMOC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOMOC</span></code></a>, <span class="target" id="index-1-prop_sf:SKIP_AUTOUIC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOUIC.html#prop_sf:SKIP_AUTOUIC" title="SKIP_AUTOUIC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOUIC</span></code></a>, <span class="target" id="index-3-prop_sf:SKIP_AUTOGEN"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOGEN.html#prop_sf:SKIP_AUTOGEN" title="SKIP_AUTOGEN"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOGEN</span></code></a>
+or <span class="target" id="index-0-policy:CMP0071"></span><a class="reference internal" href="../policy/CMP0071.html#policy:CMP0071" title="CMP0071"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0071</span></code></a></p></li>
+<li><p><span class="target" id="index-1-prop_tgt:AUTOGEN_TARGET_DEPENDS"></span><a class="reference internal" href="../prop_tgt/AUTOGEN_TARGET_DEPENDS.html#prop_tgt:AUTOGEN_TARGET_DEPENDS" title="AUTOGEN_TARGET_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_TARGET_DEPENDS</span></code></a> lists a source file</p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_GLOBAL_AUTOGEN_TARGET"></span><a class="reference internal" href="../variable/CMAKE_GLOBAL_AUTOGEN_TARGET.html#variable:CMAKE_GLOBAL_AUTOGEN_TARGET" title="CMAKE_GLOBAL_AUTOGEN_TARGET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GLOBAL_AUTOGEN_TARGET</span></code></a> is enabled</p></li>
+</ul>
+</div>
+<div class="section" id="qtmain-lib-on-windows">
+<h2><a class="toc-backref" href="#id9">qtmain.lib on Windows</a><a class="headerlink" href="#qtmain-lib-on-windows" title="Permalink to this headline">¶</a></h2>
+<p>The Qt 4 and 5 <span class="target" id="index-1-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets for the QtGui libraries specify
+that the qtmain.lib static library shipped with Qt will be linked by all
+dependent executables which have the <span class="target" id="index-0-prop_tgt:WIN32_EXECUTABLE"></span><a class="reference internal" href="../prop_tgt/WIN32_EXECUTABLE.html#prop_tgt:WIN32_EXECUTABLE" title="WIN32_EXECUTABLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">WIN32_EXECUTABLE</span></code></a> enabled.</p>
+<p>To disable this behavior, enable the <code class="docutils literal notranslate"><span class="pre">Qt5_NO_LINK_QTMAIN</span></code> target property for
+Qt 5 based targets or <code class="docutils literal notranslate"><span class="pre">QT4_NO_LINK_QTMAIN</span></code> target property for Qt 4 based
+targets.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">myexe</span><span class="w"> </span><span class="no">WIN32</span><span class="w"> </span><span class="nb">main.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myexe</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtGui</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">myexe_no_qtmain</span><span class="w"> </span><span class="no">WIN32</span><span class="w"> </span><span class="nb">main_no_qtmain.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">main_no_qtmain</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">QT4_NO_LINK_QTMAIN</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">main_no_qtmain</span><span class="w"> </span><span class="nb">Qt4</span><span class="o">::</span><span class="nb">QtGui</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-qt(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#qt-build-tools">Qt Build Tools</a><ul>
+<li><a class="reference internal" href="#automoc">AUTOMOC</a></li>
+<li><a class="reference internal" href="#autouic">AUTOUIC</a></li>
+<li><a class="reference internal" href="#autorcc">AUTORCC</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-origin-autogen-target">The <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> target</a></li>
+<li><a class="reference internal" href="#visual-studio-generators">Visual Studio Generators</a></li>
+<li><a class="reference internal" href="#qtmain-lib-on-windows">qtmain.lib on Windows</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../prop_sf/COMPILE_DEFINITIONS_CONFIG.html"
+                        title="previous chapter">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-server.7.html"
+                        title="next chapter">cmake-server(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-qt.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-server.7.html" title="cmake-server(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../prop_sf/COMPILE_DEFINITIONS_CONFIG.html" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-qt(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

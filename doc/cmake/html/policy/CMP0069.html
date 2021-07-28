@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0069 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0068" href="CMP0068.html" />
+    <link rel="prev" title="CMP0070" href="CMP0070.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0068.html" title="CMP0068"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0070.html" title="CMP0070"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0069</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0069">
+<span id="policy:CMP0069"></span><h1>CMP0069<a class="headerlink" href="#cmp0069" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.9.</span></p>
+</div>
+<p><span class="target" id="index-0-prop_tgt:INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../prop_tgt/INTERPROCEDURAL_OPTIMIZATION.html#prop_tgt:INTERPROCEDURAL_OPTIMIZATION" title="INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERPROCEDURAL_OPTIMIZATION</span></code></a> is enforced when enabled.</p>
+<p>CMake 3.9 and newer prefer to add IPO flags whenever the
+<span class="target" id="index-1-prop_tgt:INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../prop_tgt/INTERPROCEDURAL_OPTIMIZATION.html#prop_tgt:INTERPROCEDURAL_OPTIMIZATION" title="INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERPROCEDURAL_OPTIMIZATION</span></code></a> target property is enabled and
+produce an error if flags are not known to CMake for the current compiler.
+Since a given compiler may not support IPO flags in all environments in which
+it is used, it is now the project’s responsibility to use the
+<span class="target" id="index-0-module:CheckIPOSupported"></span><a class="reference internal" href="../module/CheckIPOSupported.html#module:CheckIPOSupported" title="CheckIPOSupported"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckIPOSupported</span></code></a> module to check for support before enabling the
+<span class="target" id="index-2-prop_tgt:INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../prop_tgt/INTERPROCEDURAL_OPTIMIZATION.html#prop_tgt:INTERPROCEDURAL_OPTIMIZATION" title="INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERPROCEDURAL_OPTIMIZATION</span></code></a> target property.  This approach
+allows a project to conditionally activate IPO when supported.  It also
+allows an end user to set the <span class="target" id="index-0-variable:CMAKE_INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../variable/CMAKE_INTERPROCEDURAL_OPTIMIZATION.html#variable:CMAKE_INTERPROCEDURAL_OPTIMIZATION" title="CMAKE_INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INTERPROCEDURAL_OPTIMIZATION</span></code></a>
+variable in an environment known to support IPO even if the project does
+not enable the property.</p>
+<p>Since CMake 3.8 and lower only honored <span class="target" id="index-3-prop_tgt:INTERPROCEDURAL_OPTIMIZATION"></span><a class="reference internal" href="../prop_tgt/INTERPROCEDURAL_OPTIMIZATION.html#prop_tgt:INTERPROCEDURAL_OPTIMIZATION" title="INTERPROCEDURAL_OPTIMIZATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERPROCEDURAL_OPTIMIZATION</span></code></a>
+for the Intel compiler on Linux, some projects may unconditionally enable the
+target property.  Policy <code class="docutils literal notranslate"><span class="pre">CMP0069</span></code> provides compatibility with such projects.</p>
+<p>This policy takes effect whenever the IPO property is enabled.  The <code class="docutils literal notranslate"><span class="pre">OLD</span></code>
+behavior for this policy is to add IPO flags only for Intel compiler on Linux.
+The <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior for this policy is to add IPO flags for the current
+compiler or produce an error if CMake does not know the flags.</p>
+<p>This policy was introduced in CMake version 3.9.  CMake version
+3.19.6 warns when the policy is not set and uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.
+Use the <span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="../command/cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command to set it to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> or <code class="docutils literal notranslate"><span class="pre">NEW</span></code>
+explicitly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Behave like CMake 3.8 and do not apply any IPO flags except for Intel compiler
+on Linux:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.8</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use the <span class="target" id="index-1-module:CheckIPOSupported"></span><a class="reference internal" href="../module/CheckIPOSupported.html#module:CheckIPOSupported" title="CheckIPOSupported"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckIPOSupported</span></code></a> module to detect whether IPO is
+supported by the current compiler, environment, and CMake version.
+Produce a fatal error if support is not available:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.9</span><span class="nf">)</span><span class="w"> </span><span class="c"># CMP0069 NEW</span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">include(</span><span class="nb">CheckIPOSupported</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">check_ipo_supported()</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Apply IPO flags only if compiler supports it:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.9</span><span class="nf">)</span><span class="w"> </span><span class="c"># CMP0069 NEW</span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">include(</span><span class="nb">CheckIPOSupported</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">check_ipo_supported(</span><span class="no">RESULT</span><span class="w"> </span><span class="nb">result</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="nb">result</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Apply IPO flags without any checks.  This may lead to build errors if IPO
+is not supported by the compiler in the current environment.  Produce an
+error if CMake does not know IPO flags for the current compiler:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">3.9</span><span class="nf">)</span><span class="w"> </span><span class="c"># CMP0069 NEW</span>
+<span class="nf">project(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># ...</span>
+
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERPROCEDURAL_OPTIMIZATION</span><span class="w"> </span><span class="no">TRUE</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMP0069</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0070.html"
+                        title="previous chapter">CMP0070</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0068.html"
+                        title="next chapter">CMP0068</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0069.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0068.html" title="CMP0068"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0070.html" title="CMP0070"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0069</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

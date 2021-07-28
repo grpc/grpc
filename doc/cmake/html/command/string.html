@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>string &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="unset" href="unset.html" />
+    <link rel="prev" title="site_name" href="site_name.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="unset.html" title="unset"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="site_name.html" title="site_name"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">string</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="string">
+<span id="command:string"></span><h1>string<a class="headerlink" href="#string" title="Permalink to this headline">¶</a></h1>
+<p>String operations.</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<pre class="literal-block"><a class="reference internal" href="#search-and-replace">Search and Replace</a>
+  string(<a class="reference internal" href="#find">FIND</a> &lt;string&gt; &lt;substring&gt; &lt;out-var&gt; [...])
+  string(<a class="reference internal" href="#replace">REPLACE</a> &lt;match-string&gt; &lt;replace-string&gt; &lt;out-var&gt; &lt;input&gt;...)
+  string(<a class="reference internal" href="#regex-match">REGEX MATCH</a> &lt;match-regex&gt; &lt;out-var&gt; &lt;input&gt;...)
+  string(<a class="reference internal" href="#regex-matchall">REGEX MATCHALL</a> &lt;match-regex&gt; &lt;out-var&gt; &lt;input&gt;...)
+  string(<a class="reference internal" href="#regex-replace">REGEX REPLACE</a> &lt;match-regex&gt; &lt;replace-expr&gt; &lt;out-var&gt; &lt;input&gt;...)
+
+<a class="reference internal" href="#manipulation">Manipulation</a>
+  string(<a class="reference internal" href="#append">APPEND</a> &lt;string-var&gt; [&lt;input&gt;...])
+  string(<a class="reference internal" href="#prepend">PREPEND</a> &lt;string-var&gt; [&lt;input&gt;...])
+  string(<a class="reference internal" href="#concat">CONCAT</a> &lt;out-var&gt; [&lt;input&gt;...])
+  string(<a class="reference internal" href="#join">JOIN</a> &lt;glue&gt; &lt;out-var&gt; [&lt;input&gt;...])
+  string(<a class="reference internal" href="#tolower">TOLOWER</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#toupper">TOUPPER</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#length">LENGTH</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#substring">SUBSTRING</a> &lt;string&gt; &lt;begin&gt; &lt;length&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#strip">STRIP</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#genex-strip">GENEX_STRIP</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#repeat">REPEAT</a> &lt;string&gt; &lt;count&gt; &lt;out-var&gt;)
+
+<a class="reference internal" href="#comparison">Comparison</a>
+  string(<a class="reference internal" href="#compare">COMPARE</a> &lt;op&gt; &lt;string1&gt; &lt;string2&gt; &lt;out-var&gt;)
+
+<a class="reference internal" href="#hashing">Hashing</a>
+  string(<a class="reference internal" href="#hash">&lt;HASH&gt;</a> &lt;out-var&gt; &lt;input&gt;)
+
+<a class="reference internal" href="#generation">Generation</a>
+  string(<a class="reference internal" href="#ascii">ASCII</a> &lt;number&gt;... &lt;out-var&gt;)
+  string(<a class="reference internal" href="#hex">HEX</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#configure">CONFIGURE</a> &lt;string&gt; &lt;out-var&gt; [...])
+  string(<a class="reference internal" href="#make-c-identifier">MAKE_C_IDENTIFIER</a> &lt;string&gt; &lt;out-var&gt;)
+  string(<a class="reference internal" href="#random">RANDOM</a> [&lt;option&gt;...] &lt;out-var&gt;)
+  string(<a class="reference internal" href="#timestamp">TIMESTAMP</a> &lt;out-var&gt; [&lt;format string&gt;] [UTC])
+  string(<a class="reference internal" href="#uuid">UUID</a> &lt;out-var&gt; ...)
+
+<a class="reference internal" href="#json">JSON</a>
+  string(JSON &lt;out-var&gt; [ERROR_VARIABLE &lt;error-var&gt;]
+         {<a class="reference internal" href="#get">GET</a> | <a class="reference internal" href="#type">TYPE</a> | <a class="reference internal" href="#jsonlength"><span class="std std-ref">LENGTH</span></a> | <a class="reference internal" href="#remove">REMOVE</a>}
+         &lt;json-string&gt; &lt;member|index&gt; [&lt;member|index&gt; ...])
+  string(JSON &lt;out-var&gt; [ERROR_VARIABLE &lt;error-var&gt;]
+         <a class="reference internal" href="#member">MEMBER</a> &lt;json-string&gt;
+         [&lt;member|index&gt; ...] &lt;index&gt;)
+  string(JSON &lt;out-var&gt; [ERROR_VARIABLE &lt;error-var&gt;]
+         <a class="reference internal" href="#set">SET</a> &lt;json-string&gt;
+         &lt;member|index&gt; [&lt;member|index&gt; ...] &lt;value&gt;)
+  string(JSON &lt;out-var&gt; [ERROR_VARIABLE &lt;error-var&gt;]
+         <a class="reference internal" href="#equal">EQUAL</a> &lt;json-string1&gt; &lt;json-string2&gt;)</pre>
+</div>
+<div class="section" id="search-and-replace">
+<h2>Search and Replace<a class="headerlink" href="#search-and-replace" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="search-and-replace-with-plain-strings">
+<h3>Search and Replace With Plain Strings<a class="headerlink" href="#search-and-replace-with-plain-strings" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-cmake notranslate" id="find"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">FIND</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;substring&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">REVERSE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Return the position where the given <code class="docutils literal notranslate"><span class="pre">&lt;substring&gt;</span></code> was found in
+the supplied <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code>.  If the <code class="docutils literal notranslate"><span class="pre">REVERSE</span></code> flag was used, the command will
+search for the position of the last occurrence of the specified
+<code class="docutils literal notranslate"><span class="pre">&lt;substring&gt;</span></code>.  If the <code class="docutils literal notranslate"><span class="pre">&lt;substring&gt;</span></code> is not found, a position of -1 is
+returned.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">string(FIND)</span></code> subcommand treats all strings as ASCII-only characters.
+The index stored in <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> will also be counted in bytes,
+so strings containing multi-byte characters may lead to unexpected results.</p>
+<div class="highlight-cmake notranslate" id="replace"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">REPLACE</span><span class="w"> </span><span class="nv">&lt;match_string&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;replace_string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;input&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Replace all occurrences of <code class="docutils literal notranslate"><span class="pre">&lt;match_string&gt;</span></code> in the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code>
+with <code class="docutils literal notranslate"><span class="pre">&lt;replace_string&gt;</span></code> and store the result in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+</div>
+<div class="section" id="search-and-replace-with-regular-expressions">
+<h3>Search and Replace With Regular Expressions<a class="headerlink" href="#search-and-replace-with-regular-expressions" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-cmake notranslate" id="regex-match"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">REGEX</span><span class="w"> </span><span class="no">MATCH</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="nv">&lt;input&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Match the <code class="docutils literal notranslate"><span class="pre">&lt;regular_expression&gt;</span></code> once and store the match in the
+<code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.
+All <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments are concatenated before matching.
+Regular expressions are specified in the subsection just below.</p>
+<div class="highlight-cmake notranslate" id="regex-matchall"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">REGEX</span><span class="w"> </span><span class="no">MATCHALL</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="nv">&lt;input&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Match the <code class="docutils literal notranslate"><span class="pre">&lt;regular_expression&gt;</span></code> as many times as possible and store the
+matches in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> as a list.
+All <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments are concatenated before matching.</p>
+<div class="highlight-cmake notranslate" id="regex-replace"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">REGEX</span><span class="w"> </span><span class="no">REPLACE</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;replacement_expression&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="nv">&lt;input&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Match the <code class="docutils literal notranslate"><span class="pre">&lt;regular_expression&gt;</span></code> as many times as possible and substitute
+the <code class="docutils literal notranslate"><span class="pre">&lt;replacement_expression&gt;</span></code> for the match in the output.
+All <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments are concatenated before matching.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;replacement_expression&gt;</span></code> may refer to parenthesis-delimited
+subexpressions of the match using <code class="docutils literal notranslate"><span class="pre">\1</span></code>, <code class="docutils literal notranslate"><span class="pre">\2</span></code>, …, <code class="docutils literal notranslate"><span class="pre">\9</span></code>.  Note that
+two backslashes (<code class="docutils literal notranslate"><span class="pre">\\1</span></code>) are required in CMake code to get a backslash
+through argument parsing.</p>
+</div>
+<div class="section" id="regex-specification">
+<span id="id1"></span><h3>Regex Specification<a class="headerlink" href="#regex-specification" title="Permalink to this headline">¶</a></h3>
+<p>The following characters have special meaning in regular expressions:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">^</span></code></dt><dd><p>Matches at beginning of input</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$</span></code></dt><dd><p>Matches at end of input</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.</span></code></dt><dd><p>Matches any single character</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">\&lt;char&gt;</span></code></dt><dd><p>Matches the single character specified by <code class="docutils literal notranslate"><span class="pre">&lt;char&gt;</span></code>.  Use this to
+match special regex characters, e.g. <code class="docutils literal notranslate"><span class="pre">\.</span></code> for a literal <code class="docutils literal notranslate"><span class="pre">.</span></code>
+or <code class="docutils literal notranslate"><span class="pre">\\</span></code> for a literal backslash <code class="docutils literal notranslate"><span class="pre">\</span></code>.  Escaping a non-special
+character is unnecessary but allowed, e.g. <code class="docutils literal notranslate"><span class="pre">\a</span></code> matches <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">]</span></code></dt><dd><p>Matches any character(s) inside the brackets</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">[^</span> <span class="pre">]</span></code></dt><dd><p>Matches any character(s) not inside the brackets</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-</span></code></dt><dd><p>Inside brackets, specifies an inclusive range between
+characters on either side e.g. <code class="docutils literal notranslate"><span class="pre">[a-f]</span></code> is <code class="docutils literal notranslate"><span class="pre">[abcdef]</span></code>
+To match a literal <code class="docutils literal notranslate"><span class="pre">-</span></code> using brackets, make it the first
+or the last character e.g. <code class="docutils literal notranslate"><span class="pre">[+*/-]</span></code> matches basic
+mathematical operators.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">*</span></code></dt><dd><p>Matches preceding pattern zero or more times</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">+</span></code></dt><dd><p>Matches preceding pattern one or more times</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">?</span></code></dt><dd><p>Matches preceding pattern zero or once only</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">|</span></code></dt><dd><p>Matches a pattern on either side of the <code class="docutils literal notranslate"><span class="pre">|</span></code></p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">()</span></code></dt><dd><p>Saves a matched subexpression, which can be referenced
+in the <code class="docutils literal notranslate"><span class="pre">REGEX</span> <span class="pre">REPLACE</span></code> operation. Additionally it is saved
+by all regular expression-related commands, including
+e.g. <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if(MATCHES)</span></code></a>, in the variables
+<span class="target" id="index-0-variable:CMAKE_MATCH_&lt;n&gt;"></span><a class="reference internal" href="../variable/CMAKE_MATCH_n.html#variable:CMAKE_MATCH_&lt;n&gt;" title="CMAKE_MATCH_&lt;n&gt;"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MATCH_&lt;n&gt;</span></code></a> for <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code> 0..9.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">?</span></code> have higher precedence than concatenation.  <code class="docutils literal notranslate"><span class="pre">|</span></code>
+has lower precedence than concatenation.  This means that the regular
+expression <code class="docutils literal notranslate"><span class="pre">^ab+d$</span></code> matches <code class="docutils literal notranslate"><span class="pre">abbd</span></code> but not <code class="docutils literal notranslate"><span class="pre">ababd</span></code>, and the regular
+expression <code class="docutils literal notranslate"><span class="pre">^(ab|cd)$</span></code> matches <code class="docutils literal notranslate"><span class="pre">ab</span></code> but not <code class="docutils literal notranslate"><span class="pre">abd</span></code>.</p>
+<p>CMake language <a class="reference internal" href="../manual/cmake-language.7.html#escape-sequences"><span class="std std-ref">Escape Sequences</span></a> such as <code class="docutils literal notranslate"><span class="pre">\t</span></code>, <code class="docutils literal notranslate"><span class="pre">\r</span></code>, <code class="docutils literal notranslate"><span class="pre">\n</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">\\</span></code> may be used to construct literal tabs, carriage returns,
+newlines, and backslashes (respectively) to pass in a regex.  For example:</p>
+<ul class="simple">
+<li><p>The quoted argument <code class="docutils literal notranslate"><span class="pre">&quot;[</span> <span class="pre">\t\r\n]&quot;</span></code> specifies a regex that matches
+any single whitespace character.</p></li>
+<li><p>The quoted argument <code class="docutils literal notranslate"><span class="pre">&quot;[/\\]&quot;</span></code> specifies a regex that matches
+a single forward slash <code class="docutils literal notranslate"><span class="pre">/</span></code> or backslash <code class="docutils literal notranslate"><span class="pre">\</span></code>.</p></li>
+<li><p>The quoted argument <code class="docutils literal notranslate"><span class="pre">&quot;[A-Za-z0-9_]&quot;</span></code> specifies a regex that matches
+any single “word” character in the C locale.</p></li>
+<li><p>The quoted argument <code class="docutils literal notranslate"><span class="pre">&quot;\\(\\a\\+b\\)&quot;</span></code> specifies a regex that matches
+the exact string <code class="docutils literal notranslate"><span class="pre">(a+b)</span></code>.  Each <code class="docutils literal notranslate"><span class="pre">\\</span></code> is parsed in a quoted argument
+as just <code class="docutils literal notranslate"><span class="pre">\</span></code>, so the regex itself is actually <code class="docutils literal notranslate"><span class="pre">\(\a\+\b\)</span></code>.  This
+can alternatively be specified in a <a class="reference internal" href="../manual/cmake-language.7.html#bracket-argument"><span class="std std-ref">Bracket Argument</span></a> without
+having to escape the backslashes, e.g. <code class="docutils literal notranslate"><span class="pre">[[\(\a\+\b\)]]</span></code>.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="manipulation">
+<h2>Manipulation<a class="headerlink" href="#manipulation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="append"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">APPEND</span><span class="w"> </span><span class="nv">&lt;string_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Append all the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments to the string.</p>
+<div class="highlight-cmake notranslate" id="prepend"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">PREPEND</span><span class="w"> </span><span class="nv">&lt;string_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Prepend all the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments to the string.</p>
+<div class="highlight-cmake notranslate" id="concat"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">CONCAT</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Concatenate all the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments together and store
+the result in the named <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate" id="join"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JOIN</span><span class="w"> </span><span class="nv">&lt;glue&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;input&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Join all the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> arguments together using the <code class="docutils literal notranslate"><span class="pre">&lt;glue&gt;</span></code>
+string and store the result in the named <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+<p>To join a list’s elements, prefer to use the <code class="docutils literal notranslate"><span class="pre">JOIN</span></code> operator
+from the <span class="target" id="index-0-command:list"></span><a class="reference internal" href="list.html#command:list" title="list"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">list()</span></code></a> command.  This allows for the elements to have
+special characters like <code class="docutils literal notranslate"><span class="pre">;</span></code> in them.</p>
+<div class="highlight-cmake notranslate" id="tolower"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">TOLOWER</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convert <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> to lower characters.</p>
+<div class="highlight-cmake notranslate" id="toupper"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">TOUPPER</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convert <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> to upper characters.</p>
+<div class="highlight-cmake notranslate" id="length"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">LENGTH</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Store in an <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> a given string’s length in bytes.
+Note that this means if <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> contains multi-byte characters, the
+result stored in <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> will <em>not</em> be the number of characters.</p>
+<div class="highlight-cmake notranslate" id="substring"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">SUBSTRING</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;begin&gt;</span><span class="w"> </span><span class="nv">&lt;length&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Store in an <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> a substring of a given <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code>.  If
+<code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> is <code class="docutils literal notranslate"><span class="pre">-1</span></code> the remainder of the string starting at <code class="docutils literal notranslate"><span class="pre">&lt;begin&gt;</span></code>
+will be returned.  If <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> is shorter than <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> then the
+end of the string is used instead.</p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">&lt;begin&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> are counted in bytes, so care must
+be exercised if <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> could contain multi-byte characters.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CMake 3.1 and below reported an error if <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> pointed past
+the end of <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code>.</p>
+</div>
+<div class="highlight-cmake notranslate" id="strip"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">STRIP</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Store in an <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code> a substring of a given <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> with
+leading and trailing spaces removed.</p>
+<div class="highlight-cmake notranslate" id="genex-strip"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">GENEX_STRIP</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Strip any <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>
+from the input <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> and store the result in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate" id="repeat"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">REPEAT</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;count&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Produce the output string as the input <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> repeated <code class="docutils literal notranslate"><span class="pre">&lt;count&gt;</span></code> times.</p>
+</div>
+<div class="section" id="comparison">
+<h2>Comparison<a class="headerlink" href="#comparison" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="compare"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">LESS</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">GREATER</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">EQUAL</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">NOTEQUAL</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">LESS_EQUAL</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">string(</span><span class="no">COMPARE</span><span class="w"> </span><span class="no">GREATER_EQUAL</span><span class="w"> </span><span class="nv">&lt;string1&gt;</span><span class="w"> </span><span class="nv">&lt;string2&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compare the strings and store true or false in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+</div>
+<div class="section" id="hashing">
+<span id="supported-hash-algorithms"></span><h2>Hashing<a class="headerlink" href="#hashing" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="hash"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="nv">&lt;HASH&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="nv">&lt;input&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compute a cryptographic hash of the <code class="docutils literal notranslate"><span class="pre">&lt;input&gt;</span></code> string.
+The supported <code class="docutils literal notranslate"><span class="pre">&lt;HASH&gt;</span></code> algorithm names are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">MD5</span></code></dt><dd><p>Message-Digest Algorithm 5, RFC 1321.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA1</span></code></dt><dd><p>US Secure Hash Algorithm 1, RFC 3174.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA224</span></code></dt><dd><p>US Secure Hash Algorithms, RFC 4634.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA256</span></code></dt><dd><p>US Secure Hash Algorithms, RFC 4634.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA384</span></code></dt><dd><p>US Secure Hash Algorithms, RFC 4634.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA512</span></code></dt><dd><p>US Secure Hash Algorithms, RFC 4634.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA3_224</span></code></dt><dd><p>Keccak SHA-3.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA3_256</span></code></dt><dd><p>Keccak SHA-3.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA3_384</span></code></dt><dd><p>Keccak SHA-3.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SHA3_512</span></code></dt><dd><p>Keccak SHA-3.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="generation">
+<h2>Generation<a class="headerlink" href="#generation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="ascii"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">ASCII</span><span class="w"> </span><span class="nv">&lt;number&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;number&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convert all numbers into corresponding ASCII characters.</p>
+<div class="highlight-cmake notranslate" id="hex"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">HEX</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convert each byte in the input <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> to its hexadecimal representation
+and store the concatenated hex digits in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>. Letters in
+the output (<code class="docutils literal notranslate"><span class="pre">a</span></code> through <code class="docutils literal notranslate"><span class="pre">f</span></code>) are in lowercase.</p>
+<div class="highlight-cmake notranslate" id="configure"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">CONFIGURE</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="p">[</span><span class="no">@ONLY</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">ESCAPE_QUOTES</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Transform a <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> like <span class="target" id="index-0-command:configure_file"></span><a class="reference internal" href="configure_file.html#command:configure_file" title="configure_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">configure_file()</span></code></a> transforms a file.</p>
+<div class="highlight-cmake notranslate" id="make-c-identifier"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">MAKE_C_IDENTIFIER</span><span class="w"> </span><span class="nv">&lt;string&gt;</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convert each non-alphanumeric character in the input <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> to an
+underscore and store the result in the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.  If the first
+character of the <code class="docutils literal notranslate"><span class="pre">&lt;string&gt;</span></code> is a digit, an underscore will also be prepended
+to the result.</p>
+<div class="highlight-cmake notranslate" id="random"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">RANDOM</span><span class="w"> </span><span class="p">[</span><span class="no">LENGTH</span><span class="w"> </span><span class="nv">&lt;length&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">ALPHABET</span><span class="w"> </span><span class="nv">&lt;alphabet&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="p">[</span><span class="no">RANDOM_SEED</span><span class="w"> </span><span class="nv">&lt;seed&gt;</span><span class="p">]</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Return a random string of given <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> consisting of
+characters from the given <code class="docutils literal notranslate"><span class="pre">&lt;alphabet&gt;</span></code>.  Default length is 5 characters
+and default alphabet is all numbers and upper and lower case letters.
+If an integer <code class="docutils literal notranslate"><span class="pre">RANDOM_SEED</span></code> is given, its value will be used to seed the
+random number generator.</p>
+<div class="highlight-cmake notranslate" id="timestamp"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">TIMESTAMP</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;format_string&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">UTC</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Write a string representation of the current date
+and/or time to the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>.</p>
+<p>If the command is unable to obtain a timestamp, the <code class="docutils literal notranslate"><span class="pre">&lt;output_variable&gt;</span></code>
+will be set to the empty string <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
+<p>The optional <code class="docutils literal notranslate"><span class="pre">UTC</span></code> flag requests the current date/time representation to
+be in Coordinated Universal Time (UTC) rather than local time.</p>
+<p>The optional <code class="docutils literal notranslate"><span class="pre">&lt;format_string&gt;</span></code> may contain the following format
+specifiers:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>%%        A literal percent sign (%).
+%d        The day of the current month (01-31).
+%H        The hour on a 24-hour clock (00-23).
+%I        The hour on a 12-hour clock (01-12).
+%j        The day of the current year (001-366).
+%m        The month of the current year (01-12).
+%b        Abbreviated month name (e.g. Oct).
+%B        Full month name (e.g. October).
+%M        The minute of the current hour (00-59).
+%s        Seconds since midnight (UTC) 1-Jan-1970 (UNIX time).
+%S        The second of the current minute.
+          60 represents a leap second. (00-60)
+%U        The week number of the current year (00-53).
+%w        The day of the current week. 0 is Sunday. (0-6)
+%a        Abbreviated weekday name (e.g. Fri).
+%A        Full weekday name (e.g. Friday).
+%y        The last two digits of the current year (00-99)
+%Y        The current year.
+</pre></div>
+</div>
+<p>Unknown format specifiers will be ignored and copied to the output
+as-is.</p>
+<p>If no explicit <code class="docutils literal notranslate"><span class="pre">&lt;format_string&gt;</span></code> is given, it will default to:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>%Y-%m-%dT%H:%M:%S    for local time.
+%Y-%m-%dT%H:%M:%SZ   for UTC.
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">SOURCE_DATE_EPOCH</span></code> environment variable is set,
+its value will be used instead of the current time.
+See <a class="reference external" href="https://reproducible-builds.org/specs/source-date-epoch/">https://reproducible-builds.org/specs/source-date-epoch/</a> for details.</p>
+</div>
+<div class="highlight-cmake notranslate" id="uuid"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">UUID</span><span class="w"> </span><span class="nv">&lt;output_variable&gt;</span><span class="w"> </span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nv">&lt;namespace&gt;</span><span class="w"> </span><span class="no">NAME</span><span class="w"> </span><span class="nv">&lt;name&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="no">TYPE</span><span class="w"> </span><span class="o">&lt;</span><span class="no">MD5</span><span class="p">|</span><span class="no">SHA1</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">UPPER</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Create a universally unique identifier (aka GUID) as per RFC4122
+based on the hash of the combined values of <code class="docutils literal notranslate"><span class="pre">&lt;namespace&gt;</span></code>
+(which itself has to be a valid UUID) and <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>.
+The hash algorithm can be either <code class="docutils literal notranslate"><span class="pre">MD5</span></code> (Version 3 UUID) or
+<code class="docutils literal notranslate"><span class="pre">SHA1</span></code> (Version 5 UUID).
+A UUID has the format <code class="docutils literal notranslate"><span class="pre">xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</span></code>
+where each <code class="docutils literal notranslate"><span class="pre">x</span></code> represents a lower case hexadecimal character.
+Where required, an uppercase representation can be requested
+with the optional <code class="docutils literal notranslate"><span class="pre">UPPER</span></code> flag.</p>
+</div>
+<div class="section" id="json">
+<span id="id2"></span><h2>JSON<a class="headerlink" href="#json" title="Permalink to this headline">¶</a></h2>
+<p>Functionality for querying a JSON string.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In each of the following JSON-related subcommands, if the optional
+<code class="docutils literal notranslate"><span class="pre">ERROR_VARIABLE</span></code> argument is given, errors will be reported in
+<code class="docutils literal notranslate"><span class="pre">&lt;error-variable&gt;</span></code> and the <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code> will be set to
+<code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;-[&lt;member|index&gt;...]-NOTFOUND</span></code> with the path elements
+up to the point where the error occurred, or just <code class="docutils literal notranslate"><span class="pre">NOTFOUND</span></code> if there
+is no relevant path.  If an error occurs but the <code class="docutils literal notranslate"><span class="pre">ERROR_VARIABLE</span></code>
+option is not present, a fatal error message is generated.  If no error
+occurs, the <code class="docutils literal notranslate"><span class="pre">&lt;error-variable&gt;</span></code> will be set to <code class="docutils literal notranslate"><span class="pre">NOTFOUND</span></code>.</p>
+</div>
+<div class="highlight-cmake notranslate" id="get"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">GET</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Get an element from <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location given
+by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments.
+Array and object elements will be returned as a JSON string.
+Boolean elements will be returned as <code class="docutils literal notranslate"><span class="pre">ON</span></code> or <code class="docutils literal notranslate"><span class="pre">OFF</span></code>.
+Null elements will be returned as an empty string.
+Number and string types will be returned as strings.</p>
+<div class="highlight-cmake notranslate" id="type"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">TYPE</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Get the type of an element in <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location
+given by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments. The <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code>
+will be set to one of <code class="docutils literal notranslate"><span class="pre">NULL</span></code>, <code class="docutils literal notranslate"><span class="pre">NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">STRING</span></code>, <code class="docutils literal notranslate"><span class="pre">BOOLEAN</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARRAY</span></code>, or <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code>.</p>
+<div class="highlight-cmake notranslate" id="member"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">MEMBER</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"></span>
+<span class="w">       </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="nv">&lt;index&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Get the name of the <code class="docutils literal notranslate"><span class="pre">&lt;index&gt;</span></code>-th member in <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location
+given by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments.
+Requires an element of object type.</p>
+<div class="highlight-cmake notranslate" id="jsonlength"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">LENGTH</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Get the length of an element in <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location
+given by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments.
+Requires an element of array or object type.</p>
+<div class="highlight-cmake notranslate" id="remove"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">REMOVE</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Remove an element from <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location
+given by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments. The JSON string
+without the removed element will be stored in <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate" id="set"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">SET</span><span class="w"> </span><span class="nv">&lt;json-string&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">[</span><span class="o">&lt;</span><span class="nb">member</span><span class="p">|</span><span class="nb">index</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="nv">&lt;value&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Set an element in <code class="docutils literal notranslate"><span class="pre">&lt;json-string&gt;</span></code> at the location
+given by the list of <code class="docutils literal notranslate"><span class="pre">&lt;member|index&gt;</span></code> arguments to <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code>.
+The contents of <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code> should be valid JSON.</p>
+<div class="highlight-cmake notranslate" id="equal"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">JSON</span><span class="w"> </span><span class="nv">&lt;out-var&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;error-var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">       </span><span class="no">EQUAL</span><span class="w"> </span><span class="nv">&lt;json-string1&gt;</span><span class="w"> </span><span class="nv">&lt;json-string2&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Compare the two JSON objects given by <code class="docutils literal notranslate"><span class="pre">&lt;json-string1&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;json-string2&gt;</span></code>
+for equality.  The contents of <code class="docutils literal notranslate"><span class="pre">&lt;json-string1&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;json-string2&gt;</span></code>
+should be valid JSON.  The <code class="docutils literal notranslate"><span class="pre">&lt;out-var&gt;</span></code> will be set to a true value if the
+JSON objects are considered equal, or a false value otherwise.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">string</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#search-and-replace">Search and Replace</a><ul>
+<li><a class="reference internal" href="#search-and-replace-with-plain-strings">Search and Replace With Plain Strings</a></li>
+<li><a class="reference internal" href="#search-and-replace-with-regular-expressions">Search and Replace With Regular Expressions</a></li>
+<li><a class="reference internal" href="#regex-specification">Regex Specification</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#manipulation">Manipulation</a></li>
+<li><a class="reference internal" href="#comparison">Comparison</a></li>
+<li><a class="reference internal" href="#hashing">Hashing</a></li>
+<li><a class="reference internal" href="#generation">Generation</a></li>
+<li><a class="reference internal" href="#json">JSON</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="site_name.html"
+                        title="previous chapter">site_name</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="unset.html"
+                        title="next chapter">unset</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/string.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="unset.html" title="unset"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="site_name.html" title="site_name"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">string</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

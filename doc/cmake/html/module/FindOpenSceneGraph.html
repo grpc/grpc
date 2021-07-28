@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindOpenSceneGraph &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindOpenSSL" href="FindOpenSSL.html" />
+    <link rel="prev" title="FindOpenMP" href="FindOpenMP.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindOpenSSL.html" title="FindOpenSSL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenMP.html" title="FindOpenMP"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenSceneGraph</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findopenscenegraph">
+<span id="module:FindOpenSceneGraph"></span><h1>FindOpenSceneGraph<a class="headerlink" href="#findopenscenegraph" title="Permalink to this headline">¶</a></h1>
+<p>Find OpenSceneGraph (3D graphics application programming interface)</p>
+<p>This module searches for the OpenSceneGraph core “osg” library as well
+as <span class="target" id="index-0-module:FindOpenThreads"></span><a class="reference internal" href="FindOpenThreads.html#module:FindOpenThreads" title="FindOpenThreads"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindOpenThreads</span></code></a>, and whatever additional <code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code>
+(nodekits) that you specify.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>See http://www.openscenegraph.org
+</pre></div>
+</div>
+<p>NOTE: To use this module effectively you must either require <code class="docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">&gt;=</span>
+<span class="pre">2.6.3</span></code> with  <span class="target" id="index-0-command:cmake_minimum_required"></span><a class="reference internal" href="../command/cmake_minimum_required.html#command:cmake_minimum_required" title="cmake_minimum_required"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_minimum_required(VERSION</span> <span class="pre">2.6.3)</span></code></a> or download
+and place <span class="target" id="index-1-module:FindOpenThreads"></span><a class="reference internal" href="FindOpenThreads.html#module:FindOpenThreads" title="FindOpenThreads"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindOpenThreads</span></code></a>, <span class="target" id="index-0-module:Findosg"></span><a class="reference internal" href="Findosg.html#module:Findosg" title="Findosg"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">Findosg</span></code></a> functions,
+<span class="target" id="index-1-module:Findosg"></span><a class="reference internal" href="Findosg.html#module:Findosg" title="Findosg"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">Findosg</span></code></a> and <code class="docutils literal notranslate"><span class="pre">Find&lt;etc&gt;.cmake</span></code> files into your
+<span class="target" id="index-0-variable:CMAKE_MODULE_PATH"></span><a class="reference internal" href="../variable/CMAKE_MODULE_PATH.html#variable:CMAKE_MODULE_PATH" title="CMAKE_MODULE_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MODULE_PATH</span></code></a>.</p>
+<hr class="docutils" />
+<p>This module accepts the following variables (note mixed case)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OpenSceneGraph_DEBUG - Enable debugging output
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OpenSceneGraph_MARK_AS_ADVANCED - Mark cache variables as advanced
+                                  automatically
+</pre></div>
+</div>
+<p>The following environment variables are also respected for finding the
+OSG and it’s various components.  <span class="target" id="index-0-variable:CMAKE_PREFIX_PATH"></span><a class="reference internal" href="../variable/CMAKE_PREFIX_PATH.html#variable:CMAKE_PREFIX_PATH" title="CMAKE_PREFIX_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code></a> can also be
+used for this (see <span class="target" id="index-0-command:find_library"></span><a class="reference internal" href="../command/find_library.html#command:find_library" title="find_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_library()</span></code></a> CMake documentation).</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;MODULE&gt;_DIR</span></code></dt><dd><p>(where <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> is of the form “OSGVOLUME” and there is
+a <span class="target" id="index-0-module:FindosgVolume"></span><a class="reference internal" href="FindosgVolume.html#module:FindosgVolume" title="FindosgVolume"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindosgVolume</span></code></a>.cmake` file)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OSG_DIR</span></code></dt><dd></dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OSGDIR</span></code></dt><dd></dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OSG_ROOT</span></code></dt><dd></dd>
+</dl>
+<p>[CMake 2.8.10]: The CMake variable <code class="docutils literal notranslate"><span class="pre">OSG_DIR</span></code> can now be used as well to
+influence detection, instead of needing to specify an environment
+variable.</p>
+<p>This module defines the following output variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OPENSCENEGRAPH_FOUND - Was the OSG and all of the specified components found?
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OPENSCENEGRAPH_VERSION - The version of the OSG which was found
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OPENSCENEGRAPH_INCLUDE_DIRS - Where to find the headers
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OPENSCENEGRAPH_LIBRARIES - The OSG libraries
+</pre></div>
+</div>
+<p>================================== Example Usage:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find_package(OpenSceneGraph 2.0.0 REQUIRED osgDB osgUtil)
+    # libOpenThreads &amp; libosg automatically searched
+include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>add_executable(foo foo.cc)
+target_link_libraries(foo ${OPENSCENEGRAPH_LIBRARIES})
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindOpenMP.html"
+                        title="previous chapter">FindOpenMP</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindOpenSSL.html"
+                        title="next chapter">FindOpenSSL</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindOpenSceneGraph.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindOpenSSL.html" title="FindOpenSSL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenMP.html" title="FindOpenMP"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenSceneGraph</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

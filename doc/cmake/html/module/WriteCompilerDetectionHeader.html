@@ -1,0 +1,430 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WriteCompilerDetectionHeader &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindALSA" href="FindALSA.html" />
+    <link rel="prev" title="UsewxWidgets" href="UsewxWidgets.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindALSA.html" title="FindALSA"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="UsewxWidgets.html" title="UsewxWidgets"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WriteCompilerDetectionHeader</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="writecompilerdetectionheader">
+<span id="module:WriteCompilerDetectionHeader"></span><h1>WriteCompilerDetectionHeader<a class="headerlink" href="#writecompilerdetectionheader" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.1.</span></p>
+</div>
+<p>This module provides the function <code class="docutils literal notranslate"><span class="pre">write_compiler_detection_header()</span></code>.</p>
+<p>This function can be used to generate a file suitable for preprocessor
+inclusion which contains macros to be used in source code:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>write_compiler_detection_header(
+          FILE &lt;file&gt;
+          PREFIX &lt;prefix&gt;
+          [OUTPUT_FILES_VAR &lt;output_files_var&gt; OUTPUT_DIR &lt;output_dir&gt;]
+          COMPILERS &lt;compiler&gt; [...]
+          FEATURES &lt;feature&gt; [...]
+          [BARE_FEATURES &lt;feature&gt; [...]]
+          [VERSION &lt;version&gt;]
+          [PROLOG &lt;prolog&gt;]
+          [EPILOG &lt;epilog&gt;]
+          [ALLOW_UNKNOWN_COMPILERS]
+          [ALLOW_UNKNOWN_COMPILER_VERSIONS]
+)
+</pre></div>
+</div>
+<p>This generates the file <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> with macros which all have the prefix
+<code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code>.</p>
+<p>By default, all content is written directly to the <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code>.  The
+<code class="docutils literal notranslate"><span class="pre">OUTPUT_FILES_VAR</span></code> may be specified to cause the compiler-specific
+content to be written to separate files.  The separate files are then
+available in the <code class="docutils literal notranslate"><span class="pre">&lt;output_files_var&gt;</span></code> and may be consumed by the caller
+for installation for example.  The <code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span></code> specifies a relative
+path from the main <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> to the compiler-specific files. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">write_compiler_detection_header(</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILE</span><span class="w"> </span><span class="nb">climbingstats_compiler_detection.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">PREFIX</span><span class="w"> </span><span class="nb">ClimbingStats</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT_FILES_VAR</span><span class="w"> </span><span class="nb">support_files</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT_DIR</span><span class="w"> </span><span class="nb">compilers</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILERS</span><span class="w"> </span><span class="no">GNU</span><span class="w"> </span><span class="nb">Clang</span><span class="w"> </span><span class="no">MSVC</span><span class="w"> </span><span class="nb">Intel</span><span class="w"></span>
+<span class="w">  </span><span class="no">FEATURES</span><span class="w"> </span><span class="nb">cxx_variadic_templates</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"></span>
+<span class="w">  </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/climbingstats_compiler_detection.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"></span>
+<span class="w">  </span><span class="o">${</span><span class="nt">support_files</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">include/compilers</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">VERSION</span></code> may be used to specify the API version to be generated.
+Future versions of CMake may introduce alternative APIs.  A given
+API is selected by any <code class="docutils literal notranslate"><span class="pre">&lt;version&gt;</span></code> value greater than or equal
+to the version of CMake that introduced the given API and less
+than the version of CMake that introduced its succeeding API.
+The value of the <span class="target" id="index-0-variable:CMAKE_MINIMUM_REQUIRED_VERSION"></span><a class="reference internal" href="../variable/CMAKE_MINIMUM_REQUIRED_VERSION.html#variable:CMAKE_MINIMUM_REQUIRED_VERSION" title="CMAKE_MINIMUM_REQUIRED_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MINIMUM_REQUIRED_VERSION</span></code></a>
+variable is used if no explicit version is specified.
+(As of CMake version 3.19.6 there is only one API version.)</p>
+<p><code class="docutils literal notranslate"><span class="pre">PROLOG</span></code> may be specified as text content to write at the start of the
+header. <code class="docutils literal notranslate"><span class="pre">EPILOG</span></code> may be specified as text content to write at the end
+of the header</p>
+<p>At least one <code class="docutils literal notranslate"><span class="pre">&lt;compiler&gt;</span></code> and one <code class="docutils literal notranslate"><span class="pre">&lt;feature&gt;</span></code> must be listed.  Compilers
+which are known to CMake, but not specified are detected and a preprocessor
+<code class="docutils literal notranslate"><span class="pre">#error</span></code> is generated for them.  A preprocessor macro matching
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_IS_&lt;compiler&gt;</span></code> is generated for each compiler
+known to CMake to contain the value <code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+<p>Possible compiler identifiers are documented with the
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.
+Available features in this version of CMake are listed in the
+<span class="target" id="index-0-prop_gbl:CMAKE_C_KNOWN_FEATURES"></span><a class="reference internal" href="../prop_gbl/CMAKE_C_KNOWN_FEATURES.html#prop_gbl:CMAKE_C_KNOWN_FEATURES" title="CMAKE_C_KNOWN_FEATURES"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">CMAKE_C_KNOWN_FEATURES</span></code></a> and
+<span class="target" id="index-0-prop_gbl:CMAKE_CXX_KNOWN_FEATURES"></span><a class="reference internal" href="../prop_gbl/CMAKE_CXX_KNOWN_FEATURES.html#prop_gbl:CMAKE_CXX_KNOWN_FEATURES" title="CMAKE_CXX_KNOWN_FEATURES"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">CMAKE_CXX_KNOWN_FEATURES</span></code></a> global properties.
+The <code class="docutils literal notranslate"><span class="pre">{c,cxx}_std_*</span></code> meta-features are ignored if requested.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-compile-features(7)"></span><a class="reference internal" href="../manual/cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-compile-features(7)</span></code></a> manual for information on
+compile features.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BARE_FEATURES</span></code> will define the compatibility macros with the name used in
+newer versions of the language standard, so the code can use the new feature
+name unconditionally.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ALLOW_UNKNOWN_COMPILERS</span></code> and <code class="docutils literal notranslate"><span class="pre">ALLOW_UNKNOWN_COMPILER_VERSIONS</span></code> cause
+the module to generate conditions that treat unknown compilers as simply
+lacking all features.  Without these options the default behavior is to
+generate a <code class="docutils literal notranslate"><span class="pre">#error</span></code> for unknown compilers and versions.</p>
+<div class="section" id="feature-test-macros">
+<h2>Feature Test Macros<a class="headerlink" href="#feature-test-macros" title="Permalink to this headline">¶</a></h2>
+<p>For each compiler, a preprocessor macro is generated matching
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_IS_&lt;compiler&gt;</span></code> which has the content either <code class="docutils literal notranslate"><span class="pre">0</span></code>
+or <code class="docutils literal notranslate"><span class="pre">1</span></code>, depending on the compiler in use. Preprocessor macros for
+compiler version components are generated matching
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_VERSION_MAJOR</span></code> <code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_VERSION_MINOR</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_VERSION_PATCH</span></code> containing decimal values
+for the corresponding compiler version components, if defined.</p>
+<p>A preprocessor test is generated based on the compiler version
+denoting whether each feature is enabled.  A preprocessor macro
+matching <code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_COMPILER_&lt;FEATURE&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;FEATURE&gt;</span></code> is the
+upper-case <code class="docutils literal notranslate"><span class="pre">&lt;feature&gt;</span></code> name, is generated to contain the value
+<code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code> depending on whether the compiler in use supports the
+feature:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">write_compiler_detection_header(</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILE</span><span class="w"> </span><span class="nb">climbingstats_compiler_detection.h</span><span class="w"></span>
+<span class="w">  </span><span class="no">PREFIX</span><span class="w"> </span><span class="nb">ClimbingStats</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILERS</span><span class="w"> </span><span class="no">GNU</span><span class="w"> </span><span class="nb">Clang</span><span class="w"> </span><span class="nb">AppleClang</span><span class="w"> </span><span class="no">MSVC</span><span class="w"> </span><span class="nb">Intel</span><span class="w"></span>
+<span class="w">  </span><span class="no">FEATURES</span><span class="w"> </span><span class="nb">cxx_variadic_templates</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#if ClimbingStats_COMPILER_CXX_VARIADIC_TEMPLATES</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="p">...</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">someInterface</span><span class="p">(</span><span class="n">T</span> <span class="n">t</span><span class="p">...)</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="cp">#else</span>
+<span class="c1">// Compatibility versions</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">T1</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">someInterface</span><span class="p">(</span><span class="n">T1</span> <span class="n">t1</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">T1</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T2</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">someInterface</span><span class="p">(</span><span class="n">T1</span> <span class="n">t1</span><span class="p">,</span> <span class="n">T2</span> <span class="n">t2</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">T1</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T2</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T3</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">someInterface</span><span class="p">(</span><span class="n">T1</span> <span class="n">t1</span><span class="p">,</span> <span class="n">T2</span> <span class="n">t2</span><span class="p">,</span> <span class="n">T3</span> <span class="n">t3</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="symbol-macros">
+<h2>Symbol Macros<a class="headerlink" href="#symbol-macros" title="Permalink to this headline">¶</a></h2>
+<p>Some additional symbol-defines are created for particular features for
+use as symbols which may be conditionally defined empty:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyClass</span> <span class="n">ClimbingStats_FINAL</span>
+<span class="p">{</span>
+    <span class="n">ClimbingStats_CONSTEXPR</span> <span class="kt">int</span> <span class="n">someInterface</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="mi">42</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ClimbingStats_FINAL</span></code> macro will expand to <code class="docutils literal notranslate"><span class="pre">final</span></code> if the
+compiler (and its flags) support the <code class="docutils literal notranslate"><span class="pre">cxx_final</span></code> feature, and the
+<code class="docutils literal notranslate"><span class="pre">ClimbingStats_CONSTEXPR</span></code> macro will expand to <code class="docutils literal notranslate"><span class="pre">constexpr</span></code>
+if <code class="docutils literal notranslate"><span class="pre">cxx_constexpr</span></code> is supported.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">BARE_FEATURES</span> <span class="pre">cxx_final</span></code> was given as argument the <code class="docutils literal notranslate"><span class="pre">final</span></code> keyword
+will be defined for old compilers, too.</p>
+<p>The following features generate corresponding symbol defines and if they
+are available as <code class="docutils literal notranslate"><span class="pre">BARE_FEATURES</span></code>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 42%" />
+<col style="width: 20%" />
+<col style="width: 7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Define</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>bare</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">c_restrict</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_RESTRICT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">restrict</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_constexpr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_CONSTEXPR</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">constexpr</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_deleted_functions</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_DELETED_FUNCTION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">=</span> <span class="pre">delete</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_extern_templates</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_EXTERN_TEMPLATE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">extern</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_final</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_FINAL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">final</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_noexcept</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_NOEXCEPT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">noexcept</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_noexcept</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_NOEXCEPT_EXPR(X)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">noexcept(X)</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_override</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_OVERRIDE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">override</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="compatibility-implementation-macros">
+<h2>Compatibility Implementation Macros<a class="headerlink" href="#compatibility-implementation-macros" title="Permalink to this headline">¶</a></h2>
+<p>Some features are suitable for wrapping in a macro with a backward
+compatibility implementation if the compiler does not support the feature.</p>
+<p>When the <code class="docutils literal notranslate"><span class="pre">cxx_static_assert</span></code> feature is not provided by the compiler,
+a compatibility implementation is available via the
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_STATIC_ASSERT(COND)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_STATIC_ASSERT_MSG(COND,</span> <span class="pre">MSG)</span></code> function-like macros. The macros
+expand to <code class="docutils literal notranslate"><span class="pre">static_assert</span></code> where that compiler feature is available, and
+to a compatibility implementation otherwise. In the first form, the
+condition is stringified in the message field of <code class="docutils literal notranslate"><span class="pre">static_assert</span></code>.  In
+the second form, the message <code class="docutils literal notranslate"><span class="pre">MSG</span></code> is passed to the message field of
+<code class="docutils literal notranslate"><span class="pre">static_assert</span></code>, or ignored if using the backward compatibility
+implementation.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cxx_attribute_deprecated</span></code> feature provides a macro definition
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_DEPRECATED</span></code>, which expands to either the standard
+<code class="docutils literal notranslate"><span class="pre">[[deprecated]]</span></code> attribute or a compiler-specific decorator such
+as <code class="docutils literal notranslate"><span class="pre">__attribute__((__deprecated__))</span></code> used by GNU compilers.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cxx_alignas</span></code> feature provides a macro definition
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_ALIGNAS</span></code> which expands to either the standard <code class="docutils literal notranslate"><span class="pre">alignas</span></code>
+decorator or a compiler-specific decorator such as
+<code class="docutils literal notranslate"><span class="pre">__attribute__</span> <span class="pre">((__aligned__))</span></code> used by GNU compilers.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cxx_alignof</span></code> feature provides a macro definition
+<code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_ALIGNOF</span></code> which expands to either the standard <code class="docutils literal notranslate"><span class="pre">alignof</span></code>
+decorator or a compiler-specific decorator such as <code class="docutils literal notranslate"><span class="pre">__alignof__</span></code>
+used by GNU compilers.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 36%" />
+<col style="width: 24%" />
+<col style="width: 7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Define</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>bare</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_alignas</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_ALIGNAS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">alignas</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_alignof</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_ALIGNOF</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">alignof</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_nullptr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_NULLPTR</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nullptr</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_static_assert</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_STATIC_ASSERT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">static_assert</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_static_assert</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_STATIC_ASSERT_MSG</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">static_assert</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_attribute_deprecated</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_DEPRECATED</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[deprecated]]</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_attribute_deprecated</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_DEPRECATED_MSG</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[[deprecated]]</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cxx_thread_local</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_THREAD_LOCAL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">thread_local</span></code></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>A use-case which arises with such deprecation macros is the deprecation
+of an entire library.  In that case, all public API in the library may
+be decorated with the <code class="docutils literal notranslate"><span class="pre">&lt;PREFIX&gt;_DEPRECATED</span></code> macro.  This results in
+very noisy build output when building the library itself, so the macro
+may be may be defined to empty in that case when building the deprecated
+library:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">compat_support</span><span class="w"> </span><span class="o">${</span><span class="nt">srcs</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">compat_support</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">    </span><span class="nb">CompatSupport_DEPRECATED</span><span class="p">=</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">WriteCompilerDetectionHeader</a><ul>
+<li><a class="reference internal" href="#feature-test-macros">Feature Test Macros</a></li>
+<li><a class="reference internal" href="#symbol-macros">Symbol Macros</a></li>
+<li><a class="reference internal" href="#compatibility-implementation-macros">Compatibility Implementation Macros</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="UsewxWidgets.html"
+                        title="previous chapter">UsewxWidgets</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindALSA.html"
+                        title="next chapter">FindALSA</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/WriteCompilerDetectionHeader.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindALSA.html" title="FindALSA"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="UsewxWidgets.html" title="UsewxWidgets"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WriteCompilerDetectionHeader</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

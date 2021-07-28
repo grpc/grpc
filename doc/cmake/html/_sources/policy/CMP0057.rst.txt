@@ -1,0 +1,18 @@
+CMP0057
+-------
+
+.. versionadded:: 3.3
+
+Support new :command:`if` IN_LIST operator.
+
+CMake 3.3 adds support for the new IN_LIST operator.
+
+The ``OLD`` behavior for this policy is to ignore the IN_LIST operator.
+The ``NEW`` behavior is to interpret the IN_LIST operator.
+
+This policy was introduced in CMake version 3.3.
+CMake version |release| warns when the policy is not set and uses
+``OLD`` behavior.  Use the :command:`cmake_policy` command to set
+it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

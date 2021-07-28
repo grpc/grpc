@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MACOSX_PACKAGE_LOCATION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="OBJECT_DEPENDS" href="OBJECT_DEPENDS.html" />
+    <link rel="prev" title="LOCATION" href="LOCATION.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="OBJECT_DEPENDS.html" title="OBJECT_DEPENDS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LOCATION.html" title="LOCATION"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACOSX_PACKAGE_LOCATION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="macosx-package-location">
+<span id="prop_sf:MACOSX_PACKAGE_LOCATION"></span><h1>MACOSX_PACKAGE_LOCATION<a class="headerlink" href="#macosx-package-location" title="Permalink to this headline">¶</a></h1>
+<p>Place a source file inside a Application Bundle
+(<span class="target" id="index-0-prop_tgt:MACOSX_BUNDLE"></span><a class="reference internal" href="../prop_tgt/MACOSX_BUNDLE.html#prop_tgt:MACOSX_BUNDLE" title="MACOSX_BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACOSX_BUNDLE</span></code></a>), Core Foundation Bundle (<span class="target" id="index-0-prop_tgt:BUNDLE"></span><a class="reference internal" href="../prop_tgt/BUNDLE.html#prop_tgt:BUNDLE" title="BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUNDLE</span></code></a>),
+or Framework Bundle (<span class="target" id="index-0-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="../prop_tgt/FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a>).  It is applicable for macOS
+and iOS.</p>
+<p>Executable targets with the <span class="target" id="index-1-prop_tgt:MACOSX_BUNDLE"></span><a class="reference internal" href="../prop_tgt/MACOSX_BUNDLE.html#prop_tgt:MACOSX_BUNDLE" title="MACOSX_BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACOSX_BUNDLE</span></code></a> property set are
+built as macOS or iOS application bundles on Apple platforms.  Shared
+library targets with the <span class="target" id="index-1-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="../prop_tgt/FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a> property set are built as
+macOS or iOS frameworks on Apple platforms.  Module library targets with
+the <span class="target" id="index-1-prop_tgt:BUNDLE"></span><a class="reference internal" href="../prop_tgt/BUNDLE.html#prop_tgt:BUNDLE" title="BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUNDLE</span></code></a> property set are built as macOS <code class="docutils literal notranslate"><span class="pre">CFBundle</span></code> bundles
+on Apple platforms.  Source files listed in the target with this property
+set will be copied to a directory inside the bundle or framework content
+folder specified by the property value.  For macOS Application Bundles the
+content folder is <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.app/Contents</span></code>.  For macOS Frameworks the
+content folder is <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.framework/Versions/&lt;version&gt;</span></code>.  For macOS
+CFBundles the content folder is <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.bundle/Contents</span></code> (unless the
+extension is changed).  See the <span class="target" id="index-0-prop_tgt:PUBLIC_HEADER"></span><a class="reference internal" href="../prop_tgt/PUBLIC_HEADER.html#prop_tgt:PUBLIC_HEADER" title="PUBLIC_HEADER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PUBLIC_HEADER</span></code></a>,
+<span class="target" id="index-0-prop_tgt:PRIVATE_HEADER"></span><a class="reference internal" href="../prop_tgt/PRIVATE_HEADER.html#prop_tgt:PRIVATE_HEADER" title="PRIVATE_HEADER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRIVATE_HEADER</span></code></a>, and <span class="target" id="index-0-prop_tgt:RESOURCE"></span><a class="reference internal" href="../prop_tgt/RESOURCE.html#prop_tgt:RESOURCE" title="RESOURCE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RESOURCE</span></code></a> target properties for
+specifying files meant for <code class="docutils literal notranslate"><span class="pre">Headers</span></code>, <code class="docutils literal notranslate"><span class="pre">PrivateHeaders</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">Resources</span></code> directories.</p>
+<p>If the specified location is equal to <code class="docutils literal notranslate"><span class="pre">Resources</span></code>, the resulting location
+will be the same as if the <span class="target" id="index-1-prop_tgt:RESOURCE"></span><a class="reference internal" href="../prop_tgt/RESOURCE.html#prop_tgt:RESOURCE" title="RESOURCE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RESOURCE</span></code></a> property had been used. If
+the specified location is a sub-folder of <code class="docutils literal notranslate"><span class="pre">Resources</span></code>, it will be placed
+into the respective sub-folder. Note: For iOS Apple uses a flat bundle layout
+where no <code class="docutils literal notranslate"><span class="pre">Resources</span></code> folder exist. Therefore CMake strips the <code class="docutils literal notranslate"><span class="pre">Resources</span></code>
+folder name from the specified location.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LOCATION.html"
+                        title="previous chapter">LOCATION</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="OBJECT_DEPENDS.html"
+                        title="next chapter">OBJECT_DEPENDS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_sf/MACOSX_PACKAGE_LOCATION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="OBJECT_DEPENDS.html" title="OBJECT_DEPENDS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LOCATION.html" title="LOCATION"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACOSX_PACKAGE_LOCATION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

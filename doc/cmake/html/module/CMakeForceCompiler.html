@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMakeForceCompiler &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMakeParseArguments" href="CMakeParseArguments.html" />
+    <link rel="prev" title="CMakeExpandImportedTargets" href="CMakeExpandImportedTargets.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMakeParseArguments.html" title="CMakeParseArguments"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMakeExpandImportedTargets.html" title="CMakeExpandImportedTargets"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeForceCompiler</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmakeforcecompiler">
+<span id="module:CMakeForceCompiler"></span><h1>CMakeForceCompiler<a class="headerlink" href="#cmakeforcecompiler" title="Permalink to this headline">¶</a></h1>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.6: </span>Do not use.</p>
+</div>
+<p>The macros provided by this module were once intended for use by
+cross-compiling toolchain files when CMake was not able to automatically
+detect the compiler identification.  Since the introduction of this module,
+CMake’s compiler identification capabilities have improved and can now be
+taught to recognize any compiler.  Furthermore, the suite of information
+CMake detects from a compiler is now too extensive to be provided by
+toolchain files using these macros.</p>
+<p>One common use case for this module was to skip CMake’s checks for a
+working compiler when using a cross-compiler that cannot link binaries
+without special flags or custom linker scripts.  This case is now supported
+by setting the <span class="target" id="index-0-variable:CMAKE_TRY_COMPILE_TARGET_TYPE"></span><a class="reference internal" href="../variable/CMAKE_TRY_COMPILE_TARGET_TYPE.html#variable:CMAKE_TRY_COMPILE_TARGET_TYPE" title="CMAKE_TRY_COMPILE_TARGET_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TRY_COMPILE_TARGET_TYPE</span></code></a> variable in the
+toolchain file instead.</p>
+<hr class="docutils" />
+<p>Macro <code class="docutils literal notranslate"><span class="pre">CMAKE_FORCE_C_COMPILER</span></code> has the following signature:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CMAKE_FORCE_C_COMPILER(&lt;compiler&gt; &lt;compiler-id&gt;)
+</pre></div>
+</div>
+<p>It sets <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_COMPILER</span></code></a> to
+the given compiler and the cmake internal variable
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_COMPILER_ID</span></code></a> to the given
+compiler-id.  It also bypasses the check for working compiler and basic
+compiler information tests.</p>
+<p>Macro <code class="docutils literal notranslate"><span class="pre">CMAKE_FORCE_CXX_COMPILER</span></code> has the following signature:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CMAKE_FORCE_CXX_COMPILER(&lt;compiler&gt; &lt;compiler-id&gt;)
+</pre></div>
+</div>
+<p>It sets <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER</span></code></a> to
+the given compiler and the cmake internal variable
+<span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER_ID</span></code></a> to the given
+compiler-id.  It also bypasses the check for working compiler and basic
+compiler information tests.</p>
+<p>Macro <code class="docutils literal notranslate"><span class="pre">CMAKE_FORCE_Fortran_COMPILER</span></code> has the following signature:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CMAKE_FORCE_Fortran_COMPILER(&lt;compiler&gt; &lt;compiler-id&gt;)
+</pre></div>
+</div>
+<p>It sets <span class="target" id="index-2-variable:CMAKE_&lt;LANG&gt;_COMPILER"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER.html#variable:CMAKE_&lt;LANG&gt;_COMPILER" title="CMAKE_&lt;LANG&gt;_COMPILER"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_Fortran_COMPILER</span></code></a> to
+the given compiler and the cmake internal variable
+<span class="target" id="index-2-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_Fortran_COMPILER_ID</span></code></a> to the given
+compiler-id.  It also bypasses the check for working compiler and basic
+compiler information tests.</p>
+<p>So a simple toolchain file could look like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>include (CMakeForceCompiler)
+set(CMAKE_SYSTEM_NAME Generic)
+CMAKE_FORCE_C_COMPILER   (chc12 MetrowerksHicross)
+CMAKE_FORCE_CXX_COMPILER (chc12 MetrowerksHicross)
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMakeExpandImportedTargets.html"
+                        title="previous chapter">CMakeExpandImportedTargets</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMakeParseArguments.html"
+                        title="next chapter">CMakeParseArguments</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CMakeForceCompiler.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMakeParseArguments.html" title="CMakeParseArguments"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMakeExpandImportedTargets.html" title="CMakeExpandImportedTargets"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeForceCompiler</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

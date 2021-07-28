@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPACK_SET_DESTDIR &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION" href="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION.html" />
+    <link rel="prev" title="CPACK_PACKAGING_INSTALL_PREFIX" href="CPACK_PACKAGING_INSTALL_PREFIX.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION.html" title="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CPACK_PACKAGING_INSTALL_PREFIX.html" title="CPACK_PACKAGING_INSTALL_PREFIX"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPACK_SET_DESTDIR</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-set-destdir">
+<span id="variable:CPACK_SET_DESTDIR"></span><h1>CPACK_SET_DESTDIR<a class="headerlink" href="#cpack-set-destdir" title="Permalink to this headline">¶</a></h1>
+<p>Boolean toggle to make CPack use <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> mechanism when packaging.</p>
+<p><code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> means DESTination DIRectory.  It is commonly used by makefile
+users in order to install software at non-default location.  It is a
+basic relocation mechanism that should not be used on Windows (see
+<span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> documentation).  It is usually invoked like
+this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>make DESTDIR=/home/john install
+</pre></div>
+</div>
+<p>which will install the concerned software using the installation
+prefix, e.g. <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> prepended with the <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> value which
+finally gives <code class="docutils literal notranslate"><span class="pre">/home/john/usr/local</span></code>.  When preparing a package, CPack
+first installs the items to be packaged in a local (to the build tree)
+directory by using the same <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> mechanism.  Nevertheless, if
+<code class="docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code> is set then CPack will set <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> before doing the
+local install.  The most noticeable difference is that without
+<code class="docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code>, CPack uses <span class="target" id="index-0-variable:CPACK_PACKAGING_INSTALL_PREFIX"></span><a class="reference internal" href="CPACK_PACKAGING_INSTALL_PREFIX.html#variable:CPACK_PACKAGING_INSTALL_PREFIX" title="CPACK_PACKAGING_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGING_INSTALL_PREFIX</span></code></a>
+as a prefix whereas with <code class="docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code> set, CPack will use
+<span class="target" id="index-1-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a> as a prefix.</p>
+<p>Manually setting <code class="docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code> may help (or simply be necessary)
+if some install rules uses absolute <code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> (see CMake
+<span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command).  However, starting with CPack/CMake 2.8.3 RPM
+and DEB installers tries to handle <code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> automatically so that it is
+seldom necessary for the user to set it.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CPACK_PACKAGING_INSTALL_PREFIX.html"
+                        title="previous chapter">CPACK_PACKAGING_INSTALL_PREFIX</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION.html"
+                        title="next chapter">CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CPACK_SET_DESTDIR.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION.html" title="CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CPACK_PACKAGING_INSTALL_PREFIX.html" title="CPACK_PACKAGING_INSTALL_PREFIX"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPACK_SET_DESTDIR</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

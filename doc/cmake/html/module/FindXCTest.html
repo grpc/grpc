@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindXCTest &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindXercesC" href="FindXercesC.html" />
+    <link rel="prev" title="FindXalanC" href="FindXalanC.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindXercesC.html" title="FindXercesC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindXalanC.html" title="FindXalanC"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindXCTest</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findxctest">
+<span id="module:FindXCTest"></span><h1>FindXCTest<a class="headerlink" href="#findxctest" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.3.</span></p>
+</div>
+<p>Functions to help creating and executing XCTest bundles.</p>
+<p>An XCTest bundle is a CFBundle with a special product-type
+and bundle extension. The Mac Developer Library provides more
+information in the <a class="reference external" href="http://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/testing_with_xcode/">Testing with Xcode</a> document.</p>
+<div class="section" id="module-functions">
+<h2>Module Functions<a class="headerlink" href="#module-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake command">
+<dt id="command:xctest_add_bundle">
+<code class="sig-name descname">xctest_add_bundle</code><a class="headerlink" href="#command:xctest_add_bundle" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">xctest_add_bundle</span></code> function creates a XCTest bundle named
+&lt;target&gt; which will test the target &lt;testee&gt;. Supported target types
+for testee are Frameworks and App Bundles:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>xctest_add_bundle(
+  &lt;target&gt;  # Name of the XCTest bundle
+  &lt;testee&gt;  # Target name of the testee
+  )
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:xctest_add_test">
+<code class="sig-name descname">xctest_add_test</code><a class="headerlink" href="#command:xctest_add_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">xctest_add_test</span></code> function adds an XCTest bundle to the
+project to be run by <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a>. The test will be named
+&lt;name&gt; and tests &lt;bundle&gt;:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>xctest_add_test(
+  &lt;name&gt;    # Test name
+  &lt;bundle&gt;  # Target name of XCTest bundle
+  )
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-variables">
+<h2>Module Variables<a class="headerlink" href="#module-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following variables are set by including this module:</p>
+<dl class="cmake variable">
+<dt id="variable:XCTest_FOUND">
+<code class="sig-name descname">XCTest_FOUND</code><a class="headerlink" href="#variable:XCTest_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the XCTest Framework and executable were found.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:XCTest_EXECUTABLE">
+<code class="sig-name descname">XCTest_EXECUTABLE</code><a class="headerlink" href="#variable:XCTest_EXECUTABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path to the xctest command line tool used to execute XCTest bundles.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:XCTest_INCLUDE_DIRS">
+<code class="sig-name descname">XCTest_INCLUDE_DIRS</code><a class="headerlink" href="#variable:XCTest_INCLUDE_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directory containing the XCTest Framework headers.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:XCTest_LIBRARIES">
+<code class="sig-name descname">XCTest_LIBRARIES</code><a class="headerlink" href="#variable:XCTest_LIBRARIES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The location of the XCTest Framework.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindXCTest</a><ul>
+<li><a class="reference internal" href="#module-functions">Module Functions</a></li>
+<li><a class="reference internal" href="#module-variables">Module Variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindXalanC.html"
+                        title="previous chapter">FindXalanC</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindXercesC.html"
+                        title="next chapter">FindXercesC</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindXCTest.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindXercesC.html" title="FindXercesC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindXalanC.html" title="FindXalanC"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindXCTest</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

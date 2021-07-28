@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMakeAddFortranSubdirectory &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMakeBackwardCompatibilityCXX" href="CMakeBackwardCompatibilityCXX.html" />
+    <link rel="prev" title="CheckVariableExists" href="CheckVariableExists.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMakeBackwardCompatibilityCXX.html" title="CMakeBackwardCompatibilityCXX"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CheckVariableExists.html" title="CheckVariableExists"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeAddFortranSubdirectory</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmakeaddfortransubdirectory">
+<span id="module:CMakeAddFortranSubdirectory"></span><h1>CMakeAddFortranSubdirectory<a class="headerlink" href="#cmakeaddfortransubdirectory" title="Permalink to this headline">¶</a></h1>
+<p>Add a fortran-only subdirectory, find a fortran compiler, and build.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cmake_add_fortran_subdirectory</span></code> function adds a subdirectory
+to a project that contains a fortran-only subproject.  The module will
+check the current compiler and see if it can support fortran.  If no
+fortran compiler is found and the compiler is MSVC, then this module
+will find the MinGW gfortran.  It will then use an external project to
+build with the MinGW tools.  It will also create imported targets for
+the libraries created.  This will only work if the fortran code is
+built into a dll, so <span class="target" id="index-0-variable:BUILD_SHARED_LIBS"></span><a class="reference internal" href="../variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS" title="BUILD_SHARED_LIBS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></a> is turned on in
+the project.  In addition the <span class="target" id="index-0-variable:CMAKE_GNUtoMS"></span><a class="reference internal" href="../variable/CMAKE_GNUtoMS.html#variable:CMAKE_GNUtoMS" title="CMAKE_GNUtoMS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GNUtoMS</span></code></a> option is set
+to on, so that Microsoft <code class="docutils literal notranslate"><span class="pre">.lib</span></code> files are created.  Usage is as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cmake_add_fortran_subdirectory(
+ &lt;subdir&gt;                # name of subdirectory
+ PROJECT &lt;project_name&gt;  # project name in subdir top CMakeLists.txt
+ ARCHIVE_DIR &lt;dir&gt;       # dir where project places .lib files
+ RUNTIME_DIR &lt;dir&gt;       # dir where project places .dll files
+ LIBRARIES &lt;lib&gt;...      # names of library targets to import
+ LINK_LIBRARIES          # link interface libraries for LIBRARIES
+  [LINK_LIBS &lt;lib&gt; &lt;dep&gt;...]...
+ CMAKE_COMMAND_LINE ...  # extra command line flags to pass to cmake
+ NO_EXTERNAL_INSTALL     # skip installation of external project
+ )
+</pre></div>
+</div>
+<p>Relative paths in <code class="docutils literal notranslate"><span class="pre">ARCHIVE_DIR</span></code> and <code class="docutils literal notranslate"><span class="pre">RUNTIME_DIR</span></code> are interpreted with
+respect to the build directory corresponding to the source directory
+in which the function is invoked.</p>
+<p>Limitations:</p>
+<p><code class="docutils literal notranslate"><span class="pre">NO_EXTERNAL_INSTALL</span></code> is required for forward compatibility with a
+future version that supports installation of the external project
+binaries during <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CheckVariableExists.html"
+                        title="previous chapter">CheckVariableExists</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMakeBackwardCompatibilityCXX.html"
+                        title="next chapter">CMakeBackwardCompatibilityCXX</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CMakeAddFortranSubdirectory.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMakeBackwardCompatibilityCXX.html" title="CMakeBackwardCompatibilityCXX"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CheckVariableExists.html" title="CheckVariableExists"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeAddFortranSubdirectory</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindSDL_sound &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindSDL_ttf" href="FindSDL_ttf.html" />
+    <link rel="prev" title="FindSDL_net" href="FindSDL_net.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindSDL_ttf.html" title="FindSDL_ttf"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindSDL_net.html" title="FindSDL_net"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSDL_sound</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findsdl-sound">
+<span id="module:FindSDL_sound"></span><h1>FindSDL_sound<a class="headerlink" href="#findsdl-sound" title="Permalink to this headline">¶</a></h1>
+<p>Locates the SDL_sound library</p>
+<p>This module depends on SDL being found and must be called AFTER
+FindSDL.cmake is called.</p>
+<p>This module defines</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SDL_SOUND_INCLUDE_DIR, where to find SDL_sound.h
+SDL_SOUND_FOUND, if false, do not try to link to SDL_sound
+SDL_SOUND_LIBRARIES, this contains the list of libraries that you need
+  to link against.
+SDL_SOUND_EXTRAS, this is an optional variable for you to add your own
+  flags to SDL_SOUND_LIBRARIES. This is prepended to SDL_SOUND_LIBRARIES.
+  This is available mostly for cases this module failed to anticipate for
+  and you must add additional flags. This is marked as ADVANCED.
+SDL_SOUND_VERSION_STRING, human-readable string containing the
+  version of SDL_sound
+</pre></div>
+</div>
+<p>This module also defines (but you shouldn’t need to use directly)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SDL_SOUND_LIBRARY, the name of just the SDL_sound library you would link
+against. Use SDL_SOUND_LIBRARIES for you link instructions and not this one.
+</pre></div>
+</div>
+<p>And might define the following as needed</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>MIKMOD_LIBRARY
+MODPLUG_LIBRARY
+OGG_LIBRARY
+VORBIS_LIBRARY
+SMPEG_LIBRARY
+FLAC_LIBRARY
+SPEEX_LIBRARY
+</pre></div>
+</div>
+<p>Typically, you should not use these variables directly, and you should
+use SDL_SOUND_LIBRARIES which contains SDL_SOUND_LIBRARY and the other
+audio libraries (if needed) to successfully compile on your system.</p>
+<p>Created by Eric Wing.  This module is a bit more complicated than the
+other FindSDL* family modules.  The reason is that SDL_sound can be
+compiled in a large variety of different ways which are independent of
+platform.  SDL_sound may dynamically link against other 3rd party
+libraries to get additional codec support, such as Ogg Vorbis, SMPEG,
+ModPlug, MikMod, FLAC, Speex, and potentially others.  Under some
+circumstances which I don’t fully understand, there seems to be a
+requirement that dependent libraries of libraries you use must also be
+explicitly linked against in order to successfully compile.  SDL_sound
+does not currently have any system in place to know how it was
+compiled.  So this CMake module does the hard work in trying to
+discover which 3rd party libraries are required for building (if any).
+This module uses a brute force approach to create a test program that
+uses SDL_sound, and then tries to build it.  If the build fails, it
+parses the error output for known symbol names to figure out which
+libraries are needed.</p>
+<p>Responds to the $SDLDIR and $SDLSOUNDDIR environmental variable that
+would correspond to the ./configure –prefix=$SDLDIR used in building
+SDL.</p>
+<p>On OSX, this will prefer the Framework version (if found) over others.
+People will have to manually change the cache values of SDL_LIBRARY to
+override this selectionor set the CMake environment CMAKE_INCLUDE_PATH
+to modify the search paths.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindSDL_net.html"
+                        title="previous chapter">FindSDL_net</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindSDL_ttf.html"
+                        title="next chapter">FindSDL_ttf</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindSDL_sound.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindSDL_ttf.html" title="FindSDL_ttf"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindSDL_net.html" title="FindSDL_net"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindSDL_sound</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

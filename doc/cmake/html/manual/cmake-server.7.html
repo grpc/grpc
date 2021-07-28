@@ -1,0 +1,874 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-server(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-toolchains(7)" href="cmake-toolchains.7.html" />
+    <link rel="prev" title="cmake-qt(7)" href="cmake-qt.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-toolchains.7.html" title="cmake-toolchains(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake-qt.7.html" title="cmake-qt(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-server(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-server(7)"></span><div class="section" id="cmake-server-7">
+<h1><a class="toc-backref" href="#id1">cmake-server(7)</a><a class="headerlink" href="#cmake-server-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-server-7" id="id1">cmake-server(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#operation" id="id3">Operation</a></p></li>
+<li><p><a class="reference internal" href="#debugging" id="id4">Debugging</a></p></li>
+<li><p><a class="reference internal" href="#protocol-api" id="id5">Protocol API</a></p>
+<ul>
+<li><p><a class="reference internal" href="#general-message-layout" id="id6">General Message Layout</a></p>
+<ul>
+<li><p><a class="reference internal" href="#type-reply" id="id7">Type “reply”</a></p></li>
+<li><p><a class="reference internal" href="#type-error" id="id8">Type “error”</a></p></li>
+<li><p><a class="reference internal" href="#type-progress" id="id9">Type “progress”</a></p></li>
+<li><p><a class="reference internal" href="#type-message" id="id10">Type “message”</a></p></li>
+<li><p><a class="reference internal" href="#type-signal" id="id11">Type “signal”</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#specific-signals" id="id12">Specific Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#dirty-signal" id="id13">“dirty” Signal</a></p></li>
+<li><p><a class="reference internal" href="#filechange-signal" id="id14">“fileChange” Signal</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#specific-message-types" id="id15">Specific Message Types</a></p>
+<ul>
+<li><p><a class="reference internal" href="#type-hello" id="id16">Type “hello”</a></p></li>
+<li><p><a class="reference internal" href="#type-handshake" id="id17">Type “handshake”</a></p></li>
+<li><p><a class="reference internal" href="#type-globalsettings" id="id18">Type “globalSettings”</a></p></li>
+<li><p><a class="reference internal" href="#type-setglobalsettings" id="id19">Type “setGlobalSettings”</a></p></li>
+<li><p><a class="reference internal" href="#type-configure" id="id20">Type “configure”</a></p></li>
+<li><p><a class="reference internal" href="#type-compute" id="id21">Type “compute”</a></p></li>
+<li><p><a class="reference internal" href="#type-codemodel" id="id22">Type “codemodel”</a></p></li>
+<li><p><a class="reference internal" href="#type-ctestinfo" id="id23">Type “ctestInfo”</a></p></li>
+<li><p><a class="reference internal" href="#type-cmakeinputs" id="id24">Type “cmakeInputs”</a></p></li>
+<li><p><a class="reference internal" href="#type-cache" id="id25">Type “cache”</a></p></li>
+<li><p><a class="reference internal" href="#type-filesystemwatchers" id="id26">Type “fileSystemWatchers”</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.15: </span>This will be removed from a future version of CMake.
+Clients should use the <span class="target" id="index-0-manual:cmake-file-api(7)"></span><a class="reference internal" href="cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-file-api(7)</span></code></a> instead.</p>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> is capable of providing semantic information about
+CMake code it executes to generate a buildsystem.  If executed with
+the <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">server</span></code> command line options, it starts in a long running mode
+and allows a client to request the available information via a JSON protocol.</p>
+<p>The protocol is designed to be useful to IDEs, refactoring tools, and
+other tools which have a need to understand the buildsystem in entirety.</p>
+<p>A single <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a> may describe buildsystem contents
+and build properties which differ based on
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generation-time</span> <span class="pre">context</span></code></a>
+including:</p>
+<ul class="simple">
+<li><p>The Platform (eg, Windows, APPLE, Linux).</p></li>
+<li><p>The build configuration (eg, Debug, Release, Coverage).</p></li>
+<li><p>The Compiler (eg, MSVC, GCC, Clang) and compiler version.</p></li>
+<li><p>The language of the source files compiled.</p></li>
+<li><p>Available compile features (eg CXX variadic templates).</p></li>
+<li><p>CMake policies.</p></li>
+</ul>
+<p>The protocol aims to provide information to tooling to satisfy several
+needs:</p>
+<ol class="arabic simple">
+<li><p>Provide a complete and easily parsed source of all information relevant
+to the tooling as it relates to the source code.  There should be no need
+for tooling to parse generated buildsystems to access include directories
+or compile definitions for example.</p></li>
+<li><p>Semantic information about the CMake buildsystem itself.</p></li>
+<li><p>Provide a stable interface for reading the information in the CMake cache.</p></li>
+<li><p>Information for determining when cmake needs to be re-run as a result of
+file changes.</p></li>
+</ol>
+</div>
+<div class="section" id="operation">
+<h2><a class="toc-backref" href="#id3">Operation</a><a class="headerlink" href="#operation" title="Permalink to this headline">¶</a></h2>
+<p>Start <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> in the server command mode, supplying the path to
+the build directory to process:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cmake -E server (--debug|--pipe=&lt;NAMED_PIPE&gt;)
+</pre></div>
+</div>
+<p>The server will communicate using stdin/stdout (with the <code class="docutils literal notranslate"><span class="pre">--debug</span></code> parameter)
+or using a named pipe (with the <code class="docutils literal notranslate"><span class="pre">--pipe=&lt;NAMED_PIPE&gt;</span></code> parameter).  Note
+that “named pipe” refers to a local domain socket on Unix and to a named pipe
+on Windows.</p>
+<p>When connecting to the server (via named pipe or by starting it in <code class="docutils literal notranslate"><span class="pre">--debug</span></code>
+mode), the server will reply with a hello message:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;supportedProtocolVersions&quot;:[{&quot;major&quot;:1,&quot;minor&quot;:0}],&quot;type&quot;:&quot;hello&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>Messages sent to and from the process are wrapped in magic strings:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  ... some JSON message ...
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>The server is now ready to accept further requests via the named pipe
+or stdin.</p>
+</div>
+<div class="section" id="debugging">
+<h2><a class="toc-backref" href="#id4">Debugging</a><a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<p>CMake server mode can be asked to provide statistics on execution times, etc.
+or to dump a copy of the response into a file. This is done passing a “debug”
+JSON object as a child of the request.</p>
+<p>The debug object supports the “showStats” key, which takes a boolean and makes
+the server mode return a “zzzDebug” object with stats as part of its response.
+“dumpToFile” takes a string value and will cause the cmake server to copy
+the response into the given filename.</p>
+<p>This is a response from the cmake server with “showStats” set to true:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;cookie&quot;:&quot;&quot;,
+  &quot;errorMessage&quot;:&quot;Waiting for type \&quot;handshake\&quot;.&quot;,
+  &quot;inReplyTo&quot;:&quot;unknown&quot;,
+ &quot;type&quot;:&quot;error&quot;,
+  &quot;zzzDebug&quot;: {
+    &quot;dumpFile&quot;:&quot;/tmp/error.txt&quot;,
+    &quot;jsonSerialization&quot;:0.011016,
+    &quot;size&quot;:111,
+    &quot;totalTime&quot;:0.025995
+  }
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>The server has made a copy of this response into the file /tmp/error.txt and
+took 0.011 seconds to turn the JSON response into a string, and it took 0.025
+seconds to process the request in total. The reply has a size of 111 bytes.</p>
+</div>
+<div class="section" id="protocol-api">
+<h2><a class="toc-backref" href="#id5">Protocol API</a><a class="headerlink" href="#protocol-api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="general-message-layout">
+<h3><a class="toc-backref" href="#id6">General Message Layout</a><a class="headerlink" href="#general-message-layout" title="Permalink to this headline">¶</a></h3>
+<p>All messages need to have a “type” value, which identifies the type of
+message that is passed back or forth. E.g. the initial message sent by the
+server is of type “hello”. Messages without a type will generate an response
+of type “error”.</p>
+<p>All requests sent to the server may contain a “cookie” value. This value
+will he handed back unchanged in all responses triggered by the request.</p>
+<p>All responses will contain a value “inReplyTo”, which may be empty in
+case of parse errors, but will contain the type of the request message
+in all other cases.</p>
+<div class="section" id="type-reply">
+<h4><a class="toc-backref" href="#id7">Type “reply”</a><a class="headerlink" href="#type-reply" title="Permalink to this headline">¶</a></h4>
+<p>This type is used by the server to reply to requests.</p>
+<p>The message may – depending on the type of the original request –
+contain values.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;zimtstern&quot;,&quot;inReplyTo&quot;:&quot;handshake&quot;,&quot;type&quot;:&quot;reply&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-error">
+<h4><a class="toc-backref" href="#id8">Type “error”</a><a class="headerlink" href="#type-error" title="Permalink to this headline">¶</a></h4>
+<p>This type is used to return an error condition to the client. It will
+contain an “errorMessage”.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;&quot;,&quot;errorMessage&quot;:&quot;Protocol version not supported.&quot;,&quot;inReplyTo&quot;:&quot;handshake&quot;,&quot;type&quot;:&quot;error&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-progress">
+<h4><a class="toc-backref" href="#id9">Type “progress”</a><a class="headerlink" href="#type-progress" title="Permalink to this headline">¶</a></h4>
+<p>When the server is busy for a long time, it is polite to send back replies of
+type “progress” to the client. These will contain a “progressMessage” with a
+string describing the action currently taking place as well as
+“progressMinimum”, “progressMaximum” and “progressCurrent” with integer values
+describing the range of progress.</p>
+<p>Messages of type “progress” will be followed by more “progress” messages or with
+a message of type “reply” or “error” that complete the request.</p>
+<p>“progress” messages may not be emitted after the “reply” or “error” message for
+the request that triggered the responses was delivered.</p>
+</div>
+<div class="section" id="type-message">
+<h4><a class="toc-backref" href="#id10">Type “message”</a><a class="headerlink" href="#type-message" title="Permalink to this headline">¶</a></h4>
+<p>A message is triggered when the server processes a request and produces some
+form of output that should be displayed to the user. A Message has a “message”
+with the actual text to display as well as a “title” with a suggested dialog
+box title.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;&quot;,&quot;message&quot;:&quot;Something happened.&quot;,&quot;title&quot;:&quot;Title Text&quot;,&quot;inReplyTo&quot;:&quot;handshake&quot;,&quot;type&quot;:&quot;message&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-signal">
+<h4><a class="toc-backref" href="#id11">Type “signal”</a><a class="headerlink" href="#type-signal" title="Permalink to this headline">¶</a></h4>
+<p>The server can send signals when it detects changes in the system state. Signals
+are of type “signal”, have an empty “cookie” and “inReplyTo” field and always
+have a “name” set to show which signal was sent.</p>
+</div>
+</div>
+<div class="section" id="specific-signals">
+<h3><a class="toc-backref" href="#id12">Specific Signals</a><a class="headerlink" href="#specific-signals" title="Permalink to this headline">¶</a></h3>
+<p>The cmake server may sent signals with the following names:</p>
+<div class="section" id="dirty-signal">
+<h4><a class="toc-backref" href="#id13">“dirty” Signal</a><a class="headerlink" href="#dirty-signal" title="Permalink to this headline">¶</a></h4>
+<p>The “dirty” signal is sent whenever the server determines that the configuration
+of the project is no longer up-to-date. This happens when any of the files that have
+an influence on the build system is changed.</p>
+<p>The “dirty” signal may look like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;cookie&quot;:&quot;&quot;,
+  &quot;inReplyTo&quot;:&quot;&quot;,
+  &quot;name&quot;:&quot;dirty&quot;,
+  &quot;type&quot;:&quot;signal&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="filechange-signal">
+<h4><a class="toc-backref" href="#id14">“fileChange” Signal</a><a class="headerlink" href="#filechange-signal" title="Permalink to this headline">¶</a></h4>
+<p>The “fileChange” signal is sent whenever a watched file is changed. It contains
+the “path” that has changed and a list of “properties” with the kind of change
+that was detected. Possible changes are “change” and “rename”.</p>
+<p>The “fileChange” signal looks like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;cookie&quot;:&quot;&quot;,
+  &quot;inReplyTo&quot;:&quot;&quot;,
+  &quot;name&quot;:&quot;fileChange&quot;,
+  &quot;path&quot;:&quot;/absolute/CMakeLists.txt&quot;,
+  &quot;properties&quot;:[&quot;change&quot;],
+  &quot;type&quot;:&quot;signal&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="specific-message-types">
+<h3><a class="toc-backref" href="#id15">Specific Message Types</a><a class="headerlink" href="#specific-message-types" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="type-hello">
+<h4><a class="toc-backref" href="#id16">Type “hello”</a><a class="headerlink" href="#type-hello" title="Permalink to this headline">¶</a></h4>
+<p>The initial message send by the cmake server on startup is of type “hello”.
+This is the only message ever sent by the server that is not of type “reply”,
+“progress” or “error”.</p>
+<p>It will contain “supportedProtocolVersions” with an array of server protocol
+versions supported by the cmake server. These are JSON objects with “major” and
+“minor” keys containing non-negative integer values. Some versions may be marked
+as experimental. These will contain the “isExperimental” key set to true. Enabling
+these requires a special command line argument when starting the cmake server mode.</p>
+<p>Within a “major” version all “minor” versions are fully backwards compatible.
+New “minor” versions may introduce functionality in such a way that existing
+clients of the same “major” version will continue to work, provided they
+ignore keys in the output that they do not know about.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;supportedProtocolVersions&quot;:[{&quot;major&quot;:0,&quot;minor&quot;:1}],&quot;type&quot;:&quot;hello&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-handshake">
+<h4><a class="toc-backref" href="#id17">Type “handshake”</a><a class="headerlink" href="#type-handshake" title="Permalink to this headline">¶</a></h4>
+<p>The first request that the client may send to the server is of type “handshake”.</p>
+<p>This request needs to pass one of the “supportedProtocolVersions” of the “hello”
+type response received earlier back to the server in the “protocolVersion” field.
+Giving the “major” version of the requested protocol version will make the server
+use the latest minor version of that protocol. Use this if you do not explicitly
+need to depend on a specific minor version.</p>
+<p>Protocol version 1.0 requires the following attributes to be set:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“sourceDirectory” with a path to the sources</p></li>
+<li><p>“buildDirectory” with a path to the build directory</p></li>
+<li><p>“generator” with the generator name</p></li>
+<li><p>“extraGenerator” (optional!) with the extra generator to be used</p></li>
+<li><p>“platform” with the generator platform (if supported by the generator)</p></li>
+<li><p>“toolset” with the generator toolset (if supported by the generator)</p></li>
+</ul>
+</div></blockquote>
+<p>Protocol version 1.2 makes all but the build directory optional, provided
+there is a valid cache in the build directory that contains all the other
+information already.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;zimtstern&quot;,&quot;type&quot;:&quot;handshake&quot;,&quot;protocolVersion&quot;:{&quot;major&quot;:0},
+ &quot;sourceDirectory&quot;:&quot;/home/code/cmake&quot;, &quot;buildDirectory&quot;:&quot;/tmp/testbuild&quot;,
+ &quot;generator&quot;:&quot;Ninja&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>which will result in a response type “reply”:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;zimtstern&quot;,&quot;inReplyTo&quot;:&quot;handshake&quot;,&quot;type&quot;:&quot;reply&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>indicating that the server is ready for action.</p>
+</div>
+<div class="section" id="type-globalsettings">
+<h4><a class="toc-backref" href="#id18">Type “globalSettings”</a><a class="headerlink" href="#type-globalsettings" title="Permalink to this headline">¶</a></h4>
+<p>This request can be sent after the initial handshake. It will return a
+JSON structure with information on cmake state.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;globalSettings&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>which will result in a response type “reply”:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;buildDirectory&quot;: &quot;/tmp/test-build&quot;,
+  &quot;capabilities&quot;: {
+    &quot;generators&quot;: [
+      {
+        &quot;extraGenerators&quot;: [],
+        &quot;name&quot;: &quot;Watcom WMake&quot;,
+        &quot;platformSupport&quot;: false,
+        &quot;toolsetSupport&quot;: false
+      },
+      &lt;...&gt;
+    ],
+    &quot;serverMode&quot;: false,
+    &quot;version&quot;: {
+      &quot;isDirty&quot;: false,
+      &quot;major&quot;: 3,
+      &quot;minor&quot;: 6,
+      &quot;patch&quot;: 20160830,
+      &quot;string&quot;: &quot;3.6.20160830-gd6abad&quot;,
+      &quot;suffix&quot;: &quot;gd6abad&quot;
+    }
+  },
+  &quot;checkSystemVars&quot;: false,
+  &quot;cookie&quot;: &quot;&quot;,
+  &quot;extraGenerator&quot;: &quot;&quot;,
+  &quot;generator&quot;: &quot;Ninja&quot;,
+  &quot;debugOutput&quot;: false,
+  &quot;inReplyTo&quot;: &quot;globalSettings&quot;,
+  &quot;sourceDirectory&quot;: &quot;/home/code/cmake&quot;,
+  &quot;trace&quot;: false,
+  &quot;traceExpand&quot;: false,
+  &quot;type&quot;: &quot;reply&quot;,
+  &quot;warnUninitialized&quot;: false,
+  &quot;warnUnused&quot;: false,
+  &quot;warnUnusedCli&quot;: true
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-setglobalsettings">
+<h4><a class="toc-backref" href="#id19">Type “setGlobalSettings”</a><a class="headerlink" href="#type-setglobalsettings" title="Permalink to this headline">¶</a></h4>
+<p>This request can be sent to change the global settings attributes. Unknown
+attributes are going to be ignored. Read-only attributes reported by
+“globalSettings” are all capabilities, buildDirectory, generator,
+extraGenerator and sourceDirectory. Any attempt to set these will be ignored,
+too.</p>
+<p>All other settings will be changed.</p>
+<p>The server will respond with an empty reply message or an error.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;setGlobalSettings&quot;,&quot;debugOutput&quot;:true}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will reply to this with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;inReplyTo&quot;:&quot;setGlobalSettings&quot;,&quot;type&quot;:&quot;reply&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-configure">
+<h4><a class="toc-backref" href="#id20">Type “configure”</a><a class="headerlink" href="#type-configure" title="Permalink to this headline">¶</a></h4>
+<p>This request will configure a project for build.</p>
+<p>To configure a build directory already containing cmake files, it is enough to
+set “buildDirectory” via “setGlobalSettings”. To create a fresh build directory
+you also need to set “currentGenerator” and “sourceDirectory” via “setGlobalSettings”
+in addition to “buildDirectory”.</p>
+<p>You may a list of strings to “configure” via the “cacheArguments” key. These
+strings will be interpreted similar to command line arguments related to
+cache handling that are passed to the cmake command line client.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;configure&quot;, &quot;cacheArguments&quot;:[&quot;-Dsomething=else&quot;]}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will reply like this (after reporting progress for some time):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;&quot;,&quot;inReplyTo&quot;:&quot;configure&quot;,&quot;type&quot;:&quot;reply&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-compute">
+<h4><a class="toc-backref" href="#id21">Type “compute”</a><a class="headerlink" href="#type-compute" title="Permalink to this headline">¶</a></h4>
+<p>This request will generate build system files in the build directory and
+is only available after a project was successfully “configure”d.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;compute&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will reply (after reporting progress information):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;cookie&quot;:&quot;&quot;,&quot;inReplyTo&quot;:&quot;compute&quot;,&quot;type&quot;:&quot;reply&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-codemodel">
+<h4><a class="toc-backref" href="#id22">Type “codemodel”</a><a class="headerlink" href="#type-codemodel" title="Permalink to this headline">¶</a></h4>
+<p>The “codemodel” request can be used after a project was “compute”d successfully.</p>
+<p>It will list the complete project structure as it is known to cmake.</p>
+<p>The reply will contain a key “configurations”, which will contain a list of
+configuration objects. Configuration objects are used to destinquish between
+different configurations the build directory might have enabled. While most
+generators only support one configuration, others might support several.</p>
+<p>Each configuration object can have the following keys:</p>
+<dl class="simple">
+<dt>“name”</dt><dd><p>contains the name of the configuration. The name may be empty.</p>
+</dd>
+<dt>“projects”</dt><dd><p>contains a list of project objects, one for each build project.</p>
+</dd>
+</dl>
+<p>Project objects define one (sub-)project defined in the cmake build system.</p>
+<p>Each project object can have the following keys:</p>
+<dl class="simple">
+<dt>“name”</dt><dd><p>contains the (sub-)projects name.</p>
+</dd>
+<dt>“minimumCMakeVersion”</dt><dd><p>contains the minimum cmake version allowed for this project, null if the
+project doesn’t specify one.</p>
+</dd>
+<dt>“hasInstallRule”</dt><dd><p>true if the project contains any install rules, false otherwise.</p>
+</dd>
+<dt>“sourceDirectory”</dt><dd><p>contains the current source directory</p>
+</dd>
+<dt>“buildDirectory”</dt><dd><p>contains the current build directory.</p>
+</dd>
+<dt>“targets”</dt><dd><p>contains a list of build system target objects.</p>
+</dd>
+</dl>
+<p>Target objects define individual build targets for a certain configuration.</p>
+<p>Each target object can have the following keys:</p>
+<dl class="simple">
+<dt>“name”</dt><dd><p>contains the name of the target.</p>
+</dd>
+<dt>“type”</dt><dd><p>defines the type of build of the target. Possible values are
+“STATIC_LIBRARY”, “MODULE_LIBRARY”, “SHARED_LIBRARY”, “OBJECT_LIBRARY”,
+“EXECUTABLE”, “UTILITY” and “INTERFACE_LIBRARY”.</p>
+</dd>
+<dt>“fullName”</dt><dd><p>contains the full name of the build result (incl. extensions, etc.).</p>
+</dd>
+<dt>“sourceDirectory”</dt><dd><p>contains the current source directory.</p>
+</dd>
+<dt>“buildDirectory”</dt><dd><p>contains the current build directory.</p>
+</dd>
+<dt>“isGeneratorProvided”</dt><dd><p>true if the target is auto-created by a generator, false otherwise</p>
+</dd>
+<dt>“hasInstallRule”</dt><dd><p>true if the target contains any install rules, false otherwise.</p>
+</dd>
+<dt>“installPaths”</dt><dd><p>full path to the destination directories defined by target install rules.</p>
+</dd>
+<dt>“artifacts”</dt><dd><p>with a list of build artifacts. The list is sorted with the most
+important artifacts first (e.g. a .DLL file is listed before a
+.PDB file on windows).</p>
+</dd>
+<dt>“linkerLanguage”</dt><dd><p>contains the language of the linker used to produce the artifact.</p>
+</dd>
+<dt>“linkLibraries”</dt><dd><p>with a list of libraries to link to. This value is encoded in the
+system’s native shell format.</p>
+</dd>
+<dt>“linkFlags”</dt><dd><p>with a list of flags to pass to the linker. This value is encoded in
+the system’s native shell format.</p>
+</dd>
+<dt>“linkLanguageFlags”</dt><dd><p>with the flags for a compiler using the linkerLanguage. This value is
+encoded in the system’s native shell format.</p>
+</dd>
+<dt>“frameworkPath”</dt><dd><p>with the framework path (on Apple computers). This value is encoded
+in the system’s native shell format.</p>
+</dd>
+<dt>“linkPath”</dt><dd><p>with the link path. This value is encoded in the system’s native shell
+format.</p>
+</dd>
+<dt>“sysroot”</dt><dd><p>with the sysroot path.</p>
+</dd>
+<dt>“fileGroups”</dt><dd><p>contains the source files making up the target.</p>
+</dd>
+</dl>
+<p>FileGroups are used to group sources using similar settings together.</p>
+<p>Each fileGroup object may contain the following keys:</p>
+<dl class="simple">
+<dt>“language”</dt><dd><p>contains the programming language used by all files in the group.</p>
+</dd>
+<dt>“compileFlags”</dt><dd><p>with a string containing all the flags passed to the compiler
+when building any of the files in this group. This value is encoded in
+the system’s native shell format.</p>
+</dd>
+<dt>“includePath”</dt><dd><p>with a list of include paths. Each include path is an object
+containing a “path” with the actual include path and “isSystem” with a bool
+value informing whether this is a normal include or a system include. This
+value is encoded in the system’s native shell format.</p>
+</dd>
+<dt>“defines”</dt><dd><p>with a list of defines in the form “SOMEVALUE” or “SOMEVALUE=42”. This
+value is encoded in the system’s native shell format.</p>
+</dd>
+<dt>“sources”</dt><dd><p>with a list of source files.</p>
+</dd>
+</dl>
+<p>All file paths in the fileGroup are either absolute or relative to the
+sourceDirectory of the target.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;codemodel&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will reply:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;configurations&quot;: [
+    {
+      &quot;name&quot;: &quot;&quot;,
+      &quot;projects&quot;: [
+        {
+          &quot;buildDirectory&quot;: &quot;/tmp/build/Source/CursesDialog/form&quot;,
+          &quot;name&quot;: &quot;CMAKE_FORM&quot;,
+          &quot;sourceDirectory&quot;: &quot;/home/code/src/cmake/Source/CursesDialog/form&quot;,
+          &quot;targets&quot;: [
+            {
+              &quot;artifacts&quot;: [ &quot;/tmp/build/Source/CursesDialog/form/libcmForm.a&quot; ],
+              &quot;buildDirectory&quot;: &quot;/tmp/build/Source/CursesDialog/form&quot;,
+              &quot;fileGroups&quot;: [
+                {
+                  &quot;compileFlags&quot;: &quot;  -std=gnu11&quot;,
+                  &quot;defines&quot;: [ &quot;CURL_STATICLIB&quot;, &quot;LIBARCHIVE_STATIC&quot; ],
+                  &quot;includePath&quot;: [ { &quot;path&quot;: &quot;/tmp/build/Utilities&quot; }, &lt;...&gt; ],
+                  &quot;isGenerated&quot;: false,
+                  &quot;language&quot;: &quot;C&quot;,
+                  &quot;sources&quot;: [ &quot;fld_arg.c&quot;, &lt;...&gt; ]
+                }
+              ],
+              &quot;fullName&quot;: &quot;libcmForm.a&quot;,
+              &quot;linkerLanguage&quot;: &quot;C&quot;,
+              &quot;name&quot;: &quot;cmForm&quot;,
+              &quot;sourceDirectory&quot;: &quot;/home/code/src/cmake/Source/CursesDialog/form&quot;,
+              &quot;type&quot;: &quot;STATIC_LIBRARY&quot;
+            }
+          ]
+        },
+        &lt;...&gt;
+      ]
+    }
+  ],
+  &quot;cookie&quot;: &quot;&quot;,
+  &quot;inReplyTo&quot;: &quot;codemodel&quot;,
+  &quot;type&quot;: &quot;reply&quot;
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-ctestinfo">
+<h4><a class="toc-backref" href="#id23">Type “ctestInfo”</a><a class="headerlink" href="#type-ctestinfo" title="Permalink to this headline">¶</a></h4>
+<p>The “ctestInfo” request can be used after a project was “compute”d successfully.</p>
+<p>It will list the complete project test structure as it is known to cmake.</p>
+<p>The reply will contain a key “configurations”, which will contain a list of
+configuration objects. Configuration objects are used to destinquish between
+different configurations the build directory might have enabled. While most
+generators only support one configuration, others might support several.</p>
+<p>Each configuration object can have the following keys:</p>
+<dl class="simple">
+<dt>“name”</dt><dd><p>contains the name of the configuration. The name may be empty.</p>
+</dd>
+<dt>“projects”</dt><dd><p>contains a list of project objects, one for each build project.</p>
+</dd>
+</dl>
+<p>Project objects define one (sub-)project defined in the cmake build system.</p>
+<p>Each project object can have the following keys:</p>
+<dl class="simple">
+<dt>“name”</dt><dd><p>contains the (sub-)projects name.</p>
+</dd>
+<dt>“ctestInfo”</dt><dd><p>contains a list of test objects.</p>
+</dd>
+</dl>
+<p>Each test object can have the following keys:</p>
+<dl class="simple">
+<dt>“ctestName”</dt><dd><p>contains the name of the test.</p>
+</dd>
+<dt>“ctestCommand”</dt><dd><p>contains the test command.</p>
+</dd>
+<dt>“properties”</dt><dd><p>contains a list of test property objects.</p>
+</dd>
+</dl>
+<p>Each test property object can have the following keys:</p>
+<dl class="simple">
+<dt>“key”</dt><dd><p>contains the test property key.</p>
+</dd>
+<dt>“value”</dt><dd><p>contains the test property value.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="type-cmakeinputs">
+<h4><a class="toc-backref" href="#id24">Type “cmakeInputs”</a><a class="headerlink" href="#type-cmakeinputs" title="Permalink to this headline">¶</a></h4>
+<p>The “cmakeInputs” requests will report files used by CMake as part
+of the build system itself.</p>
+<p>This request is only available after a project was successfully
+“configure”d.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;cmakeInputs&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will reply with the following information:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;buildFiles&quot;:
+  [
+    {&quot;isCMake&quot;:true,&quot;isTemporary&quot;:false,&quot;sources&quot;:[&quot;/usr/lib/cmake/...&quot;, ... ]},
+    {&quot;isCMake&quot;:false,&quot;isTemporary&quot;:false,&quot;sources&quot;:[&quot;CMakeLists.txt&quot;, ...]},
+    {&quot;isCMake&quot;:false,&quot;isTemporary&quot;:true,&quot;sources&quot;:[&quot;/tmp/build/CMakeFiles/...&quot;, ...]}
+  ],
+  &quot;cmakeRootDirectory&quot;:&quot;/usr/lib/cmake&quot;,
+  &quot;sourceDirectory&quot;:&quot;/home/code/src/cmake&quot;,
+  &quot;cookie&quot;:&quot;&quot;,
+  &quot;inReplyTo&quot;:&quot;cmakeInputs&quot;,
+  &quot;type&quot;:&quot;reply&quot;
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>All file names are either relative to the top level source directory or
+absolute.</p>
+<p>The list of files which “isCMake” set to true are part of the cmake installation.</p>
+<p>The list of files witch “isTemporary” set to true are part of the build directory
+and will not survive the build directory getting cleaned out.</p>
+</div>
+<div class="section" id="type-cache">
+<h4><a class="toc-backref" href="#id25">Type “cache”</a><a class="headerlink" href="#type-cache" title="Permalink to this headline">¶</a></h4>
+<p>The “cache” request will list the cached configuration values.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;cache&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will respond with the following output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;cookie&quot;:&quot;&quot;,&quot;inReplyTo&quot;:&quot;cache&quot;,&quot;type&quot;:&quot;reply&quot;,
+  &quot;cache&quot;:
+  [
+    {
+      &quot;key&quot;:&quot;SOMEVALUE&quot;,
+      &quot;properties&quot;:
+      {
+        &quot;ADVANCED&quot;:&quot;1&quot;,
+        &quot;HELPSTRING&quot;:&quot;This is not helpful&quot;
+      }
+      &quot;type&quot;:&quot;STRING&quot;,
+      &quot;value&quot;:&quot;TEST&quot;}
+  ]
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>The output can be limited to a list of keys by passing an array of key names
+to the “keys” optional field of the “cache” request.</p>
+</div>
+<div class="section" id="type-filesystemwatchers">
+<h4><a class="toc-backref" href="#id26">Type “fileSystemWatchers”</a><a class="headerlink" href="#type-filesystemwatchers" title="Permalink to this headline">¶</a></h4>
+<p>The server can watch the filesystem for changes. The “fileSystemWatchers”
+command will report on the files and directories watched.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{&quot;type&quot;:&quot;fileSystemWatchers&quot;}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+<p>CMake will respond with the following output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[== &quot;CMake Server&quot; ==[
+{
+  &quot;cookie&quot;:&quot;&quot;,&quot;inReplyTo&quot;:&quot;fileSystemWatchers&quot;,&quot;type&quot;:&quot;reply&quot;,
+  &quot;watchedFiles&quot;: [ &quot;/absolute/path&quot; ],
+  &quot;watchedDirectories&quot;: [ &quot;/absolute&quot; ]
+}
+]== &quot;CMake Server&quot; ==]
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-server(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#operation">Operation</a></li>
+<li><a class="reference internal" href="#debugging">Debugging</a></li>
+<li><a class="reference internal" href="#protocol-api">Protocol API</a><ul>
+<li><a class="reference internal" href="#general-message-layout">General Message Layout</a><ul>
+<li><a class="reference internal" href="#type-reply">Type “reply”</a></li>
+<li><a class="reference internal" href="#type-error">Type “error”</a></li>
+<li><a class="reference internal" href="#type-progress">Type “progress”</a></li>
+<li><a class="reference internal" href="#type-message">Type “message”</a></li>
+<li><a class="reference internal" href="#type-signal">Type “signal”</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#specific-signals">Specific Signals</a><ul>
+<li><a class="reference internal" href="#dirty-signal">“dirty” Signal</a></li>
+<li><a class="reference internal" href="#filechange-signal">“fileChange” Signal</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#specific-message-types">Specific Message Types</a><ul>
+<li><a class="reference internal" href="#type-hello">Type “hello”</a></li>
+<li><a class="reference internal" href="#type-handshake">Type “handshake”</a></li>
+<li><a class="reference internal" href="#type-globalsettings">Type “globalSettings”</a></li>
+<li><a class="reference internal" href="#type-setglobalsettings">Type “setGlobalSettings”</a></li>
+<li><a class="reference internal" href="#type-configure">Type “configure”</a></li>
+<li><a class="reference internal" href="#type-compute">Type “compute”</a></li>
+<li><a class="reference internal" href="#type-codemodel">Type “codemodel”</a></li>
+<li><a class="reference internal" href="#type-ctestinfo">Type “ctestInfo”</a></li>
+<li><a class="reference internal" href="#type-cmakeinputs">Type “cmakeInputs”</a></li>
+<li><a class="reference internal" href="#type-cache">Type “cache”</a></li>
+<li><a class="reference internal" href="#type-filesystemwatchers">Type “fileSystemWatchers”</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake-qt.7.html"
+                        title="previous chapter">cmake-qt(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-toolchains.7.html"
+                        title="next chapter">cmake-toolchains(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-server.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-toolchains.7.html" title="cmake-toolchains(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake-qt.7.html" title="cmake-qt(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-server(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

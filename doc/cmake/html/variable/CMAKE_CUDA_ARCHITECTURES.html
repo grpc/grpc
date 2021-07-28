@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_CUDA_ARCHITECTURES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_CUDA_COMPILE_FEATURES" href="CMAKE_CUDA_COMPILE_FEATURES.html" />
+    <link rel="prev" title="CMAKE_COMPILER_IS_GNUG77" href="CMAKE_COMPILER_IS_GNUG77.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_CUDA_COMPILE_FEATURES.html" title="CMAKE_CUDA_COMPILE_FEATURES"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_COMPILER_IS_GNUG77.html" title="CMAKE_COMPILER_IS_GNUG77"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_CUDA_ARCHITECTURES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-cuda-architectures">
+<span id="variable:CMAKE_CUDA_ARCHITECTURES"></span><h1>CMAKE_CUDA_ARCHITECTURES<a class="headerlink" href="#cmake-cuda-architectures" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.18.</span></p>
+</div>
+<p>Default value for <span class="target" id="index-0-prop_tgt:CUDA_ARCHITECTURES"></span><a class="reference internal" href="../prop_tgt/CUDA_ARCHITECTURES.html#prop_tgt:CUDA_ARCHITECTURES" title="CUDA_ARCHITECTURES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_ARCHITECTURES</span></code></a> property of targets.</p>
+<p>This is initialized as follows depending on <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CUDA_COMPILER_ID</span></code></a>:</p>
+<ul class="simple">
+<li><p>For <code class="docutils literal notranslate"><span class="pre">Clang</span></code>: the oldest architecture that works.</p></li>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">NVIDIA</span></code>: the default architecture chosen by the compiler.
+See policy <span class="target" id="index-0-policy:CMP0104"></span><a class="reference internal" href="../policy/CMP0104.html#policy:CMP0104" title="CMP0104"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0104</span></code></a>.</p></li>
+</ul>
+<p>Users are encouraged to override this, as the default varies across compilers
+and compiler versions.</p>
+<p>This variable is used to initialize the <span class="target" id="index-1-prop_tgt:CUDA_ARCHITECTURES"></span><a class="reference internal" href="../prop_tgt/CUDA_ARCHITECTURES.html#prop_tgt:CUDA_ARCHITECTURES" title="CUDA_ARCHITECTURES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_ARCHITECTURES</span></code></a> property
+on all targets. See the target property for additional information.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_COMPILER_IS_GNUG77.html"
+                        title="previous chapter">CMAKE_COMPILER_IS_GNUG77</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_CUDA_COMPILE_FEATURES.html"
+                        title="next chapter">CMAKE_CUDA_COMPILE_FEATURES</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_CUDA_ARCHITECTURES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_CUDA_COMPILE_FEATURES.html" title="CMAKE_CUDA_COMPILE_FEATURES"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_COMPILER_IS_GNUG77.html" title="CMAKE_COMPILER_IS_GNUG77"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_CUDA_ARCHITECTURES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

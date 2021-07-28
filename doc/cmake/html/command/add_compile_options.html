@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_compile_options &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_custom_command" href="add_custom_command.html" />
+    <link rel="prev" title="add_compile_definitions" href="add_compile_definitions.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_custom_command.html" title="add_custom_command"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_compile_definitions.html" title="add_compile_definitions"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_compile_options</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-compile-options">
+<span id="command:add_compile_options"></span><h1>add_compile_options<a class="headerlink" href="#add-compile-options" title="Permalink to this headline">¶</a></h1>
+<p>Add options to the compilation of source files.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_compile_options(</span><span class="nv">&lt;option&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Adds options to the <span class="target" id="index-0-prop_dir:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_dir/COMPILE_OPTIONS.html#prop_dir:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> directory property.
+These options are used when compiling targets from the current
+directory and below.</p>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">add_compile_options</span></code> may use “generator expressions” with
+the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a>
+manual for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+manual for more on defining buildsystem properties.</p>
+<p>The final set of compile or link options used for a target is constructed by
+accumulating options from the current target and the usage requirements of
+its dependencies.  The set of options is de-duplicated to avoid repetition.
+While beneficial for individual options, the de-duplication step can break
+up option groups.  For example, <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">-D</span> <span class="pre">B</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">B</span></code>.  One may
+specify a group of options using shell-like quoting along with a <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code>
+prefix.  The <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code> prefix is dropped, and the rest of the option string
+is parsed using the <span class="target" id="index-0-command:separate_arguments"></span><a class="reference internal" href="separate_arguments.html#command:separate_arguments" title="separate_arguments"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">separate_arguments()</span></code></a> <code class="docutils literal notranslate"><span class="pre">UNIX_COMMAND</span></code> mode.
+For example, <code class="docutils literal notranslate"><span class="pre">&quot;SHELL:-D</span> <span class="pre">A&quot;</span> <span class="pre">&quot;SHELL:-D</span> <span class="pre">B&quot;</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">-D</span> <span class="pre">B</span></code>.</p>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Since different compilers support different options, a typical use of
+this command is in a compiler-specific conditional clause:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">if</span> <span class="nf">(</span><span class="no">MSVC</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="c"># warning level 4 and all warnings as errors</span>
+<span class="w">    </span><span class="nf">add_compile_options(</span><span class="na">/W4</span><span class="w"> </span><span class="na">/WX</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">else()</span><span class="w"></span>
+<span class="w">    </span><span class="c"># lots of warnings and all warnings as errors</span>
+<span class="w">    </span><span class="nf">add_compile_options(</span><span class="p">-</span><span class="nb">Wall</span><span class="w"> </span><span class="p">-</span><span class="nb">Wextra</span><span class="w"> </span><span class="p">-</span><span class="nb">pedantic</span><span class="w"> </span><span class="p">-</span><span class="nb">Werror</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p>This command can be used to add any options. However, for
+adding preprocessor definitions and include directories it is recommended
+to use the more specific commands <span class="target" id="index-0-command:add_compile_definitions"></span><a class="reference internal" href="add_compile_definitions.html#command:add_compile_definitions" title="add_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_definitions()</span></code></a>
+and <span class="target" id="index-0-command:include_directories"></span><a class="reference internal" href="include_directories.html#command:include_directories" title="include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include_directories()</span></code></a>.</p>
+<p>The command <span class="target" id="index-0-command:target_compile_options"></span><a class="reference internal" href="target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a> adds target-specific options.</p>
+<p>The source file property <span class="target" id="index-0-prop_sf:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_sf/COMPILE_OPTIONS.html#prop_sf:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> adds options to one
+source file.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">add_compile_options</a><ul>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_compile_definitions.html"
+                        title="previous chapter">add_compile_definitions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_custom_command.html"
+                        title="next chapter">add_custom_command</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_compile_options.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_custom_command.html" title="add_custom_command"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_compile_definitions.html" title="add_compile_definitions"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_compile_options</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

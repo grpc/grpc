@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>macro &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mark_as_advanced" href="mark_as_advanced.html" />
+    <link rel="prev" title="list" href="list.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="mark_as_advanced.html" title="mark_as_advanced"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="list.html" title="list"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">macro</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="macro">
+<span id="command:macro"></span><h1>macro<a class="headerlink" href="#macro" title="Permalink to this headline">¶</a></h1>
+<p>Start recording a macro for later invocation as a command</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">macro(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;arg1&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nv">&lt;commands&gt;</span><span class="w"></span>
+<span class="nf">endmacro()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Defines a macro named <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> that takes arguments named
+<code class="docutils literal notranslate"><span class="pre">&lt;arg1&gt;</span></code>, … Commands listed after macro, but before the
+matching <span class="target" id="index-0-command:endmacro"></span><a class="reference internal" href="endmacro.html#command:endmacro" title="endmacro"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endmacro()</span></code></a>, are not executed until the macro
+is invoked.</p>
+<p>Per legacy, the <span class="target" id="index-1-command:endmacro"></span><a class="reference internal" href="endmacro.html#command:endmacro" title="endmacro"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endmacro()</span></code></a> command admits an optional
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> argument. If used, it must be a verbatim repeat of the
+argument of the opening <code class="docutils literal notranslate"><span class="pre">macro</span></code> command.</p>
+<p>See the <span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command documentation for the behavior
+of policies inside macros.</p>
+<p>See the <a class="reference internal" href="#macro-vs-function"><span class="std std-ref">Macro vs Function</span></a> section below for differences
+between CMake macros and <span class="target" id="index-0-command:function"></span><a class="reference internal" href="function.html#command:function" title="function"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">functions</span></code></a>.</p>
+<div class="section" id="invocation">
+<h2>Invocation<a class="headerlink" href="#invocation" title="Permalink to this headline">¶</a></h2>
+<p>The macro invocation is case-insensitive. A macro defined as</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">macro(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nv">&lt;commands&gt;</span><span class="w"></span>
+<span class="nf">endmacro()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>can be invoked through any of</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foo()</span><span class="w"></span>
+<span class="nf">Foo()</span><span class="w"></span>
+<span class="nf">FOO()</span><span class="w"></span>
+<span class="nf">cmake_language(</span><span class="no">CALL</span><span class="w"> </span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>and so on. However, it is strongly recommended to stay with the
+case chosen in the macro definition.  Typically macros use
+all-lowercase names.</p>
+<p>The <span class="target" id="index-0-command:cmake_language"></span><a class="reference internal" href="cmake_language.html#command:cmake_language" title="cmake_language"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_language(CALL</span> <span class="pre">...)</span></code></a> command can also be used to
+invoke the macro.</p>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>When a macro is invoked, the commands recorded in the macro are
+first modified by replacing formal parameters (<code class="docutils literal notranslate"><span class="pre">${arg1}</span></code>, …)
+with the arguments passed, and then invoked as normal commands.</p>
+<p>In addition to referencing the formal parameters you can reference the
+values <code class="docutils literal notranslate"><span class="pre">${ARGC}</span></code> which will be set to the number of arguments passed
+into the function as well as <code class="docutils literal notranslate"><span class="pre">${ARGV0}</span></code>, <code class="docutils literal notranslate"><span class="pre">${ARGV1}</span></code>, <code class="docutils literal notranslate"><span class="pre">${ARGV2}</span></code>,
+…  which will have the actual values of the arguments passed in.
+This facilitates creating macros with optional arguments.</p>
+<p>Furthermore, <code class="docutils literal notranslate"><span class="pre">${ARGV}</span></code> holds the list of all arguments given to the
+macro and <code class="docutils literal notranslate"><span class="pre">${ARGN}</span></code> holds the list of arguments past the last expected
+argument.
+Referencing to <code class="docutils literal notranslate"><span class="pre">${ARGV#}</span></code> arguments beyond <code class="docutils literal notranslate"><span class="pre">${ARGC}</span></code> have undefined
+behavior. Checking that <code class="docutils literal notranslate"><span class="pre">${ARGC}</span></code> is greater than <code class="docutils literal notranslate"><span class="pre">#</span></code> is the only
+way to ensure that <code class="docutils literal notranslate"><span class="pre">${ARGV#}</span></code> was passed to the function as an extra
+argument.</p>
+</div>
+<div class="section" id="macro-vs-function">
+<span id="id1"></span><h2>Macro vs Function<a class="headerlink" href="#macro-vs-function" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">macro</span></code> command is very similar to the <span class="target" id="index-1-command:function"></span><a class="reference internal" href="function.html#command:function" title="function"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">function()</span></code></a> command.
+Nonetheless, there are a few important differences.</p>
+<p>In a function, <code class="docutils literal notranslate"><span class="pre">ARGN</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGC</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGV</span></code> and <code class="docutils literal notranslate"><span class="pre">ARGV0</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGV1</span></code>, …
+are true variables in the usual CMake sense.  In a macro, they are not,
+they are string replacements much like the C preprocessor would do
+with a macro.  This has a number of consequences, as explained in
+the <a class="reference internal" href="#argument-caveats"><span class="std std-ref">Argument Caveats</span></a> section below.</p>
+<p>Another difference between macros and functions is the control flow.
+A function is executed by transferring control from the calling
+statement to the function body.  A macro is executed as if the macro
+body were pasted in place of the calling statement.  This has the
+consequence that a <span class="target" id="index-0-command:return"></span><a class="reference internal" href="return.html#command:return" title="return"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">return()</span></code></a> in a macro body does not
+just terminate execution of the macro; rather, control is returned
+from the scope of the macro call.  To avoid confusion, it is recommended
+to avoid <span class="target" id="index-1-command:return"></span><a class="reference internal" href="return.html#command:return" title="return"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">return()</span></code></a> in macros altogether.</p>
+<p>Unlike a function, the <span class="target" id="index-0-variable:CMAKE_CURRENT_FUNCTION"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_FUNCTION.html#variable:CMAKE_CURRENT_FUNCTION" title="CMAKE_CURRENT_FUNCTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_FUNCTION</span></code></a>,
+<span class="target" id="index-0-variable:CMAKE_CURRENT_FUNCTION_LIST_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_FUNCTION_LIST_DIR.html#variable:CMAKE_CURRENT_FUNCTION_LIST_DIR" title="CMAKE_CURRENT_FUNCTION_LIST_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_FUNCTION_LIST_DIR</span></code></a>,
+<span class="target" id="index-0-variable:CMAKE_CURRENT_FUNCTION_LIST_FILE"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_FUNCTION_LIST_FILE.html#variable:CMAKE_CURRENT_FUNCTION_LIST_FILE" title="CMAKE_CURRENT_FUNCTION_LIST_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_FUNCTION_LIST_FILE</span></code></a>,
+<span class="target" id="index-0-variable:CMAKE_CURRENT_FUNCTION_LIST_LINE"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_FUNCTION_LIST_LINE.html#variable:CMAKE_CURRENT_FUNCTION_LIST_LINE" title="CMAKE_CURRENT_FUNCTION_LIST_LINE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_FUNCTION_LIST_LINE</span></code></a> variables are not
+set for a macro.</p>
+</div>
+<div class="section" id="argument-caveats">
+<span id="id2"></span><h2>Argument Caveats<a class="headerlink" href="#argument-caveats" title="Permalink to this headline">¶</a></h2>
+<p>Since <code class="docutils literal notranslate"><span class="pre">ARGN</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGC</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGV</span></code>, <code class="docutils literal notranslate"><span class="pre">ARGV0</span></code> etc. are not variables,
+you will NOT be able to use commands like</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">if(</span><span class="no">ARGV1</span><span class="nf">)</span><span class="w"> </span><span class="c"># ARGV1 is not a variable</span>
+<span class="nf">if(</span><span class="no">DEFINED</span><span class="w"> </span><span class="no">ARGV2</span><span class="nf">)</span><span class="w"> </span><span class="c"># ARGV2 is not a variable</span>
+<span class="nf">if(</span><span class="no">ARGC</span><span class="w"> </span><span class="no">GREATER</span><span class="w"> </span><span class="m">2</span><span class="nf">)</span><span class="w"> </span><span class="c"># ARGC is not a variable</span>
+<span class="nf">foreach(</span><span class="nb">loop_var</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">LISTS</span><span class="w"> </span><span class="no">ARGN</span><span class="nf">)</span><span class="w"> </span><span class="c"># ARGN is not a variable</span>
+</pre></div>
+</div>
+<p>In the first case, you can use <code class="docutils literal notranslate"><span class="pre">if(${ARGV1})</span></code>.  In the second and
+third case, the proper way to check if an optional variable was
+passed to the macro is to use <code class="docutils literal notranslate"><span class="pre">if(${ARGC}</span> <span class="pre">GREATER</span> <span class="pre">2)</span></code>.  In the
+last case, you can use <code class="docutils literal notranslate"><span class="pre">foreach(loop_var</span> <span class="pre">${ARGN})</span></code> but this will
+skip empty arguments.  If you need to include them, you can use</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">list_var</span><span class="w"> </span><span class="s">&quot;${ARGN}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">foreach(</span><span class="nb">loop_var</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">LISTS</span><span class="w"> </span><span class="nb">list_var</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that if you have a variable with the same name in the scope from
+which the macro is called, using unreferenced names will use the
+existing variable instead of the arguments. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">macro(</span><span class="nb">bar</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">foreach(</span><span class="nb">arg</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">LISTS</span><span class="w"> </span><span class="no">ARGN</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&lt;commands&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">endforeach()</span><span class="w"></span>
+<span class="nf">endmacro()</span><span class="w"></span>
+
+<span class="nf">function(</span><span class="nb">foo</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">bar(</span><span class="nb">x</span><span class="w"> </span><span class="nb">y</span><span class="w"> </span><span class="nb">z</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endfunction()</span><span class="w"></span>
+
+<span class="nf">foo(</span><span class="nb">a</span><span class="w"> </span><span class="nb">b</span><span class="w"> </span><span class="nb">c</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Will loop over <code class="docutils literal notranslate"><span class="pre">a;b;c</span></code> and not over <code class="docutils literal notranslate"><span class="pre">x;y;z</span></code> as one might have expected.
+If you want true CMake variables and/or better CMake scope control you
+should look at the function command.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">macro</a><ul>
+<li><a class="reference internal" href="#invocation">Invocation</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+<li><a class="reference internal" href="#macro-vs-function">Macro vs Function</a></li>
+<li><a class="reference internal" href="#argument-caveats">Argument Caveats</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="list.html"
+                        title="previous chapter">list</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mark_as_advanced.html"
+                        title="next chapter">mark_as_advanced</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/macro.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="mark_as_advanced.html" title="mark_as_advanced"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="list.html" title="list"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">macro</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

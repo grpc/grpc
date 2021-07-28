@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ctest_test &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ctest_update" href="ctest_update.html" />
+    <link rel="prev" title="ctest_submit" href="ctest_submit.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ctest_update.html" title="ctest_update"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ctest_submit.html" title="ctest_submit"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_test</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctest-test">
+<span id="command:ctest_test"></span><h1>ctest_test<a class="headerlink" href="#ctest-test" title="Permalink to this headline">¶</a></h1>
+<p>Perform the <a class="reference internal" href="../manual/ctest.1.html#ctest-test-step"><span class="std std-ref">CTest Test Step</span></a> as a <a class="reference internal" href="../manual/ctest.1.html#dashboard-client"><span class="std std-ref">Dashboard Client</span></a>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest_test([BUILD &lt;build-dir&gt;] [APPEND]
+           [START &lt;start-number&gt;]
+           [END &lt;end-number&gt;]
+           [STRIDE &lt;stride-number&gt;]
+           [EXCLUDE &lt;exclude-regex&gt;]
+           [INCLUDE &lt;include-regex&gt;]
+           [EXCLUDE_LABEL &lt;label-exclude-regex&gt;]
+           [INCLUDE_LABEL &lt;label-include-regex&gt;]
+           [EXCLUDE_FIXTURE &lt;regex&gt;]
+           [EXCLUDE_FIXTURE_SETUP &lt;regex&gt;]
+           [EXCLUDE_FIXTURE_CLEANUP &lt;regex&gt;]
+           [PARALLEL_LEVEL &lt;level&gt;]
+           [RESOURCE_SPEC_FILE &lt;file&gt;]
+           [TEST_LOAD &lt;threshold&gt;]
+           [SCHEDULE_RANDOM &lt;ON|OFF&gt;]
+           [STOP_ON_FAILURE]
+           [STOP_TIME &lt;time-of-day&gt;]
+           [RETURN_VALUE &lt;result-var&gt;]
+           [CAPTURE_CMAKE_ERROR &lt;result-var&gt;]
+           [REPEAT &lt;mode&gt;:&lt;n&gt;]
+           [QUIET]
+           )
+</pre></div>
+</div>
+<p>Run tests in the project build tree and store results in
+<code class="docutils literal notranslate"><span class="pre">Test.xml</span></code> for submission with the <span class="target" id="index-0-command:ctest_submit"></span><a class="reference internal" href="ctest_submit.html#command:ctest_submit" title="ctest_submit"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_submit()</span></code></a> command.</p>
+<p>The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD</span> <span class="pre">&lt;build-dir&gt;</span></code></dt><dd><p>Specify the top-level build directory.  If not given, the
+<span class="target" id="index-0-variable:CTEST_BINARY_DIRECTORY"></span><a class="reference internal" href="../variable/CTEST_BINARY_DIRECTORY.html#variable:CTEST_BINARY_DIRECTORY" title="CTEST_BINARY_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_BINARY_DIRECTORY</span></code></a> variable is used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">APPEND</span></code></dt><dd><p>Mark <code class="docutils literal notranslate"><span class="pre">Test.xml</span></code> for append to results previously submitted to a
+dashboard server since the last <span class="target" id="index-0-command:ctest_start"></span><a class="reference internal" href="ctest_start.html#command:ctest_start" title="ctest_start"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_start()</span></code></a> call.
+Append semantics are defined by the dashboard server in use.
+This does <em>not</em> cause results to be appended to a <code class="docutils literal notranslate"><span class="pre">.xml</span></code> file
+produced by a previous call to this command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">START</span> <span class="pre">&lt;start-number&gt;</span></code></dt><dd><p>Specify the beginning of a range of test numbers.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">END</span> <span class="pre">&lt;end-number&gt;</span></code></dt><dd><p>Specify the end of a range of test numbers.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STRIDE</span> <span class="pre">&lt;stride-number&gt;</span></code></dt><dd><p>Specify the stride by which to step across a range of test numbers.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE</span> <span class="pre">&lt;exclude-regex&gt;</span></code></dt><dd><p>Specify a regular expression matching test names to exclude.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INCLUDE</span> <span class="pre">&lt;include-regex&gt;</span></code></dt><dd><p>Specify a regular expression matching test names to include.
+Tests not matching this expression are excluded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_LABEL</span> <span class="pre">&lt;label-exclude-regex&gt;</span></code></dt><dd><p>Specify a regular expression matching test labels to exclude.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INCLUDE_LABEL</span> <span class="pre">&lt;label-include-regex&gt;</span></code></dt><dd><p>Specify a regular expression matching test labels to include.
+Tests not matching this expression are excluded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FIXTURE</span> <span class="pre">&lt;regex&gt;</span></code></dt><dd><p>If a test in the set of tests to be executed requires a particular fixture,
+that fixture’s setup and cleanup tests would normally be added to the test
+set automatically. This option prevents adding setup or cleanup tests for
+fixtures matching the <code class="docutils literal notranslate"><span class="pre">&lt;regex&gt;</span></code>. Note that all other fixture behavior is
+retained, including test dependencies and skipping tests that have fixture
+setup tests that fail.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FIXTURE_SETUP</span> <span class="pre">&lt;regex&gt;</span></code></dt><dd><p>Same as <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FIXTURE</span></code> except only matching setup tests are excluded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FIXTURE_CLEANUP</span> <span class="pre">&lt;regex&gt;</span></code></dt><dd><p>Same as <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FIXTURE</span></code> except only matching cleanup tests are excluded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PARALLEL_LEVEL</span> <span class="pre">&lt;level&gt;</span></code></dt><dd><p>Specify a positive number representing the number of tests to
+be run in parallel.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RESOURCE_SPEC_FILE</span> <span class="pre">&lt;file&gt;</span></code></dt><dd><p>Specify a
+<a class="reference internal" href="../manual/ctest.1.html#ctest-resource-specification-file"><span class="std std-ref">resource specification file</span></a>. See
+<a class="reference internal" href="../manual/ctest.1.html#ctest-resource-allocation"><span class="std std-ref">Resource Allocation</span></a> for more information.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_LOAD</span> <span class="pre">&lt;threshold&gt;</span></code></dt><dd><p>While running tests in parallel, try not to start tests when they
+may cause the CPU load to pass above a given threshold.  If not
+specified the <span class="target" id="index-0-variable:CTEST_TEST_LOAD"></span><a class="reference internal" href="../variable/CTEST_TEST_LOAD.html#variable:CTEST_TEST_LOAD" title="CTEST_TEST_LOAD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_TEST_LOAD</span></code></a> variable will be checked,
+and then the <code class="docutils literal notranslate"><span class="pre">--test-load</span></code> command-line argument to <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a>.
+See also the <code class="docutils literal notranslate"><span class="pre">TestLoad</span></code> setting in the <a class="reference internal" href="../manual/ctest.1.html#ctest-test-step"><span class="std std-ref">CTest Test Step</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REPEAT</span> <span class="pre">&lt;mode&gt;:&lt;n&gt;</span></code></dt><dd><p>Run tests repeatedly based on the given <code class="docutils literal notranslate"><span class="pre">&lt;mode&gt;</span></code> up to <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code> times.
+The modes are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">UNTIL_FAIL</span></code></dt><dd><p>Require each test to run <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code> times without failing in order to pass.
+This is useful in finding sporadic failures in test cases.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UNTIL_PASS</span></code></dt><dd><p>Allow each test to run up to <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code> times in order to pass.
+Repeats tests if they fail for any reason.
+This is useful in tolerating sporadic failures in test cases.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AFTER_TIMEOUT</span></code></dt><dd><p>Allow each test to run up to <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code> times in order to pass.
+Repeats tests only if they timeout.
+This is useful in tolerating sporadic timeouts in test cases
+on busy machines.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SCHEDULE_RANDOM</span> <span class="pre">&lt;ON|OFF&gt;</span></code></dt><dd><p>Launch tests in a random order.  This may be useful for detecting
+implicit test dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STOP_ON_FAILURE</span></code></dt><dd><p>Stop the execution of the tests once one has failed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STOP_TIME</span> <span class="pre">&lt;time-of-day&gt;</span></code></dt><dd><p>Specify a time of day at which the tests should all stop running.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RETURN_VALUE</span> <span class="pre">&lt;result-var&gt;</span></code></dt><dd><p>Store in the <code class="docutils literal notranslate"><span class="pre">&lt;result-var&gt;</span></code> variable <code class="docutils literal notranslate"><span class="pre">0</span></code> if all tests passed.
+Store non-zero if anything went wrong.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CAPTURE_CMAKE_ERROR</span> <span class="pre">&lt;result-var&gt;</span></code></dt><dd><p>Store in the <code class="docutils literal notranslate"><span class="pre">&lt;result-var&gt;</span></code> variable -1 if there are any errors running
+the command and prevent ctest from returning non-zero if an error occurs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QUIET</span></code></dt><dd><p>Suppress any CTest-specific non-error messages that would have otherwise
+been printed to the console.  Output from the underlying test command is not
+affected.  Summary info detailing the percentage of passing tests is also
+unaffected by the <code class="docutils literal notranslate"><span class="pre">QUIET</span></code> option.</p>
+</dd>
+</dl>
+<p>See also the <span class="target" id="index-0-variable:CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE"></span><a class="reference internal" href="../variable/CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE.html#variable:CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE" title="CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE</span></code></a>
+and <span class="target" id="index-0-variable:CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE"></span><a class="reference internal" href="../variable/CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE.html#variable:CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE" title="CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE</span></code></a> variables.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ctest_submit.html"
+                        title="previous chapter">ctest_submit</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ctest_update.html"
+                        title="next chapter">ctest_update</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/ctest_test.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ctest_update.html" title="ctest_update"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ctest_submit.html" title="ctest_submit"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_test</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

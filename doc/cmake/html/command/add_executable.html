@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_executable &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_library" href="add_library.html" />
+    <link rel="prev" title="add_dependencies" href="add_dependencies.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_library.html" title="add_library"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_dependencies.html" title="add_dependencies"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_executable</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-executable">
+<span id="command:add_executable"></span><h1><a class="toc-backref" href="#id1">add_executable</a><a class="headerlink" href="#add-executable" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#add-executable" id="id1">add_executable</a></p>
+<ul>
+<li><p><a class="reference internal" href="#normal-executables" id="id2">Normal Executables</a></p></li>
+<li><p><a class="reference internal" href="#imported-executables" id="id3">Imported Executables</a></p></li>
+<li><p><a class="reference internal" href="#alias-executables" id="id4">Alias Executables</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>Add an executable to the project using the specified source files.</p>
+<div class="section" id="normal-executables">
+<h2><a class="toc-backref" href="#id2">Normal Executables</a><a class="headerlink" href="#normal-executables" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">WIN32</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">MACOSX_BUNDLE</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="no">EXCLUDE_FROM_ALL</span><span class="p">]</span><span class="w"></span>
+<span class="w">               </span><span class="p">[</span><span class="nb">source1</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="nb">source2</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Adds an executable target called <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> to be built from the source
+files listed in the command invocation.  (The source files can be omitted
+here if they are added later using <span class="target" id="index-0-command:target_sources"></span><a class="reference internal" href="target_sources.html#command:target_sources" title="target_sources"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_sources()</span></code></a>.)  The
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> corresponds to the logical target name and must be globally
+unique within a project.  The actual file name of the executable built is
+constructed based on conventions of the native platform (such as
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.exe</span></code> or just <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>).</p>
+<p>By default the executable file will be created in the build tree
+directory corresponding to the source tree directory in which the
+command was invoked.  See documentation of the
+<span class="target" id="index-0-prop_tgt:RUNTIME_OUTPUT_DIRECTORY"></span><a class="reference internal" href="../prop_tgt/RUNTIME_OUTPUT_DIRECTORY.html#prop_tgt:RUNTIME_OUTPUT_DIRECTORY" title="RUNTIME_OUTPUT_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RUNTIME_OUTPUT_DIRECTORY</span></code></a> target property to change this
+location.  See documentation of the <span class="target" id="index-0-prop_tgt:OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/OUTPUT_NAME.html#prop_tgt:OUTPUT_NAME" title="OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">OUTPUT_NAME</span></code></a> target property
+to change the <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> part of the final file name.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">WIN32</span></code> is given the property <span class="target" id="index-0-prop_tgt:WIN32_EXECUTABLE"></span><a class="reference internal" href="../prop_tgt/WIN32_EXECUTABLE.html#prop_tgt:WIN32_EXECUTABLE" title="WIN32_EXECUTABLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">WIN32_EXECUTABLE</span></code></a> will be
+set on the target created.  See documentation of that target property for
+details.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">MACOSX_BUNDLE</span></code> is given the corresponding property will be set on
+the created target.  See documentation of the <span class="target" id="index-0-prop_tgt:MACOSX_BUNDLE"></span><a class="reference internal" href="../prop_tgt/MACOSX_BUNDLE.html#prop_tgt:MACOSX_BUNDLE" title="MACOSX_BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MACOSX_BUNDLE</span></code></a>
+target property for details.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code> is given the corresponding property will be set on
+the created target.  See documentation of the <span class="target" id="index-0-prop_tgt:EXCLUDE_FROM_ALL"></span><a class="reference internal" href="../prop_tgt/EXCLUDE_FROM_ALL.html#prop_tgt:EXCLUDE_FROM_ALL" title="EXCLUDE_FROM_ALL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></a>
+target property for details.</p>
+<p>Source arguments to <code class="docutils literal notranslate"><span class="pre">add_executable</span></code> may use “generator expressions” with
+the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a>
+manual for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+manual for more on defining buildsystem properties.</p>
+<p>See also <span class="target" id="index-0-prop_sf:HEADER_FILE_ONLY"></span><a class="reference internal" href="../prop_sf/HEADER_FILE_ONLY.html#prop_sf:HEADER_FILE_ONLY" title="HEADER_FILE_ONLY"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">HEADER_FILE_ONLY</span></code></a> on what to do if some sources are
+pre-processed, and you want to have the original sources reachable from
+within IDE.</p>
+</div>
+<div class="section" id="imported-executables">
+<h2><a class="toc-backref" href="#id3">Imported Executables</a><a class="headerlink" href="#imported-executables" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="no">IMPORTED</span><span class="w"> </span><span class="p">[</span><span class="no">GLOBAL</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>An <a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">IMPORTED executable target</span></a> references an
+executable file located outside the project.  No rules are generated to
+build it, and the <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target property is <code class="docutils literal notranslate"><span class="pre">True</span></code>.  The
+target name has scope in the directory in which it is created and below, but
+the <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> option extends visibility.  It may be referenced like any
+target built within the project.  <code class="docutils literal notranslate"><span class="pre">IMPORTED</span></code> executables are useful
+for convenient reference from commands like <span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a>.
+Details about the imported executable are specified by setting properties
+whose names begin in <code class="docutils literal notranslate"><span class="pre">IMPORTED_</span></code>.  The most important such property is
+<span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION"></span><a class="reference internal" href="../prop_tgt/IMPORTED_LOCATION.html#prop_tgt:IMPORTED_LOCATION" title="IMPORTED_LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION</span></code></a> (and its per-configuration version
+<span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/IMPORTED_LOCATION_CONFIG.html#prop_tgt:IMPORTED_LOCATION_&lt;CONFIG&gt;" title="IMPORTED_LOCATION_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION_&lt;CONFIG&gt;</span></code></a>) which specifies the location of
+the main executable file on disk.  See documentation of the <code class="docutils literal notranslate"><span class="pre">IMPORTED_*</span></code>
+properties for more information.</p>
+</div>
+<div class="section" id="alias-executables">
+<h2><a class="toc-backref" href="#id4">Alias Executables</a><a class="headerlink" href="#alias-executables" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="no">ALIAS</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Creates an <a class="reference internal" href="../manual/cmake-buildsystem.7.html#alias-targets"><span class="std std-ref">Alias Target</span></a>, such that <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> can
+be used to refer to <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> in subsequent commands.  The <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>
+does not appear in the generated buildsystem as a make target.  The
+<code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> may not be an <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code>.</p>
+<p>An <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> to a non-<code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> <a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">Imported Target</span></a>
+has scope in the directory in which the alias is created and below.
+The <span class="target" id="index-0-prop_tgt:ALIAS_GLOBAL"></span><a class="reference internal" href="../prop_tgt/ALIAS_GLOBAL.html#prop_tgt:ALIAS_GLOBAL" title="ALIAS_GLOBAL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ALIAS_GLOBAL</span></code></a> target property can be used to check if the
+alias is global or not.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> targets can be used as targets to read properties
+from, executables for custom commands and custom targets.  They can also be
+tested for existence with the regular <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if(TARGET)</span></code></a> subcommand.
+The <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> may not be used to modify properties of <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code>, that
+is, it may not be used as the operand of <span class="target" id="index-0-command:set_property"></span><a class="reference internal" href="set_property.html#command:set_property" title="set_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_property()</span></code></a>,
+<span class="target" id="index-0-command:set_target_properties"></span><a class="reference internal" href="set_target_properties.html#command:set_target_properties" title="set_target_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_target_properties()</span></code></a>, <span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> etc.
+An <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> target may not be installed or exported.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">add_executable</a><ul>
+<li><a class="reference internal" href="#normal-executables">Normal Executables</a></li>
+<li><a class="reference internal" href="#imported-executables">Imported Executables</a></li>
+<li><a class="reference internal" href="#alias-executables">Alias Executables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_dependencies.html"
+                        title="previous chapter">add_dependencies</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_library.html"
+                        title="next chapter">add_library</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_executable.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_library.html" title="add_library"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_dependencies.html" title="add_dependencies"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_executable</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

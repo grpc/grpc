@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindJava &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindJNI" href="FindJNI.html" />
+    <link rel="prev" title="FindJasper" href="FindJasper.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindJNI.html" title="FindJNI"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindJasper.html" title="FindJasper"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindJava</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findjava">
+<span id="module:FindJava"></span><h1>FindJava<a class="headerlink" href="#findjava" title="Permalink to this headline">¶</a></h1>
+<p>Find Java</p>
+<p>This module finds if Java is installed and determines where the
+include files and libraries are.  The caller may set variable <code class="docutils literal notranslate"><span class="pre">JAVA_HOME</span></code>
+to specify a Java installation prefix explicitly.</p>
+<p>See also the <span class="target" id="index-0-module:FindJNI"></span><a class="reference internal" href="FindJNI.html#module:FindJNI" title="FindJNI"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindJNI</span></code></a> module to find Java Native Interface (JNI).</p>
+<p>Specify one or more of the following components as you call this find module. See example below.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Runtime     = Java Runtime Environment used to execute Java byte-compiled applications
+Development = Development tools (java, javac, javah, jar and javadoc), includes Runtime component
+IdlJ        = Interface Description Language (IDL) to Java compiler
+JarSigner   = Signer and verifier tool for Java Archive (JAR) files
+</pre></div>
+</div>
+<p>This module sets the following result variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Java_JAVA_EXECUTABLE      = the full path to the Java runtime
+Java_JAVAC_EXECUTABLE     = the full path to the Java compiler
+Java_JAVAH_EXECUTABLE     = the full path to the Java header generator
+Java_JAVADOC_EXECUTABLE   = the full path to the Java documentation generator
+Java_IDLJ_EXECUTABLE      = the full path to the Java idl compiler
+Java_JAR_EXECUTABLE       = the full path to the Java archiver
+Java_JARSIGNER_EXECUTABLE = the full path to the Java jar signer
+Java_VERSION_STRING       = Version of java found, eg. 1.6.0_12
+Java_VERSION_MAJOR        = The major version of the package found.
+Java_VERSION_MINOR        = The minor version of the package found.
+Java_VERSION_PATCH        = The patch version of the package found.
+Java_VERSION_TWEAK        = The tweak version of the package found (after &#39;_&#39;)
+Java_VERSION              = This is set to: $major[.$minor[.$patch[.$tweak]]]
+</pre></div>
+</div>
+<p>The minimum required version of Java can be specified using the
+<span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> syntax, e.g.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_package(</span><span class="nb">Java</span><span class="w"> </span><span class="m">1.8</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>NOTE: <code class="docutils literal notranslate"><span class="pre">${Java_VERSION}</span></code> and <code class="docutils literal notranslate"><span class="pre">${Java_VERSION_STRING}</span></code> are not guaranteed to
+be identical.  For example some java version may return:
+<code class="docutils literal notranslate"><span class="pre">Java_VERSION_STRING</span> <span class="pre">=</span> <span class="pre">1.8.0_17</span></code> and <code class="docutils literal notranslate"><span class="pre">Java_VERSION</span> <span class="pre">=</span> <span class="pre">1.8.0.17</span></code></p>
+<p>another example is the Java OEM, with: <code class="docutils literal notranslate"><span class="pre">Java_VERSION_STRING</span> <span class="pre">=</span> <span class="pre">1.8.0-oem</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Java_VERSION</span> <span class="pre">=</span> <span class="pre">1.8.0</span></code></p>
+<p>For these components the following variables are set:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Java_FOUND                    - TRUE if all components are found.
+Java_&lt;component&gt;_FOUND        - TRUE if &lt;component&gt; is found.
+</pre></div>
+</div>
+<p>Example Usages:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>find_package(Java)
+find_package(Java 1.8 REQUIRED)
+find_package(Java COMPONENTS Runtime)
+find_package(Java COMPONENTS Development)
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindJasper.html"
+                        title="previous chapter">FindJasper</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindJNI.html"
+                        title="next chapter">FindJNI</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindJava.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindJNI.html" title="FindJNI"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindJasper.html" title="FindJasper"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindJava</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

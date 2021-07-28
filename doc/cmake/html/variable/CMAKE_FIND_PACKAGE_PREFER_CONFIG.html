@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_FIND_PACKAGE_PREFER_CONFIG &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS" href="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS.html" />
+    <link rel="prev" title="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY" href="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS.html" title="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY.html" title="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_FIND_PACKAGE_PREFER_CONFIG</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-find-package-prefer-config">
+<span id="variable:CMAKE_FIND_PACKAGE_PREFER_CONFIG"></span><h1>CMAKE_FIND_PACKAGE_PREFER_CONFIG<a class="headerlink" href="#cmake-find-package-prefer-config" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.15.</span></p>
+</div>
+<p>Tell <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> to try “Config” mode before “Module” mode if no
+mode was specified.</p>
+<p>The command <span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> operates without an explicit mode when
+the reduced signature is used without the <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> option. In this case,
+by default, CMake first tries Module mode by searching for a
+<code class="docutils literal notranslate"><span class="pre">Find&lt;pkg&gt;.cmake</span></code> module.  If it fails, CMake then searches for the package
+using Config mode.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_PACKAGE_PREFER_CONFIG</span></code> to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> to tell
+<span class="target" id="index-2-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> to first search using Config mode before falling back
+to Module mode.</p>
+<p>This variable may be useful when a developer has compiled a custom version of
+a common library and wishes to link it to a dependent project.  If this
+variable is set to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code>, it would prevent a dependent project’s call
+to <span class="target" id="index-3-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> from selecting the default library located by the
+system’s <code class="docutils literal notranslate"><span class="pre">Find&lt;pkg&gt;.cmake</span></code> module before finding the developer’s custom
+built library.</p>
+<p>Once this variable is set, it is the responsibility of the exported
+<code class="docutils literal notranslate"><span class="pre">&lt;pkg&gt;Config.cmake</span></code> files to provide the same result variables as the
+<code class="docutils literal notranslate"><span class="pre">Find&lt;pkg&gt;.cmake</span></code> modules so that dependent projects can use them
+interchangeably.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY.html"
+                        title="previous chapter">CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS.html"
+                        title="next chapter">CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_FIND_PACKAGE_PREFER_CONFIG.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS.html" title="CMAKE_FIND_PACKAGE_RESOLVE_SYMLINKS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY.html" title="CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_FIND_PACKAGE_PREFER_CONFIG</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

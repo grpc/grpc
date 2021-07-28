@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindOpenGL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindOpenMP" href="FindOpenMP.html" />
+    <link rel="prev" title="FindOpenCL" href="FindOpenCL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindOpenMP.html" title="FindOpenMP"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenCL.html" title="FindOpenCL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenGL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findopengl">
+<span id="module:FindOpenGL"></span><h1>FindOpenGL<a class="headerlink" href="#findopengl" title="Permalink to this headline">¶</a></h1>
+<p>FindModule for OpenGL and OpenGL Utility Library (GLU).</p>
+<div class="section" id="optional-components">
+<h2>Optional COMPONENTS<a class="headerlink" href="#optional-components" title="Permalink to this headline">¶</a></h2>
+<p>This module respects several optional COMPONENTS: <code class="docutils literal notranslate"><span class="pre">EGL</span></code>, <code class="docutils literal notranslate"><span class="pre">GLX</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">OpenGL</span></code>.  There are corresponding import targets for each of these flags.</p>
+</div>
+<div class="section" id="imported-targets">
+<h2>IMPORTED Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL::GL</span></code></dt><dd><p>Defined to the platform-specific OpenGL libraries if the system has OpenGL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL::OpenGL</span></code></dt><dd><p>Defined to libOpenGL if the system is GLVND-based.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL::GLU</span></code></dt><dd><p>Defined if the system has OpenGL Utility Library (GLU).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL::GLX</span></code></dt><dd><p>Defined if the system has OpenGL Extension to the X Window System (GLX).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL::EGL</span></code></dt><dd><p>Defined if the system has EGL.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module sets the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_FOUND</span></code></dt><dd><p>True, if the system has OpenGL and all components are found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_XMESA_FOUND</span></code></dt><dd><p>True, if the system has XMESA.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_GLU_FOUND</span></code></dt><dd><p>True, if the system has GLU.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL_OpenGL_FOUND</span></code></dt><dd><p>True, if the system has an OpenGL library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL_GLX_FOUND</span></code></dt><dd><p>True, if the system has GLX.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenGL_EGL_FOUND</span></code></dt><dd><p>True, if the system has EGL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_INCLUDE_DIR</span></code></dt><dd><p>Path to the OpenGL include directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_EGL_INCLUDE_DIRS</span></code></dt><dd><p>Path to the EGL include directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_LIBRARIES</span></code></dt><dd><p>Paths to the OpenGL library, windowing system libraries, and GLU libraries.
+On Linux, this assumes GLX and is never correct for EGL-based targets.
+Clients are encouraged to use the <code class="docutils literal notranslate"><span class="pre">OpenGL::*</span></code> import targets instead.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following cache variables may also be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_egl_LIBRARY</span></code></dt><dd><p>Path to the EGL library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_glu_LIBRARY</span></code></dt><dd><p>Path to the GLU library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_glx_LIBRARY</span></code></dt><dd><p>Path to the GLVND ‘GLX’ library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_opengl_LIBRARY</span></code></dt><dd><p>Path to the GLVND ‘OpenGL’ library</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENGL_gl_LIBRARY</span></code></dt><dd><p>Path to the OpenGL library.  New code should prefer the <code class="docutils literal notranslate"><span class="pre">OpenGL::*</span></code> import
+targets.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="linux-specific">
+<h2>Linux-specific<a class="headerlink" href="#linux-specific" title="Permalink to this headline">¶</a></h2>
+<p>Some Linux systems utilize GLVND as a new ABI for OpenGL.  GLVND separates
+context libraries from OpenGL itself; OpenGL lives in “libOpenGL”, and
+contexts are defined in “libGLX” or “libEGL”.  GLVND is currently the only way
+to get OpenGL 3+ functionality via EGL in a manner portable across vendors.
+Projects may use GLVND explicitly with target <code class="docutils literal notranslate"><span class="pre">OpenGL::OpenGL</span></code> and either
+<code class="docutils literal notranslate"><span class="pre">OpenGL::GLX</span></code> or <code class="docutils literal notranslate"><span class="pre">OpenGL::EGL</span></code>.</p>
+<p>Projects may use the <code class="docutils literal notranslate"><span class="pre">OpenGL::GL</span></code> target (or <code class="docutils literal notranslate"><span class="pre">OPENGL_LIBRARIES</span></code> variable)
+to use legacy GL interfaces.  These will use the legacy GL library located
+by <code class="docutils literal notranslate"><span class="pre">OPENGL_gl_LIBRARY</span></code>, if available.  If <code class="docutils literal notranslate"><span class="pre">OPENGL_gl_LIBRARY</span></code> is empty or
+not found and GLVND is available, the <code class="docutils literal notranslate"><span class="pre">OpenGL::GL</span></code> target will use GLVND
+<code class="docutils literal notranslate"><span class="pre">OpenGL::OpenGL</span></code> and <code class="docutils literal notranslate"><span class="pre">OpenGL::GLX</span></code> (and the <code class="docutils literal notranslate"><span class="pre">OPENGL_LIBRARIES</span></code>
+variable will use the corresponding libraries).  Thus, for non-EGL-based
+Linux targets, the <code class="docutils literal notranslate"><span class="pre">OpenGL::GL</span></code> target is most portable.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">OpenGL_GL_PREFERENCE</span></code> variable may be set to specify the preferred way
+to provide legacy GL interfaces in case multiple choices are available.
+The value may be one of:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">GLVND</span></code></dt><dd><p>If the GLVND OpenGL and GLX libraries are available, prefer them.
+This forces <code class="docutils literal notranslate"><span class="pre">OPENGL_gl_LIBRARY</span></code> to be empty.
+This is the default if components were requested (since components
+correspond to GLVND libraries) or if policy <span class="target" id="index-0-policy:CMP0072"></span><a class="reference internal" href="../policy/CMP0072.html#policy:CMP0072" title="CMP0072"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0072</span></code></a> is
+set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LEGACY</span></code></dt><dd><p>Prefer to use the legacy libGL library, if available.
+This is the default if no components were requested and
+policy <span class="target" id="index-1-policy:CMP0072"></span><a class="reference internal" href="../policy/CMP0072.html#policy:CMP0072" title="CMP0072"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0072</span></code></a> is not set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+</dd>
+</dl>
+<p>For EGL targets the client must rely on GLVND support on the user’s system.
+Linking should use the <code class="docutils literal notranslate"><span class="pre">OpenGL::OpenGL</span> <span class="pre">OpenGL::EGL</span></code> targets.  Using GLES*
+libraries is theoretically possible in place of <code class="docutils literal notranslate"><span class="pre">OpenGL::OpenGL</span></code>, but this
+module does not currently support that; contributions welcome.</p>
+<p><code class="docutils literal notranslate"><span class="pre">OPENGL_egl_LIBRARY</span></code> and <code class="docutils literal notranslate"><span class="pre">OPENGL_EGL_INCLUDE_DIRS</span></code> are defined in the case of
+GLVND.  For non-GLVND Linux and other systems these are left undefined.</p>
+</div>
+<div class="section" id="macos-specific">
+<h2>macOS-Specific<a class="headerlink" href="#macos-specific" title="Permalink to this headline">¶</a></h2>
+<p>On OSX FindOpenGL defaults to using the framework version of OpenGL. People
+will have to change the cache values of OPENGL_glu_LIBRARY and
+OPENGL_gl_LIBRARY to use OpenGL with X11 on OSX.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindOpenGL</a><ul>
+<li><a class="reference internal" href="#optional-components">Optional COMPONENTS</a></li>
+<li><a class="reference internal" href="#imported-targets">IMPORTED Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache variables</a></li>
+<li><a class="reference internal" href="#linux-specific">Linux-specific</a></li>
+<li><a class="reference internal" href="#macos-specific">macOS-Specific</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindOpenCL.html"
+                        title="previous chapter">FindOpenCL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindOpenMP.html"
+                        title="next chapter">FindOpenMP</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindOpenGL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindOpenMP.html" title="FindOpenMP"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenCL.html" title="FindOpenCL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenGL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

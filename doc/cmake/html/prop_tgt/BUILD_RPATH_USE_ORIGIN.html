@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUILD_RPATH_USE_ORIGIN &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="BUILD_WITH_INSTALL_NAME_DIR" href="BUILD_WITH_INSTALL_NAME_DIR.html" />
+    <link rel="prev" title="BUILD_RPATH" href="BUILD_RPATH.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="BUILD_WITH_INSTALL_NAME_DIR.html" title="BUILD_WITH_INSTALL_NAME_DIR"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="BUILD_RPATH.html" title="BUILD_RPATH"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BUILD_RPATH_USE_ORIGIN</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="build-rpath-use-origin">
+<span id="prop_tgt:BUILD_RPATH_USE_ORIGIN"></span><h1>BUILD_RPATH_USE_ORIGIN<a class="headerlink" href="#build-rpath-use-origin" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.14.</span></p>
+</div>
+<p>Whether to use relative paths for the build <code class="docutils literal notranslate"><span class="pre">RPATH</span></code>.</p>
+<p>This property is initialized by the value of the variable
+<span class="target" id="index-0-variable:CMAKE_BUILD_RPATH_USE_ORIGIN"></span><a class="reference internal" href="../variable/CMAKE_BUILD_RPATH_USE_ORIGIN.html#variable:CMAKE_BUILD_RPATH_USE_ORIGIN" title="CMAKE_BUILD_RPATH_USE_ORIGIN"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_RPATH_USE_ORIGIN</span></code></a>.</p>
+<p>On platforms that support runtime paths (<code class="docutils literal notranslate"><span class="pre">RPATH</span></code>) with the
+<code class="docutils literal notranslate"><span class="pre">$ORIGIN</span></code> token, setting this property to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> enables relative
+paths in the build <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> for executables and shared libraries that
+point to shared libraries in the same build tree.</p>
+<p>Normally the build <code class="docutils literal notranslate"><span class="pre">RPATH</span></code> of a binary contains absolute paths
+to the directory of each shared library it links to.  The <code class="docutils literal notranslate"><span class="pre">RPATH</span></code>
+entries for directories contained within the build tree can be made
+relative to enable relocatable builds and to help achieve reproducible
+builds by omitting the build directory from the build environment.</p>
+<p>This property has no effect on platforms that do not support the
+<code class="docutils literal notranslate"><span class="pre">$ORIGIN</span></code> token in <code class="docutils literal notranslate"><span class="pre">RPATH</span></code>, or when the <span class="target" id="index-0-variable:CMAKE_SKIP_RPATH"></span><a class="reference internal" href="../variable/CMAKE_SKIP_RPATH.html#variable:CMAKE_SKIP_RPATH" title="CMAKE_SKIP_RPATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SKIP_RPATH</span></code></a>
+variable is set. The runtime path set through the
+<span class="target" id="index-0-prop_tgt:BUILD_RPATH"></span><a class="reference internal" href="BUILD_RPATH.html#prop_tgt:BUILD_RPATH" title="BUILD_RPATH"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUILD_RPATH</span></code></a> target property is also unaffected by this
+property.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="BUILD_RPATH.html"
+                        title="previous chapter">BUILD_RPATH</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BUILD_WITH_INSTALL_NAME_DIR.html"
+                        title="next chapter">BUILD_WITH_INSTALL_NAME_DIR</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/BUILD_RPATH_USE_ORIGIN.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="BUILD_WITH_INSTALL_NAME_DIR.html" title="BUILD_WITH_INSTALL_NAME_DIR"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="BUILD_RPATH.html" title="BUILD_RPATH"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BUILD_RPATH_USE_ORIGIN</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

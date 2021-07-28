@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0058 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0057" href="CMP0057.html" />
+    <link rel="prev" title="CMP0059" href="CMP0059.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0057.html" title="CMP0057"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0059.html" title="CMP0059"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0058</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0058">
+<span id="policy:CMP0058"></span><h1>CMP0058<a class="headerlink" href="#cmp0058" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.3.</span></p>
+</div>
+<p>Ninja requires custom command byproducts to be explicit.</p>
+<p>When an intermediate file generated during the build is consumed
+by an expensive operation or a large tree of dependents, one may
+reduce the work needed for an incremental rebuild by updating the
+file timestamp only when its content changes.  With this approach
+the generation rule must have a separate output file that is always
+updated with a new timestamp that is newer than any dependencies of
+the rule so that the build tool re-runs the rule only when the input
+changes.  We refer to the separate output file as a rule’s <em>witness</em>
+and the generated file as a rule’s <em>byproduct</em>.</p>
+<p>Byproducts may not be listed as outputs because their timestamps are
+allowed to be older than the inputs.  No build tools (like <code class="docutils literal notranslate"><span class="pre">make</span></code>)
+that existed when CMake was designed have a way to express byproducts.
+Therefore CMake versions prior to 3.2 had no way to specify them.
+Projects typically left byproducts undeclared in the rules that
+generate them.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">witness.txt</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">copy_if_different</span><span class="w"></span>
+<span class="w">          </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/input.txt</span><span class="w"></span>
+<span class="w">          </span><span class="nb">byproduct.txt</span><span class="w"> </span><span class="c"># timestamp may not change</span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">touch</span><span class="w"> </span><span class="nb">witness.txt</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPENDS</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/input.txt</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_custom_target(</span><span class="nb">Provider</span><span class="w"> </span><span class="no">DEPENDS</span><span class="w"> </span><span class="nb">witness.txt</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_custom_command(</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">generated.c</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="nb">expensive-task</span><span class="w"> </span><span class="p">-</span><span class="nb">i</span><span class="w"> </span><span class="nb">byproduct.txt</span><span class="w"> </span><span class="p">-</span><span class="nb">o</span><span class="w"> </span><span class="nb">generated.c</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPENDS</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/byproduct.txt</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">Consumer</span><span class="w"> </span><span class="nb">generated.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_dependencies(</span><span class="nb">Consumer</span><span class="w"> </span><span class="nb">Provider</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This works well for all generators except <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>.
+The Ninja build tool sees a rule listing <code class="docutils literal notranslate"><span class="pre">byproduct.txt</span></code>
+as a dependency and no rule listing it as an output.  Ninja then
+complains that there is no way to satisfy the dependency and
+stops building even though there are order-only dependencies
+that ensure <code class="docutils literal notranslate"><span class="pre">byproduct.txt</span></code> will exist before its consumers
+need it.  See discussion of this problem in <a class="reference external" href="https://github.com/martine/ninja/issues/760">Ninja Issue 760</a>
+for further details on why Ninja works this way.</p>
+<p>Instead of leaving byproducts undeclared in the rules that generate
+them, Ninja expects byproducts to be listed along with other outputs.
+Such rules may be marked with a <code class="docutils literal notranslate"><span class="pre">restat</span></code> option that tells Ninja
+to check the timestamps of outputs after the rules run.  This
+prevents byproducts whose timestamps do not change from causing
+their dependents to re-build unnecessarily.</p>
+<p>Since the above approach does not tell CMake what custom command
+generates <code class="docutils literal notranslate"><span class="pre">byproduct.txt</span></code>, the Ninja generator does not have
+enough information to add the byproduct as an output of any rule.
+CMake 2.8.12 and above work around this problem and allow projects
+using the above approach to build by generating <code class="docutils literal notranslate"><span class="pre">phony</span></code> build
+rules to tell Ninja to tolerate such missing files.  However, this
+workaround prevents Ninja from diagnosing a dependency that is
+really missing.  It also works poorly in in-source builds where
+every custom command dependency, even on source files, needs to
+be treated this way because CMake does not have enough information
+to know which files are generated as byproducts of custom commands.</p>
+<p>CMake 3.2 introduced the <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> option to the
+<span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a> and <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>
+commands.  This option allows byproducts to be specified explicitly:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_command(</span><span class="w"></span>
+<span class="w">  </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">witness.txt</span><span class="w"></span>
+<span class="w">  </span><span class="no">BYPRODUCTS</span><span class="w"> </span><span class="nb">byproduct.txt</span><span class="w"> </span><span class="c"># explicit byproduct specification</span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">copy_if_different</span><span class="w"></span>
+<span class="w">          </span><span class="o">${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/input.txt</span><span class="w"></span>
+<span class="w">          </span><span class="nb">byproduct.txt</span><span class="w"> </span><span class="c"># timestamp may not change</span>
+<span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> option is used by the <span class="target" id="index-1-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator
+to list byproducts among the outputs of the custom commands that
+generate them, and is ignored by other generators.</p>
+<p>CMake 3.3 and above prefer to require projects to specify custom
+command byproducts explicitly so that it can avoid using the
+<code class="docutils literal notranslate"><span class="pre">phony</span></code> rule workaround altogether.  Policy <code class="docutils literal notranslate"><span class="pre">CMP0058</span></code> was
+introduced to provide compatibility with existing projects that
+still need the workaround.</p>
+<p>This policy has no effect on generators other than <span class="target" id="index-2-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>.
+The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior for this policy is to generate Ninja <code class="docutils literal notranslate"><span class="pre">phony</span></code>
+rules for unknown dependencies in the build tree.  The <code class="docutils literal notranslate"><span class="pre">NEW</span></code>
+behavior for this policy is to not generate these and instead
+require projects to specify custom command <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> explicitly.</p>
+<p>This policy was introduced in CMake version 3.3.
+CMake version 3.19.6 warns when it sees unknown dependencies in
+out-of-source build trees if the policy is not set and then uses
+<code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.  Use the <span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="../command/cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy()</span></code></a> command to set
+the policy to <code class="docutils literal notranslate"><span class="pre">OLD</span></code> or <code class="docutils literal notranslate"><span class="pre">NEW</span></code> explicitly.  The policy setting
+must be in scope at the end of the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>
+file of the project and has global effect.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0059.html"
+                        title="previous chapter">CMP0059</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0057.html"
+                        title="next chapter">CMP0057</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0058.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0057.html" title="CMP0057"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0059.html" title="CMP0059"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0058</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

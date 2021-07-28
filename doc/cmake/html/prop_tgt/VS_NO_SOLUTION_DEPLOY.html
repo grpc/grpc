@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS_NO_SOLUTION_DEPLOY &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VS_PACKAGE_REFERENCES" href="VS_PACKAGE_REFERENCES.html" />
+    <link rel="prev" title="VS_MOBILE_EXTENSIONS_VERSION" href="VS_MOBILE_EXTENSIONS_VERSION.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="VS_PACKAGE_REFERENCES.html" title="VS_PACKAGE_REFERENCES"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="VS_MOBILE_EXTENSIONS_VERSION.html" title="VS_MOBILE_EXTENSIONS_VERSION"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_NO_SOLUTION_DEPLOY</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="vs-no-solution-deploy">
+<span id="prop_tgt:VS_NO_SOLUTION_DEPLOY"></span><h1>VS_NO_SOLUTION_DEPLOY<a class="headerlink" href="#vs-no-solution-deploy" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.15.</span></p>
+</div>
+<p>Specify that the target should not be marked for deployment to a Windows CE
+or Windows Phone device in the generated Visual Studio solution.</p>
+<p>Be default, all EXE and shared library (DLL) targets are marked to deploy to
+the target device in the generated Visual Studio solution.</p>
+<p>Generator expressions are supported.</p>
+<p>There are reasons one might want to exclude a target / generated project from
+deployment:</p>
+<ul class="simple">
+<li><p>The library or executable may not be necessary in the primary deploy/debug
+scenario, and excluding from deployment saves time in the
+develop/download/debug cycle.</p></li>
+<li><p>There may be insufficient space on the target device to accommodate all of
+the build products.</p></li>
+<li><p>Visual Studio 2013 requires a target device IP address be entered for each
+target marked for deployment.  For large numbers of targets, this can be
+tedious.
+NOTE: Visual Studio <em>will</em> deploy all project dependencies of a project
+tagged for deployment to the IP address configured for that project even
+if those dependencies are not tagged for deployment.</p></li>
+</ul>
+<div class="section" id="example-1">
+<h2>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h2>
+<p>This shows setting the variable for the target foo.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">foo</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">foo.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">VS_NO_SOLUTION_DEPLOY</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example-2">
+<h2>Example 2<a class="headerlink" href="#example-2" title="Permalink to this headline">¶</a></h2>
+<p>This shows setting the variable for the Release configuration only.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">foo</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">foo.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">VS_NO_SOLUTION_DEPLOY</span><span class="w"> </span><span class="s">&quot;$&lt;CONFIG:Release&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">VS_NO_SOLUTION_DEPLOY</a><ul>
+<li><a class="reference internal" href="#example-1">Example 1</a></li>
+<li><a class="reference internal" href="#example-2">Example 2</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VS_MOBILE_EXTENSIONS_VERSION.html"
+                        title="previous chapter">VS_MOBILE_EXTENSIONS_VERSION</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="VS_PACKAGE_REFERENCES.html"
+                        title="next chapter">VS_PACKAGE_REFERENCES</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/VS_NO_SOLUTION_DEPLOY.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="VS_PACKAGE_REFERENCES.html" title="VS_PACKAGE_REFERENCES"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="VS_MOBILE_EXTENSIONS_VERSION.html" title="VS_MOBILE_EXTENSIONS_VERSION"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">VS_NO_SOLUTION_DEPLOY</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

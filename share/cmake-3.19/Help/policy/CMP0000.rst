@@ -1,0 +1,34 @@
+CMP0000
+-------
+
+A minimum required CMake version must be specified.
+
+CMake requires that projects specify the version of CMake to which
+they have been written.  This policy has been put in place so users
+trying to build the project may be told when they need to update their
+CMake.  Specifying a version also helps the project build with CMake
+versions newer than that specified.  Use the :command:`cmake_minimum_required`
+command at the top of your main ``CMakeLists.txt`` file:
+
+::
+
+  cmake_minimum_required(VERSION <major>.<minor>)
+
+where ``<major>.<minor>`` is the version of CMake you want to support
+(such as ``3.14``).  The command will ensure that at least the given
+version of CMake is running and help newer versions be compatible with
+the project.  See documentation of :command:`cmake_minimum_required` for
+details.
+
+Note that the command invocation must appear in the ``CMakeLists.txt``
+file itself; a call in an included file is not sufficient.  However,
+the  :command:`cmake_policy` command may be called to set policy ``CMP0000``
+to ``OLD`` or ``NEW`` behavior explicitly.  The ``OLD`` behavior is to
+silently ignore the missing invocation.  The ``NEW`` behavior is to issue
+an error instead of a warning.  An included file may set ``CMP0000``
+explicitly to affect how this policy is enforced for the main
+``CMakeLists.txt`` file.
+
+This policy was introduced in CMake version 2.6.0.
+
+.. include:: DEPRECATED.txt

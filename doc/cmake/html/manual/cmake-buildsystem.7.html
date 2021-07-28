@@ -1,0 +1,1085 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-buildsystem(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-commands(7)" href="cmake-commands.7.html" />
+    <link rel="prev" title="ccmake(1)" href="ccmake.1.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-commands.7.html" title="cmake-commands(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ccmake.1.html" title="ccmake(1)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-buildsystem(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-buildsystem(7)"></span><div class="section" id="cmake-buildsystem-7">
+<h1><a class="toc-backref" href="#id13">cmake-buildsystem(7)</a><a class="headerlink" href="#cmake-buildsystem-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-buildsystem-7" id="id13">cmake-buildsystem(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id14">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#binary-targets" id="id15">Binary Targets</a></p>
+<ul>
+<li><p><a class="reference internal" href="#binary-executables" id="id16">Binary Executables</a></p></li>
+<li><p><a class="reference internal" href="#binary-library-types" id="id17">Binary Library Types</a></p>
+<ul>
+<li><p><a class="reference internal" href="#normal-libraries" id="id18">Normal Libraries</a></p>
+<ul>
+<li><p><a class="reference internal" href="#apple-frameworks" id="id19">Apple Frameworks</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#object-libraries" id="id20">Object Libraries</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#build-specification-and-usage-requirements" id="id21">Build Specification and Usage Requirements</a></p>
+<ul>
+<li><p><a class="reference internal" href="#target-properties" id="id22">Target Properties</a></p></li>
+<li><p><a class="reference internal" href="#transitive-usage-requirements" id="id23">Transitive Usage Requirements</a></p></li>
+<li><p><a class="reference internal" href="#compatible-interface-properties" id="id24">Compatible Interface Properties</a></p></li>
+<li><p><a class="reference internal" href="#property-origin-debugging" id="id25">Property Origin Debugging</a></p></li>
+<li><p><a class="reference internal" href="#build-specification-with-generator-expressions" id="id26">Build Specification with Generator Expressions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#include-directories-and-usage-requirements" id="id27">Include Directories and Usage Requirements</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#link-libraries-and-generator-expressions" id="id28">Link Libraries and Generator Expressions</a></p></li>
+<li><p><a class="reference internal" href="#output-artifacts" id="id29">Output Artifacts</a></p>
+<ul>
+<li><p><a class="reference internal" href="#runtime-output-artifacts" id="id30">Runtime Output Artifacts</a></p></li>
+<li><p><a class="reference internal" href="#library-output-artifacts" id="id31">Library Output Artifacts</a></p></li>
+<li><p><a class="reference internal" href="#archive-output-artifacts" id="id32">Archive Output Artifacts</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#directory-scoped-commands" id="id33">Directory-Scoped Commands</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#pseudo-targets" id="id34">Pseudo Targets</a></p>
+<ul>
+<li><p><a class="reference internal" href="#imported-targets" id="id35">Imported Targets</a></p></li>
+<li><p><a class="reference internal" href="#alias-targets" id="id36">Alias Targets</a></p></li>
+<li><p><a class="reference internal" href="#interface-libraries" id="id37">Interface Libraries</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id14">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>A CMake-based buildsystem is organized as a set of high-level logical
+targets.  Each target corresponds to an executable or library, or
+is a custom target containing custom commands.  Dependencies between the
+targets are expressed in the buildsystem to determine the build order
+and the rules for regeneration in response to change.</p>
+</div>
+<div class="section" id="binary-targets">
+<h2><a class="toc-backref" href="#id15">Binary Targets</a><a class="headerlink" href="#binary-targets" title="Permalink to this headline">¶</a></h2>
+<p>Executables and libraries are defined using the <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>
+and <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> commands.  The resulting binary files have
+appropriate <span class="target" id="index-0-prop_tgt:PREFIX"></span><a class="reference internal" href="../prop_tgt/PREFIX.html#prop_tgt:PREFIX" title="PREFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PREFIX</span></code></a>, <span class="target" id="index-0-prop_tgt:SUFFIX"></span><a class="reference internal" href="../prop_tgt/SUFFIX.html#prop_tgt:SUFFIX" title="SUFFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SUFFIX</span></code></a> and extensions for the platform targeted.
+Dependencies between binary targets are expressed using the
+<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">zipapp</span><span class="w"> </span><span class="nb">zipapp.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">zipapp</span><span class="w"> </span><span class="nb">archive</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">archive</span></code> is defined as a <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> library – an archive containing objects
+compiled from <code class="docutils literal notranslate"><span class="pre">archive.cpp</span></code>, <code class="docutils literal notranslate"><span class="pre">zip.cpp</span></code>, and <code class="docutils literal notranslate"><span class="pre">lzma.cpp</span></code>.  <code class="docutils literal notranslate"><span class="pre">zipapp</span></code>
+is defined as an executable formed by compiling and linking <code class="docutils literal notranslate"><span class="pre">zipapp.cpp</span></code>.
+When linking the <code class="docutils literal notranslate"><span class="pre">zipapp</span></code> executable, the <code class="docutils literal notranslate"><span class="pre">archive</span></code> static library is
+linked in.</p>
+<div class="section" id="binary-executables">
+<h3><a class="toc-backref" href="#id16">Binary Executables</a><a class="headerlink" href="#binary-executables" title="Permalink to this headline">¶</a></h3>
+<p>The <span class="target" id="index-1-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command defines an executable target:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">mytool</span><span class="w"> </span><span class="nb">mytool.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Commands such as <span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a>, which generates rules to be
+run at build time can transparently use an <span class="target" id="index-0-prop_tgt:TYPE"></span><a class="reference internal" href="../prop_tgt/TYPE.html#prop_tgt:TYPE" title="TYPE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">EXECUTABLE</span></code></a>
+target as a <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> executable.  The buildsystem rules will ensure that
+the executable is built before attempting to run the command.</p>
+</div>
+<div class="section" id="binary-library-types">
+<h3><a class="toc-backref" href="#id17">Binary Library Types</a><a class="headerlink" href="#binary-library-types" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="normal-libraries">
+<span id="id1"></span><h4><a class="toc-backref" href="#id18">Normal Libraries</a><a class="headerlink" href="#normal-libraries" title="Permalink to this headline">¶</a></h4>
+<p>By default, the <span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command defines a <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> library,
+unless a type is specified.  A type may be specified when using the command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-0-variable:BUILD_SHARED_LIBS"></span><a class="reference internal" href="../variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS" title="BUILD_SHARED_LIBS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></a> variable may be enabled to change the
+behavior of <span class="target" id="index-2-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> to build shared libraries by default.</p>
+<p>In the context of the buildsystem definition as a whole, it is largely
+irrelevant whether particular libraries are <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> or <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> –
+the commands, dependency specifications and other APIs work similarly
+regardless of the library type.  The <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> library type is
+dissimilar in that it is generally not linked to – it is not used in
+the right-hand-side of the <span class="target" id="index-1-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command.
+It is a type which is loaded as a plugin using runtime techniques.
+If the library does not export any unmanaged symbols (e.g. Windows
+resource DLL, C++/CLI DLL), it is required that the library not be a
+<code class="docutils literal notranslate"><span class="pre">SHARED</span></code> library because CMake expects <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> libraries to export
+at least one symbol.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">MODULE</span><span class="w"> </span><span class="m">7</span><span class="nb">z.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="section" id="apple-frameworks">
+<span id="id2"></span><h5><a class="toc-backref" href="#id19">Apple Frameworks</a><a class="headerlink" href="#apple-frameworks" title="Permalink to this headline">¶</a></h5>
+<p>A <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> library may be marked with the <span class="target" id="index-0-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="../prop_tgt/FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a>
+target property to create an macOS or iOS Framework Bundle.
+A library with the <code class="docutils literal notranslate"><span class="pre">FRAMEWORK</span></code> target property should also set the
+<span class="target" id="index-0-prop_tgt:FRAMEWORK_VERSION"></span><a class="reference internal" href="../prop_tgt/FRAMEWORK_VERSION.html#prop_tgt:FRAMEWORK_VERSION" title="FRAMEWORK_VERSION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK_VERSION</span></code></a> target property.  This property is typically
+set to the value of “A” by macOS conventions.
+The <code class="docutils literal notranslate"><span class="pre">MACOSX_FRAMEWORK_IDENTIFIER</span></code> sets <code class="docutils literal notranslate"><span class="pre">CFBundleIdentifier</span></code> key
+and it uniquely identifies the bundle.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">MyFramework</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">MyFramework.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_target_properties(</span><span class="nb">MyFramework</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">FRAMEWORK</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">FRAMEWORK_VERSION</span><span class="w"> </span><span class="no">A</span><span class="w"> </span><span class="c"># Version &quot;A&quot; is macOS convention</span>
+<span class="w">  </span><span class="no">MACOSX_FRAMEWORK_IDENTIFIER</span><span class="w"> </span><span class="nb">org.cmake.MyFramework</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="object-libraries">
+<span id="id3"></span><h4><a class="toc-backref" href="#id20">Object Libraries</a><a class="headerlink" href="#object-libraries" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> library type defines a non-archival collection of object files
+resulting from compiling the given source files.  The object files collection
+may be used as source inputs to other targets by using the syntax
+<code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_OBJECTS:name&gt;</span></code>.  This is a
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expression</span></code></a> that can be
+used to supply the <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> library content to other targets:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">OBJECT</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">TARGET_OBJECTS</span><span class="o">:</span><span class="nb">archive</span><span class="o">&gt;</span><span class="w"> </span><span class="nb">extras.cpp</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">test_exe</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">TARGET_OBJECTS</span><span class="o">:</span><span class="nb">archive</span><span class="o">&gt;</span><span class="w"> </span><span class="nb">test.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The link (or archiving) step of those other targets will use the object
+files collection in addition to those from their own sources.</p>
+<p>Alternatively, object libraries may be linked into other targets:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">OBJECT</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="nb">extras.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">archive</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">test_exe</span><span class="w"> </span><span class="nb">test.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">test_exe</span><span class="w"> </span><span class="nb">archive</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The link (or archiving) step of those other targets will use the object
+files from <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> libraries that are <em>directly</em> linked.  Additionally,
+usage requirements of the <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> libraries will be honored when compiling
+sources in those other targets.  Furthermore, those usage requirements
+will propagate transitively to dependents of those other targets.</p>
+<p>Object libraries may not be used as the <code class="docutils literal notranslate"><span class="pre">TARGET</span></code> in a use of the
+<span class="target" id="index-1-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command(TARGET)</span></code></a> command signature.  However,
+the list of objects can be used by <span class="target" id="index-2-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command(OUTPUT)</span></code></a>
+or <span class="target" id="index-0-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(GENERATE)</span></code></a> by using <code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_OBJECTS:objlib&gt;</span></code>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="build-specification-and-usage-requirements">
+<h2><a class="toc-backref" href="#id21">Build Specification and Usage Requirements</a><a class="headerlink" href="#build-specification-and-usage-requirements" title="Permalink to this headline">¶</a></h2>
+<p>The <span class="target" id="index-0-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>, <span class="target" id="index-0-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>
+and <span class="target" id="index-0-command:target_compile_options"></span><a class="reference internal" href="../command/target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a> commands specify the build specifications
+and the usage requirements of binary targets.  The commands populate the
+<span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>, <span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> and
+<span class="target" id="index-0-prop_tgt:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> target properties respectively, and/or the
+<span class="target" id="index-0-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a>, <span class="target" id="index-0-prop_tgt:INTERFACE_COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS" title="INTERFACE_COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_DEFINITIONS</span></code></a>
+and <span class="target" id="index-0-prop_tgt:INTERFACE_COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS" title="INTERFACE_COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_OPTIONS</span></code></a> target properties.</p>
+<p>Each of the commands has a <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code>, <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> and <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> mode.  The
+<code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> mode populates only the non-<code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> variant of the target
+property and the <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> mode populates only the <code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> variants.
+The <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> mode populates both variants of the respective target property.
+Each command may be invoked with multiple uses of each keyword:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_compile_definitions(</span><span class="nb">archive</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="no">BUILDING_WITH_LZMA</span><span class="w"></span>
+<span class="w">  </span><span class="no">INTERFACE</span><span class="w"> </span><span class="no">USING_ARCHIVE_LIB</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that usage requirements are not designed as a way to make downstreams
+use particular <span class="target" id="index-1-prop_tgt:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> or
+<span class="target" id="index-1-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> etc for convenience only.  The contents of
+the properties must be <strong>requirements</strong>, not merely recommendations or
+convenience.</p>
+<p>See the <a class="reference internal" href="cmake-packages.7.html#creating-relocatable-packages"><span class="std std-ref">Creating Relocatable Packages</span></a> section of the
+<span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual for discussion of additional care
+that must be taken when specifying usage requirements while creating
+packages for redistribution.</p>
+<div class="section" id="target-properties">
+<h3><a class="toc-backref" href="#id22">Target Properties</a><a class="headerlink" href="#target-properties" title="Permalink to this headline">¶</a></h3>
+<p>The contents of the <span class="target" id="index-1-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>,
+<span class="target" id="index-2-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> and <span class="target" id="index-2-prop_tgt:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> target
+properties are used appropriately when compiling the source files of a
+binary target.</p>
+<p>Entries in the <span class="target" id="index-2-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a> are added to the compile line
+with <code class="docutils literal notranslate"><span class="pre">-I</span></code> or <code class="docutils literal notranslate"><span class="pre">-isystem</span></code> prefixes and in the order of appearance in the
+property value.</p>
+<p>Entries in the <span class="target" id="index-3-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> are prefixed with <code class="docutils literal notranslate"><span class="pre">-D</span></code> or
+<code class="docutils literal notranslate"><span class="pre">/D</span></code> and added to the compile line in an unspecified order.  The
+<span class="target" id="index-0-prop_tgt:DEFINE_SYMBOL"></span><a class="reference internal" href="../prop_tgt/DEFINE_SYMBOL.html#prop_tgt:DEFINE_SYMBOL" title="DEFINE_SYMBOL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DEFINE_SYMBOL</span></code></a> target property is also added as a compile
+definition as a special convenience case for <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> and <code class="docutils literal notranslate"><span class="pre">MODULE</span></code>
+library targets.</p>
+<p>Entries in the <span class="target" id="index-3-prop_tgt:COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS" title="COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_OPTIONS</span></code></a> are escaped for the shell and added
+in the order of appearance in the property value.  Several compile options have
+special separate handling, such as <span class="target" id="index-0-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a>.</p>
+<p>The contents of the <span class="target" id="index-1-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a>,
+<span class="target" id="index-1-prop_tgt:INTERFACE_COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS" title="INTERFACE_COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_DEFINITIONS</span></code></a> and
+<span class="target" id="index-1-prop_tgt:INTERFACE_COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS" title="INTERFACE_COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_OPTIONS</span></code></a> target properties are
+<em>Usage Requirements</em> – they specify content which consumers
+must use to correctly compile and link with the target they appear on.
+For any binary target, the contents of each <code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> property on
+each target specified in a <span class="target" id="index-2-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command is
+consumed:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">srcs</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="w"> </span><span class="nb">zip.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if</span> <span class="nf">(</span><span class="no">LZMA_FOUND</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">srcs</span><span class="w"> </span><span class="nb">lzma.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="o">${</span><span class="nt">srcs</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if</span> <span class="nf">(</span><span class="no">LZMA_FOUND</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="c"># The archive library sources are compiled with -DBUILDING_WITH_LZMA</span>
+<span class="w">  </span><span class="nf">target_compile_definitions(</span><span class="nb">archive</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="no">BUILDING_WITH_LZMA</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">archive</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="no">USING_ARCHIVE_LIB</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">consumer</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># Link consumer to archive and consume its usage requirements. The consumer</span>
+<span class="c"># executable sources are compiled with -DUSING_ARCHIVE_LIB.</span>
+<span class="nf">target_link_libraries(</span><span class="nb">consumer</span><span class="w"> </span><span class="nb">archive</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Because it is common to require that the source directory and corresponding
+build directory are added to the <span class="target" id="index-3-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>, the
+<span class="target" id="index-0-variable:CMAKE_INCLUDE_CURRENT_DIR"></span><a class="reference internal" href="../variable/CMAKE_INCLUDE_CURRENT_DIR.html#variable:CMAKE_INCLUDE_CURRENT_DIR" title="CMAKE_INCLUDE_CURRENT_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INCLUDE_CURRENT_DIR</span></code></a> variable can be enabled to conveniently
+add the corresponding directories to the <span class="target" id="index-4-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a> of
+all targets.  The variable <span class="target" id="index-0-variable:CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE"></span><a class="reference internal" href="../variable/CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE.html#variable:CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE" title="CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE</span></code></a>
+can be enabled to add the corresponding directories to the
+<span class="target" id="index-2-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a> of all targets.  This makes use of
+targets in multiple different directories convenient through use of the
+<span class="target" id="index-3-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command.</p>
+</div>
+<div class="section" id="transitive-usage-requirements">
+<span id="target-usage-requirements"></span><h3><a class="toc-backref" href="#id23">Transitive Usage Requirements</a><a class="headerlink" href="#transitive-usage-requirements" title="Permalink to this headline">¶</a></h3>
+<p>The usage requirements of a target can transitively propagate to dependents.
+The <span class="target" id="index-4-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command has <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> and <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> keywords to control the propagation.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">archive</span><span class="w"> </span><span class="nb">archive.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">archive</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="no">USING_ARCHIVE_LIB</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">serialization</span><span class="w"> </span><span class="nb">serialization.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">serialization</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="no">USING_SERIALIZATION_LIB</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="nb">extras.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">archive</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">archiveExtras</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">serialization</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># archiveExtras is compiled with -DUSING_ARCHIVE_LIB</span>
+<span class="c"># and -DUSING_SERIALIZATION_LIB</span>
+
+<span class="nf">add_executable(</span><span class="nb">consumer</span><span class="w"> </span><span class="nb">consumer.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># consumer is compiled with -DUSING_ARCHIVE_LIB</span>
+<span class="nf">target_link_libraries(</span><span class="nb">consumer</span><span class="w"> </span><span class="nb">archiveExtras</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Because <code class="docutils literal notranslate"><span class="pre">archive</span></code> is a <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> dependency of <code class="docutils literal notranslate"><span class="pre">archiveExtras</span></code>, the
+usage requirements of it are propagated to <code class="docutils literal notranslate"><span class="pre">consumer</span></code> too.  Because
+<code class="docutils literal notranslate"><span class="pre">serialization</span></code> is a <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> dependency of <code class="docutils literal notranslate"><span class="pre">archiveExtras</span></code>, the usage
+requirements of it are not propagated to <code class="docutils literal notranslate"><span class="pre">consumer</span></code>.</p>
+<p>Generally, a dependency should be specified in a use of
+<span class="target" id="index-5-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> keyword if it is used by
+only the implementation of a library, and not in the header files.  If a
+dependency is additionally used in the header files of a library (e.g. for
+class inheritance), then it should be specified as a <code class="docutils literal notranslate"><span class="pre">PUBLIC</span></code> dependency.
+A dependency which is not used by the implementation of a library, but only by
+its headers should be specified as an <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> dependency.  The
+<span class="target" id="index-6-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command may be invoked with multiple uses of
+each keyword:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_link_libraries(</span><span class="nb">archiveExtras</span><span class="w"></span>
+<span class="w">  </span><span class="no">PUBLIC</span><span class="w"> </span><span class="nb">archive</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">serialization</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Usage requirements are propagated by reading the <code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> variants
+of target properties from dependencies and appending the values to the
+non-<code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> variants of the operand.  For example, the
+<span class="target" id="index-3-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a> of dependencies is read and
+appended to the <span class="target" id="index-5-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a> of the operand.  In cases
+where order is relevant and maintained, and the order resulting from the
+<span class="target" id="index-7-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> calls does not allow correct compilation,
+use of an appropriate command to set the property directly may update the
+order.</p>
+<p>For example, if the linked libraries for a target must be specified
+in the order <code class="docutils literal notranslate"><span class="pre">lib1</span></code> <code class="docutils literal notranslate"><span class="pre">lib2</span></code> <code class="docutils literal notranslate"><span class="pre">lib3</span></code> , but the include directories must
+be specified in the order <code class="docutils literal notranslate"><span class="pre">lib3</span></code> <code class="docutils literal notranslate"><span class="pre">lib1</span></code> <code class="docutils literal notranslate"><span class="pre">lib2</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_link_libraries(</span><span class="nb">myExe</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib2</span><span class="w"> </span><span class="nb">lib3</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">myExe</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="nb">lib3</span><span class="p">,</span><span class="no">INTERFACE_INCLUDE_DIRECTORIES</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that care must be taken when specifying usage requirements for targets
+which will be exported for installation using the <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a>
+command.  See <a class="reference internal" href="cmake-packages.7.html#creating-packages"><span class="std std-ref">Creating Packages</span></a> for more.</p>
+</div>
+<div class="section" id="compatible-interface-properties">
+<span id="id4"></span><h3><a class="toc-backref" href="#id24">Compatible Interface Properties</a><a class="headerlink" href="#compatible-interface-properties" title="Permalink to this headline">¶</a></h3>
+<p>Some target properties are required to be compatible between a target and
+the interface of each dependency.  For example, the
+<span class="target" id="index-1-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> target property may specify a
+boolean value of whether a target should be compiled as
+position-independent-code, which has platform-specific consequences.
+A target may also specify the usage requirement
+<span class="target" id="index-0-prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/INTERFACE_POSITION_INDEPENDENT_CODE.html#prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE" title="INTERFACE_POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_POSITION_INDEPENDENT_CODE</span></code></a> to communicate that
+consumers must be compiled as position-independent-code.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">exe1</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">exe2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here, both <code class="docutils literal notranslate"><span class="pre">exe1</span></code> and <code class="docutils literal notranslate"><span class="pre">exe2</span></code> will be compiled as position-independent-code.
+<code class="docutils literal notranslate"><span class="pre">lib1</span></code> will also be compiled as position-independent-code because that is the
+default setting for <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> libraries.  If dependencies have conflicting,
+non-compatible requirements <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> issues a diagnostic:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">lib2</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib2</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">exe1</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">exe2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib2</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">lib1</span></code> requirement <code class="docutils literal notranslate"><span class="pre">INTERFACE_POSITION_INDEPENDENT_CODE</span></code> is not
+“compatible” with the <span class="target" id="index-2-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> property of
+the <code class="docutils literal notranslate"><span class="pre">exe1</span></code> target.  The library requires that consumers are built as
+position-independent-code, while the executable specifies to not built as
+position-independent-code, so a diagnostic is issued.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">lib1</span></code> and <code class="docutils literal notranslate"><span class="pre">lib2</span></code> requirements are not “compatible”.  One of them
+requires that consumers are built as position-independent-code, while
+the other requires that consumers are not built as position-independent-code.
+Because <code class="docutils literal notranslate"><span class="pre">exe2</span></code> links to both and they are in conflict, a CMake error message
+is issued:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CMake Error: The INTERFACE_POSITION_INDEPENDENT_CODE property of &quot;lib2&quot; does
+not agree with the value of POSITION_INDEPENDENT_CODE already determined
+for &quot;exe2&quot;.
+</pre></div>
+</div>
+<p>To be “compatible”, the <span class="target" id="index-3-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> property,
+if set must be either the same, in a boolean sense, as the
+<span class="target" id="index-1-prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/INTERFACE_POSITION_INDEPENDENT_CODE.html#prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE" title="INTERFACE_POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_POSITION_INDEPENDENT_CODE</span></code></a> property of all transitively
+specified dependencies on which that property is set.</p>
+<p>This property of “compatible interface requirement” may be extended to other
+properties by specifying the property in the content of the
+<span class="target" id="index-0-prop_tgt:COMPATIBLE_INTERFACE_BOOL"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_BOOL.html#prop_tgt:COMPATIBLE_INTERFACE_BOOL" title="COMPATIBLE_INTERFACE_BOOL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_BOOL</span></code></a> target property.  Each specified property
+must be compatible between the consuming target and the corresponding property
+with an <code class="docutils literal notranslate"><span class="pre">INTERFACE_</span></code> prefix from each dependency:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_CUSTOM_PROP</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBLE_INTERFACE_BOOL</span><span class="w"> </span><span class="no">CUSTOM_PROP</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v3.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_CUSTOM_PROP</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="nf">)</span><span class="w"> </span><span class="c"># CUSTOM_PROP will be ON</span>
+
+<span class="nf">add_executable(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">exe2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="nf">)</span><span class="w"> </span><span class="c"># Diagnostic</span>
+</pre></div>
+</div>
+<p>Non-boolean properties may also participate in “compatible interface”
+computations.  Properties specified in the
+<span class="target" id="index-0-prop_tgt:COMPATIBLE_INTERFACE_STRING"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_STRING.html#prop_tgt:COMPATIBLE_INTERFACE_STRING" title="COMPATIBLE_INTERFACE_STRING"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_STRING</span></code></a>
+property must be either unspecified or compare to the same string among
+all transitively specified dependencies. This can be useful to ensure
+that multiple incompatible versions of a library are not linked together
+through transitive requirements of a target:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_LIB_VERSION</span><span class="w"> </span><span class="m">2</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBLE_INTERFACE_STRING</span><span class="w"> </span><span class="no">LIB_VERSION</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v3.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_LIB_VERSION</span><span class="w"> </span><span class="m">3</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="nf">)</span><span class="w"> </span><span class="c"># LIB_VERSION will be &quot;2&quot;</span>
+
+<span class="nf">add_executable(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">exe2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="nf">)</span><span class="w"> </span><span class="c"># Diagnostic</span>
+</pre></div>
+</div>
+<p>The <span class="target" id="index-0-prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MAX"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MAX.html#prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MAX" title="COMPATIBLE_INTERFACE_NUMBER_MAX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_NUMBER_MAX</span></code></a> target property specifies
+that content will be evaluated numerically and the maximum number among all
+specified will be calculated:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_CONTAINER_SIZE_REQUIRED</span><span class="w"> </span><span class="m">200</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBLE_INTERFACE_NUMBER_MAX</span><span class="w"> </span><span class="no">CONTAINER_SIZE_REQUIRED</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v3.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_CONTAINER_SIZE_REQUIRED</span><span class="w"> </span><span class="m">1000</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># CONTAINER_SIZE_REQUIRED will be &quot;200&quot;</span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">exe2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="c"># CONTAINER_SIZE_REQUIRED will be &quot;1000&quot;</span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe2</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="nb">lib1Version3</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Similarly, the <span class="target" id="index-0-prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MIN"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MIN.html#prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MIN" title="COMPATIBLE_INTERFACE_NUMBER_MIN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_NUMBER_MIN</span></code></a> may be used to
+calculate the numeric minimum value for a property from dependencies.</p>
+<p>Each calculated “compatible” property value may be read in the consumer at
+generate-time using generator expressions.</p>
+<p>Note that for each dependee, the set of properties specified in each
+compatible interface property must not intersect with the set specified in
+any of the other properties.</p>
+</div>
+<div class="section" id="property-origin-debugging">
+<h3><a class="toc-backref" href="#id25">Property Origin Debugging</a><a class="headerlink" href="#property-origin-debugging" title="Permalink to this headline">¶</a></h3>
+<p>Because build specifications can be determined by dependencies, the lack of
+locality of code which creates a target and code which is responsible for
+setting build specifications may make the code more difficult to reason about.
+<span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> provides a debugging facility to print the origin of the
+contents of properties which may be determined by dependencies.  The properties
+which can be debugged are listed in the
+<span class="target" id="index-0-variable:CMAKE_DEBUG_TARGET_PROPERTIES"></span><a class="reference internal" href="../variable/CMAKE_DEBUG_TARGET_PROPERTIES.html#variable:CMAKE_DEBUG_TARGET_PROPERTIES" title="CMAKE_DEBUG_TARGET_PROPERTIES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_DEBUG_TARGET_PROPERTIES</span></code></a> variable documentation:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">CMAKE_DEBUG_TARGET_PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">INCLUDE_DIRECTORIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPILE_DEFINITIONS</span><span class="w"></span>
+<span class="w">  </span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="w"></span>
+<span class="w">  </span><span class="no">CONTAINER_SIZE_REQUIRED</span><span class="w"></span>
+<span class="w">  </span><span class="no">LIB_VERSION</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In the case of properties listed in <span class="target" id="index-1-prop_tgt:COMPATIBLE_INTERFACE_BOOL"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_BOOL.html#prop_tgt:COMPATIBLE_INTERFACE_BOOL" title="COMPATIBLE_INTERFACE_BOOL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_BOOL</span></code></a> or
+<span class="target" id="index-1-prop_tgt:COMPATIBLE_INTERFACE_STRING"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_STRING.html#prop_tgt:COMPATIBLE_INTERFACE_STRING" title="COMPATIBLE_INTERFACE_STRING"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_STRING</span></code></a>, the debug output shows which target
+was responsible for setting the property, and which other dependencies also
+defined the property.  In the case of
+<span class="target" id="index-1-prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MAX"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MAX.html#prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MAX" title="COMPATIBLE_INTERFACE_NUMBER_MAX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_NUMBER_MAX</span></code></a> and
+<span class="target" id="index-1-prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MIN"></span><a class="reference internal" href="../prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MIN.html#prop_tgt:COMPATIBLE_INTERFACE_NUMBER_MIN" title="COMPATIBLE_INTERFACE_NUMBER_MIN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPATIBLE_INTERFACE_NUMBER_MIN</span></code></a>, the debug output shows the
+value of the property from each dependency, and whether the value determines
+the new extreme.</p>
+</div>
+<div class="section" id="build-specification-with-generator-expressions">
+<h3><a class="toc-backref" href="#id26">Build Specification with Generator Expressions</a><a class="headerlink" href="#build-specification-with-generator-expressions" title="Permalink to this headline">¶</a></h3>
+<p>Build specifications may use
+<span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> containing
+content which may be conditional or known only at generate-time.  For example,
+the calculated “compatible” value of a property may be read with the
+<code class="docutils literal notranslate"><span class="pre">TARGET_PROPERTY</span></code> expression:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">SHARED</span><span class="w"> </span><span class="nb">lib1_v2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">INTERFACE_CONTAINER_SIZE_REQUIRED</span><span class="w"> </span><span class="m">200</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMPATIBLE_INTERFACE_NUMBER_MAX</span><span class="w"> </span><span class="no">CONTAINER_SIZE_REQUIRED</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1Version2</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">exe1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">    </span><span class="no">CONTAINER_SIZE</span><span class="p">=</span><span class="o">$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="no">CONTAINER_SIZE_REQUIRED</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">exe1</span></code> source files will be compiled with
+<code class="docutils literal notranslate"><span class="pre">-DCONTAINER_SIZE=200</span></code>.</p>
+<p>Configuration determined build specifications may be conveniently set using
+the <code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> generator expression.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_compile_definitions(</span><span class="nb">exe1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">    </span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="nb">Debug</span><span class="o">&gt;:</span><span class="no">DEBUG_BUILD</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> parameter is compared case-insensitively with the configuration
+being built.  In the presence of <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets, the content of
+<span class="target" id="index-0-prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/MAP_IMPORTED_CONFIG_CONFIG.html#prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;" title="MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MAP_IMPORTED_CONFIG_DEBUG</span></code></a> is also
+accounted for by this expression.</p>
+<p>Some buildsystems generated by <span class="target" id="index-2-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> have a predetermined
+build-configuration set in the <span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> variable.  The
+buildsystem for the IDEs such as Visual Studio and Xcode are generated
+independent of the build-configuration, and the actual build configuration
+is not known until build-time.  Therefore, code such as</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">string(</span><span class="no">TOLOWER</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_BUILD_TYPE</span><span class="o">}</span><span class="w"> </span><span class="nb">_type</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if</span> <span class="nf">(</span><span class="nb">_type</span><span class="w"> </span><span class="no">STREQUAL</span><span class="w"> </span><span class="nb">debug</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">target_compile_definitions(</span><span class="nb">exe1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="no">DEBUG_BUILD</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>may appear to work for <a class="reference internal" href="cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> and <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>
+generators, but is not portable to IDE generators.  Additionally,
+the <span class="target" id="index-1-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> configuration-mappings are not accounted for
+with code like this, so it should be avoided.</p>
+<p>The unary <code class="docutils literal notranslate"><span class="pre">TARGET_PROPERTY</span></code> generator expression and the <code class="docutils literal notranslate"><span class="pre">TARGET_POLICY</span></code>
+generator expression are evaluated with the consuming target context.  This
+means that a usage requirement specification may be evaluated differently based
+on the consumer:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;$&lt;</span><span class="no">STREQUAL</span><span class="o">:$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="no">TYPE</span><span class="o">&gt;</span><span class="p">,</span><span class="no">EXECUTABLE</span><span class="o">&gt;:</span><span class="no">LIB1_WITH_EXE</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;$&lt;</span><span class="no">STREQUAL</span><span class="o">:$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="no">TYPE</span><span class="o">&gt;</span><span class="p">,</span><span class="no">SHARED_LIBRARY</span><span class="o">&gt;:</span><span class="no">LIB1_WITH_SHARED_LIB</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;$&lt;</span><span class="no">TARGET_POLICY</span><span class="o">:</span><span class="no">CMP0041</span><span class="o">&gt;:</span><span class="no">CONSUMER_CMP0041_NEW</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">cmake_policy(</span><span class="no">SET</span><span class="w"> </span><span class="no">CMP0041</span><span class="w"> </span><span class="no">NEW</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">shared_lib</span><span class="w"> </span><span class="nb">shared_lib.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">shared_lib</span><span class="w"> </span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">exe1</span></code> executable will be compiled with <code class="docutils literal notranslate"><span class="pre">-DLIB1_WITH_EXE</span></code>, while the
+<code class="docutils literal notranslate"><span class="pre">shared_lib</span></code> shared library will be compiled with <code class="docutils literal notranslate"><span class="pre">-DLIB1_WITH_SHARED_LIB</span></code>
+and <code class="docutils literal notranslate"><span class="pre">-DCONSUMER_CMP0041_NEW</span></code>, because policy <span class="target" id="index-0-policy:CMP0041"></span><a class="reference internal" href="../policy/CMP0041.html#policy:CMP0041" title="CMP0041"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0041</span></code></a> is
+<code class="docutils literal notranslate"><span class="pre">NEW</span></code> at the point where the <code class="docutils literal notranslate"><span class="pre">shared_lib</span></code> target is created.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BUILD_INTERFACE</span></code> expression wraps requirements which are only used when
+consumed from a target in the same buildsystem, or when consumed from a target
+exported to the build directory using the <span class="target" id="index-0-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a> command.  The
+<code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> expression wraps requirements which are only used when
+consumed from a target which has been installed and exported with the
+<span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a> command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="nb">climbingstats.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:</span><span class="nb">ClimbingStats_FROM_BUILD_LOCATION</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="nb">ClimbingStats_FROM_INSTALLED_LOCATION</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">libExport</span><span class="w"> </span><span class="o">${</span><span class="nt">InstallArgs</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">libExport</span><span class="w"> </span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="w"></span>
+<span class="w">        </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">lib/cmake/ClimbingStats</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">export(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">libExport</span><span class="w"> </span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">ClimbingStats</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">exe1</span></code> executable will be compiled with
+<code class="docutils literal notranslate"><span class="pre">-DClimbingStats_FROM_BUILD_LOCATION</span></code>.  The exporting commands generate
+<span class="target" id="index-2-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets with either the <code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> or the
+<code class="docutils literal notranslate"><span class="pre">BUILD_INTERFACE</span></code> omitted, and the <code class="docutils literal notranslate"><span class="pre">*_INTERFACE</span></code> marker stripped away.
+A separate project consuming the <code class="docutils literal notranslate"><span class="pre">ClimbingStats</span></code> package would contain:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_package(</span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="no">REQUIRED</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">Downstream</span><span class="w"> </span><span class="nb">main.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">Downstream</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="nb">ClimbingStats</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Depending on whether the <code class="docutils literal notranslate"><span class="pre">ClimbingStats</span></code> package was used from the build
+location or the install location, the <code class="docutils literal notranslate"><span class="pre">Downstream</span></code> target would be compiled
+with either <code class="docutils literal notranslate"><span class="pre">-DClimbingStats_FROM_BUILD_LOCATION</span></code> or
+<code class="docutils literal notranslate"><span class="pre">-DClimbingStats_FROM_INSTALL_LOCATION</span></code>.  For more about packages and
+exporting see the <span class="target" id="index-1-manual:cmake-packages(7)"></span><a class="reference internal" href="cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual.</p>
+<div class="section" id="include-directories-and-usage-requirements">
+<span id="id5"></span><h4><a class="toc-backref" href="#id27">Include Directories and Usage Requirements</a><a class="headerlink" href="#include-directories-and-usage-requirements" title="Permalink to this headline">¶</a></h4>
+<p>Include directories require some special consideration when specified as usage
+requirements and when used with generator expressions.  The
+<span class="target" id="index-1-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a> command accepts both relative and
+absolute include directories:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"></span>
+<span class="w">  </span><span class="na">/absolute/path</span><span class="w"></span>
+<span class="w">  </span><span class="na">relative/path</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Relative paths are interpreted relative to the source directory where the
+command appears.  Relative paths are not allowed in the
+<span class="target" id="index-4-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a> of <span class="target" id="index-3-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets.</p>
+<p>In cases where a non-trivial generator expression is used, the
+<code class="docutils literal notranslate"><span class="pre">INSTALL_PREFIX</span></code> expression may be used within the argument of an
+<code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> expression.  It is a replacement marker which
+expands to the installation prefix when imported by a consuming project.</p>
+<p>Include directories usage requirements commonly differ between the build-tree
+and the install-tree.  The <code class="docutils literal notranslate"><span class="pre">BUILD_INTERFACE</span></code> and <code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code>
+generator expressions can be used to describe separate usage requirements
+based on the usage location.  Relative paths are allowed within the
+<code class="docutils literal notranslate"><span class="pre">INSTALL_INTERFACE</span></code> expression and are interpreted relative to the
+installation prefix.  For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="nb">climbingstats.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">ClimbingStats</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="na">/generated</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="na">/absolute/path</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="na">relative/path</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:$&lt;</span><span class="no">INSTALL_PREFIX</span><span class="o">&gt;</span><span class="na">/</span><span class="o">$&lt;</span><span class="no">CONFIG</span><span class="o">&gt;</span><span class="na">/generated</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Two convenience APIs are provided relating to include directories usage
+requirements.  The <span class="target" id="index-1-variable:CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE"></span><a class="reference internal" href="../variable/CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE.html#variable:CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE" title="CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE</span></code></a> variable
+may be enabled, with an equivalent effect to:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_INCLUDE_DIRECTORIES</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="p">;</span><span class="o">${</span><span class="nt">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>for each target affected.  The convenience for installed targets is
+an <code class="docutils literal notranslate"><span class="pre">INCLUDES</span> <span class="pre">DESTINATION</span></code> component with the <span class="target" id="index-2-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(TARGETS)</span></code></a>
+command:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="nb">bar</span><span class="w"> </span><span class="nb">bat</span><span class="w"> </span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">tgts</span><span class="w"> </span><span class="o">${</span><span class="nt">dest_args</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">INCLUDES</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">tgts</span><span class="w"> </span><span class="o">${</span><span class="nt">other_args</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="o">${</span><span class="nt">headers</span><span class="o">}</span><span class="w"> </span><span class="no">DESTINATION</span><span class="w"> </span><span class="nb">include</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This is equivalent to appending <code class="docutils literal notranslate"><span class="pre">${CMAKE_INSTALL_PREFIX}/include</span></code> to the
+<span class="target" id="index-5-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a> of each of the installed
+<span class="target" id="index-4-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets when generated by <span class="target" id="index-3-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a>.</p>
+<p>When the <span class="target" id="index-6-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a> of an
+<a class="reference internal" href="#imported-targets"><span class="std std-ref">imported target</span></a> is consumed, the entries in the
+property are treated as <code class="docutils literal notranslate"><span class="pre">SYSTEM</span></code> include directories, as if they were
+listed in the <span class="target" id="index-0-prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES" title="INTERFACE_SYSTEM_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_SYSTEM_INCLUDE_DIRECTORIES</span></code></a> of the
+dependency. This can result in omission of compiler warnings for headers
+found in those directories.  This behavior for <a class="reference internal" href="#imported-targets"><span class="std std-ref">Imported Targets</span></a> may
+be controlled by setting the <span class="target" id="index-0-prop_tgt:NO_SYSTEM_FROM_IMPORTED"></span><a class="reference internal" href="../prop_tgt/NO_SYSTEM_FROM_IMPORTED.html#prop_tgt:NO_SYSTEM_FROM_IMPORTED" title="NO_SYSTEM_FROM_IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">NO_SYSTEM_FROM_IMPORTED</span></code></a> target
+property on the <em>consumers</em> of imported targets.</p>
+<p>If a binary target is linked transitively to a macOS <span class="target" id="index-1-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="../prop_tgt/FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a>, the
+<code class="docutils literal notranslate"><span class="pre">Headers</span></code> directory of the framework is also treated as a usage requirement.
+This has the same effect as passing the framework directory as an include
+directory.</p>
+</div>
+</div>
+<div class="section" id="link-libraries-and-generator-expressions">
+<h3><a class="toc-backref" href="#id28">Link Libraries and Generator Expressions</a><a class="headerlink" href="#link-libraries-and-generator-expressions" title="Permalink to this headline">¶</a></h3>
+<p>Like build specifications, <span class="target" id="index-0-prop_tgt:LINK_LIBRARIES"></span><a class="reference internal" href="../prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES" title="LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">link</span> <span class="pre">libraries</span></code></a> may be
+specified with generator expression conditions.  However, as consumption of
+usage requirements is based on collection from linked dependencies, there is
+an additional limitation that the link dependencies must form a “directed
+acyclic graph”.  That is, if linking to a target is dependent on the value of
+a target property, that target property may not be dependent on the linked
+dependencies:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">lib2</span><span class="w"> </span><span class="nb">lib2.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="no">POSITION_INDEPENDENT_CODE</span><span class="o">&gt;:</span><span class="nb">lib2</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">lib3</span><span class="w"> </span><span class="nb">lib3.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">lib3</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib3</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>As the value of the <span class="target" id="index-4-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> property of
+the <code class="docutils literal notranslate"><span class="pre">exe1</span></code> target is dependent on the linked libraries (<code class="docutils literal notranslate"><span class="pre">lib3</span></code>), and the
+edge of linking <code class="docutils literal notranslate"><span class="pre">exe1</span></code> is determined by the same
+<span class="target" id="index-5-prop_tgt:POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE" title="POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">POSITION_INDEPENDENT_CODE</span></code></a> property, the dependency graph above
+contains a cycle.  <span class="target" id="index-3-manual:cmake(1)"></span><a class="reference internal" href="cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> issues an error message.</p>
+</div>
+<div class="section" id="output-artifacts">
+<span id="id6"></span><h3><a class="toc-backref" href="#id29">Output Artifacts</a><a class="headerlink" href="#output-artifacts" title="Permalink to this headline">¶</a></h3>
+<p>The buildsystem targets created by the <span class="target" id="index-3-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> and
+<span class="target" id="index-2-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> commands create rules to create binary outputs.
+The exact output location of the binaries can only be determined at
+generate-time because it can depend on the build-configuration and the
+link-language of linked dependencies etc.  <code class="docutils literal notranslate"><span class="pre">TARGET_FILE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">TARGET_LINKER_FILE</span></code> and related expressions can be used to access the
+name and location of generated binaries.  These expressions do not work
+for <code class="docutils literal notranslate"><span class="pre">OBJECT</span></code> libraries however, as there is no single file generated
+by such libraries which is relevant to the expressions.</p>
+<p>There are three kinds of output artifacts that may be build by targets
+as detailed in the following sections.  Their classification differs
+between DLL platforms and non-DLL platforms.  All Windows-based
+systems including Cygwin are DLL platforms.</p>
+<div class="section" id="runtime-output-artifacts">
+<span id="id7"></span><h4><a class="toc-backref" href="#id30">Runtime Output Artifacts</a><a class="headerlink" href="#runtime-output-artifacts" title="Permalink to this headline">¶</a></h4>
+<p>A <em>runtime</em> output artifact of a buildsystem target may be:</p>
+<ul class="simple">
+<li><p>The executable file (e.g. <code class="docutils literal notranslate"><span class="pre">.exe</span></code>) of an executable target
+created by the <span class="target" id="index-3-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command.</p></li>
+<li><p>On DLL platforms: the executable file (e.g. <code class="docutils literal notranslate"><span class="pre">.dll</span></code>) of a shared
+library target created by the <span class="target" id="index-4-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command
+with the <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> option.</p></li>
+</ul>
+<p>The <span class="target" id="index-0-prop_tgt:RUNTIME_OUTPUT_DIRECTORY"></span><a class="reference internal" href="../prop_tgt/RUNTIME_OUTPUT_DIRECTORY.html#prop_tgt:RUNTIME_OUTPUT_DIRECTORY" title="RUNTIME_OUTPUT_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RUNTIME_OUTPUT_DIRECTORY</span></code></a> and <span class="target" id="index-0-prop_tgt:RUNTIME_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/RUNTIME_OUTPUT_NAME.html#prop_tgt:RUNTIME_OUTPUT_NAME" title="RUNTIME_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RUNTIME_OUTPUT_NAME</span></code></a>
+target properties may be used to control runtime output artifact locations
+and names in the build tree.</p>
+</div>
+<div class="section" id="library-output-artifacts">
+<span id="id8"></span><h4><a class="toc-backref" href="#id31">Library Output Artifacts</a><a class="headerlink" href="#library-output-artifacts" title="Permalink to this headline">¶</a></h4>
+<p>A <em>library</em> output artifact of a buildsystem target may be:</p>
+<ul class="simple">
+<li><p>The loadable module file (e.g. <code class="docutils literal notranslate"><span class="pre">.dll</span></code> or <code class="docutils literal notranslate"><span class="pre">.so</span></code>) of a module
+library target created by the <span class="target" id="index-5-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command
+with the <code class="docutils literal notranslate"><span class="pre">MODULE</span></code> option.</p></li>
+<li><p>On non-DLL platforms: the shared library file (e.g. <code class="docutils literal notranslate"><span class="pre">.so</span></code> or <code class="docutils literal notranslate"><span class="pre">.dylib</span></code>)
+of a shared library target created by the <span class="target" id="index-6-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>
+command with the <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> option.</p></li>
+</ul>
+<p>The <span class="target" id="index-0-prop_tgt:LIBRARY_OUTPUT_DIRECTORY"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_DIRECTORY.html#prop_tgt:LIBRARY_OUTPUT_DIRECTORY" title="LIBRARY_OUTPUT_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_DIRECTORY</span></code></a> and <span class="target" id="index-0-prop_tgt:LIBRARY_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_NAME.html#prop_tgt:LIBRARY_OUTPUT_NAME" title="LIBRARY_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_NAME</span></code></a>
+target properties may be used to control library output artifact locations
+and names in the build tree.</p>
+</div>
+<div class="section" id="archive-output-artifacts">
+<span id="id9"></span><h4><a class="toc-backref" href="#id32">Archive Output Artifacts</a><a class="headerlink" href="#archive-output-artifacts" title="Permalink to this headline">¶</a></h4>
+<p>An <em>archive</em> output artifact of a buildsystem target may be:</p>
+<ul class="simple">
+<li><p>The static library file (e.g. <code class="docutils literal notranslate"><span class="pre">.lib</span></code> or <code class="docutils literal notranslate"><span class="pre">.a</span></code>) of a static
+library target created by the <span class="target" id="index-7-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command
+with the <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> option.</p></li>
+<li><p>On DLL platforms: the import library file (e.g. <code class="docutils literal notranslate"><span class="pre">.lib</span></code>) of a shared
+library target created by the <span class="target" id="index-8-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a> command
+with the <code class="docutils literal notranslate"><span class="pre">SHARED</span></code> option.  This file is only guaranteed to exist if
+the library exports at least one unmanaged symbol.</p></li>
+<li><p>On DLL platforms: the import library file (e.g. <code class="docutils literal notranslate"><span class="pre">.lib</span></code>) of an
+executable target created by the <span class="target" id="index-4-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command
+when its <span class="target" id="index-0-prop_tgt:ENABLE_EXPORTS"></span><a class="reference internal" href="../prop_tgt/ENABLE_EXPORTS.html#prop_tgt:ENABLE_EXPORTS" title="ENABLE_EXPORTS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ENABLE_EXPORTS</span></code></a> target property is set.</p></li>
+<li><p>On AIX: the linker import file (e.g. <code class="docutils literal notranslate"><span class="pre">.imp</span></code>) of an executable target
+created by the <span class="target" id="index-5-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a> command when its
+<span class="target" id="index-1-prop_tgt:ENABLE_EXPORTS"></span><a class="reference internal" href="../prop_tgt/ENABLE_EXPORTS.html#prop_tgt:ENABLE_EXPORTS" title="ENABLE_EXPORTS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ENABLE_EXPORTS</span></code></a> target property is set.</p></li>
+</ul>
+<p>The <span class="target" id="index-0-prop_tgt:ARCHIVE_OUTPUT_DIRECTORY"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_DIRECTORY.html#prop_tgt:ARCHIVE_OUTPUT_DIRECTORY" title="ARCHIVE_OUTPUT_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_DIRECTORY</span></code></a> and <span class="target" id="index-0-prop_tgt:ARCHIVE_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_NAME.html#prop_tgt:ARCHIVE_OUTPUT_NAME" title="ARCHIVE_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_NAME</span></code></a>
+target properties may be used to control archive output artifact locations
+and names in the build tree.</p>
+</div>
+</div>
+<div class="section" id="directory-scoped-commands">
+<h3><a class="toc-backref" href="#id33">Directory-Scoped Commands</a><a class="headerlink" href="#directory-scoped-commands" title="Permalink to this headline">¶</a></h3>
+<p>The <span class="target" id="index-2-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>,
+<span class="target" id="index-1-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a> and
+<span class="target" id="index-1-command:target_compile_options"></span><a class="reference internal" href="../command/target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a> commands have an effect on only one
+target at a time.  The commands <span class="target" id="index-0-command:add_compile_definitions"></span><a class="reference internal" href="../command/add_compile_definitions.html#command:add_compile_definitions" title="add_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_definitions()</span></code></a>,
+<span class="target" id="index-0-command:add_compile_options"></span><a class="reference internal" href="../command/add_compile_options.html#command:add_compile_options" title="add_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_options()</span></code></a> and <span class="target" id="index-0-command:include_directories"></span><a class="reference internal" href="../command/include_directories.html#command:include_directories" title="include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include_directories()</span></code></a> have
+a similar function, but operate at directory scope instead of target
+scope for convenience.</p>
+</div>
+</div>
+<div class="section" id="pseudo-targets">
+<h2><a class="toc-backref" href="#id34">Pseudo Targets</a><a class="headerlink" href="#pseudo-targets" title="Permalink to this headline">¶</a></h2>
+<p>Some target types do not represent outputs of the buildsystem, but only inputs
+such as external dependencies, aliases or other non-build artifacts.  Pseudo
+targets are not represented in the generated buildsystem.</p>
+<div class="section" id="imported-targets">
+<span id="id10"></span><h3><a class="toc-backref" href="#id35">Imported Targets</a><a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h3>
+<p>An <span class="target" id="index-5-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target represents a pre-existing dependency.  Usually
+such targets are defined by an upstream package and should be treated as
+immutable. After declaring an <span class="target" id="index-6-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target one can adjust its
+target properties by using the customary commands such as
+<span class="target" id="index-2-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>, <span class="target" id="index-3-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>,
+<span class="target" id="index-2-command:target_compile_options"></span><a class="reference internal" href="../command/target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a> or <span class="target" id="index-8-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> just like
+with any other regular target.</p>
+<p><span class="target" id="index-7-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets may have the same usage requirement properties
+populated as binary targets, such as
+<span class="target" id="index-7-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a>,
+<span class="target" id="index-2-prop_tgt:INTERFACE_COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS" title="INTERFACE_COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_DEFINITIONS</span></code></a>,
+<span class="target" id="index-2-prop_tgt:INTERFACE_COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS" title="INTERFACE_COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_OPTIONS</span></code></a>,
+<span class="target" id="index-0-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a>, and
+<span class="target" id="index-2-prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/INTERFACE_POSITION_INDEPENDENT_CODE.html#prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE" title="INTERFACE_POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_POSITION_INDEPENDENT_CODE</span></code></a>.</p>
+<p>The <span class="target" id="index-0-prop_tgt:LOCATION"></span><a class="reference internal" href="../prop_tgt/LOCATION.html#prop_tgt:LOCATION" title="LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LOCATION</span></code></a> may also be read from an IMPORTED target, though there
+is rarely reason to do so.  Commands such as <span class="target" id="index-3-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a> can
+transparently use an <span class="target" id="index-8-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> <span class="target" id="index-1-prop_tgt:TYPE"></span><a class="reference internal" href="../prop_tgt/TYPE.html#prop_tgt:TYPE" title="TYPE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">EXECUTABLE</span></code></a> target
+as a <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> executable.</p>
+<p>The scope of the definition of an <span class="target" id="index-9-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target is the directory
+where it was defined.  It may be accessed and used from subdirectories, but
+not from parent directories or sibling directories.  The scope is similar to
+the scope of a cmake variable.</p>
+<p>It is also possible to define a <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> <span class="target" id="index-10-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target which is
+accessible globally in the buildsystem.</p>
+<p>See the <span class="target" id="index-2-manual:cmake-packages(7)"></span><a class="reference internal" href="cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual for more on creating packages
+with <span class="target" id="index-11-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets.</p>
+</div>
+<div class="section" id="alias-targets">
+<span id="id11"></span><h3><a class="toc-backref" href="#id36">Alias Targets</a><a class="headerlink" href="#alias-targets" title="Permalink to this headline">¶</a></h3>
+<p>An <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> target is a name which may be used interchangeably with
+a binary target name in read-only contexts.  A primary use-case for <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code>
+targets is for example or unit test executables accompanying a library, which
+may be part of the same buildsystem or built separately based on user
+configuration.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib1</span><span class="w"> </span><span class="nb">lib1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">lib1</span><span class="w"> </span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">lib1Export</span><span class="w"> </span><span class="o">${</span><span class="nt">dest_args</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">lib1Export</span><span class="w"> </span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="w"> </span><span class="o">${</span><span class="nt">other_args</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">Upstream</span><span class="o">::</span><span class="nb">lib1</span><span class="w"> </span><span class="no">ALIAS</span><span class="w"> </span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In another directory, we can link unconditionally to the <code class="docutils literal notranslate"><span class="pre">Upstream::lib1</span></code>
+target, which may be an <span class="target" id="index-12-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target from a package, or an
+<code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> target if built as part of the same buildsystem.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">if</span> <span class="nf">(</span><span class="no">NOT</span><span class="w"> </span><span class="no">TARGET</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">find_package(</span><span class="nb">lib1</span><span class="w"> </span><span class="no">REQUIRED</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="nb">lib1</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> targets are not mutable, installable or exportable.  They are
+entirely local to the buildsystem description.  A name can be tested for
+whether it is an <code class="docutils literal notranslate"><span class="pre">ALIAS</span></code> name by reading the <span class="target" id="index-0-prop_tgt:ALIASED_TARGET"></span><a class="reference internal" href="../prop_tgt/ALIASED_TARGET.html#prop_tgt:ALIASED_TARGET" title="ALIASED_TARGET"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ALIASED_TARGET</span></code></a>
+property from it:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_target_property(</span><span class="nb">_aliased</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="nb">lib1</span><span class="w"> </span><span class="no">ALIASED_TARGET</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if(</span><span class="nb">_aliased</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;The name Upstream::lib1 is an ALIAS for ${_aliased}.&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="interface-libraries">
+<span id="id12"></span><h3><a class="toc-backref" href="#id37">Interface Libraries</a><a class="headerlink" href="#interface-libraries" title="Permalink to this headline">¶</a></h3>
+<p>An <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> library target does not compile sources and does not
+produce a library artifact on disk, so it has no <span class="target" id="index-1-prop_tgt:LOCATION"></span><a class="reference internal" href="../prop_tgt/LOCATION.html#prop_tgt:LOCATION" title="LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LOCATION</span></code></a>.</p>
+<p>It may specify usage requirements such as
+<span class="target" id="index-8-prop_tgt:INTERFACE_INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES" title="INTERFACE_INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_INCLUDE_DIRECTORIES</span></code></a>,
+<span class="target" id="index-3-prop_tgt:INTERFACE_COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS" title="INTERFACE_COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_DEFINITIONS</span></code></a>,
+<span class="target" id="index-3-prop_tgt:INTERFACE_COMPILE_OPTIONS"></span><a class="reference internal" href="../prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS" title="INTERFACE_COMPILE_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_COMPILE_OPTIONS</span></code></a>,
+<span class="target" id="index-1-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a>,
+<span class="target" id="index-0-prop_tgt:INTERFACE_SOURCES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES" title="INTERFACE_SOURCES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_SOURCES</span></code></a>,
+and <span class="target" id="index-3-prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE"></span><a class="reference internal" href="../prop_tgt/INTERFACE_POSITION_INDEPENDENT_CODE.html#prop_tgt:INTERFACE_POSITION_INDEPENDENT_CODE" title="INTERFACE_POSITION_INDEPENDENT_CODE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_POSITION_INDEPENDENT_CODE</span></code></a>.
+Only the <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> modes of the <span class="target" id="index-4-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>,
+<span class="target" id="index-3-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>, <span class="target" id="index-3-command:target_compile_options"></span><a class="reference internal" href="../command/target_compile_options.html#command:target_compile_options" title="target_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_options()</span></code></a>,
+<span class="target" id="index-0-command:target_sources"></span><a class="reference internal" href="../command/target_sources.html#command:target_sources" title="target_sources"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_sources()</span></code></a>, and <span class="target" id="index-9-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> commands
+may be used with <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> libraries.</p>
+<p>Since CMake 3.19, an <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> library target may optionally contain
+source files.  An interface library that contains source files will be
+included as a build target in the generated buildsystem.  It does not
+compile sources, but may contain custom commands to generate other sources.
+Additionally, IDEs will show the source files as part of the target for
+interactive reading and editing.</p>
+<p>A primary use-case for <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> libraries is header-only libraries.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">Eigen</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/eigen.h</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/vector.h</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/matrix.h</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">Eigen</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/src</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="na">include/Eigen</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">Eigen</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here, the usage requirements from the <code class="docutils literal notranslate"><span class="pre">Eigen</span></code> target are consumed and used
+when compiling, but it has no effect on linking.</p>
+<p>Another use-case is to employ an entirely target-focussed design for usage
+requirements:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">pic_on</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">pic_on</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">ON</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">pic_off</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">pic_off</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">INTERFACE_POSITION_INDEPENDENT_CODE</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_library(</span><span class="nb">enable_rtti</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_options(</span><span class="nb">enable_rtti</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;$&lt;</span><span class="no">OR</span><span class="o">:$&lt;</span><span class="no">COMPILER_ID</span><span class="o">:</span><span class="no">GNU</span><span class="o">&gt;</span><span class="p">,</span><span class="o">$&lt;</span><span class="no">COMPILER_ID</span><span class="o">:</span><span class="nb">Clang</span><span class="o">&gt;&gt;:</span><span class="p">-</span><span class="nb">rtti</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">exe1.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">exe1</span><span class="w"> </span><span class="nb">pic_on</span><span class="w"> </span><span class="nb">enable_rtti</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This way, the build specification of <code class="docutils literal notranslate"><span class="pre">exe1</span></code> is expressed entirely as linked
+targets, and the complexity of compiler-specific flags is encapsulated in an
+<code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> library target.</p>
+<p><code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> libraries may be installed and exported.  Any content they refer
+to must be installed separately:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">Eigen_headers</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/eigen.h</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/vector.h</span><span class="w"></span>
+<span class="w">  </span><span class="na">src/matrix.h</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">Eigen</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">${</span><span class="nt">Eigen_headers</span><span class="o">}</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">Eigen</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">BUILD_INTERFACE</span><span class="o">:${</span><span class="nt">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="na">/src</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="o">$&lt;</span><span class="no">INSTALL_INTERFACE</span><span class="o">:</span><span class="na">include/Eigen</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">install(</span><span class="no">TARGETS</span><span class="w"> </span><span class="nb">Eigen</span><span class="w"> </span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">eigenExport</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">EXPORT</span><span class="w"> </span><span class="nb">eigenExport</span><span class="w"> </span><span class="no">NAMESPACE</span><span class="w"> </span><span class="nb">Upstream</span><span class="o">::</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">lib/cmake/Eigen</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">install(</span><span class="no">FILES</span><span class="w"> </span><span class="o">${</span><span class="nt">Eigen_headers</span><span class="o">}</span><span class="w"></span>
+<span class="w">  </span><span class="no">DESTINATION</span><span class="w"> </span><span class="na">include/Eigen</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-buildsystem(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#binary-targets">Binary Targets</a><ul>
+<li><a class="reference internal" href="#binary-executables">Binary Executables</a></li>
+<li><a class="reference internal" href="#binary-library-types">Binary Library Types</a><ul>
+<li><a class="reference internal" href="#normal-libraries">Normal Libraries</a><ul>
+<li><a class="reference internal" href="#apple-frameworks">Apple Frameworks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#object-libraries">Object Libraries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#build-specification-and-usage-requirements">Build Specification and Usage Requirements</a><ul>
+<li><a class="reference internal" href="#target-properties">Target Properties</a></li>
+<li><a class="reference internal" href="#transitive-usage-requirements">Transitive Usage Requirements</a></li>
+<li><a class="reference internal" href="#compatible-interface-properties">Compatible Interface Properties</a></li>
+<li><a class="reference internal" href="#property-origin-debugging">Property Origin Debugging</a></li>
+<li><a class="reference internal" href="#build-specification-with-generator-expressions">Build Specification with Generator Expressions</a><ul>
+<li><a class="reference internal" href="#include-directories-and-usage-requirements">Include Directories and Usage Requirements</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#link-libraries-and-generator-expressions">Link Libraries and Generator Expressions</a></li>
+<li><a class="reference internal" href="#output-artifacts">Output Artifacts</a><ul>
+<li><a class="reference internal" href="#runtime-output-artifacts">Runtime Output Artifacts</a></li>
+<li><a class="reference internal" href="#library-output-artifacts">Library Output Artifacts</a></li>
+<li><a class="reference internal" href="#archive-output-artifacts">Archive Output Artifacts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#directory-scoped-commands">Directory-Scoped Commands</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pseudo-targets">Pseudo Targets</a><ul>
+<li><a class="reference internal" href="#imported-targets">Imported Targets</a></li>
+<li><a class="reference internal" href="#alias-targets">Alias Targets</a></li>
+<li><a class="reference internal" href="#interface-libraries">Interface Libraries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ccmake.1.html"
+                        title="previous chapter">ccmake(1)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-commands.7.html"
+                        title="next chapter">cmake-commands(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-buildsystem.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-commands.7.html" title="cmake-commands(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ccmake.1.html" title="ccmake(1)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-buildsystem(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

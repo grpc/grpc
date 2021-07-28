@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_VERSION &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_VS_DEVENV_COMMAND" href="CMAKE_VS_DEVENV_COMMAND.html" />
+    <link rel="prev" title="CMAKE_VERBOSE_MAKEFILE" href="CMAKE_VERBOSE_MAKEFILE.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_VS_DEVENV_COMMAND.html" title="CMAKE_VS_DEVENV_COMMAND"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_VERBOSE_MAKEFILE.html" title="CMAKE_VERBOSE_MAKEFILE"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_VERSION</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-version">
+<span id="variable:CMAKE_VERSION"></span><h1>CMAKE_VERSION<a class="headerlink" href="#cmake-version" title="Permalink to this headline">¶</a></h1>
+<p>The CMake version string as three non-negative integer components
+separated by <code class="docutils literal notranslate"><span class="pre">.</span></code> and possibly followed by <code class="docutils literal notranslate"><span class="pre">-</span></code> and other information.
+The first two components represent the feature level and the third
+component represents either a bug-fix level or development date.</p>
+<p>Release versions and release candidate versions of CMake use the format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;[-rc&lt;n&gt;]
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">&lt;patch&gt;</span></code> component is less than <code class="docutils literal notranslate"><span class="pre">20000000</span></code>.  Development
+versions of CMake use the format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;major&gt;.&lt;minor&gt;.&lt;date&gt;[-&lt;id&gt;]
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">&lt;date&gt;</span></code> component is of format <code class="docutils literal notranslate"><span class="pre">CCYYMMDD</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;</span></code>
+may contain arbitrary text.  This represents development as of a
+particular date following the <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;minor&gt;</span></code> feature release.</p>
+<p>Individual component values are also available in variables:</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-variable:CMAKE_MAJOR_VERSION"></span><a class="reference internal" href="CMAKE_MAJOR_VERSION.html#variable:CMAKE_MAJOR_VERSION" title="CMAKE_MAJOR_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MAJOR_VERSION</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_MINOR_VERSION"></span><a class="reference internal" href="CMAKE_MINOR_VERSION.html#variable:CMAKE_MINOR_VERSION" title="CMAKE_MINOR_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MINOR_VERSION</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_PATCH_VERSION"></span><a class="reference internal" href="CMAKE_PATCH_VERSION.html#variable:CMAKE_PATCH_VERSION" title="CMAKE_PATCH_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PATCH_VERSION</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_TWEAK_VERSION"></span><a class="reference internal" href="CMAKE_TWEAK_VERSION.html#variable:CMAKE_TWEAK_VERSION" title="CMAKE_TWEAK_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TWEAK_VERSION</span></code></a></p></li>
+</ul>
+<p>Use the <span class="target" id="index-0-command:if"></span><a class="reference internal" href="../command/if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if()</span></code></a> command <code class="docutils literal notranslate"><span class="pre">VERSION_LESS</span></code>, <code class="docutils literal notranslate"><span class="pre">VERSION_GREATER</span></code>,
+<code class="docutils literal notranslate"><span class="pre">VERSION_EQUAL</span></code>, <code class="docutils literal notranslate"><span class="pre">VERSION_LESS_EQUAL</span></code>, or <code class="docutils literal notranslate"><span class="pre">VERSION_GREATER_EQUAL</span></code>
+operators to compare version string values against <code class="docutils literal notranslate"><span class="pre">CMAKE_VERSION</span></code> using a
+component-wise test.  Version component values may be 10 or larger so do not
+attempt to compare version strings as floating-point numbers.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CMake versions 2.8.2 through 2.8.12 used three components for the
+feature level.  Release versions represented the bug-fix level in a
+fourth component, i.e. <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;[.&lt;tweak&gt;][-rc&lt;n&gt;]</span></code>.
+Development versions represented the development date in the fourth
+component, i.e. <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;date&gt;[-&lt;id&gt;]</span></code>.</p>
+<p>CMake versions prior to 2.8.2 used three components for the
+feature level and had no bug-fix component.  Release versions
+used an even-valued second component, i.e.
+<code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;even-minor&gt;.&lt;patch&gt;[-rc&lt;n&gt;]</span></code>.  Development versions
+used an odd-valued second component with the development date as
+the third component, i.e. <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;odd-minor&gt;.&lt;date&gt;</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">CMAKE_VERSION</span></code> variable is defined by CMake 2.6.3 and higher.
+Earlier versions defined only the individual component variables.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_VERBOSE_MAKEFILE.html"
+                        title="previous chapter">CMAKE_VERBOSE_MAKEFILE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_VS_DEVENV_COMMAND.html"
+                        title="next chapter">CMAKE_VS_DEVENV_COMMAND</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_VERSION.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_VS_DEVENV_COMMAND.html" title="CMAKE_VS_DEVENV_COMMAND"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_VERBOSE_MAKEFILE.html" title="CMAKE_VERBOSE_MAKEFILE"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_VERSION</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

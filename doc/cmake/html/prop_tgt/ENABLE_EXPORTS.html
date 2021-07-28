@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENABLE_EXPORTS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="EXCLUDE_FROM_ALL" href="EXCLUDE_FROM_ALL.html" />
+    <link rel="prev" title="EchoString" href="EchoString.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="EXCLUDE_FROM_ALL.html" title="EXCLUDE_FROM_ALL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EchoString.html" title="EchoString"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ENABLE_EXPORTS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="enable-exports">
+<span id="prop_tgt:ENABLE_EXPORTS"></span><h1>ENABLE_EXPORTS<a class="headerlink" href="#enable-exports" title="Permalink to this headline">¶</a></h1>
+<p>Specify whether an executable exports symbols for loadable modules.</p>
+<p>Normally an executable does not export any symbols because it is the
+final program.  It is possible for an executable to export symbols to
+be used by loadable modules.  When this property is set to true CMake
+will allow other targets to “link” to the executable with the
+<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command.  On all platforms a target-level
+dependency on the executable is created for targets that link to it.
+Handling of the executable on the link lines of the loadable modules
+varies by platform:</p>
+<ul class="simple">
+<li><p>On Windows-based systems (including Cygwin) an “import library” is
+created along with the executable to list the exported symbols.
+Loadable modules link to the import library to get the symbols.</p></li>
+<li><p>On macOS, loadable modules link to the executable itself using the
+<code class="docutils literal notranslate"><span class="pre">-bundle_loader</span></code> flag.</p></li>
+<li><p>On AIX, a linker “import file” is created along with the executable
+to list the exported symbols for import when linking other targets.
+Loadable modules link to the import file to get the symbols.</p></li>
+<li><p>On other platforms, loadable modules are simply linked without
+referencing the executable since the dynamic loader will
+automatically bind symbols when the module is loaded.</p></li>
+</ul>
+<p>This property is initialized by the value of the variable
+<span class="target" id="index-0-variable:CMAKE_ENABLE_EXPORTS"></span><a class="reference internal" href="../variable/CMAKE_ENABLE_EXPORTS.html#variable:CMAKE_ENABLE_EXPORTS" title="CMAKE_ENABLE_EXPORTS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ENABLE_EXPORTS</span></code></a> if it is set when a target is created.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EchoString.html"
+                        title="previous chapter">EchoString</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXCLUDE_FROM_ALL.html"
+                        title="next chapter">EXCLUDE_FROM_ALL</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/ENABLE_EXPORTS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="EXCLUDE_FROM_ALL.html" title="EXCLUDE_FROM_ALL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="EchoString.html" title="EchoString"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ENABLE_EXPORTS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

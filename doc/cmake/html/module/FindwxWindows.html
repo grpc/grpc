@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindwxWindows &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPackArchive" href="CPackArchive.html" />
+    <link rel="prev" title="FindQt" href="FindQt.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CPackArchive.html" title="CPackArchive"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindQt.html" title="FindQt"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindwxWindows</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findwxwindows">
+<span id="module:FindwxWindows"></span><h1>FindwxWindows<a class="headerlink" href="#findwxwindows" title="Permalink to this headline">¶</a></h1>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.0: </span>Replaced by <span class="target" id="index-0-module:FindwxWidgets"></span><a class="reference internal" href="FindwxWidgets.html#module:FindwxWidgets" title="FindwxWidgets"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindwxWidgets</span></code></a>.</p>
+</div>
+<p>Find wxWindows (wxWidgets) installation</p>
+<p>This module finds if wxWindows/wxWidgets is installed and determines
+where the include files and libraries are.  It also determines what
+the name of the library is.  This code sets the following variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>WXWINDOWS_FOUND     = system has WxWindows
+WXWINDOWS_LIBRARIES = path to the wxWindows libraries
+                      on Unix/Linux with additional
+                      linker flags from
+                      &quot;wx-config --libs&quot;
+CMAKE_WXWINDOWS_CXX_FLAGS  = Compiler flags for wxWindows,
+                             essentially &quot;`wx-config --cxxflags`&quot;
+                             on Linux
+WXWINDOWS_INCLUDE_DIR      = where to find &quot;wx/wx.h&quot; and &quot;wx/setup.h&quot;
+WXWINDOWS_LINK_DIRECTORIES = link directories, useful for rpath on
+                              Unix
+WXWINDOWS_DEFINITIONS      = extra defines
+</pre></div>
+</div>
+<p>OPTIONS If you need OpenGL support please</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(WXWINDOWS_USE_GL 1)
+</pre></div>
+</div>
+<p>in your CMakeLists.txt <em>before</em> you include this file.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>HAVE_ISYSTEM      - true required to replace -I by -isystem on g++
+</pre></div>
+</div>
+<p>For convenience include Use_wxWindows.cmake in your project’s
+CMakeLists.txt using
+include(${CMAKE_CURRENT_LIST_DIR}/Use_wxWindows.cmake).</p>
+<p>USAGE</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(WXWINDOWS_USE_GL 1)
+find_package(wxWindows)
+</pre></div>
+</div>
+<p>NOTES wxWidgets 2.6.x is supported for monolithic builds e.g.
+compiled in wx/build/msw dir as:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>nmake -f makefile.vc BUILD=debug SHARED=0 USE_OPENGL=1 MONOLITHIC=1
+</pre></div>
+</div>
+<p>DEPRECATED</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>CMAKE_WX_CAN_COMPILE
+WXWINDOWS_LIBRARY
+CMAKE_WX_CXX_FLAGS
+WXWINDOWS_INCLUDE_PATH
+</pre></div>
+</div>
+<p>AUTHOR Jan Woetzel &lt;<a class="reference external" href="http://www.mip.informatik.uni-kiel.de/~jw">http://www.mip.informatik.uni-kiel.de/~jw</a>&gt;
+(07/2003-01/2006)</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindQt.html"
+                        title="previous chapter">FindQt</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CPackArchive.html"
+                        title="next chapter">CPackArchive</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindwxWindows.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CPackArchive.html" title="CPackArchive"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindQt.html" title="FindQt"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindwxWindows</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

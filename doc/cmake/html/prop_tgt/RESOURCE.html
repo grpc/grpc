@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESOURCE &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RULE_LAUNCH_COMPILE" href="RULE_LAUNCH_COMPILE.html" />
+    <link rel="prev" title="PUBLIC_HEADER" href="PUBLIC_HEADER.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="RULE_LAUNCH_COMPILE.html" title="RULE_LAUNCH_COMPILE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="PUBLIC_HEADER.html" title="PUBLIC_HEADER"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">RESOURCE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="resource">
+<span id="prop_tgt:RESOURCE"></span><h1>RESOURCE<a class="headerlink" href="#resource" title="Permalink to this headline">¶</a></h1>
+<p>Specify resource files in a <span class="target" id="index-0-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a> or <span class="target" id="index-0-prop_tgt:BUNDLE"></span><a class="reference internal" href="BUNDLE.html#prop_tgt:BUNDLE" title="BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUNDLE</span></code></a>.</p>
+<p>Target marked with the <span class="target" id="index-1-prop_tgt:FRAMEWORK"></span><a class="reference internal" href="FRAMEWORK.html#prop_tgt:FRAMEWORK" title="FRAMEWORK"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FRAMEWORK</span></code></a> or <span class="target" id="index-1-prop_tgt:BUNDLE"></span><a class="reference internal" href="BUNDLE.html#prop_tgt:BUNDLE" title="BUNDLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">BUNDLE</span></code></a> property
+generate framework or application bundle (both macOS and iOS is supported)
+or normal shared libraries on other platforms.
+This property may be set to a list of files to be placed in the corresponding
+directory (eg. <code class="docutils literal notranslate"><span class="pre">Resources</span></code> directory for macOS) inside the bundle.
+On non-Apple platforms these files may be installed using the <code class="docutils literal notranslate"><span class="pre">RESOURCE</span></code>
+option to the <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(TARGETS)</span></code></a> command.</p>
+<p>Following example of Application Bundle:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">ExecutableTarget</span><span class="w"></span>
+<span class="w">  </span><span class="nb">addDemo.c</span><span class="w"></span>
+<span class="w">  </span><span class="nb">resourcefile.txt</span><span class="w"></span>
+<span class="w">  </span><span class="na">appresourcedir/appres.txt</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">target_link_libraries(</span><span class="nb">ExecutableTarget</span><span class="w"> </span><span class="nb">heymath</span><span class="w"> </span><span class="nb">mul</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set(</span><span class="no">RESOURCE_FILES</span><span class="w"></span>
+<span class="w">  </span><span class="nb">resourcefile.txt</span><span class="w"></span>
+<span class="w">  </span><span class="na">appresourcedir/appres.txt</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_target_properties(</span><span class="nb">ExecutableTarget</span><span class="w"> </span><span class="no">PROPERTIES</span><span class="w"></span>
+<span class="w">  </span><span class="no">MACOSX_BUNDLE</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">MACOSX_FRAMEWORK_IDENTIFIER</span><span class="w"> </span><span class="nb">org.cmake.ExecutableTarget</span><span class="w"></span>
+<span class="w">  </span><span class="no">RESOURCE</span><span class="w"> </span><span class="s">&quot;${RESOURCE_FILES}&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>will produce flat structure for iOS systems:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ExecutableTarget.app
+  appres.txt
+  ExecutableTarget
+  Info.plist
+  resourcefile.txt
+</pre></div>
+</div>
+<p>For macOS systems it will produce following directory structure:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ExecutableTarget.app/
+  Contents
+    Info.plist
+    MacOS
+      ExecutableTarget
+    Resources
+      appres.txt
+      resourcefile.txt
+</pre></div>
+</div>
+<p>For Linux, such CMake script produce following files:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ExecutableTarget
+Resources
+  appres.txt
+  resourcefile.txt
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="PUBLIC_HEADER.html"
+                        title="previous chapter">PUBLIC_HEADER</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="RULE_LAUNCH_COMPILE.html"
+                        title="next chapter">RULE_LAUNCH_COMPILE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/RESOURCE.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="RULE_LAUNCH_COMPILE.html" title="RULE_LAUNCH_COMPILE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="PUBLIC_HEADER.html" title="PUBLIC_HEADER"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">RESOURCE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

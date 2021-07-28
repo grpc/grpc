@@ -1,0 +1,34 @@
+CMP0037
+-------
+
+Target names should not be reserved and should match a validity pattern.
+
+CMake 2.8.12 and lower allowed creating targets using :command:`add_library`,
+:command:`add_executable` and :command:`add_custom_target` with unrestricted
+choice for the target name.  Newer cmake features such
+as :manual:`cmake-generator-expressions(7)` and some
+diagnostics expect target names to match a restricted pattern.
+
+Target names may contain upper and lower case letters, numbers, the underscore
+character (``_``), dot(``.``), plus(``+``) and minus(``-``).
+As a special case, ``ALIAS`` and ``IMPORTED`` targets may contain
+two consecutive colons.
+
+Target names reserved by one or more CMake generators are not allowed.
+Among others these include ``all``, ``clean``, ``help``, and ``install``.
+
+Target names associated with optional features, such as ``test`` and
+``package``, may also be reserved.  CMake 3.10 and below always reserve them.
+CMake 3.11 and above reserve them only when the corresponding feature is
+enabled (e.g. by including the :module:`CTest` or :module:`CPack` modules).
+
+The ``OLD`` behavior for this policy is to allow creating targets with
+reserved names or which do not match the validity pattern.
+The ``NEW`` behavior for this policy is to report an error
+if an add_* command is used with an invalid target name.
+
+This policy was introduced in CMake version 3.0.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

@@ -1,0 +1,1040 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CMAKE-GENERATOR-EXPRESSIONS" "7" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cmake-generator-expressions \- CMake Generator Expressions
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH INTRODUCTION
+.sp
+Generator expressions are evaluated during build system generation to produce
+information specific to each build configuration.
+.sp
+Generator expressions are allowed in the context of many target properties,
+such as \fBLINK_LIBRARIES\fP, \fBINCLUDE_DIRECTORIES\fP,
+\fBCOMPILE_DEFINITIONS\fP and others.  They may also be used when using
+commands to populate those properties, such as \fBtarget_link_libraries()\fP,
+\fBtarget_include_directories()\fP, \fBtarget_compile_definitions()\fP
+and others.
+.sp
+They enable conditional linking, conditional definitions used when compiling,
+conditional include directories, and more.  The conditions may be based on
+the build configuration, target properties, platform information or any other
+queryable information.
+.sp
+Generator expressions have the form \fB$<...>\fP\&.  To avoid confusion, this page
+deviates from most of the CMake documentation in that it omits angular brackets
+\fB<...>\fP around placeholders like \fBcondition\fP, \fBstring\fP, \fBtarget\fP,
+among others.
+.sp
+Generator expressions can be nested, as shown in most of the examples below.
+.SH BOOLEAN GENERATOR EXPRESSIONS
+.sp
+Boolean expressions evaluate to either \fB0\fP or \fB1\fP\&.
+They are typically used to construct the condition in a \fI\%conditional
+generator expression\fP\&.
+.sp
+Available boolean expressions are:
+.SS Logical Operators
+.INDENT 0.0
+.TP
+.B \fB$<BOOL:string>\fP
+Converts \fBstring\fP to \fB0\fP or \fB1\fP\&. Evaluates to \fB0\fP if any of the
+following is true:
+.INDENT 7.0
+.IP \(bu 2
+\fBstring\fP is empty,
+.IP \(bu 2
+\fBstring\fP is a case\-insensitive equal of
+\fB0\fP, \fBFALSE\fP, \fBOFF\fP, \fBN\fP, \fBNO\fP, \fBIGNORE\fP, or \fBNOTFOUND\fP, or
+.IP \(bu 2
+\fBstring\fP ends in the suffix \fB\-NOTFOUND\fP (case\-sensitive).
+.UNINDENT
+.sp
+Otherwise evaluates to \fB1\fP\&.
+.TP
+.B \fB$<AND:conditions>\fP
+where \fBconditions\fP is a comma\-separated list of boolean expressions.
+Evaluates to \fB1\fP if all conditions are \fB1\fP\&.
+Otherwise evaluates to \fB0\fP\&.
+.TP
+.B \fB$<OR:conditions>\fP
+where \fBconditions\fP is a comma\-separated list of boolean expressions.
+Evaluates to \fB1\fP if at least one of the conditions is \fB1\fP\&.
+Otherwise evaluates to \fB0\fP\&.
+.TP
+.B \fB$<NOT:condition>\fP
+\fB0\fP if \fBcondition\fP is \fB1\fP, else \fB1\fP\&.
+.UNINDENT
+.SS String Comparisons
+.INDENT 0.0
+.TP
+.B \fB$<STREQUAL:string1,string2>\fP
+\fB1\fP if \fBstring1\fP and \fBstring2\fP are equal, else \fB0\fP\&.
+The comparison is case\-sensitive.  For a case\-insensitive comparison,
+combine with a \fI\%string transforming generator expression\fP,
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$<STREQUAL:$<UPPER_CASE:${foo}>,"BAR"> # "1" if ${foo} is any of "BAR", "Bar", "bar", ...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.TP
+.B \fB$<EQUAL:value1,value2>\fP
+\fB1\fP if \fBvalue1\fP and \fBvalue2\fP are numerically equal, else \fB0\fP\&.
+.TP
+.B \fB$<IN_LIST:string,list>\fP
+\fB1\fP if \fBstring\fP is member of the semicolon\-separated \fBlist\fP, else \fB0\fP\&.
+Uses case\-sensitive comparisons.
+.TP
+.B \fB$<VERSION_LESS:v1,v2>\fP
+\fB1\fP if \fBv1\fP is a version less than \fBv2\fP, else \fB0\fP\&.
+.TP
+.B \fB$<VERSION_GREATER:v1,v2>\fP
+\fB1\fP if \fBv1\fP is a version greater than \fBv2\fP, else \fB0\fP\&.
+.TP
+.B \fB$<VERSION_EQUAL:v1,v2>\fP
+\fB1\fP if \fBv1\fP is the same version as \fBv2\fP, else \fB0\fP\&.
+.TP
+.B \fB$<VERSION_LESS_EQUAL:v1,v2>\fP
+\fB1\fP if \fBv1\fP is a version less than or equal to \fBv2\fP, else \fB0\fP\&.
+.TP
+.B \fB$<VERSION_GREATER_EQUAL:v1,v2>\fP
+\fB1\fP if \fBv1\fP is a version greater than or equal to \fBv2\fP, else \fB0\fP\&.
+.UNINDENT
+.SS Variable Queries
+.INDENT 0.0
+.TP
+.B \fB$<TARGET_EXISTS:target>\fP
+\fB1\fP if \fBtarget\fP exists, else \fB0\fP\&.
+.TP
+.B \fB$<CONFIG:cfgs>\fP
+\fB1\fP if config is any one of the entries in \fBcfgs\fP, else \fB0\fP\&. This is a
+case\-insensitive comparison. The mapping in
+\fBMAP_IMPORTED_CONFIG_<CONFIG>\fP is also considered by this
+expression when it is evaluated on a property on an \fBIMPORTED\fP
+target.
+.TP
+.B \fB$<PLATFORM_ID:platform_ids>\fP
+where \fBplatform_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s platform id matches any one of the entries in
+\fBplatform_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_SYSTEM_NAME\fP variable.
+.TP
+.B \fB$<C_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the C compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<CXX_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the CXX compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<CUDA_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the CUDA compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<OBJC_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the Objective\-C compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<OBJCXX_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the Objective\-C++ compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<Fortran_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the Fortran compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<ISPC_COMPILER_ID:compiler_ids>\fP
+where \fBcompiler_ids\fP is a comma\-separated list.
+\fB1\fP if the CMake’s compiler id of the ISPC compiler matches any one
+of the entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<C_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the C compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<CXX_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the CXX compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<CUDA_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the CXX compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<OBJC_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the OBJC compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<OBJCXX_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the OBJCXX compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<Fortran_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the Fortran compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<ISPC_COMPILER_VERSION:version>\fP
+\fB1\fP if the version of the ISPC compiler matches \fBversion\fP, otherwise \fB0\fP\&.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<TARGET_POLICY:policy>\fP
+\fB1\fP if the \fBpolicy\fP was NEW when the ‘head’ target was created,
+else \fB0\fP\&.  If the \fBpolicy\fP was not set, the warning message for the policy
+will be emitted. This generator expression only works for a subset of
+policies.
+.TP
+.B \fB$<COMPILE_FEATURES:features>\fP
+where \fBfeatures\fP is a comma\-spearated list.
+Evaluates to \fB1\fP if all of the \fBfeatures\fP are available for the ‘head’
+target, and \fB0\fP otherwise. If this expression is used while evaluating
+the link implementation of a target and if any dependency transitively
+increases the required \fBC_STANDARD\fP or \fBCXX_STANDARD\fP
+for the ‘head’ target, an error is reported.  See the
+\fBcmake\-compile\-features(7)\fP manual for information on
+compile features and a list of supported compilers.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fB$<COMPILE_LANG_AND_ID:language,compiler_ids>\fP
+\fB1\fP when the language used for compilation unit matches \fBlanguage\fP and
+the CMake’s compiler id of the language compiler matches any one of the
+entries in \fBcompiler_ids\fP, otherwise \fB0\fP\&. This expression is a short form
+for the combination of \fB$<COMPILE_LANGUAGE:language>\fP and
+\fB$<LANG_COMPILER_ID:compiler_ids>\fP\&. This expression may be used to specify
+compile options, compile definitions, and include directories for source files of a
+particular language and compiler combination in a target. For example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_executable(myapp main.cpp foo.c bar.cpp zot.cu)
+target_compile_definitions(myapp
+  PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:COMPILING_CXX_WITH_CLANG>
+          $<$<COMPILE_LANG_AND_ID:CXX,Intel>:COMPILING_CXX_WITH_INTEL>
+          $<$<COMPILE_LANG_AND_ID:C,Clang>:COMPILING_C_WITH_CLANG>
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This specifies the use of different compile definitions based on both
+the compiler id and compilation language. This example will have a
+\fBCOMPILING_CXX_WITH_CLANG\fP compile definition when Clang is the CXX
+compiler, and \fBCOMPILING_CXX_WITH_INTEL\fP when Intel is the CXX compiler.
+Likewise when the C compiler is Clang it will only see the  \fBCOMPILING_C_WITH_CLANG\fP
+definition.
+.sp
+Without the \fBCOMPILE_LANG_AND_ID\fP generator expression the same logic
+would be expressed as:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+target_compile_definitions(myapp
+  PRIVATE $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:AppleClang,Clang>>:COMPILING_CXX_WITH_CLANG>
+          $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Intel>>:COMPILING_CXX_WITH_INTEL>
+          $<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:Clang>>:COMPILING_C_WITH_CLANG>
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.TP
+.B \fB$<COMPILE_LANGUAGE:languages>\fP
+\fB1\fP when the language used for compilation unit matches any of the entries
+in \fBlanguages\fP, otherwise \fB0\fP\&.  This expression may be used to specify
+compile options, compile definitions, and include directories for source files of a
+particular language in a target. For example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_executable(myapp main.cpp foo.c bar.cpp zot.cu)
+target_compile_options(myapp
+  PRIVATE $<$<COMPILE_LANGUAGE:CXX>:\-fno\-exceptions>
+)
+target_compile_definitions(myapp
+  PRIVATE $<$<COMPILE_LANGUAGE:CXX>:COMPILING_CXX>
+          $<$<COMPILE_LANGUAGE:CUDA>:COMPILING_CUDA>
+)
+target_include_directories(myapp
+  PRIVATE $<$<COMPILE_LANGUAGE:CXX,CUDA>:/opt/foo/headers>
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This specifies the use of the \fB\-fno\-exceptions\fP compile option,
+\fBCOMPILING_CXX\fP compile definition, and \fBcxx_headers\fP include
+directory for C++ only (compiler id checks elided).  It also specifies
+a \fBCOMPILING_CUDA\fP compile definition for CUDA.
+.sp
+Note that with Visual Studio Generators and \fBXcode\fP there
+is no way to represent target\-wide compile definitions or include directories
+separately for \fBC\fP and \fBCXX\fP languages.
+Also, with Visual Studio Generators there is no way to represent
+target\-wide flags separately for \fBC\fP and \fBCXX\fP languages.  Under these
+generators, expressions for both C and C++ sources will be evaluated
+using \fBCXX\fP if there are any C++ sources and otherwise using \fBC\fP\&.
+A workaround is to create separate libraries for each source file language
+instead:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(myapp_c foo.c)
+add_library(myapp_cxx bar.cpp)
+target_compile_options(myapp_cxx PUBLIC \-fno\-exceptions)
+add_executable(myapp main.cpp)
+target_link_libraries(myapp myapp_c myapp_cxx)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fB$<LINK_LANG_AND_ID:language,compiler_ids>\fP
+\fB1\fP when the language used for link step matches \fBlanguage\fP and the
+CMake’s compiler id of the language linker matches any one of the entries
+in \fBcompiler_ids\fP, otherwise \fB0\fP\&. This expression is a short form for the
+combination of \fB$<LINK_LANGUAGE:language>\fP and
+\fB$<LANG_COMPILER_ID:compiler_ids>\fP\&. This expression may be used to specify
+link libraries, link options, link directories and link dependencies of a
+particular language and linker combination in a target. For example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(libC_Clang ...)
+add_library(libCXX_Clang ...)
+add_library(libC_Intel ...)
+add_library(libCXX_Intel ...)
+
+add_executable(myapp main.c)
+if (CXX_CONFIG)
+  target_sources(myapp PRIVATE file.cxx)
+endif()
+target_link_libraries(myapp
+  PRIVATE $<$<LINK_LANG_AND_ID:CXX,Clang,AppleClang>:libCXX_Clang>
+          $<$<LINK_LANG_AND_ID:C,Clang,AppleClang>:libC_Clang>
+          $<$<LINK_LANG_AND_ID:CXX,Intel>:libCXX_Intel>
+          $<$<LINK_LANG_AND_ID:C,Intel>:libC_Intel>)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This specifies the use of different link libraries based on both the
+compiler id and link language. This example will have target \fBlibCXX_Clang\fP
+as link dependency when \fBClang\fP or \fBAppleClang\fP is the \fBCXX\fP
+linker, and \fBlibCXX_Intel\fP when \fBIntel\fP is the \fBCXX\fP linker.
+Likewise when the \fBC\fP linker is \fBClang\fP or \fBAppleClang\fP, target
+\fBlibC_Clang\fP will be added as link dependency and \fBlibC_Intel\fP when
+\fBIntel\fP is the \fBC\fP linker.
+.sp
+See \fI\%the note related to\fP
+\fB$<LINK_LANGUAGE:language>\fP for constraints about the usage of this
+generator expression.
+.TP
+.B \fB$<LINK_LANGUAGE:languages>\fP
+\fB1\fP when the language used for link step matches any of the entries
+in \fBlanguages\fP, otherwise \fB0\fP\&.  This expression may be used to specify
+link libraries, link options, link directories and link dependencies of a
+particular language in a target. For example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(api_C ...)
+add_library(api_CXX ...)
+add_library(api INTERFACE)
+target_link_options(api INTERFACE $<$<LINK_LANGUAGE:C>:\-opt_c>
+                                    $<$<LINK_LANGUAGE:CXX>:\-opt_cxx>)
+target_link_libraries(api INTERFACE $<$<LINK_LANGUAGE:C>:api_C>
+                                    $<$<LINK_LANGUAGE:CXX>:api_CXX>)
+
+add_executable(myapp1 main.c)
+target_link_options(myapp1 PRIVATE api)
+
+add_executable(myapp2 main.cpp)
+target_link_options(myapp2 PRIVATE api)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This specifies to use the \fBapi\fP target for linking targets \fBmyapp1\fP and
+\fBmyapp2\fP\&. In practice, \fBmyapp1\fP will link with target \fBapi_C\fP and
+option \fB\-opt_c\fP because it will use \fBC\fP as link language. And \fBmyapp2\fP
+will link with \fBapi_CXX\fP and option \fB\-opt_cxx\fP because \fBCXX\fP will be
+the link language.
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+To determine the link language of a target, it is required to collect,
+transitively, all the targets which will be linked to it. So, for link
+libraries properties, a double evaluation will be done. During the first
+evaluation, \fB$<LINK_LANGUAGE:..>\fP expressions will always return \fB0\fP\&.
+The link language computed after this first pass will be used to do the
+second pass. To avoid inconsistency, it is required that the second pass
+do not change the link language. Moreover, to avoid unexpected
+side\-effects, it is required to specify complete entities as part of the
+\fB$<LINK_LANGUAGE:..>\fP expression. For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(lib STATIC file.cxx)
+add_library(libother STATIC file.c)
+
+# bad usage
+add_executable(myapp1 main.c)
+target_link_libraries(myapp1 PRIVATE lib$<$<LINK_LANGUAGE:C>:other>)
+
+# correct usage
+add_executable(myapp2 main.c)
+target_link_libraries(myapp2 PRIVATE $<$<LINK_LANGUAGE:C>:libother>)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+In this example, for \fBmyapp1\fP, the first pass will, unexpectedly,
+determine that the link language is \fBCXX\fP because the evaluation of the
+generator expression will be an empty string so \fBmyapp1\fP will depends on
+target \fBlib\fP which is \fBC++\fP\&. On the contrary, for \fBmyapp2\fP, the first
+evaluation will give \fBC\fP as link language, so the second pass will
+correctly add target \fBlibother\fP as link dependency.
+.UNINDENT
+.UNINDENT
+.TP
+.B \fB$<DEVICE_LINK:list>\fP
+Returns the list if it is the device link step, an empty list otherwise.
+The device link step is controlled by \fBCUDA_SEPARABLE_COMPILATION\fP
+and \fBCUDA_RESOLVE_DEVICE_SYMBOLS\fP properties and
+policy \fBCMP0105\fP\&. This expression can only be used to specify link
+options.
+.TP
+.B \fB$<HOST_LINK:list>\fP
+Returns the list if it is the normal link step, an empty list otherwise.
+This expression is mainly useful when a device link step is also involved
+(see \fB$<DEVICE_LINK:list>\fP generator expression). This expression can only
+be used to specify link options.
+.UNINDENT
+.SH STRING-VALUED GENERATOR EXPRESSIONS
+.sp
+These expressions expand to some string.
+For example,
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+include_directories(/usr/include/$<CXX_COMPILER_ID>/)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+expands to \fB/usr/include/GNU/\fP or \fB/usr/include/Clang/\fP etc, depending on
+the compiler identifier.
+.sp
+String\-valued expressions may also be combined with other expressions.
+Here an example for a string\-valued expression within a boolean expressions
+within a conditional expression:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$<$<VERSION_LESS:$<CXX_COMPILER_VERSION>,4.2.0>:OLD_COMPILER>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+expands to \fBOLD_COMPILER\fP if the
+\fBCMAKE_CXX_COMPILER_VERSION\fP is less
+than 4.2.0.
+.sp
+And here two nested string\-valued expressions:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-I$<JOIN:$<TARGET_PROPERTY:INCLUDE_DIRECTORIES>, \-I>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+generates a string of the entries in the \fBINCLUDE_DIRECTORIES\fP target
+property with each entry preceded by \fB\-I\fP\&.
+.sp
+Expanding on the previous example, if one first wants to check if the
+\fBINCLUDE_DIRECTORIES\fP property is non\-empty, then it is advisable to
+introduce a helper variable to keep the code readable:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+set(prop "$<TARGET_PROPERTY:INCLUDE_DIRECTORIES>") # helper variable
+$<$<BOOL:${prop}>:\-I$<JOIN:${prop}, \-I>>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The following string\-valued generator expressions are available:
+.SS Escaped Characters
+.sp
+String literals to escape the special meaning a character would otherwise have:
+.INDENT 0.0
+.TP
+.B \fB$<ANGLE\-R>\fP
+A literal \fB>\fP\&. Used for example to compare strings that contain a \fB>\fP\&.
+.TP
+.B \fB$<COMMA>\fP
+A literal \fB,\fP\&. Used for example to compare strings which contain a \fB,\fP\&.
+.TP
+.B \fB$<SEMICOLON>\fP
+A literal \fB;\fP\&. Used to prevent list expansion on an argument with \fB;\fP\&.
+.UNINDENT
+.SS Conditional Expressions
+.sp
+Conditional generator expressions depend on a boolean condition
+that must be \fB0\fP or \fB1\fP\&.
+.INDENT 0.0
+.TP
+.B \fB$<condition:true_string>\fP
+Evaluates to \fBtrue_string\fP if \fBcondition\fP is \fB1\fP\&.
+Otherwise evaluates to the empty string.
+.TP
+.B \fB$<IF:condition,true_string,false_string>\fP
+Evaluates to \fBtrue_string\fP if \fBcondition\fP is \fB1\fP\&.
+Otherwise evaluates to \fBfalse_string\fP\&.
+.UNINDENT
+.sp
+Typically, the \fBcondition\fP is a \fI\%boolean generator expression\fP\&.  For instance,
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$<$<CONFIG:Debug>:DEBUG_MODE>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+expands to \fBDEBUG_MODE\fP when the \fBDebug\fP configuration is used, and
+otherwise expands to the empty string.
+.SS String Transformations
+.INDENT 0.0
+.TP
+.B \fB$<JOIN:list,string>\fP
+Joins the list with the content of \fBstring\fP\&.
+.TP
+.B \fB$<REMOVE_DUPLICATES:list>\fP
+Removes duplicated items in the given \fBlist\fP\&.
+.TP
+.B \fB$<FILTER:list,INCLUDE|EXCLUDE,regex>\fP
+Includes or removes items from \fBlist\fP that match the regular expression \fBregex\fP\&.
+.TP
+.B \fB$<LOWER_CASE:string>\fP
+Content of \fBstring\fP converted to lower case.
+.TP
+.B \fB$<UPPER_CASE:string>\fP
+Content of \fBstring\fP converted to upper case.
+.TP
+.B \fB$<GENEX_EVAL:expr>\fP
+Content of \fBexpr\fP evaluated as a generator expression in the current
+context. This enables consumption of generator expressions whose
+evaluation results itself in generator expressions.
+.TP
+.B \fB$<TARGET_GENEX_EVAL:tgt,expr>\fP
+Content of \fBexpr\fP evaluated as a generator expression in the context of
+\fBtgt\fP target. This enables consumption of custom target properties that
+themselves contain generator expressions.
+.sp
+Having the capability to evaluate generator expressions is very useful when
+you want to manage custom properties supporting generator expressions.
+For example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_library(foo ...)
+
+set_property(TARGET foo PROPERTY
+  CUSTOM_KEYS $<$<CONFIG:DEBUG>:FOO_EXTRA_THINGS>
+)
+
+add_custom_target(printFooKeys
+  COMMAND ${CMAKE_COMMAND} \-E echo $<TARGET_PROPERTY:foo,CUSTOM_KEYS>
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This naive implementation of the \fBprintFooKeys\fP custom command is wrong
+because \fBCUSTOM_KEYS\fP target property is not evaluated and the content
+is passed as is (i.e. \fB$<$<CONFIG:DEBUG>:FOO_EXTRA_THINGS>\fP).
+.sp
+To have the expected result (i.e. \fBFOO_EXTRA_THINGS\fP if config is
+\fBDebug\fP), it is required to evaluate the output of
+\fB$<TARGET_PROPERTY:foo,CUSTOM_KEYS>\fP:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_custom_target(printFooKeys
+  COMMAND ${CMAKE_COMMAND} \-E
+    echo $<TARGET_GENEX_EVAL:foo,$<TARGET_PROPERTY:foo,CUSTOM_KEYS>>
+)
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Variable Queries
+.INDENT 0.0
+.TP
+.B \fB$<CONFIG>\fP
+Configuration name.
+.TP
+.B \fB$<CONFIGURATION>\fP
+Configuration name. Deprecated since CMake 3.0. Use \fBCONFIG\fP instead.
+.TP
+.B \fB$<PLATFORM_ID>\fP
+The current system’s CMake platform id.
+See also the \fBCMAKE_SYSTEM_NAME\fP variable.
+.TP
+.B \fB$<C_COMPILER_ID>\fP
+The CMake’s compiler id of the C compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<CXX_COMPILER_ID>\fP
+The CMake’s compiler id of the CXX compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<CUDA_COMPILER_ID>\fP
+The CMake’s compiler id of the CUDA compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<OBJC_COMPILER_ID>\fP
+The CMake’s compiler id of the OBJC compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<OBJCXX_COMPILER_ID>\fP
+The CMake’s compiler id of the OBJCXX compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<Fortran_COMPILER_ID>\fP
+The CMake’s compiler id of the Fortran compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<ISPC_COMPILER_ID>\fP
+The CMake’s compiler id of the ISPC compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_ID\fP variable.
+.TP
+.B \fB$<C_COMPILER_VERSION>\fP
+The version of the C compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<CXX_COMPILER_VERSION>\fP
+The version of the CXX compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<CUDA_COMPILER_VERSION>\fP
+The version of the CUDA compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<OBJC_COMPILER_VERSION>\fP
+The version of the OBJC compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<OBJCXX_COMPILER_VERSION>\fP
+The version of the OBJCXX compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<Fortran_COMPILER_VERSION>\fP
+The version of the Fortran compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<ISPC_COMPILER_VERSION>\fP
+The version of the ISPC compiler used.
+See also the \fBCMAKE_<LANG>_COMPILER_VERSION\fP variable.
+.TP
+.B \fB$<COMPILE_LANGUAGE>\fP
+The compile language of source files when evaluating compile options.
+See \fI\%the related boolean expression\fP
+\fB$<COMPILE_LANGUAGE:language>\fP
+for notes about the portability of this generator expression.
+.TP
+.B \fB$<LINK_LANGUAGE>\fP
+The link language of target when evaluating link options.
+See \fI\%the related boolean expression\fP \fB$<LINK_LANGUAGE:language>\fP
+for notes about the portability of this generator expression.
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+This generator expression is not supported by the link libraries
+properties to avoid side\-effects due to the double evaluation of
+these properties.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Target\-Dependent Queries
+.sp
+These queries refer to a target \fBtgt\fP\&. This can be any runtime artifact,
+namely:
+.INDENT 0.0
+.IP \(bu 2
+an executable target created by \fBadd_executable()\fP
+.IP \(bu 2
+a shared library target (\fB\&.so\fP, \fB\&.dll\fP but not their \fB\&.lib\fP import library)
+created by \fBadd_library()\fP
+.IP \(bu 2
+a static library target created by \fBadd_library()\fP
+.UNINDENT
+.sp
+In the following, “the \fBtgt\fP filename” means the name of the \fBtgt\fP
+binary file. This has to be distinguished from “the target name”,
+which is just the string \fBtgt\fP\&.
+.INDENT 0.0
+.TP
+.B \fB$<TARGET_NAME_IF_EXISTS:tgt>\fP
+The target name \fBtgt\fP if the target exists, an empty string otherwise.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_FILE:tgt>\fP
+Full path to the \fBtgt\fP binary file.
+.TP
+.B \fB$<TARGET_FILE_BASE_NAME:tgt>\fP
+Base name of \fBtgt\fP, i.e. \fB$<TARGET_FILE_NAME:tgt>\fP without prefix and
+suffix.
+For example, if the \fBtgt\fP filename is \fBlibbase.so\fP, the base name is \fBbase\fP\&.
+.sp
+See also the \fBOUTPUT_NAME\fP, \fBARCHIVE_OUTPUT_NAME\fP,
+\fBLIBRARY_OUTPUT_NAME\fP and \fBRUNTIME_OUTPUT_NAME\fP
+target properties and their configuration specific variants
+\fBOUTPUT_NAME_<CONFIG>\fP, \fBARCHIVE_OUTPUT_NAME_<CONFIG>\fP,
+\fBLIBRARY_OUTPUT_NAME_<CONFIG>\fP and
+\fBRUNTIME_OUTPUT_NAME_<CONFIG>\fP\&.
+.sp
+The \fB<CONFIG>_POSTFIX\fP and \fBDEBUG_POSTFIX\fP target
+properties can also be considered.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_FILE_PREFIX:tgt>\fP
+Prefix of the \fBtgt\fP filename (such as \fBlib\fP).
+.sp
+See also the \fBPREFIX\fP target property.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_FILE_SUFFIX:tgt>\fP
+Suffix of the \fBtgt\fP filename (extension such as \fB\&.so\fP or \fB\&.exe\fP).
+.sp
+See also the \fBSUFFIX\fP target property.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_FILE_NAME:tgt>\fP
+The \fBtgt\fP filename.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_FILE_DIR:tgt>\fP
+Directory of the \fBtgt\fP binary file.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_LINKER_FILE:tgt>\fP
+File used when linking to the \fBtgt\fP target.  This will usually
+be the library that \fBtgt\fP represents (\fB\&.a\fP, \fB\&.lib\fP, \fB\&.so\fP),
+but for a shared library on DLL platforms, it would be the \fB\&.lib\fP
+import library associated with the DLL.
+.TP
+.B \fB$<TARGET_LINKER_FILE_BASE_NAME:tgt>\fP
+Base name of file used to link the target \fBtgt\fP, i.e.
+\fB$<TARGET_LINKER_FILE_NAME:tgt>\fP without prefix and suffix. For example,
+if target file name is \fBlibbase.a\fP, the base name is \fBbase\fP\&.
+.sp
+See also the \fBOUTPUT_NAME\fP, \fBARCHIVE_OUTPUT_NAME\fP,
+and \fBLIBRARY_OUTPUT_NAME\fP target properties and their configuration
+specific variants \fBOUTPUT_NAME_<CONFIG>\fP,
+\fBARCHIVE_OUTPUT_NAME_<CONFIG>\fP and
+\fBLIBRARY_OUTPUT_NAME_<CONFIG>\fP\&.
+.sp
+The \fB<CONFIG>_POSTFIX\fP and \fBDEBUG_POSTFIX\fP target
+properties can also be considered.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_LINKER_FILE_PREFIX:tgt>\fP
+Prefix of file used to link target \fBtgt\fP\&.
+.sp
+See also the \fBPREFIX\fP and \fBIMPORT_PREFIX\fP target
+properties.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_LINKER_FILE_SUFFIX:tgt>\fP
+Suffix of file used to link where \fBtgt\fP is the name of a target.
+.sp
+The suffix corresponds to the file extension (such as “.so” or “.lib”).
+.sp
+See also the \fBSUFFIX\fP and \fBIMPORT_SUFFIX\fP target
+properties.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_LINKER_FILE_NAME:tgt>\fP
+Name of file used to link target \fBtgt\fP\&.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_LINKER_FILE_DIR:tgt>\fP
+Directory of file used to link target \fBtgt\fP\&.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_SONAME_FILE:tgt>\fP
+File with soname (\fB\&.so.3\fP) where \fBtgt\fP is the name of a target.
+.TP
+.B \fB$<TARGET_SONAME_FILE_NAME:tgt>\fP
+Name of file with soname (\fB\&.so.3\fP).
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_SONAME_FILE_DIR:tgt>\fP
+Directory of with soname (\fB\&.so.3\fP).
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_PDB_FILE:tgt>\fP
+Full path to the linker generated program database file (.pdb)
+where \fBtgt\fP is the name of a target.
+.sp
+See also the \fBPDB_NAME\fP and \fBPDB_OUTPUT_DIRECTORY\fP
+target properties and their configuration specific variants
+\fBPDB_NAME_<CONFIG>\fP and \fBPDB_OUTPUT_DIRECTORY_<CONFIG>\fP\&.
+.TP
+.B \fB$<TARGET_PDB_FILE_BASE_NAME:tgt>\fP
+Base name of the linker generated program database file (.pdb)
+where \fBtgt\fP is the name of a target.
+.sp
+The base name corresponds to the target PDB file name (see
+\fB$<TARGET_PDB_FILE_NAME:tgt>\fP) without prefix and suffix. For example,
+if target file name is \fBbase.pdb\fP, the base name is \fBbase\fP\&.
+.sp
+See also the \fBPDB_NAME\fP target property and its configuration
+specific variant \fBPDB_NAME_<CONFIG>\fP\&.
+.sp
+The \fB<CONFIG>_POSTFIX\fP and \fBDEBUG_POSTFIX\fP target
+properties can also be considered.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_PDB_FILE_NAME:tgt>\fP
+Name of the linker generated program database file (.pdb).
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_PDB_FILE_DIR:tgt>\fP
+Directory of the linker generated program database file (.pdb).
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_BUNDLE_DIR:tgt>\fP
+Full path to the bundle directory (\fBmy.app\fP, \fBmy.framework\fP, or
+\fBmy.bundle\fP) where \fBtgt\fP is the name of a target.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_BUNDLE_CONTENT_DIR:tgt>\fP
+Full path to the bundle content directory where \fBtgt\fP is the name of a
+target. For the macOS SDK it leads to \fBmy.app/Contents\fP, \fBmy.framework\fP,
+or \fBmy.bundle/Contents\fP\&. For all other SDKs (e.g. iOS) it leads to
+\fBmy.app\fP, \fBmy.framework\fP, or \fBmy.bundle\fP due to the flat bundle
+structure.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on (see policy \fBCMP0112\fP).
+.TP
+.B \fB$<TARGET_PROPERTY:tgt,prop>\fP
+Value of the property \fBprop\fP on the target \fBtgt\fP\&.
+.sp
+Note that \fBtgt\fP is not added as a dependency of the target this
+expression is evaluated on.
+.TP
+.B \fB$<TARGET_PROPERTY:prop>\fP
+Value of the property \fBprop\fP on the target for which the expression
+is being evaluated. Note that for generator expressions in
+Target Usage Requirements this is the consuming target rather
+than the target specifying the requirement.
+.TP
+.B \fB$<INSTALL_PREFIX>\fP
+Content of the install prefix when the target is exported via
+\fBinstall(EXPORT)\fP, or when evaluated in
+\fBINSTALL_NAME_DIR\fP, and empty otherwise.
+.UNINDENT
+.SS Output\-Related Expressions
+.INDENT 0.0
+.TP
+.B \fB$<TARGET_NAME:...>\fP
+Marks \fB\&...\fP as being the name of a target.  This is required if exporting
+targets to multiple dependent export sets.  The \fB\&...\fP must be a literal
+name of a target\- it may not contain generator expressions.
+.TP
+.B \fB$<LINK_ONLY:...>\fP
+Content of \fB\&...\fP except when evaluated in a link interface while
+propagating Target Usage Requirements, in which case it is the
+empty string.
+Intended for use only in an \fBINTERFACE_LINK_LIBRARIES\fP target
+property, perhaps via the \fBtarget_link_libraries()\fP command,
+to specify private link dependencies without other usage requirements.
+.TP
+.B \fB$<INSTALL_INTERFACE:...>\fP
+Content of \fB\&...\fP when the property is exported using \fBinstall(EXPORT)\fP,
+and empty otherwise.
+.TP
+.B \fB$<BUILD_INTERFACE:...>\fP
+Content of \fB\&...\fP when the property is exported using \fBexport()\fP, or
+when the target is used by another target in the same buildsystem. Expands to
+the empty string otherwise.
+.TP
+.B \fB$<MAKE_C_IDENTIFIER:...>\fP
+Content of \fB\&...\fP converted to a C identifier.  The conversion follows the
+same behavior as \fBstring(MAKE_C_IDENTIFIER)\fP\&.
+.TP
+.B \fB$<TARGET_OBJECTS:objLib>\fP
+List of objects resulting from build of \fBobjLib\fP\&.
+.TP
+.B \fB$<SHELL_PATH:...>\fP
+Content of \fB\&...\fP converted to shell path style. For example, slashes are
+converted to backslashes in Windows shells and drive letters are converted
+to posix paths in MSYS shells. The \fB\&...\fP must be an absolute path.
+The \fB\&...\fP may be a semicolon\-separated list
+of paths, in which case each path is converted individually and a result
+list is generated using the shell path separator (\fB:\fP on POSIX and
+\fB;\fP on Windows).  Be sure to enclose the argument containing this genex
+in double quotes in CMake source code so that \fB;\fP does not split arguments.
+.UNINDENT
+.SH DEBUGGING
+.sp
+Since generator expressions are evaluated during generation of the buildsystem,
+and not during processing of \fBCMakeLists.txt\fP files, it is not possible to
+inspect their result with the \fBmessage()\fP command.
+.sp
+One possible way to generate debug messages is to add a custom target,
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+add_custom_target(genexdebug COMMAND ${CMAKE_COMMAND} \-E echo "$<...>")
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The shell command \fBmake genexdebug\fP (invoked after execution of \fBcmake\fP)
+would then print the result of \fB$<...>\fP\&.
+.sp
+Another way is to write debug messages to a file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+file(GENERATE OUTPUT filename CONTENT "$<...>")
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

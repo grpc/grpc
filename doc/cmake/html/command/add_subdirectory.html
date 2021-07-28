@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_subdirectory &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_test" href="add_test.html" />
+    <link rel="prev" title="add_link_options" href="add_link_options.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_test.html" title="add_test"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_link_options.html" title="add_link_options"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_subdirectory</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-subdirectory">
+<span id="command:add_subdirectory"></span><h1>add_subdirectory<a class="headerlink" href="#add-subdirectory" title="Permalink to this headline">¶</a></h1>
+<p>Add a subdirectory to the build.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_subdirectory(</span><span class="nb">source_dir</span><span class="w"> </span><span class="p">[</span><span class="nb">binary_dir</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">EXCLUDE_FROM_ALL</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Adds a subdirectory to the build.  The source_dir specifies the
+directory in which the source CMakeLists.txt and code files are
+located.  If it is a relative path it will be evaluated with respect
+to the current directory (the typical usage), but it may also be an
+absolute path.  The <code class="docutils literal notranslate"><span class="pre">binary_dir</span></code> specifies the directory in which to
+place the output files.  If it is a relative path it will be evaluated
+with respect to the current output directory, but it may also be an
+absolute path.  If <code class="docutils literal notranslate"><span class="pre">binary_dir</span></code> is not specified, the value of
+<code class="docutils literal notranslate"><span class="pre">source_dir</span></code>, before expanding any relative path, will be used (the
+typical usage).  The CMakeLists.txt file in the specified source
+directory will be processed immediately by CMake before processing in
+the current input file continues beyond this command.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code> argument is provided then targets in the
+subdirectory will not be included in the <code class="docutils literal notranslate"><span class="pre">ALL</span></code> target of the parent
+directory by default, and will be excluded from IDE project files.
+Users must explicitly build targets in the subdirectory.  This is
+meant for use when the subdirectory contains a separate part of the
+project that is useful but not necessary, such as a set of examples.
+Typically the subdirectory should contain its own <span class="target" id="index-0-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a>
+command invocation so that a full build system will be generated in the
+subdirectory (such as a VS IDE solution file).  Note that inter-target
+dependencies supersede this exclusion.  If a target built by the
+parent project depends on a target in the subdirectory, the dependee
+target will be included in the parent project build system to satisfy
+the dependency.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_link_options.html"
+                        title="previous chapter">add_link_options</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_test.html"
+                        title="next chapter">add_test</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_subdirectory.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_test.html" title="add_test"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_link_options.html" title="add_link_options"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_subdirectory</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

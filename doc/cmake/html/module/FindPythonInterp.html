@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindPythonInterp &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindPythonLibs" href="FindPythonLibs.html" />
+    <link rel="prev" title="FindCUDA" href="FindCUDA.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindPythonLibs.html" title="FindPythonLibs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindCUDA.html" title="FindCUDA"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPythonInterp</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findpythoninterp">
+<span id="module:FindPythonInterp"></span><h1>FindPythonInterp<a class="headerlink" href="#findpythoninterp" title="Permalink to this headline">¶</a></h1>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.12: </span>Use <span class="target" id="index-0-module:FindPython3"></span><a class="reference internal" href="FindPython3.html#module:FindPython3" title="FindPython3"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython3</span></code></a>, <span class="target" id="index-0-module:FindPython2"></span><a class="reference internal" href="FindPython2.html#module:FindPython2" title="FindPython2"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython2</span></code></a> or <span class="target" id="index-0-module:FindPython"></span><a class="reference internal" href="FindPython.html#module:FindPython" title="FindPython"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython</span></code></a> instead.</p>
+</div>
+<p>Find python interpreter</p>
+<p>This module finds if Python interpreter is installed and determines
+where the executables are.  This code sets the following variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>PYTHONINTERP_FOUND         - Was the Python executable found
+PYTHON_EXECUTABLE          - path to the Python interpreter
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>PYTHON_VERSION_STRING      - Python version found e.g. 2.5.2
+PYTHON_VERSION_MAJOR       - Python major version found e.g. 2
+PYTHON_VERSION_MINOR       - Python minor version found e.g. 5
+PYTHON_VERSION_PATCH       - Python patch version found e.g. 2
+</pre></div>
+</div>
+<p>The Python_ADDITIONAL_VERSIONS variable can be used to specify a list
+of version numbers that should be taken into account when searching
+for Python.  You need to set this variable before calling
+find_package(PythonInterp).</p>
+<p>If calling both <code class="docutils literal notranslate"><span class="pre">find_package(PythonInterp)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">find_package(PythonLibs)</span></code>, call <code class="docutils literal notranslate"><span class="pre">find_package(PythonInterp)</span></code> first to
+get the currently active Python version by default with a consistent version
+of PYTHON_LIBRARIES.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A call to <code class="docutils literal notranslate"><span class="pre">find_package(PythonInterp</span> <span class="pre">${V})</span></code> for python version <code class="docutils literal notranslate"><span class="pre">V</span></code>
+may find a <code class="docutils literal notranslate"><span class="pre">python</span></code> executable with no version suffix.  In this case
+no attempt is made to avoid python executables from other versions.
+Use <span class="target" id="index-1-module:FindPython3"></span><a class="reference internal" href="FindPython3.html#module:FindPython3" title="FindPython3"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython3</span></code></a>, <span class="target" id="index-1-module:FindPython2"></span><a class="reference internal" href="FindPython2.html#module:FindPython2" title="FindPython2"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython2</span></code></a> or <span class="target" id="index-1-module:FindPython"></span><a class="reference internal" href="FindPython.html#module:FindPython" title="FindPython"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPython</span></code></a>
+instead.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindCUDA.html"
+                        title="previous chapter">FindCUDA</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindPythonLibs.html"
+                        title="next chapter">FindPythonLibs</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindPythonInterp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindPythonLibs.html" title="FindPythonLibs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindCUDA.html" title="FindCUDA"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindPythonInterp</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

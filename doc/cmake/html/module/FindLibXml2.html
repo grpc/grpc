@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindLibXml2 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindLibXslt" href="FindLibXslt.html" />
+    <link rel="prev" title="FindLibLZMA" href="FindLibLZMA.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindLibXslt.html" title="FindLibXslt"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindLibLZMA.html" title="FindLibLZMA"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindLibXml2</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findlibxml2">
+<span id="module:FindLibXml2"></span><h1>FindLibXml2<a class="headerlink" href="#findlibxml2" title="Permalink to this headline">¶</a></h1>
+<p>Find the XML processing library (libxml2).</p>
+<div class="section" id="imported-targets">
+<h2>IMPORTED Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>The following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets may be defined:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">LibXml2::LibXml2</span></code></dt><dd><p>If the libxml2 library has been found</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LibXml2::xmllint</span></code></dt><dd><p>If the xmllint command-line executable has been found</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="result-variables">
+<h2>Result variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">LibXml2_FOUND</span></code></dt><dd><p>true if libxml2 headers and libraries were found</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_INCLUDE_DIR</span></code></dt><dd><p>the directory containing LibXml2 headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_INCLUDE_DIRS</span></code></dt><dd><p>list of the include directories needed to use LibXml2</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_LIBRARIES</span></code></dt><dd><p>LibXml2 libraries to be linked</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_DEFINITIONS</span></code></dt><dd><p>the compiler switches required for using LibXml2</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_XMLLINT_EXECUTABLE</span></code></dt><dd><p>path to the XML checking tool xmllint coming with LibXml2</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_VERSION_STRING</span></code></dt><dd><p>the version of LibXml2 found (since CMake 2.8.8)</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>The following cache variables may also be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_INCLUDE_DIR</span></code></dt><dd><p>the directory containing LibXml2 headers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBXML2_LIBRARY</span></code></dt><dd><p>path to the LibXml2 library</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindLibXml2</a><ul>
+<li><a class="reference internal" href="#imported-targets">IMPORTED Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindLibLZMA.html"
+                        title="previous chapter">FindLibLZMA</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindLibXslt.html"
+                        title="next chapter">FindLibXslt</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindLibXml2.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindLibXslt.html" title="FindLibXslt"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindLibLZMA.html" title="FindLibLZMA"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindLibXml2</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

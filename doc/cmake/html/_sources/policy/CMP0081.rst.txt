@@ -1,0 +1,24 @@
+CMP0081
+-------
+
+.. versionadded:: 3.13
+
+Relative paths not allowed in :prop_tgt:`LINK_DIRECTORIES` target property.
+
+CMake 3.12 and lower allowed the :prop_dir:`LINK_DIRECTORIES` directory
+property to contain relative paths.  The base path for such relative
+entries is not well defined.  CMake 3.13 and later will issue a
+``FATAL_ERROR`` if the :prop_tgt:`LINK_DIRECTORIES` target property
+(which is initialized by the :prop_dir:`LINK_DIRECTORIES` directory property)
+contains a relative path.
+
+The ``OLD`` behavior for this policy is not to warn about relative paths
+in the :prop_tgt:`LINK_DIRECTORIES` target property.  The ``NEW`` behavior for
+this policy is to issue a ``FATAL_ERROR`` if :prop_tgt:`LINK_DIRECTORIES`
+contains a relative path.
+
+This policy was introduced in CMake version 3.13.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

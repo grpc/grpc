@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUTOUIC &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="AUTOUIC_EXECUTABLE" href="AUTOUIC_EXECUTABLE.html" />
+    <link rel="prev" title="AUTORCC_OPTIONS" href="AUTORCC_OPTIONS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="AUTOUIC_EXECUTABLE.html" title="AUTOUIC_EXECUTABLE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AUTORCC_OPTIONS.html" title="AUTORCC_OPTIONS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOUIC</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="autouic">
+<span id="prop_tgt:AUTOUIC"></span><h1>AUTOUIC<a class="headerlink" href="#autouic" title="Permalink to this headline">¶</a></h1>
+<p>Should the target be processed with auto-uic (for Qt projects).</p>
+<p><span class="target" id="index-0-prop_tgt:AUTOUIC"></span><a class="reference internal" href="#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> is a boolean specifying whether CMake will handle
+the Qt <code class="docutils literal notranslate"><span class="pre">uic</span></code> code generator automatically, i.e. without having to use
+the <span class="target" id="index-0-module:FindQt4"></span><a class="reference internal" href="../module/FindQt4.html#module:FindQt4" title="FindQt4"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">QT4_WRAP_UI()</span></code></a> or <code class="docutils literal notranslate"><span class="pre">QT5_WRAP_UI()</span></code> macro. Currently
+Qt4 and Qt5 are supported.</p>
+<p>This property is initialized by the value of the <span class="target" id="index-0-variable:CMAKE_AUTOUIC"></span><a class="reference internal" href="../variable/CMAKE_AUTOUIC.html#variable:CMAKE_AUTOUIC" title="CMAKE_AUTOUIC"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOUIC</span></code></a>
+variable if it is set when a target is created.</p>
+<p>When this property is <code class="docutils literal notranslate"><span class="pre">ON</span></code>, CMake will scan the header and source files at
+build time and invoke <code class="docutils literal notranslate"><span class="pre">uic</span></code> accordingly.</p>
+<div class="section" id="header-and-source-file-processing">
+<h2>Header and source file processing<a class="headerlink" href="#header-and-source-file-processing" title="Permalink to this headline">¶</a></h2>
+<p>At build time, CMake scans each header and source file from the
+target’s sources for include statements of the form</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;ui_&lt;ui_base&gt;.h&quot;</span><span class="cp"></span>
+</pre></div>
+</div>
+<p>Once such an include statement is found in a file, CMake searches for the
+<code class="docutils literal notranslate"><span class="pre">uic</span></code> input file <code class="docutils literal notranslate"><span class="pre">&lt;ui_base&gt;.ui</span></code></p>
+<ul class="simple">
+<li><p>in the vicinity of the file and</p></li>
+<li><p>in the <span class="target" id="index-0-prop_tgt:AUTOUIC_SEARCH_PATHS"></span><a class="reference internal" href="AUTOUIC_SEARCH_PATHS.html#prop_tgt:AUTOUIC_SEARCH_PATHS" title="AUTOUIC_SEARCH_PATHS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_SEARCH_PATHS</span></code></a> of the target.</p></li>
+</ul>
+<p>If the <code class="docutils literal notranslate"><span class="pre">&lt;ui_base&gt;.ui</span></code> file was found, <code class="docutils literal notranslate"><span class="pre">uic</span></code> is called on it to generate
+<code class="docutils literal notranslate"><span class="pre">ui_&lt;ui_base&gt;.h</span></code> in the directory</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include</span></code> for single configuration generators or in</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;/include_&lt;CONFIG&gt;</span></code> for
+<span class="target" id="index-0-prop_gbl:GENERATOR_IS_MULTI_CONFIG"></span><a class="reference internal" href="../prop_gbl/GENERATOR_IS_MULTI_CONFIG.html#prop_gbl:GENERATOR_IS_MULTI_CONFIG" title="GENERATOR_IS_MULTI_CONFIG"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">multi</span> <span class="pre">configuration</span></code></a> generators.</p></li>
+</ul>
+<p>Where <code class="docutils literal notranslate"><span class="pre">&lt;AUTOGEN_BUILD_DIR&gt;</span></code> is the value of the target property
+<span class="target" id="index-0-prop_tgt:AUTOGEN_BUILD_DIR"></span><a class="reference internal" href="AUTOGEN_BUILD_DIR.html#prop_tgt:AUTOGEN_BUILD_DIR" title="AUTOGEN_BUILD_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_BUILD_DIR</span></code></a>.</p>
+<p>The include directory is automatically added to the target’s
+<span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>.</p>
+</div>
+<div class="section" id="modifiers">
+<h2>Modifiers<a class="headerlink" href="#modifiers" title="Permalink to this headline">¶</a></h2>
+<p><span class="target" id="index-0-prop_tgt:AUTOUIC_EXECUTABLE"></span><a class="reference internal" href="AUTOUIC_EXECUTABLE.html#prop_tgt:AUTOUIC_EXECUTABLE" title="AUTOUIC_EXECUTABLE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_EXECUTABLE</span></code></a>:
+The <code class="docutils literal notranslate"><span class="pre">uic</span></code> executable will be detected automatically, but can be forced to
+a certain binary using this target property.</p>
+<p><span class="target" id="index-0-prop_tgt:AUTOUIC_OPTIONS"></span><a class="reference internal" href="AUTOUIC_OPTIONS.html#prop_tgt:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a>:
+Additional command line options for <code class="docutils literal notranslate"><span class="pre">uic</span></code> can be set via this target
+property.  The corresponding <span class="target" id="index-0-prop_sf:AUTOUIC_OPTIONS"></span><a class="reference internal" href="../prop_sf/AUTOUIC_OPTIONS.html#prop_sf:AUTOUIC_OPTIONS" title="AUTOUIC_OPTIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">AUTOUIC_OPTIONS</span></code></a> source file property
+can be used to specify options to be applied only to a specific
+<code class="docutils literal notranslate"><span class="pre">&lt;base_name&gt;.ui</span></code> file.</p>
+<p><span class="target" id="index-0-prop_sf:SKIP_AUTOUIC"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOUIC.html#prop_sf:SKIP_AUTOUIC" title="SKIP_AUTOUIC"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOUIC</span></code></a>:
+Source files can be excluded from <span class="target" id="index-1-prop_tgt:AUTOUIC"></span><a class="reference internal" href="#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> processing by setting
+this source file property.</p>
+<p><span class="target" id="index-0-prop_sf:SKIP_AUTOGEN"></span><a class="reference internal" href="../prop_sf/SKIP_AUTOGEN.html#prop_sf:SKIP_AUTOGEN" title="SKIP_AUTOGEN"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">SKIP_AUTOGEN</span></code></a>:
+Source files can be excluded from <span class="target" id="index-0-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a>,
+<span class="target" id="index-2-prop_tgt:AUTOUIC"></span><a class="reference internal" href="#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> and <span class="target" id="index-0-prop_tgt:AUTORCC"></span><a class="reference internal" href="AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a> processing by
+setting this source file property.</p>
+<p><span class="target" id="index-0-prop_gbl:AUTOGEN_TARGETS_FOLDER"></span><a class="reference internal" href="../prop_gbl/AUTOGEN_TARGETS_FOLDER.html#prop_gbl:AUTOGEN_TARGETS_FOLDER" title="AUTOGEN_TARGETS_FOLDER"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">AUTOGEN_TARGETS_FOLDER</span></code></a>:
+This global property can be used to group <span class="target" id="index-1-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a>,
+<span class="target" id="index-3-prop_tgt:AUTOUIC"></span><a class="reference internal" href="#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> and <span class="target" id="index-1-prop_tgt:AUTORCC"></span><a class="reference internal" href="AUTORCC.html#prop_tgt:AUTORCC" title="AUTORCC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTORCC</span></code></a> targets together in an IDE,
+e.g.  in MSVS.</p>
+<p><span class="target" id="index-0-variable:CMAKE_GLOBAL_AUTOGEN_TARGET"></span><a class="reference internal" href="../variable/CMAKE_GLOBAL_AUTOGEN_TARGET.html#variable:CMAKE_GLOBAL_AUTOGEN_TARGET" title="CMAKE_GLOBAL_AUTOGEN_TARGET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GLOBAL_AUTOGEN_TARGET</span></code></a>:
+A global <code class="docutils literal notranslate"><span class="pre">autogen</span></code> target, that depends on all <span class="target" id="index-2-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> or
+<span class="target" id="index-4-prop_tgt:AUTOUIC"></span><a class="reference internal" href="#prop_tgt:AUTOUIC" title="AUTOUIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOUIC</span></code></a> generated <code class="docutils literal notranslate"><span class="pre">&lt;ORIGIN&gt;_autogen</span></code> targets in the project,
+will be generated when this variable is <code class="docutils literal notranslate"><span class="pre">ON</span></code>.</p>
+<p><span class="target" id="index-0-prop_tgt:AUTOGEN_PARALLEL"></span><a class="reference internal" href="AUTOGEN_PARALLEL.html#prop_tgt:AUTOGEN_PARALLEL" title="AUTOGEN_PARALLEL"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_PARALLEL</span></code></a>:
+This target property controls the number of <code class="docutils literal notranslate"><span class="pre">moc</span></code> or <code class="docutils literal notranslate"><span class="pre">uic</span></code> processes to
+start in parallel during builds.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-qt(7)"></span><a class="reference internal" href="../manual/cmake-qt.7.html#manual:cmake-qt(7)" title="cmake-qt(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-qt(7)</span></code></a> manual for more information on using CMake
+with Qt.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">AUTOUIC</a><ul>
+<li><a class="reference internal" href="#header-and-source-file-processing">Header and source file processing</a></li>
+<li><a class="reference internal" href="#modifiers">Modifiers</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AUTORCC_OPTIONS.html"
+                        title="previous chapter">AUTORCC_OPTIONS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="AUTOUIC_EXECUTABLE.html"
+                        title="next chapter">AUTOUIC_EXECUTABLE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/AUTOUIC.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="AUTOUIC_EXECUTABLE.html" title="AUTOUIC_EXECUTABLE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AUTORCC_OPTIONS.html" title="AUTORCC_OPTIONS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOUIC</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

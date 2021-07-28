@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>try_run &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ctest_build" href="ctest_build.html" />
+    <link rel="prev" title="try_compile" href="try_compile.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ctest_build.html" title="ctest_build"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="try_compile.html" title="try_compile"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">try_run</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="try-run">
+<span id="command:try_run"></span><h1><a class="toc-backref" href="#id1">try_run</a><a class="headerlink" href="#try-run" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#try-run" id="id1">try_run</a></p>
+<ul>
+<li><p><a class="reference internal" href="#try-compiling-and-running-source-files" id="id2">Try Compiling and Running Source Files</a></p></li>
+<li><p><a class="reference internal" href="#other-behavior-settings" id="id3">Other Behavior Settings</a></p></li>
+<li><p><a class="reference internal" href="#behavior-when-cross-compiling" id="id4">Behavior when Cross Compiling</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>Try compiling and then running some code.</p>
+<div class="section" id="try-compiling-and-running-source-files">
+<h2><a class="toc-backref" href="#id2">Try Compiling and Running Source Files</a><a class="headerlink" href="#try-compiling-and-running-source-files" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">try_run(</span><span class="nv">&lt;runResultVar&gt;</span><span class="w"> </span><span class="nv">&lt;compileResultVar&gt;</span><span class="w"></span>
+<span class="w">        </span><span class="nv">&lt;bindir&gt;</span><span class="w"> </span><span class="nv">&lt;srcfile&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">CMAKE_FLAGS</span><span class="w"> </span><span class="nv">&lt;flags&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">COMPILE_DEFINITIONS</span><span class="w"> </span><span class="nv">&lt;defs&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">LINK_OPTIONS</span><span class="w"> </span><span class="nv">&lt;options&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">LINK_LIBRARIES</span><span class="w"> </span><span class="nv">&lt;libs&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">COMPILE_OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">RUN_OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;var&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">ARGS</span><span class="w"> </span><span class="nv">&lt;args&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Try compiling a <code class="docutils literal notranslate"><span class="pre">&lt;srcfile&gt;</span></code>.  Returns <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> or <code class="docutils literal notranslate"><span class="pre">FALSE</span></code> for success
+or failure in <code class="docutils literal notranslate"><span class="pre">&lt;compileResultVar&gt;</span></code>.  If the compile succeeded, runs the
+executable and returns its exit code in <code class="docutils literal notranslate"><span class="pre">&lt;runResultVar&gt;</span></code>.  If the
+executable was built, but failed to run, then <code class="docutils literal notranslate"><span class="pre">&lt;runResultVar&gt;</span></code> will be
+set to <code class="docutils literal notranslate"><span class="pre">FAILED_TO_RUN</span></code>.  See the <span class="target" id="index-0-command:try_compile"></span><a class="reference internal" href="try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a> command for
+information on how the test project is constructed to build the source file.</p>
+<p>The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_FLAGS</span> <span class="pre">&lt;flags&gt;...</span></code></dt><dd><p>Specify flags of the form <code class="docutils literal notranslate"><span class="pre">-DVAR:TYPE=VALUE</span></code> to be passed to
+the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command-line used to drive the test build.
+The example in <span class="target" id="index-1-command:try_compile"></span><a class="reference internal" href="try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a> shows how values for variables
+<code class="docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code>, <code class="docutils literal notranslate"><span class="pre">LINK_DIRECTORIES</span></code>, and <code class="docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span></code>
+are used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span> <span class="pre">&lt;defs&gt;...</span></code></dt><dd><p>Specify <code class="docutils literal notranslate"><span class="pre">-Ddefinition</span></code> arguments to pass to <span class="target" id="index-0-command:add_definitions"></span><a class="reference internal" href="add_definitions.html#command:add_definitions" title="add_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_definitions()</span></code></a>
+in the generated test project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMPILE_OUTPUT_VARIABLE</span> <span class="pre">&lt;var&gt;</span></code></dt><dd><p>Report the compile step build output in a given variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span> <span class="pre">&lt;libs&gt;...</span></code></dt><dd><p>Specify libraries to be linked in the generated project.
+The list of libraries may refer to system libraries and to
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">Imported Targets</span></a> from the calling project.</p>
+<p>If this option is specified, any <code class="docutils literal notranslate"><span class="pre">-DLINK_LIBRARIES=...</span></code> value
+given to the <code class="docutils literal notranslate"><span class="pre">CMAKE_FLAGS</span></code> option will be ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LINK_OPTIONS</span> <span class="pre">&lt;options&gt;...</span></code></dt><dd><p>Specify link step options to pass to <span class="target" id="index-0-command:target_link_options"></span><a class="reference internal" href="target_link_options.html#command:target_link_options" title="target_link_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_options()</span></code></a> in the
+generated project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span> <span class="pre">&lt;var&gt;</span></code></dt><dd><p>Report the compile build output and the output from running the executable
+in the given variable.  This option exists for legacy reasons.  Prefer
+<code class="docutils literal notranslate"><span class="pre">COMPILE_OUTPUT_VARIABLE</span></code> and <code class="docutils literal notranslate"><span class="pre">RUN_OUTPUT_VARIABLE</span></code> instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RUN_OUTPUT_VARIABLE</span> <span class="pre">&lt;var&gt;</span></code></dt><dd><p>Report the output from running the executable in a given variable.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="other-behavior-settings">
+<h2><a class="toc-backref" href="#id3">Other Behavior Settings</a><a class="headerlink" href="#other-behavior-settings" title="Permalink to this headline">¶</a></h2>
+<p>Set the <span class="target" id="index-0-variable:CMAKE_TRY_COMPILE_CONFIGURATION"></span><a class="reference internal" href="../variable/CMAKE_TRY_COMPILE_CONFIGURATION.html#variable:CMAKE_TRY_COMPILE_CONFIGURATION" title="CMAKE_TRY_COMPILE_CONFIGURATION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TRY_COMPILE_CONFIGURATION</span></code></a> variable to choose
+a build configuration.</p>
+</div>
+<div class="section" id="behavior-when-cross-compiling">
+<h2><a class="toc-backref" href="#id4">Behavior when Cross Compiling</a><a class="headerlink" href="#behavior-when-cross-compiling" title="Permalink to this headline">¶</a></h2>
+<p>When cross compiling, the executable compiled in the first step
+usually cannot be run on the build host.  The <code class="docutils literal notranslate"><span class="pre">try_run</span></code> command checks
+the <span class="target" id="index-0-variable:CMAKE_CROSSCOMPILING"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING.html#variable:CMAKE_CROSSCOMPILING" title="CMAKE_CROSSCOMPILING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING</span></code></a> variable to detect whether CMake is in
+cross-compiling mode.  If that is the case, it will still try to compile
+the executable, but it will not try to run the executable unless the
+<span class="target" id="index-0-variable:CMAKE_CROSSCOMPILING_EMULATOR"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING_EMULATOR.html#variable:CMAKE_CROSSCOMPILING_EMULATOR" title="CMAKE_CROSSCOMPILING_EMULATOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING_EMULATOR</span></code></a> variable is set.  Instead it
+will create cache variables which must be filled by the user or by
+presetting them in some CMake script file to the values the executable
+would have produced if it had been run on its actual target platform.
+These cache entries are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;runResultVar&gt;</span></code></dt><dd><p>Exit code if the executable were to be run on the target platform.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;runResultVar&gt;__TRYRUN_OUTPUT</span></code></dt><dd><p>Output from stdout and stderr if the executable were to be run on
+the target platform.  This is created only if the
+<code class="docutils literal notranslate"><span class="pre">RUN_OUTPUT_VARIABLE</span></code> or <code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span></code> option was used.</p>
+</dd>
+</dl>
+<p>In order to make cross compiling your project easier, use <code class="docutils literal notranslate"><span class="pre">try_run</span></code>
+only if really required.  If you use <code class="docutils literal notranslate"><span class="pre">try_run</span></code>, use the
+<code class="docutils literal notranslate"><span class="pre">RUN_OUTPUT_VARIABLE</span></code> or <code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span></code> options only if really
+required.  Using them will require that when cross-compiling, the cache
+variables will have to be set manually to the output of the executable.
+You can also “guard” the calls to <code class="docutils literal notranslate"><span class="pre">try_run</span></code> with an <span class="target" id="index-0-command:if"></span><a class="reference internal" href="if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if()</span></code></a>
+block checking the <span class="target" id="index-1-variable:CMAKE_CROSSCOMPILING"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING.html#variable:CMAKE_CROSSCOMPILING" title="CMAKE_CROSSCOMPILING"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING</span></code></a> variable and
+provide an easy-to-preset alternative for this case.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">try_run</a><ul>
+<li><a class="reference internal" href="#try-compiling-and-running-source-files">Try Compiling and Running Source Files</a></li>
+<li><a class="reference internal" href="#other-behavior-settings">Other Behavior Settings</a></li>
+<li><a class="reference internal" href="#behavior-when-cross-compiling">Behavior when Cross Compiling</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="try_compile.html"
+                        title="previous chapter">try_compile</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ctest_build.html"
+                        title="next chapter">ctest_build</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/try_run.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ctest_build.html" title="ctest_build"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="try_compile.html" title="try_compile"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">try_run</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

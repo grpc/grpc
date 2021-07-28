@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindOpenSSL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindOpenThreads" href="FindOpenThreads.html" />
+    <link rel="prev" title="FindOpenSceneGraph" href="FindOpenSceneGraph.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindOpenThreads.html" title="FindOpenThreads"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenSceneGraph.html" title="FindOpenSceneGraph"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenSSL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findopenssl">
+<span id="module:FindOpenSSL"></span><h1>FindOpenSSL<a class="headerlink" href="#findopenssl" title="Permalink to this headline">¶</a></h1>
+<p>Find the OpenSSL encryption library.</p>
+<div class="section" id="optional-components">
+<h2>Optional COMPONENTS<a class="headerlink" href="#optional-components" title="Permalink to this headline">¶</a></h2>
+<p>This module supports two optional COMPONENTS: <code class="docutils literal notranslate"><span class="pre">Crypto</span></code> and <code class="docutils literal notranslate"><span class="pre">SSL</span></code>.  Both
+components have associated imported targets, as described below.</p>
+</div>
+<div class="section" id="imported-targets">
+<h2>Imported Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenSSL::SSL</span></code></dt><dd><p>The OpenSSL <code class="docutils literal notranslate"><span class="pre">ssl</span></code> library, if found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenSSL::Crypto</span></code></dt><dd><p>The OpenSSL <code class="docutils literal notranslate"><span class="pre">crypto</span></code> library, if found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenSSL::applink</span></code></dt><dd><p>The OpenSSL <code class="docutils literal notranslate"><span class="pre">applink</span></code> components that might be need to be compiled into
+projects under MSVC. This target is available only if found OpenSSL version
+is not less than 0.9.8. By linking this target the above OpenSSL targets can
+be linked even if the project has different MSVC runtime configurations with
+the above OpenSSL targets. This target has no effect on platforms other than
+MSVC.</p>
+</dd>
+</dl>
+<p>NOTE: Due to how <code class="docutils literal notranslate"><span class="pre">INTERFACE_SOURCES</span></code> are consumed by the consuming target,
+unless you certainly know what you are doing, it is always preferred to link
+<code class="docutils literal notranslate"><span class="pre">OpenSSL::applink</span></code> target as <code class="docutils literal notranslate"><span class="pre">PRIVATE</span></code> and to make sure that this target is
+linked at most once for the whole dependency graph of any library or
+executable:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_link_libraries(</span><span class="nb">myTarget</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">OpenSSL</span><span class="o">::</span><span class="nb">applink</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Otherwise you would probably encounter unexpected random problems when building
+and linking, as both the ISO C and the ISO C++ standard claims almost nothing
+about what a link process should be.</p>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_FOUND</span></code></dt><dd><p>System has the OpenSSL library. If no components are requested it only
+requires the crypto library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_INCLUDE_DIR</span></code></dt><dd><p>The OpenSSL include directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_CRYPTO_LIBRARY</span></code></dt><dd><p>The OpenSSL crypto library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_CRYPTO_LIBRARIES</span></code></dt><dd><p>The OpenSSL crypto library and its dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_SSL_LIBRARY</span></code></dt><dd><p>The OpenSSL SSL library.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_SSL_LIBRARIES</span></code></dt><dd><p>The OpenSSL SSL library and its dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_LIBRARIES</span></code></dt><dd><p>All OpenSSL libraries and their dependencies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_VERSION</span></code></dt><dd><p>This is set to <code class="docutils literal notranslate"><span class="pre">$major.$minor.$revision$patch</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">0.9.8s</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPENSSL_APPLINK_SOURCE</span></code></dt><dd><p>The sources in the target <code class="docutils literal notranslate"><span class="pre">OpenSSL::applink</span></code> that is mentioned above. This
+variable shall always be undefined if found openssl version is less than
+0.9.8 or if platform is not MSVC.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="hints">
+<h2>Hints<a class="headerlink" href="#hints" title="Permalink to this headline">¶</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">OPENSSL_ROOT_DIR</span></code> to the root directory of an OpenSSL installation.
+Set <code class="docutils literal notranslate"><span class="pre">OPENSSL_USE_STATIC_LIBS</span></code> to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> to look for static libraries.
+Set <code class="docutils literal notranslate"><span class="pre">OPENSSL_MSVC_STATIC_RT</span></code> set <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> to choose the MT version of the lib.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindOpenSSL</a><ul>
+<li><a class="reference internal" href="#optional-components">Optional COMPONENTS</a></li>
+<li><a class="reference internal" href="#imported-targets">Imported Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#hints">Hints</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindOpenSceneGraph.html"
+                        title="previous chapter">FindOpenSceneGraph</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindOpenThreads.html"
+                        title="next chapter">FindOpenThreads</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindOpenSSL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindOpenThreads.html" title="FindOpenThreads"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenSceneGraph.html" title="FindOpenSceneGraph"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenSSL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

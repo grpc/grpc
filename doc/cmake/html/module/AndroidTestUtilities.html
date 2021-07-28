@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AndroidTestUtilities &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="BundleUtilities" href="BundleUtilities.html" />
+    <link rel="prev" title="AddFileDependencies" href="AddFileDependencies.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="BundleUtilities.html" title="BundleUtilities"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AddFileDependencies.html" title="AddFileDependencies"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AndroidTestUtilities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="androidtestutilities">
+<span id="module:AndroidTestUtilities"></span><h1>AndroidTestUtilities<a class="headerlink" href="#androidtestutilities" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.7.</span></p>
+</div>
+<p>Create a test that automatically loads specified data onto an Android device.</p>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Use this module to push data needed for testing an Android device behavior
+onto a connected Android device. The module will accept files and libraries as
+well as separate destinations for each. It will create a test that loads the
+files into a device object store and link to them from the specified
+destination. The files are only uploaded if they are not already in the object
+store.</p>
+<p>For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">AndroidTestUtilities</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">android_add_test_data(</span><span class="w"></span>
+<span class="w">  </span><span class="nb">example_setup_test</span><span class="w"></span>
+<span class="w">  </span><span class="no">FILES</span><span class="w"> </span><span class="nv">&lt;files&gt;...</span><span class="w"></span>
+<span class="w">  </span><span class="no">LIBS</span><span class="w"> </span><span class="nv">&lt;libs&gt;...</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEVICE_TEST_DIR</span><span class="w"> </span><span class="s">&quot;/data/local/tests/example&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEVICE_OBJECT_STORE</span><span class="w"> </span><span class="s">&quot;/sdcard/.ExternalData/SHA&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>At build time a test named “example_setup_test” will be created.  Run this test
+on the command line with <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> to load the data onto the Android
+device.</p>
+</div>
+<div class="section" id="module-functions">
+<h2>Module Functions<a class="headerlink" href="#module-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake command">
+<dt id="command:android_add_test_data">
+<code class="sig-name descname">android_add_test_data</code><a class="headerlink" href="#command:android_add_test_data" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">android_add_test_data(</span><span class="nv">&lt;test-name&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">FILES</span><span class="w"> </span><span class="nv">&lt;files&gt;...</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">FILES_DEST</span><span class="w"> </span><span class="nv">&lt;device-dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">LIBS</span><span class="w"> </span><span class="nv">&lt;libs&gt;...</span><span class="p">]</span><span class="w">   </span><span class="p">[</span><span class="no">LIBS_DEST</span><span class="w"> </span><span class="nv">&lt;device-dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">DEVICE_OBJECT_STORE</span><span class="w"> </span><span class="nv">&lt;device-dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">DEVICE_TEST_DIR</span><span class="w"> </span><span class="nv">&lt;device-dir&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">[</span><span class="no">NO_LINK_REGEX</span><span class="w"> </span><span class="nv">&lt;strings&gt;...</span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">android_add_test_data</span></code> function is used to copy files and libraries
+needed to run project-specific tests. On the host operating system, this is
+done at build time. For on-device testing, the files are loaded onto the
+device by the manufactured test at run time.</p>
+<p>This function accepts the following named parameters:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">FILES</span> <span class="pre">&lt;files&gt;...</span></code></dt><dd><p>zero or more files needed for testing</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBS</span> <span class="pre">&lt;libs&gt;...</span></code></dt><dd><p>zero or more libraries needed for testing</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">FILES_DEST</span> <span class="pre">&lt;device-dir&gt;</span></code></dt><dd><p>absolute path where the data files are expected to be</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LIBS_DEST</span> <span class="pre">&lt;device-dir&gt;</span></code></dt><dd><p>absolute path where the libraries are expected to be</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEVICE_OBJECT_STORE</span> <span class="pre">&lt;device-dir&gt;</span></code></dt><dd><p>absolute path to the location where the data is stored on-device</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEVICE_TEST_DIR</span> <span class="pre">&lt;device-dir&gt;</span></code></dt><dd><p>absolute path to the root directory of the on-device test location</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NO_LINK_REGEX</span> <span class="pre">&lt;strings&gt;...</span></code></dt><dd><p>list of regex strings matching the names of files that should be
+copied from the object store to the testing directory</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">AndroidTestUtilities</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#module-functions">Module Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AddFileDependencies.html"
+                        title="previous chapter">AddFileDependencies</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BundleUtilities.html"
+                        title="next chapter">BundleUtilities</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/AndroidTestUtilities.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="BundleUtilities.html" title="BundleUtilities"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AddFileDependencies.html" title="AddFileDependencies"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AndroidTestUtilities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>define_property &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="enable_language" href="enable_language.html" />
+    <link rel="prev" title="create_test_sourcelist" href="create_test_sourcelist.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="enable_language.html" title="enable_language"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="create_test_sourcelist.html" title="create_test_sourcelist"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">define_property</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="define-property">
+<span id="command:define_property"></span><h1>define_property<a class="headerlink" href="#define-property" title="Permalink to this headline">¶</a></h1>
+<p>Define and document custom properties.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">define_property(</span><span class="o">&lt;</span><span class="no">GLOBAL</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">DIRECTORY</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">TARGET</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">SOURCE</span><span class="w"> </span><span class="p">|</span><span class="w"></span>
+<span class="w">                 </span><span class="no">TEST</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">VARIABLE</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">CACHED_VARIABLE</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">                 </span><span class="no">PROPERTY</span><span class="w"> </span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">INHERITED</span><span class="p">]</span><span class="w"></span>
+<span class="w">                 </span><span class="no">BRIEF_DOCS</span><span class="w"> </span><span class="nv">&lt;brief-doc&gt;</span><span class="w"> </span><span class="p">[</span><span class="nb">docs...</span><span class="p">]</span><span class="w"></span>
+<span class="w">                 </span><span class="no">FULL_DOCS</span><span class="w"> </span><span class="nv">&lt;full-doc&gt;</span><span class="w"> </span><span class="p">[</span><span class="nb">docs...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Defines one property in a scope for use with the <span class="target" id="index-0-command:set_property"></span><a class="reference internal" href="set_property.html#command:set_property" title="set_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_property()</span></code></a> and
+<span class="target" id="index-0-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> commands.  This is primarily useful to associate
+documentation with property names that may be retrieved with the
+<span class="target" id="index-1-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> command. The first argument determines the kind of
+scope in which the property should be used.  It must be one of the
+following:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GLOBAL    = associated with the global namespace
+DIRECTORY = associated with one directory
+TARGET    = associated with one target
+SOURCE    = associated with one source file
+TEST      = associated with a test named with add_test
+VARIABLE  = documents a CMake language variable
+CACHED_VARIABLE = documents a CMake cache variable
+</pre></div>
+</div>
+<p>Note that unlike <span class="target" id="index-1-command:set_property"></span><a class="reference internal" href="set_property.html#command:set_property" title="set_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_property()</span></code></a> and <span class="target" id="index-2-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> no
+actual scope needs to be given; only the kind of scope is important.</p>
+<p>The required <code class="docutils literal notranslate"><span class="pre">PROPERTY</span></code> option is immediately followed by the name of
+the property being defined.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">INHERITED</span></code> option is given, then the <span class="target" id="index-3-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> command
+will chain up to the next higher scope when the requested property is not set
+in the scope given to the command.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DIRECTORY</span></code> scope chains to its parent directory’s scope, continuing the
+walk up parent directories until a directory has the property set or there
+are no more parents.  If still not found at the top level directory, it
+chains to the <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> scope.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TARGET</span></code>, <code class="docutils literal notranslate"><span class="pre">SOURCE</span></code> and <code class="docutils literal notranslate"><span class="pre">TEST</span></code> properties chain to <code class="docutils literal notranslate"><span class="pre">DIRECTORY</span></code> scope,
+including further chaining up the directories, etc. as needed.</p></li>
+</ul>
+<p>Note that this scope chaining behavior only applies to calls to
+<span class="target" id="index-4-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a>, <span class="target" id="index-0-command:get_directory_property"></span><a class="reference internal" href="get_directory_property.html#command:get_directory_property" title="get_directory_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_directory_property()</span></code></a>,
+<span class="target" id="index-0-command:get_target_property"></span><a class="reference internal" href="get_target_property.html#command:get_target_property" title="get_target_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_target_property()</span></code></a>, <span class="target" id="index-0-command:get_source_file_property"></span><a class="reference internal" href="get_source_file_property.html#command:get_source_file_property" title="get_source_file_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_source_file_property()</span></code></a> and
+<span class="target" id="index-0-command:get_test_property"></span><a class="reference internal" href="get_test_property.html#command:get_test_property" title="get_test_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_test_property()</span></code></a>.  There is no inheriting behavior when <em>setting</em>
+properties, so using <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> or <code class="docutils literal notranslate"><span class="pre">APPEND_STRING</span></code> with the
+<span class="target" id="index-2-command:set_property"></span><a class="reference internal" href="set_property.html#command:set_property" title="set_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_property()</span></code></a> command will not consider inherited values when working
+out the contents to append to.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BRIEF_DOCS</span></code> and <code class="docutils literal notranslate"><span class="pre">FULL_DOCS</span></code> options are followed by strings to be
+associated with the property as its brief and full documentation.
+Corresponding options to the <span class="target" id="index-5-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> command will retrieve
+the documentation.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="create_test_sourcelist.html"
+                        title="previous chapter">create_test_sourcelist</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="enable_language.html"
+                        title="next chapter">enable_language</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/define_property.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="enable_language.html" title="enable_language"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="create_test_sourcelist.html" title="create_test_sourcelist"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">define_property</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

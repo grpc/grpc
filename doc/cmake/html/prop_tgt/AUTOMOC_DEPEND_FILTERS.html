@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUTOMOC_DEPEND_FILTERS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="AUTOMOC_EXECUTABLE" href="AUTOMOC_EXECUTABLE.html" />
+    <link rel="prev" title="AUTOMOC_COMPILER_PREDEFINES" href="AUTOMOC_COMPILER_PREDEFINES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="AUTOMOC_EXECUTABLE.html" title="AUTOMOC_EXECUTABLE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AUTOMOC_COMPILER_PREDEFINES.html" title="AUTOMOC_COMPILER_PREDEFINES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOMOC_DEPEND_FILTERS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="automoc-depend-filters">
+<span id="prop_tgt:AUTOMOC_DEPEND_FILTERS"></span><h1>AUTOMOC_DEPEND_FILTERS<a class="headerlink" href="#automoc-depend-filters" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.9.</span></p>
+</div>
+<p>Filter definitions used by <span class="target" id="index-0-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a> to extract file names from a
+source file that are registered as additional dependencies for the
+<code class="docutils literal notranslate"><span class="pre">moc</span></code> file of the source file.</p>
+<p>Filters are defined as <code class="docutils literal notranslate"><span class="pre">KEYWORD;REGULAR_EXPRESSION</span></code> pairs. First the file
+content is searched for <code class="docutils literal notranslate"><span class="pre">KEYWORD</span></code>. If it is found at least once, then file
+names are extracted by successively searching for <code class="docutils literal notranslate"><span class="pre">REGULAR_EXPRESSION</span></code> and
+taking the first match group.</p>
+<p>The file name found in the first match group is searched for</p>
+<ul class="simple">
+<li><p>first in the vicinity of the source file</p></li>
+<li><p>and afterwards in the target’s <span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>.</p></li>
+</ul>
+<p>If any of the extracted files changes, then the <code class="docutils literal notranslate"><span class="pre">moc</span></code> file for the source
+file gets rebuilt even when the source file itself doesn’t change.</p>
+<p>If any of the extracted files is <span class="target" id="index-0-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a> or if it is not in the
+target’s sources, then it might be necessary to add it to the
+<code class="docutils literal notranslate"><span class="pre">_autogen</span></code> target  dependencies.
+See <span class="target" id="index-0-prop_tgt:AUTOGEN_TARGET_DEPENDS"></span><a class="reference internal" href="AUTOGEN_TARGET_DEPENDS.html#prop_tgt:AUTOGEN_TARGET_DEPENDS" title="AUTOGEN_TARGET_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_TARGET_DEPENDS</span></code></a> for reference.</p>
+<p>By default <span class="target" id="index-0-prop_tgt:AUTOMOC_DEPEND_FILTERS"></span><a class="reference internal" href="#prop_tgt:AUTOMOC_DEPEND_FILTERS" title="AUTOMOC_DEPEND_FILTERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC_DEPEND_FILTERS</span></code></a> is initialized from
+<span class="target" id="index-0-variable:CMAKE_AUTOMOC_DEPEND_FILTERS"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_DEPEND_FILTERS.html#variable:CMAKE_AUTOMOC_DEPEND_FILTERS" title="CMAKE_AUTOMOC_DEPEND_FILTERS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_DEPEND_FILTERS</span></code></a>, which is empty by default.</p>
+<p>From Qt 5.15.0 on this variable is ignored as moc is able to output the correct
+dependencies.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-qt(7)"></span><a class="reference internal" href="../manual/cmake-qt.7.html#manual:cmake-qt(7)" title="cmake-qt(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-qt(7)</span></code></a> manual for more information on using CMake
+with Qt.</p>
+<div class="section" id="example-1">
+<h2>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h2>
+<p>A header file <code class="docutils literal notranslate"><span class="pre">my_class.hpp</span></code> uses a custom macro <code class="docutils literal notranslate"><span class="pre">JSON_FILE_MACRO</span></code> which
+is defined in an other header <code class="docutils literal notranslate"><span class="pre">macros.hpp</span></code>.
+We want the <code class="docutils literal notranslate"><span class="pre">moc</span></code> file of <code class="docutils literal notranslate"><span class="pre">my_class.hpp</span></code> to depend on the file name
+argument of <code class="docutils literal notranslate"><span class="pre">JSON_FILE_MACRO</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// my_class.hpp
+class My_Class : public QObject
+{
+  Q_OBJECT
+  JSON_FILE_MACRO ( &quot;info.json&quot; )
+...
+};
+</pre></div>
+</div>
+<p>In <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> we add a filter to
+<span class="target" id="index-1-variable:CMAKE_AUTOMOC_DEPEND_FILTERS"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_DEPEND_FILTERS.html#variable:CMAKE_AUTOMOC_DEPEND_FILTERS" title="CMAKE_AUTOMOC_DEPEND_FILTERS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_DEPEND_FILTERS</span></code></a> like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>list( APPEND CMAKE_AUTOMOC_DEPEND_FILTERS
+  &quot;JSON_FILE_MACRO&quot;
+  &quot;[\n][ \t]*JSON_FILE_MACRO[ \t]*\\([ \t]*\&quot;([^\&quot;]+)\&quot;&quot;
+)
+</pre></div>
+</div>
+<p>We assume <code class="docutils literal notranslate"><span class="pre">info.json</span></code> is a plain (not <span class="target" id="index-1-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a>) file that is
+listed in the target’s source.  Therefore we do not need to add it to
+<span class="target" id="index-1-prop_tgt:AUTOGEN_TARGET_DEPENDS"></span><a class="reference internal" href="AUTOGEN_TARGET_DEPENDS.html#prop_tgt:AUTOGEN_TARGET_DEPENDS" title="AUTOGEN_TARGET_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_TARGET_DEPENDS</span></code></a>.</p>
+</div>
+<div class="section" id="example-2">
+<h2>Example 2<a class="headerlink" href="#example-2" title="Permalink to this headline">¶</a></h2>
+<p>In the target <code class="docutils literal notranslate"><span class="pre">my_target</span></code> a header file <code class="docutils literal notranslate"><span class="pre">complex_class.hpp</span></code> uses a
+custom macro <code class="docutils literal notranslate"><span class="pre">JSON_BASED_CLASS</span></code> which is defined in an other header
+<code class="docutils literal notranslate"><span class="pre">macros.hpp</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// macros.hpp
+...
+#define JSON_BASED_CLASS(name, json) \
+class name : public QObject \
+{ \
+  Q_OBJECT \
+  Q_PLUGIN_METADATA(IID &quot;demo&quot; FILE json) \
+  name() {} \
+};
+...
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// complex_class.hpp
+#pragma once
+JSON_BASED_CLASS(Complex_Class, &quot;meta.json&quot;)
+// end of file
+</pre></div>
+</div>
+<p>Since <code class="docutils literal notranslate"><span class="pre">complex_class.hpp</span></code> doesn’t contain a <code class="docutils literal notranslate"><span class="pre">Q_OBJECT</span></code> macro it would be
+ignored by <span class="target" id="index-1-prop_tgt:AUTOMOC"></span><a class="reference internal" href="AUTOMOC.html#prop_tgt:AUTOMOC" title="AUTOMOC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOMOC</span></code></a>.  We change this by adding <code class="docutils literal notranslate"><span class="pre">JSON_BASED_CLASS</span></code>
+to <span class="target" id="index-0-variable:CMAKE_AUTOMOC_MACRO_NAMES"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_MACRO_NAMES.html#variable:CMAKE_AUTOMOC_MACRO_NAMES" title="CMAKE_AUTOMOC_MACRO_NAMES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_MACRO_NAMES</span></code></a>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>list(APPEND CMAKE_AUTOMOC_MACRO_NAMES &quot;JSON_BASED_CLASS&quot;)
+</pre></div>
+</div>
+<p>We want the <code class="docutils literal notranslate"><span class="pre">moc</span></code> file of <code class="docutils literal notranslate"><span class="pre">complex_class.hpp</span></code> to depend on
+<code class="docutils literal notranslate"><span class="pre">meta.json</span></code>.  So we add a filter to
+<span class="target" id="index-2-variable:CMAKE_AUTOMOC_DEPEND_FILTERS"></span><a class="reference internal" href="../variable/CMAKE_AUTOMOC_DEPEND_FILTERS.html#variable:CMAKE_AUTOMOC_DEPEND_FILTERS" title="CMAKE_AUTOMOC_DEPEND_FILTERS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_AUTOMOC_DEPEND_FILTERS</span></code></a>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>list(APPEND CMAKE_AUTOMOC_DEPEND_FILTERS
+  &quot;JSON_BASED_CLASS&quot;
+  &quot;[\n^][ \t]*JSON_BASED_CLASS[ \t]*\\([^,]*,[ \t]*\&quot;([^\&quot;]+)\&quot;&quot;
+)
+</pre></div>
+</div>
+<p>Additionally we assume <code class="docutils literal notranslate"><span class="pre">meta.json</span></code> is <span class="target" id="index-2-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a> which is
+why we have to add it to <span class="target" id="index-2-prop_tgt:AUTOGEN_TARGET_DEPENDS"></span><a class="reference internal" href="AUTOGEN_TARGET_DEPENDS.html#prop_tgt:AUTOGEN_TARGET_DEPENDS" title="AUTOGEN_TARGET_DEPENDS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">AUTOGEN_TARGET_DEPENDS</span></code></a>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set_property(TARGET my_target APPEND PROPERTY AUTOGEN_TARGET_DEPENDS &quot;meta.json&quot;)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">AUTOMOC_DEPEND_FILTERS</a><ul>
+<li><a class="reference internal" href="#example-1">Example 1</a></li>
+<li><a class="reference internal" href="#example-2">Example 2</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AUTOMOC_COMPILER_PREDEFINES.html"
+                        title="previous chapter">AUTOMOC_COMPILER_PREDEFINES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="AUTOMOC_EXECUTABLE.html"
+                        title="next chapter">AUTOMOC_EXECUTABLE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/AUTOMOC_DEPEND_FILTERS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="AUTOMOC_EXECUTABLE.html" title="AUTOMOC_EXECUTABLE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AUTOMOC_COMPILER_PREDEFINES.html" title="AUTOMOC_COMPILER_PREDEFINES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AUTOMOC_DEPEND_FILTERS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

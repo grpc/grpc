@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_HOST_SYSTEM_PROCESSOR &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_HOST_SYSTEM_VERSION" href="CMAKE_HOST_SYSTEM_VERSION.html" />
+    <link rel="prev" title="CMAKE_HOST_SYSTEM_NAME" href="CMAKE_HOST_SYSTEM_NAME.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_HOST_SYSTEM_VERSION.html" title="CMAKE_HOST_SYSTEM_VERSION"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_HOST_SYSTEM_NAME.html" title="CMAKE_HOST_SYSTEM_NAME"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_HOST_SYSTEM_PROCESSOR</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-host-system-processor">
+<span id="variable:CMAKE_HOST_SYSTEM_PROCESSOR"></span><h1>CMAKE_HOST_SYSTEM_PROCESSOR<a class="headerlink" href="#cmake-host-system-processor" title="Permalink to this headline">¶</a></h1>
+<p>The name of the CPU CMake is running on.</p>
+<div class="section" id="windows-platforms">
+<h2>Windows Platforms<a class="headerlink" href="#windows-platforms" title="Permalink to this headline">¶</a></h2>
+<p>On Windows, this variable is set to the value of the environment variable
+<code class="docutils literal notranslate"><span class="pre">PROCESSOR_ARCHITECTURE</span></code>.</p>
+</div>
+<div class="section" id="unix-platforms">
+<h2>Unix Platforms<a class="headerlink" href="#unix-platforms" title="Permalink to this headline">¶</a></h2>
+<p>On systems that support <code class="docutils literal notranslate"><span class="pre">uname</span></code>, this variable is set to the output of:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code> on GNU, Linux, Cygwin, Android, or</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">arch</span></code> on OpenBSD, or</p></li>
+<li><p>on other systems,</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-p</span></code> if its exit code is nonzero, or</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code> otherwise.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="macos-platforms">
+<h2>macOS Platforms<a class="headerlink" href="#macos-platforms" title="Permalink to this headline">¶</a></h2>
+<p>The value of <code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code> is used by default.</p>
+<p>On Apple Silicon hosts, the architecture printed by <code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code> may vary
+based on CMake’s own architecture and that of the invoking process tree.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.19.2: </span>On Apple Silicon hosts:</p>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-variable:CMAKE_APPLE_SILICON_PROCESSOR"></span><a class="reference internal" href="CMAKE_APPLE_SILICON_PROCESSOR.html#variable:CMAKE_APPLE_SILICON_PROCESSOR" title="CMAKE_APPLE_SILICON_PROCESSOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_APPLE_SILICON_PROCESSOR</span></code></a> variable or
+the <span class="target" id="index-0-envvar:CMAKE_APPLE_SILICON_PROCESSOR"></span><a class="reference internal" href="../envvar/CMAKE_APPLE_SILICON_PROCESSOR.html#envvar:CMAKE_APPLE_SILICON_PROCESSOR" title="CMAKE_APPLE_SILICON_PROCESSOR"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_APPLE_SILICON_PROCESSOR</span></code></a> environment variable
+may be set to specify the host architecture explicitly.</p></li>
+<li><p>If <span class="target" id="index-0-variable:CMAKE_OSX_ARCHITECTURES"></span><a class="reference internal" href="CMAKE_OSX_ARCHITECTURES.html#variable:CMAKE_OSX_ARCHITECTURES" title="CMAKE_OSX_ARCHITECTURES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_OSX_ARCHITECTURES</span></code></a> is not set, CMake adds explicit
+flags to tell the compiler to build for the host architecture so the
+toolchain does not have to guess based on the process tree’s architecture.</p></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMAKE_HOST_SYSTEM_PROCESSOR</a><ul>
+<li><a class="reference internal" href="#windows-platforms">Windows Platforms</a></li>
+<li><a class="reference internal" href="#unix-platforms">Unix Platforms</a></li>
+<li><a class="reference internal" href="#macos-platforms">macOS Platforms</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_HOST_SYSTEM_NAME.html"
+                        title="previous chapter">CMAKE_HOST_SYSTEM_NAME</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_HOST_SYSTEM_VERSION.html"
+                        title="next chapter">CMAKE_HOST_SYSTEM_VERSION</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_HOST_SYSTEM_PROCESSOR.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_HOST_SYSTEM_VERSION.html" title="CMAKE_HOST_SYSTEM_VERSION"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_HOST_SYSTEM_NAME.html" title="CMAKE_HOST_SYSTEM_NAME"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_HOST_SYSTEM_PROCESSOR</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

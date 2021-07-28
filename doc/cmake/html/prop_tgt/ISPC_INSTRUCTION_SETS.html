@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ISPC_INSTRUCTION_SETS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="JOB_POOL_COMPILE" href="JOB_POOL_COMPILE.html" />
+    <link rel="prev" title="ISPC_HEADER_SUFFIX" href="ISPC_HEADER_SUFFIX.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="JOB_POOL_COMPILE.html" title="JOB_POOL_COMPILE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ISPC_HEADER_SUFFIX.html" title="ISPC_HEADER_SUFFIX"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ISPC_INSTRUCTION_SETS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ispc-instruction-sets">
+<span id="prop_tgt:ISPC_INSTRUCTION_SETS"></span><h1>ISPC_INSTRUCTION_SETS<a class="headerlink" href="#ispc-instruction-sets" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.19.</span></p>
+</div>
+<p>List of instruction set architectures to generate code for.</p>
+<p>This property is initialized by the value of the <span class="target" id="index-0-variable:CMAKE_ISPC_INSTRUCTION_SETS"></span><a class="reference internal" href="../variable/CMAKE_ISPC_INSTRUCTION_SETS.html#variable:CMAKE_ISPC_INSTRUCTION_SETS" title="CMAKE_ISPC_INSTRUCTION_SETS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ISPC_INSTRUCTION_SETS</span></code></a>
+variable if it is set when a target is created.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ISPC_INSTRUCTION_SETS</span></code> target property must be used when generating for multiple
+instruction sets so that CMake can track what object files will be generated.</p>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">ISPC_INSTRUCTION_SETS</span><span class="w"> </span><span class="nb">avx2-i32x4</span><span class="w"> </span><span class="nb">avx512skx-i32x835</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generates code for avx2 and avx512skx target architectures.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">ISPC_INSTRUCTION_SETS</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ISPC_HEADER_SUFFIX.html"
+                        title="previous chapter">ISPC_HEADER_SUFFIX</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="JOB_POOL_COMPILE.html"
+                        title="next chapter">JOB_POOL_COMPILE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/ISPC_INSTRUCTION_SETS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="JOB_POOL_COMPILE.html" title="JOB_POOL_COMPILE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ISPC_HEADER_SUFFIX.html" title="ISPC_HEADER_SUFFIX"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ISPC_INSTRUCTION_SETS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

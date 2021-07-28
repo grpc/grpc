@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ctest_start &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ctest_submit" href="ctest_submit.html" />
+    <link rel="prev" title="ctest_sleep" href="ctest_sleep.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ctest_submit.html" title="ctest_submit"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ctest_sleep.html" title="ctest_sleep"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_start</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctest-start">
+<span id="command:ctest_start"></span><h1>ctest_start<a class="headerlink" href="#ctest-start" title="Permalink to this headline">¶</a></h1>
+<p>Starts the testing for a given model</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ctest_start(&lt;model&gt; [&lt;source&gt; [&lt;binary&gt;]] [GROUP &lt;group&gt;] [QUIET])
+
+ctest_start([&lt;model&gt; [&lt;source&gt; [&lt;binary&gt;]]] [GROUP &lt;group&gt;] APPEND [QUIET])
+</pre></div>
+</div>
+<p>Starts the testing for a given model.  The command should be called
+after the binary directory is initialized.</p>
+<p>The parameters are as follows:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;model&gt;</span></code></dt><dd><p>Set the dashboard model. Must be one of <code class="docutils literal notranslate"><span class="pre">Experimental</span></code>, <code class="docutils literal notranslate"><span class="pre">Continuous</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">Nightly</span></code>. This parameter is required unless <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> is specified.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;source&gt;</span></code></dt><dd><p>Set the source directory. If not specified, the value of
+<span class="target" id="index-0-variable:CTEST_SOURCE_DIRECTORY"></span><a class="reference internal" href="../variable/CTEST_SOURCE_DIRECTORY.html#variable:CTEST_SOURCE_DIRECTORY" title="CTEST_SOURCE_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_SOURCE_DIRECTORY</span></code></a> is used instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;binary&gt;</span></code></dt><dd><p>Set the binary directory. If not specified, the value of
+<span class="target" id="index-0-variable:CTEST_BINARY_DIRECTORY"></span><a class="reference internal" href="../variable/CTEST_BINARY_DIRECTORY.html#variable:CTEST_BINARY_DIRECTORY" title="CTEST_BINARY_DIRECTORY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_BINARY_DIRECTORY</span></code></a> is used instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GROUP</span> <span class="pre">&lt;group&gt;</span></code></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">GROUP</span></code> is used, the submissions will go to the specified group on the
+CDash server. If no <code class="docutils literal notranslate"><span class="pre">GROUP</span></code> is specified, the name of the model is used by
+default. This replaces the deprecated option <code class="docutils literal notranslate"><span class="pre">TRACK</span></code>. Despite the name
+change its behavior is unchanged.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">APPEND</span></code></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> is used, the existing <code class="docutils literal notranslate"><span class="pre">TAG</span></code> is used rather than creating a new
+one based on the current time stamp. If you use <code class="docutils literal notranslate"><span class="pre">APPEND</span></code>, you can omit the
+<code class="docutils literal notranslate"><span class="pre">&lt;model&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">GROUP</span> <span class="pre">&lt;group&gt;</span></code> parameters, because they will be read from
+the generated <code class="docutils literal notranslate"><span class="pre">TAG</span></code> file. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ctest_start(</span><span class="nb">Experimental</span><span class="w"> </span><span class="no">GROUP</span><span class="w"> </span><span class="nb">GroupExperimental</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Later, in another <code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-S</span></code> script:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ctest_start(</span><span class="no">APPEND</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When the second script runs <code class="docutils literal notranslate"><span class="pre">ctest_start(APPEND)</span></code>, it will read the
+<code class="docutils literal notranslate"><span class="pre">Experimental</span></code> model and <code class="docutils literal notranslate"><span class="pre">GroupExperimental</span></code> group from the <code class="docutils literal notranslate"><span class="pre">TAG</span></code> file
+generated by the first <code class="docutils literal notranslate"><span class="pre">ctest_start()</span></code> command. Please note that if you
+call <code class="docutils literal notranslate"><span class="pre">ctest_start(APPEND)</span></code> and specify a different model or group than
+in the first <code class="docutils literal notranslate"><span class="pre">ctest_start()</span></code> command, a warning will be issued, and the
+new model and group will be used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QUIET</span></code></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">QUIET</span></code> is used, CTest will suppress any non-error messages that it
+otherwise would have printed to the console.</p>
+</dd>
+</dl>
+<p>The parameters for <code class="docutils literal notranslate"><span class="pre">ctest_start()</span></code> can be issued in any order, with the
+exception that <code class="docutils literal notranslate"><span class="pre">&lt;model&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;source&gt;</span></code>, and <code class="docutils literal notranslate"><span class="pre">&lt;binary&gt;</span></code> have to appear
+in that order with respect to each other. The following are all valid and
+equivalent:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ctest_start(</span><span class="nb">Experimental</span><span class="w"> </span><span class="na">path/to/source</span><span class="w"> </span><span class="na">path/to/binary</span><span class="w"> </span><span class="no">GROUP</span><span class="w"> </span><span class="nb">SomeGroup</span><span class="w"> </span><span class="no">QUIET</span><span class="w"> </span><span class="no">APPEND</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">ctest_start(</span><span class="no">GROUP</span><span class="w"> </span><span class="nb">SomeGroup</span><span class="w"> </span><span class="nb">Experimental</span><span class="w"> </span><span class="no">QUIET</span><span class="w"> </span><span class="na">path/to/source</span><span class="w"> </span><span class="no">APPEND</span><span class="w"> </span><span class="na">path/to/binary</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">ctest_start(</span><span class="no">APPEND</span><span class="w"> </span><span class="no">QUIET</span><span class="w"> </span><span class="nb">Experimental</span><span class="w"> </span><span class="na">path/to/source</span><span class="w"> </span><span class="no">GROUP</span><span class="w"> </span><span class="nb">SomeGroup</span><span class="w"> </span><span class="na">path/to/binary</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>However, for the sake of readability, it is recommended that you order your
+parameters in the order listed at the top of this page.</p>
+<p>If the <span class="target" id="index-0-variable:CTEST_CHECKOUT_COMMAND"></span><a class="reference internal" href="../variable/CTEST_CHECKOUT_COMMAND.html#variable:CTEST_CHECKOUT_COMMAND" title="CTEST_CHECKOUT_COMMAND"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_CHECKOUT_COMMAND</span></code></a> variable (or the
+<span class="target" id="index-0-variable:CTEST_CVS_CHECKOUT"></span><a class="reference internal" href="../variable/CTEST_CVS_CHECKOUT.html#variable:CTEST_CVS_CHECKOUT" title="CTEST_CVS_CHECKOUT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CTEST_CVS_CHECKOUT</span></code></a> variable) is set, its content is treated as
+command-line.  The command is invoked with the current working directory set
+to the parent of the source directory, even if the source directory already
+exists.  This can be used to create the source tree from a version control
+repository.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ctest_sleep.html"
+                        title="previous chapter">ctest_sleep</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ctest_submit.html"
+                        title="next chapter">ctest_submit</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/ctest_start.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ctest_submit.html" title="ctest_submit"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ctest_sleep.html" title="ctest_sleep"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ctest_start</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

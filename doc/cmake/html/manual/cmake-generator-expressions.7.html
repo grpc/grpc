@@ -1,0 +1,911 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-generator-expressions(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-generators(7)" href="cmake-generators.7.html" />
+    <link rel="prev" title="cmake-file-api(7)" href="cmake-file-api.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-generators.7.html" title="cmake-generators(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake-file-api.7.html" title="cmake-file-api(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-generator-expressions(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-generator-expressions(7)"></span><div class="section" id="cmake-generator-expressions-7">
+<h1><a class="toc-backref" href="#id3">cmake-generator-expressions(7)</a><a class="headerlink" href="#cmake-generator-expressions-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-generator-expressions-7" id="id3">cmake-generator-expressions(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id4">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#boolean-generator-expressions" id="id5">Boolean Generator Expressions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#logical-operators" id="id6">Logical Operators</a></p></li>
+<li><p><a class="reference internal" href="#string-comparisons" id="id7">String Comparisons</a></p></li>
+<li><p><a class="reference internal" href="#variable-queries" id="id8">Variable Queries</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#string-valued-generator-expressions" id="id9">String-Valued Generator Expressions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#escaped-characters" id="id10">Escaped Characters</a></p></li>
+<li><p><a class="reference internal" href="#conditional-expressions" id="id11">Conditional Expressions</a></p></li>
+<li><p><a class="reference internal" href="#string-transformations" id="id12">String Transformations</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id13">Variable Queries</a></p></li>
+<li><p><a class="reference internal" href="#target-dependent-queries" id="id14">Target-Dependent Queries</a></p></li>
+<li><p><a class="reference internal" href="#output-related-expressions" id="id15">Output-Related Expressions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#debugging" id="id16">Debugging</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id4">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Generator expressions are evaluated during build system generation to produce
+information specific to each build configuration.</p>
+<p>Generator expressions are allowed in the context of many target properties,
+such as <span class="target" id="index-0-prop_tgt:LINK_LIBRARIES"></span><a class="reference internal" href="../prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES" title="LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_LIBRARIES</span></code></a>, <span class="target" id="index-0-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a>,
+<span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> and others.  They may also be used when using
+commands to populate those properties, such as <span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a>,
+<span class="target" id="index-0-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a>, <span class="target" id="index-0-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a>
+and others.</p>
+<p>They enable conditional linking, conditional definitions used when compiling,
+conditional include directories, and more.  The conditions may be based on
+the build configuration, target properties, platform information or any other
+queryable information.</p>
+<p>Generator expressions have the form <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  To avoid confusion, this page
+deviates from most of the CMake documentation in that it omits angular brackets
+<code class="docutils literal notranslate"><span class="pre">&lt;...&gt;</span></code> around placeholders like <code class="docutils literal notranslate"><span class="pre">condition</span></code>, <code class="docutils literal notranslate"><span class="pre">string</span></code>, <code class="docutils literal notranslate"><span class="pre">target</span></code>,
+among others.</p>
+<p>Generator expressions can be nested, as shown in most of the examples below.</p>
+</div>
+<div class="section" id="boolean-generator-expressions">
+<span id="id1"></span><h2><a class="toc-backref" href="#id5">Boolean Generator Expressions</a><a class="headerlink" href="#boolean-generator-expressions" title="Permalink to this headline">¶</a></h2>
+<p>Boolean expressions evaluate to either <code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>.
+They are typically used to construct the condition in a <a class="reference internal" href="#conditional-generator-expressions"><span class="std std-ref">conditional
+generator expression</span></a>.</p>
+<p>Available boolean expressions are:</p>
+<div class="section" id="logical-operators">
+<h3><a class="toc-backref" href="#id6">Logical Operators</a><a class="headerlink" href="#logical-operators" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;BOOL:string&gt;</span></code></dt><dd><p>Converts <code class="docutils literal notranslate"><span class="pre">string</span></code> to <code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>. Evaluates to <code class="docutils literal notranslate"><span class="pre">0</span></code> if any of the
+following is true:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">string</span></code> is empty,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">string</span></code> is a case-insensitive equal of
+<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>, <code class="docutils literal notranslate"><span class="pre">OFF</span></code>, <code class="docutils literal notranslate"><span class="pre">N</span></code>, <code class="docutils literal notranslate"><span class="pre">NO</span></code>, <code class="docutils literal notranslate"><span class="pre">IGNORE</span></code>, or <code class="docutils literal notranslate"><span class="pre">NOTFOUND</span></code>, or</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">string</span></code> ends in the suffix <code class="docutils literal notranslate"><span class="pre">-NOTFOUND</span></code> (case-sensitive).</p></li>
+</ul>
+<p>Otherwise evaluates to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;AND:conditions&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">conditions</span></code> is a comma-separated list of boolean expressions.
+Evaluates to <code class="docutils literal notranslate"><span class="pre">1</span></code> if all conditions are <code class="docutils literal notranslate"><span class="pre">1</span></code>.
+Otherwise evaluates to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OR:conditions&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">conditions</span></code> is a comma-separated list of boolean expressions.
+Evaluates to <code class="docutils literal notranslate"><span class="pre">1</span></code> if at least one of the conditions is <code class="docutils literal notranslate"><span class="pre">1</span></code>.
+Otherwise evaluates to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;NOT:condition&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span></code> if <code class="docutils literal notranslate"><span class="pre">condition</span></code> is <code class="docutils literal notranslate"><span class="pre">1</span></code>, else <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="string-comparisons">
+<h3><a class="toc-backref" href="#id7">String Comparisons</a><a class="headerlink" href="#string-comparisons" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;STREQUAL:string1,string2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">string1</span></code> and <code class="docutils literal notranslate"><span class="pre">string2</span></code> are equal, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+The comparison is case-sensitive.  For a case-insensitive comparison,
+combine with a <a class="reference internal" href="#string-transforming-generator-expressions"><span class="std std-ref">string transforming generator expression</span></a>,</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="o">$&lt;</span><span class="no">STREQUAL</span><span class="o">:$&lt;</span><span class="no">UPPER_CASE</span><span class="o">:${</span><span class="nt">foo</span><span class="o">}&gt;</span><span class="p">,</span><span class="s">&quot;BAR&quot;</span><span class="o">&gt;</span><span class="w"> </span><span class="c"># &quot;1&quot; if ${foo} is any of &quot;BAR&quot;, &quot;Bar&quot;, &quot;bar&quot;, ...</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;EQUAL:value1,value2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">value1</span></code> and <code class="docutils literal notranslate"><span class="pre">value2</span></code> are numerically equal, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;IN_LIST:string,list&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">string</span></code> is member of the semicolon-separated <code class="docutils literal notranslate"><span class="pre">list</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+Uses case-sensitive comparisons.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;VERSION_LESS:v1,v2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">v1</span></code> is a version less than <code class="docutils literal notranslate"><span class="pre">v2</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;VERSION_GREATER:v1,v2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">v1</span></code> is a version greater than <code class="docutils literal notranslate"><span class="pre">v2</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;VERSION_EQUAL:v1,v2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">v1</span></code> is the same version as <code class="docutils literal notranslate"><span class="pre">v2</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;VERSION_LESS_EQUAL:v1,v2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">v1</span></code> is a version less than or equal to <code class="docutils literal notranslate"><span class="pre">v2</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;VERSION_GREATER_EQUAL:v1,v2&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">v1</span></code> is a version greater than or equal to <code class="docutils literal notranslate"><span class="pre">v2</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="variable-queries">
+<h3><a class="toc-backref" href="#id8">Variable Queries</a><a class="headerlink" href="#variable-queries" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_EXISTS:target&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">target</span></code> exists, else <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CONFIG:cfgs&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if config is any one of the entries in <code class="docutils literal notranslate"><span class="pre">cfgs</span></code>, else <code class="docutils literal notranslate"><span class="pre">0</span></code>. This is a
+case-insensitive comparison. The mapping in
+<span class="target" id="index-0-prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/MAP_IMPORTED_CONFIG_CONFIG.html#prop_tgt:MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;" title="MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">MAP_IMPORTED_CONFIG_&lt;CONFIG&gt;</span></code></a> is also considered by this
+expression when it is evaluated on a property on an <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a>
+target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;PLATFORM_ID:platform_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">platform_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s platform id matches any one of the entries in
+<code class="docutils literal notranslate"><span class="pre">platform_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-0-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;C_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the C compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CXX_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the CXX compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CUDA_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the CUDA compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-2-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJC_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the Objective-C compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-3-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJCXX_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the Objective-C++ compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-4-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;Fortran_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the Fortran compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-5-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;ISPC_COMPILER_ID:compiler_ids&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code> is a comma-separated list.
+<code class="docutils literal notranslate"><span class="pre">1</span></code> if the CMake’s compiler id of the ISPC compiler matches any one
+of the entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-6-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;C_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the C compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CXX_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the CXX compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-1-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CUDA_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the CXX compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-2-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJC_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the OBJC compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-3-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJCXX_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the OBJCXX compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-4-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;Fortran_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the Fortran compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-5-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;ISPC_COMPILER_VERSION:version&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the version of the ISPC compiler matches <code class="docutils literal notranslate"><span class="pre">version</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+See also the <span class="target" id="index-6-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_POLICY:policy&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> if the <code class="docutils literal notranslate"><span class="pre">policy</span></code> was NEW when the ‘head’ target was created,
+else <code class="docutils literal notranslate"><span class="pre">0</span></code>.  If the <code class="docutils literal notranslate"><span class="pre">policy</span></code> was not set, the warning message for the policy
+will be emitted. This generator expression only works for a subset of
+policies.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_FEATURES:features&gt;</span></code></dt><dd><p>where <code class="docutils literal notranslate"><span class="pre">features</span></code> is a comma-spearated list.
+Evaluates to <code class="docutils literal notranslate"><span class="pre">1</span></code> if all of the <code class="docutils literal notranslate"><span class="pre">features</span></code> are available for the ‘head’
+target, and <code class="docutils literal notranslate"><span class="pre">0</span></code> otherwise. If this expression is used while evaluating
+the link implementation of a target and if any dependency transitively
+increases the required <span class="target" id="index-0-prop_tgt:C_STANDARD"></span><a class="reference internal" href="../prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD" title="C_STANDARD"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">C_STANDARD</span></code></a> or <span class="target" id="index-0-prop_tgt:CXX_STANDARD"></span><a class="reference internal" href="../prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD" title="CXX_STANDARD"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CXX_STANDARD</span></code></a>
+for the ‘head’ target, an error is reported.  See the
+<span class="target" id="index-0-manual:cmake-compile-features(7)"></span><a class="reference internal" href="cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-compile-features(7)</span></code></a> manual for information on
+compile features and a list of supported compilers.</p>
+</dd>
+</dl>
+<dl id="boolean-compile-language-generator-expression">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANG_AND_ID:language,compiler_ids&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> when the language used for compilation unit matches <code class="docutils literal notranslate"><span class="pre">language</span></code> and
+the CMake’s compiler id of the language compiler matches any one of the
+entries in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>. This expression is a short form
+for the combination of <code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE:language&gt;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">$&lt;LANG_COMPILER_ID:compiler_ids&gt;</span></code>. This expression may be used to specify
+compile options, compile definitions, and include directories for source files of a
+particular language and compiler combination in a target. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">myapp</span><span class="w"> </span><span class="nb">main.cpp</span><span class="w"> </span><span class="nb">foo.c</span><span class="w"> </span><span class="nb">bar.cpp</span><span class="w"> </span><span class="nb">zot.cu</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANG_AND_ID</span><span class="o">:</span><span class="no">CXX</span><span class="p">,</span><span class="nb">AppleClang</span><span class="p">,</span><span class="nb">Clang</span><span class="o">&gt;:</span><span class="no">COMPILING_CXX_WITH_CLANG</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANG_AND_ID</span><span class="o">:</span><span class="no">CXX</span><span class="p">,</span><span class="nb">Intel</span><span class="o">&gt;:</span><span class="no">COMPILING_CXX_WITH_INTEL</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANG_AND_ID</span><span class="o">:</span><span class="no">C</span><span class="p">,</span><span class="nb">Clang</span><span class="o">&gt;:</span><span class="no">COMPILING_C_WITH_CLANG</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This specifies the use of different compile definitions based on both
+the compiler id and compilation language. This example will have a
+<code class="docutils literal notranslate"><span class="pre">COMPILING_CXX_WITH_CLANG</span></code> compile definition when Clang is the CXX
+compiler, and <code class="docutils literal notranslate"><span class="pre">COMPILING_CXX_WITH_INTEL</span></code> when Intel is the CXX compiler.
+Likewise when the C compiler is Clang it will only see the  <code class="docutils literal notranslate"><span class="pre">COMPILING_C_WITH_CLANG</span></code>
+definition.</p>
+<p>Without the <code class="docutils literal notranslate"><span class="pre">COMPILE_LANG_AND_ID</span></code> generator expression the same logic
+would be expressed as:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">target_compile_definitions(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">AND</span><span class="o">:$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;</span><span class="p">,</span><span class="o">$&lt;</span><span class="no">CXX_COMPILER_ID</span><span class="o">:</span><span class="nb">AppleClang</span><span class="p">,</span><span class="nb">Clang</span><span class="o">&gt;&gt;:</span><span class="no">COMPILING_CXX_WITH_CLANG</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">AND</span><span class="o">:$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;</span><span class="p">,</span><span class="o">$&lt;</span><span class="no">CXX_COMPILER_ID</span><span class="o">:</span><span class="nb">Intel</span><span class="o">&gt;&gt;:</span><span class="no">COMPILING_CXX_WITH_INTEL</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">AND</span><span class="o">:$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">C</span><span class="o">&gt;</span><span class="p">,</span><span class="o">$&lt;</span><span class="no">C_COMPILER_ID</span><span class="o">:</span><span class="nb">Clang</span><span class="o">&gt;&gt;:</span><span class="no">COMPILING_C_WITH_CLANG</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE:languages&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> when the language used for compilation unit matches any of the entries
+in <code class="docutils literal notranslate"><span class="pre">languages</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.  This expression may be used to specify
+compile options, compile definitions, and include directories for source files of a
+particular language in a target. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_executable(</span><span class="nb">myapp</span><span class="w"> </span><span class="nb">main.cpp</span><span class="w"> </span><span class="nb">foo.c</span><span class="w"> </span><span class="nb">bar.cpp</span><span class="w"> </span><span class="nb">zot.cu</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_options(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;:</span><span class="p">-</span><span class="nb">fno-exceptions</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_definitions(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;:</span><span class="no">COMPILING_CXX</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CUDA</span><span class="o">&gt;:</span><span class="no">COMPILING_CUDA</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">target_include_directories(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">COMPILE_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="p">,</span><span class="no">CUDA</span><span class="o">&gt;:</span><span class="na">/opt/foo/headers</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This specifies the use of the <code class="docutils literal notranslate"><span class="pre">-fno-exceptions</span></code> compile option,
+<code class="docutils literal notranslate"><span class="pre">COMPILING_CXX</span></code> compile definition, and <code class="docutils literal notranslate"><span class="pre">cxx_headers</span></code> include
+directory for C++ only (compiler id checks elided).  It also specifies
+a <code class="docutils literal notranslate"><span class="pre">COMPILING_CUDA</span></code> compile definition for CUDA.</p>
+<p>Note that with <a class="reference internal" href="cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> and <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> there
+is no way to represent target-wide compile definitions or include directories
+separately for <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code> languages.
+Also, with <a class="reference internal" href="cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> there is no way to represent
+target-wide flags separately for <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code> languages.  Under these
+generators, expressions for both C and C++ sources will be evaluated
+using <code class="docutils literal notranslate"><span class="pre">CXX</span></code> if there are any C++ sources and otherwise using <code class="docutils literal notranslate"><span class="pre">C</span></code>.
+A workaround is to create separate libraries for each source file language
+instead:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">myapp_c</span><span class="w"> </span><span class="nb">foo.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">myapp_cxx</span><span class="w"> </span><span class="nb">bar.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_compile_options(</span><span class="nb">myapp_cxx</span><span class="w"> </span><span class="no">PUBLIC</span><span class="w"> </span><span class="p">-</span><span class="nb">fno-exceptions</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_executable(</span><span class="nb">myapp</span><span class="w"> </span><span class="nb">main.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myapp</span><span class="w"> </span><span class="nb">myapp_c</span><span class="w"> </span><span class="nb">myapp_cxx</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<dl id="boolean-link-language-generator-expression">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANG_AND_ID:language,compiler_ids&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> when the language used for link step matches <code class="docutils literal notranslate"><span class="pre">language</span></code> and the
+CMake’s compiler id of the language linker matches any one of the entries
+in <code class="docutils literal notranslate"><span class="pre">compiler_ids</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>. This expression is a short form for the
+combination of <code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:language&gt;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">$&lt;LANG_COMPILER_ID:compiler_ids&gt;</span></code>. This expression may be used to specify
+link libraries, link options, link directories and link dependencies of a
+particular language and linker combination in a target. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">libC_Clang</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">libCXX_Clang</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">libC_Intel</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">libCXX_Intel</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">myapp</span><span class="w"> </span><span class="nb">main.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">if</span> <span class="nf">(</span><span class="no">CXX_CONFIG</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nf">target_sources(</span><span class="nb">myapp</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">file.cxx</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endif()</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myapp</span><span class="w"></span>
+<span class="w">  </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANG_AND_ID</span><span class="o">:</span><span class="no">CXX</span><span class="p">,</span><span class="nb">Clang</span><span class="p">,</span><span class="nb">AppleClang</span><span class="o">&gt;:</span><span class="nb">libCXX_Clang</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANG_AND_ID</span><span class="o">:</span><span class="no">C</span><span class="p">,</span><span class="nb">Clang</span><span class="p">,</span><span class="nb">AppleClang</span><span class="o">&gt;:</span><span class="nb">libC_Clang</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANG_AND_ID</span><span class="o">:</span><span class="no">CXX</span><span class="p">,</span><span class="nb">Intel</span><span class="o">&gt;:</span><span class="nb">libCXX_Intel</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">          </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANG_AND_ID</span><span class="o">:</span><span class="no">C</span><span class="p">,</span><span class="nb">Intel</span><span class="o">&gt;:</span><span class="nb">libC_Intel</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This specifies the use of different link libraries based on both the
+compiler id and link language. This example will have target <code class="docutils literal notranslate"><span class="pre">libCXX_Clang</span></code>
+as link dependency when <code class="docutils literal notranslate"><span class="pre">Clang</span></code> or <code class="docutils literal notranslate"><span class="pre">AppleClang</span></code> is the <code class="docutils literal notranslate"><span class="pre">CXX</span></code>
+linker, and <code class="docutils literal notranslate"><span class="pre">libCXX_Intel</span></code> when <code class="docutils literal notranslate"><span class="pre">Intel</span></code> is the <code class="docutils literal notranslate"><span class="pre">CXX</span></code> linker.
+Likewise when the <code class="docutils literal notranslate"><span class="pre">C</span></code> linker is <code class="docutils literal notranslate"><span class="pre">Clang</span></code> or <code class="docutils literal notranslate"><span class="pre">AppleClang</span></code>, target
+<code class="docutils literal notranslate"><span class="pre">libC_Clang</span></code> will be added as link dependency and <code class="docutils literal notranslate"><span class="pre">libC_Intel</span></code> when
+<code class="docutils literal notranslate"><span class="pre">Intel</span></code> is the <code class="docutils literal notranslate"><span class="pre">C</span></code> linker.</p>
+<p>See <a class="reference internal" href="#constraints-link-language-generator-expression"><span class="std std-ref">the note related to</span></a>
+<code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:language&gt;</span></code> for constraints about the usage of this
+generator expression.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:languages&gt;</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">1</span></code> when the language used for link step matches any of the entries
+in <code class="docutils literal notranslate"><span class="pre">languages</span></code>, otherwise <code class="docutils literal notranslate"><span class="pre">0</span></code>.  This expression may be used to specify
+link libraries, link options, link directories and link dependencies of a
+particular language in a target. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">api_C</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">api_CXX</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">api</span><span class="w"> </span><span class="no">INTERFACE</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_options(</span><span class="nb">api</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">C</span><span class="o">&gt;:</span><span class="p">-</span><span class="nb">opt_c</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">                                    </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;:</span><span class="p">-</span><span class="nb">opt_cxx</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">api</span><span class="w"> </span><span class="no">INTERFACE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">C</span><span class="o">&gt;:</span><span class="nb">api_C</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">                                    </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">CXX</span><span class="o">&gt;:</span><span class="nb">api_CXX</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">myapp1</span><span class="w"> </span><span class="nb">main.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_options(</span><span class="nb">myapp1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">api</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_executable(</span><span class="nb">myapp2</span><span class="w"> </span><span class="nb">main.cpp</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_options(</span><span class="nb">myapp2</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">api</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This specifies to use the <code class="docutils literal notranslate"><span class="pre">api</span></code> target for linking targets <code class="docutils literal notranslate"><span class="pre">myapp1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">myapp2</span></code>. In practice, <code class="docutils literal notranslate"><span class="pre">myapp1</span></code> will link with target <code class="docutils literal notranslate"><span class="pre">api_C</span></code> and
+option <code class="docutils literal notranslate"><span class="pre">-opt_c</span></code> because it will use <code class="docutils literal notranslate"><span class="pre">C</span></code> as link language. And <code class="docutils literal notranslate"><span class="pre">myapp2</span></code>
+will link with <code class="docutils literal notranslate"><span class="pre">api_CXX</span></code> and option <code class="docutils literal notranslate"><span class="pre">-opt_cxx</span></code> because <code class="docutils literal notranslate"><span class="pre">CXX</span></code> will be
+the link language.</p>
+<div class="admonition note" id="constraints-link-language-generator-expression">
+<p class="admonition-title">Note</p>
+<p>To determine the link language of a target, it is required to collect,
+transitively, all the targets which will be linked to it. So, for link
+libraries properties, a double evaluation will be done. During the first
+evaluation, <code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:..&gt;</span></code> expressions will always return <code class="docutils literal notranslate"><span class="pre">0</span></code>.
+The link language computed after this first pass will be used to do the
+second pass. To avoid inconsistency, it is required that the second pass
+do not change the link language. Moreover, to avoid unexpected
+side-effects, it is required to specify complete entities as part of the
+<code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:..&gt;</span></code> expression. For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">lib</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="nb">file.cxx</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">add_library(</span><span class="nb">libother</span><span class="w"> </span><span class="no">STATIC</span><span class="w"> </span><span class="nb">file.c</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># bad usage</span>
+<span class="nf">add_executable(</span><span class="nb">myapp1</span><span class="w"> </span><span class="nb">main.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myapp1</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="nb">lib</span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">C</span><span class="o">&gt;:</span><span class="nb">other</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+
+<span class="c"># correct usage</span>
+<span class="nf">add_executable(</span><span class="nb">myapp2</span><span class="w"> </span><span class="nb">main.c</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">target_link_libraries(</span><span class="nb">myapp2</span><span class="w"> </span><span class="no">PRIVATE</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">LINK_LANGUAGE</span><span class="o">:</span><span class="no">C</span><span class="o">&gt;:</span><span class="nb">libother</span><span class="o">&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this example, for <code class="docutils literal notranslate"><span class="pre">myapp1</span></code>, the first pass will, unexpectedly,
+determine that the link language is <code class="docutils literal notranslate"><span class="pre">CXX</span></code> because the evaluation of the
+generator expression will be an empty string so <code class="docutils literal notranslate"><span class="pre">myapp1</span></code> will depends on
+target <code class="docutils literal notranslate"><span class="pre">lib</span></code> which is <code class="docutils literal notranslate"><span class="pre">C++</span></code>. On the contrary, for <code class="docutils literal notranslate"><span class="pre">myapp2</span></code>, the first
+evaluation will give <code class="docutils literal notranslate"><span class="pre">C</span></code> as link language, so the second pass will
+correctly add target <code class="docutils literal notranslate"><span class="pre">libother</span></code> as link dependency.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;DEVICE_LINK:list&gt;</span></code></dt><dd><p>Returns the list if it is the device link step, an empty list otherwise.
+The device link step is controlled by <span class="target" id="index-0-prop_tgt:CUDA_SEPARABLE_COMPILATION"></span><a class="reference internal" href="../prop_tgt/CUDA_SEPARABLE_COMPILATION.html#prop_tgt:CUDA_SEPARABLE_COMPILATION" title="CUDA_SEPARABLE_COMPILATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_SEPARABLE_COMPILATION</span></code></a>
+and <span class="target" id="index-0-prop_tgt:CUDA_RESOLVE_DEVICE_SYMBOLS"></span><a class="reference internal" href="../prop_tgt/CUDA_RESOLVE_DEVICE_SYMBOLS.html#prop_tgt:CUDA_RESOLVE_DEVICE_SYMBOLS" title="CUDA_RESOLVE_DEVICE_SYMBOLS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_RESOLVE_DEVICE_SYMBOLS</span></code></a> properties and
+policy <span class="target" id="index-0-policy:CMP0105"></span><a class="reference internal" href="../policy/CMP0105.html#policy:CMP0105" title="CMP0105"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0105</span></code></a>. This expression can only be used to specify link
+options.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;HOST_LINK:list&gt;</span></code></dt><dd><p>Returns the list if it is the normal link step, an empty list otherwise.
+This expression is mainly useful when a device link step is also involved
+(see <code class="docutils literal notranslate"><span class="pre">$&lt;DEVICE_LINK:list&gt;</span></code> generator expression). This expression can only
+be used to specify link options.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="string-valued-generator-expressions">
+<h2><a class="toc-backref" href="#id9">String-Valued Generator Expressions</a><a class="headerlink" href="#string-valued-generator-expressions" title="Permalink to this headline">¶</a></h2>
+<p>These expressions expand to some string.
+For example,</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include_directories(</span><span class="na">/usr/include/</span><span class="o">$&lt;</span><span class="no">CXX_COMPILER_ID</span><span class="o">&gt;</span><span class="na">/</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>expands to <code class="docutils literal notranslate"><span class="pre">/usr/include/GNU/</span></code> or <code class="docutils literal notranslate"><span class="pre">/usr/include/Clang/</span></code> etc, depending on
+the compiler identifier.</p>
+<p>String-valued expressions may also be combined with other expressions.
+Here an example for a string-valued expression within a boolean expressions
+within a conditional expression:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="o">$&lt;$&lt;</span><span class="no">VERSION_LESS</span><span class="o">:$&lt;</span><span class="no">CXX_COMPILER_VERSION</span><span class="o">&gt;</span><span class="p">,</span><span class="m">4.2.0</span><span class="o">&gt;:</span><span class="no">OLD_COMPILER</span><span class="o">&gt;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>expands to <code class="docutils literal notranslate"><span class="pre">OLD_COMPILER</span></code> if the
+<span class="target" id="index-7-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER_VERSION</span></code></a> is less
+than 4.2.0.</p>
+<p>And here two nested string-valued expressions:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="p">-</span><span class="no">I</span><span class="o">$&lt;</span><span class="no">JOIN</span><span class="o">:$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="no">INCLUDE_DIRECTORIES</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="p">-</span><span class="no">I</span><span class="o">&gt;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>generates a string of the entries in the <span class="target" id="index-1-prop_tgt:INCLUDE_DIRECTORIES"></span><a class="reference internal" href="../prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES" title="INCLUDE_DIRECTORIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code></a> target
+property with each entry preceded by <code class="docutils literal notranslate"><span class="pre">-I</span></code>.</p>
+<p>Expanding on the previous example, if one first wants to check if the
+<code class="docutils literal notranslate"><span class="pre">INCLUDE_DIRECTORIES</span></code> property is non-empty, then it is advisable to
+introduce a helper variable to keep the code readable:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="nb">prop</span><span class="w"> </span><span class="s">&quot;$&lt;TARGET_PROPERTY:INCLUDE_DIRECTORIES&gt;&quot;</span><span class="nf">)</span><span class="w"> </span><span class="c"># helper variable</span>
+<span class="o">$&lt;$&lt;</span><span class="no">BOOL</span><span class="o">:${</span><span class="nt">prop</span><span class="o">}&gt;:</span><span class="p">-</span><span class="no">I</span><span class="o">$&lt;</span><span class="no">JOIN</span><span class="o">:${</span><span class="nt">prop</span><span class="o">}</span><span class="p">,</span><span class="w"> </span><span class="p">-</span><span class="no">I</span><span class="o">&gt;&gt;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The following string-valued generator expressions are available:</p>
+<div class="section" id="escaped-characters">
+<h3><a class="toc-backref" href="#id10">Escaped Characters</a><a class="headerlink" href="#escaped-characters" title="Permalink to this headline">¶</a></h3>
+<p>String literals to escape the special meaning a character would otherwise have:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;ANGLE-R&gt;</span></code></dt><dd><p>A literal <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>. Used for example to compare strings that contain a <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;COMMA&gt;</span></code></dt><dd><p>A literal <code class="docutils literal notranslate"><span class="pre">,</span></code>. Used for example to compare strings which contain a <code class="docutils literal notranslate"><span class="pre">,</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;SEMICOLON&gt;</span></code></dt><dd><p>A literal <code class="docutils literal notranslate"><span class="pre">;</span></code>. Used to prevent list expansion on an argument with <code class="docutils literal notranslate"><span class="pre">;</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="conditional-expressions">
+<span id="conditional-generator-expressions"></span><h3><a class="toc-backref" href="#id11">Conditional Expressions</a><a class="headerlink" href="#conditional-expressions" title="Permalink to this headline">¶</a></h3>
+<p>Conditional generator expressions depend on a boolean condition
+that must be <code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;condition:true_string&gt;</span></code></dt><dd><p>Evaluates to <code class="docutils literal notranslate"><span class="pre">true_string</span></code> if <code class="docutils literal notranslate"><span class="pre">condition</span></code> is <code class="docutils literal notranslate"><span class="pre">1</span></code>.
+Otherwise evaluates to the empty string.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;IF:condition,true_string,false_string&gt;</span></code></dt><dd><p>Evaluates to <code class="docutils literal notranslate"><span class="pre">true_string</span></code> if <code class="docutils literal notranslate"><span class="pre">condition</span></code> is <code class="docutils literal notranslate"><span class="pre">1</span></code>.
+Otherwise evaluates to <code class="docutils literal notranslate"><span class="pre">false_string</span></code>.</p>
+</dd>
+</dl>
+<p>Typically, the <code class="docutils literal notranslate"><span class="pre">condition</span></code> is a <a class="reference internal" href="#boolean-generator-expressions"><span class="std std-ref">boolean generator expression</span></a>.  For instance,</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="nb">Debug</span><span class="o">&gt;:</span><span class="no">DEBUG_MODE</span><span class="o">&gt;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>expands to <code class="docutils literal notranslate"><span class="pre">DEBUG_MODE</span></code> when the <code class="docutils literal notranslate"><span class="pre">Debug</span></code> configuration is used, and
+otherwise expands to the empty string.</p>
+</div>
+<div class="section" id="string-transformations">
+<span id="string-transforming-generator-expressions"></span><h3><a class="toc-backref" href="#id12">String Transformations</a><a class="headerlink" href="#string-transformations" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;JOIN:list,string&gt;</span></code></dt><dd><p>Joins the list with the content of <code class="docutils literal notranslate"><span class="pre">string</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;REMOVE_DUPLICATES:list&gt;</span></code></dt><dd><p>Removes duplicated items in the given <code class="docutils literal notranslate"><span class="pre">list</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;FILTER:list,INCLUDE|EXCLUDE,regex&gt;</span></code></dt><dd><p>Includes or removes items from <code class="docutils literal notranslate"><span class="pre">list</span></code> that match the regular expression <code class="docutils literal notranslate"><span class="pre">regex</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;LOWER_CASE:string&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">string</span></code> converted to lower case.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;UPPER_CASE:string&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">string</span></code> converted to upper case.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;GENEX_EVAL:expr&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">expr</span></code> evaluated as a generator expression in the current
+context. This enables consumption of generator expressions whose
+evaluation results itself in generator expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_GENEX_EVAL:tgt,expr&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">expr</span></code> evaluated as a generator expression in the context of
+<code class="docutils literal notranslate"><span class="pre">tgt</span></code> target. This enables consumption of custom target properties that
+themselves contain generator expressions.</p>
+<p>Having the capability to evaluate generator expressions is very useful when
+you want to manage custom properties supporting generator expressions.
+For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_library(</span><span class="nb">foo</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">foo</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">CUSTOM_KEYS</span><span class="w"> </span><span class="o">$&lt;$&lt;</span><span class="no">CONFIG</span><span class="o">:</span><span class="no">DEBUG</span><span class="o">&gt;:</span><span class="no">FOO_EXTRA_THINGS</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+
+<span class="nf">add_custom_target(</span><span class="nb">printFooKeys</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="nb">foo</span><span class="p">,</span><span class="no">CUSTOM_KEYS</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This naive implementation of the <code class="docutils literal notranslate"><span class="pre">printFooKeys</span></code> custom command is wrong
+because <code class="docutils literal notranslate"><span class="pre">CUSTOM_KEYS</span></code> target property is not evaluated and the content
+is passed as is (i.e. <code class="docutils literal notranslate"><span class="pre">$&lt;$&lt;CONFIG:DEBUG&gt;:FOO_EXTRA_THINGS&gt;</span></code>).</p>
+<p>To have the expected result (i.e. <code class="docutils literal notranslate"><span class="pre">FOO_EXTRA_THINGS</span></code> if config is
+<code class="docutils literal notranslate"><span class="pre">Debug</span></code>), it is required to evaluate the output of
+<code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PROPERTY:foo,CUSTOM_KEYS&gt;</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_target(</span><span class="nb">printFooKeys</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"></span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">TARGET_GENEX_EVAL</span><span class="o">:</span><span class="nb">foo</span><span class="p">,</span><span class="o">$&lt;</span><span class="no">TARGET_PROPERTY</span><span class="o">:</span><span class="nb">foo</span><span class="p">,</span><span class="no">CUSTOM_KEYS</span><span class="o">&gt;&gt;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="id2">
+<h3><a class="toc-backref" href="#id13">Variable Queries</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CONFIG&gt;</span></code></dt><dd><p>Configuration name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CONFIGURATION&gt;</span></code></dt><dd><p>Configuration name. Deprecated since CMake 3.0. Use <code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;PLATFORM_ID&gt;</span></code></dt><dd><p>The current system’s CMake platform id.
+See also the <span class="target" id="index-1-variable:CMAKE_SYSTEM_NAME"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_NAME.html#variable:CMAKE_SYSTEM_NAME" title="CMAKE_SYSTEM_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_NAME</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;C_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the C compiler used.
+See also the <span class="target" id="index-7-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CXX_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the CXX compiler used.
+See also the <span class="target" id="index-8-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CUDA_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the CUDA compiler used.
+See also the <span class="target" id="index-9-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJC_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the OBJC compiler used.
+See also the <span class="target" id="index-10-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJCXX_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the OBJCXX compiler used.
+See also the <span class="target" id="index-11-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;Fortran_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the Fortran compiler used.
+See also the <span class="target" id="index-12-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;ISPC_COMPILER_ID&gt;</span></code></dt><dd><p>The CMake’s compiler id of the ISPC compiler used.
+See also the <span class="target" id="index-13-variable:CMAKE_&lt;LANG&gt;_COMPILER_ID"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_ID.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_ID" title="CMAKE_&lt;LANG&gt;_COMPILER_ID"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_ID</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;C_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the C compiler used.
+See also the <span class="target" id="index-8-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CXX_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the CXX compiler used.
+See also the <span class="target" id="index-9-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;CUDA_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the CUDA compiler used.
+See also the <span class="target" id="index-10-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJC_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the OBJC compiler used.
+See also the <span class="target" id="index-11-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;OBJCXX_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the OBJCXX compiler used.
+See also the <span class="target" id="index-12-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;Fortran_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the Fortran compiler used.
+See also the <span class="target" id="index-13-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;ISPC_COMPILER_VERSION&gt;</span></code></dt><dd><p>The version of the ISPC compiler used.
+See also the <span class="target" id="index-14-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_COMPILER_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE&gt;</span></code></dt><dd><p>The compile language of source files when evaluating compile options.
+See <a class="reference internal" href="#boolean-compile-language-generator-expression"><span class="std std-ref">the related boolean expression</span></a>
+<code class="docutils literal notranslate"><span class="pre">$&lt;COMPILE_LANGUAGE:language&gt;</span></code>
+for notes about the portability of this generator expression.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE&gt;</span></code></dt><dd><p>The link language of target when evaluating link options.
+See <a class="reference internal" href="#boolean-link-language-generator-expression"><span class="std std-ref">the related boolean expression</span></a> <code class="docutils literal notranslate"><span class="pre">$&lt;LINK_LANGUAGE:language&gt;</span></code>
+for notes about the portability of this generator expression.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This generator expression is not supported by the link libraries
+properties to avoid side-effects due to the double evaluation of
+these properties.</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="target-dependent-queries">
+<h3><a class="toc-backref" href="#id14">Target-Dependent Queries</a><a class="headerlink" href="#target-dependent-queries" title="Permalink to this headline">¶</a></h3>
+<p>These queries refer to a target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>. This can be any runtime artifact,
+namely:</p>
+<ul class="simple">
+<li><p>an executable target created by <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a></p></li>
+<li><p>a shared library target (<code class="docutils literal notranslate"><span class="pre">.so</span></code>, <code class="docutils literal notranslate"><span class="pre">.dll</span></code> but not their <code class="docutils literal notranslate"><span class="pre">.lib</span></code> import library)
+created by <span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a></p></li>
+<li><p>a static library target created by <span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a></p></li>
+</ul>
+<p>In the following, “the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> filename” means the name of the <code class="docutils literal notranslate"><span class="pre">tgt</span></code>
+binary file. This has to be distinguished from “the target name”,
+which is just the string <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_NAME_IF_EXISTS:tgt&gt;</span></code></dt><dd><p>The target name <code class="docutils literal notranslate"><span class="pre">tgt</span></code> if the target exists, an empty string otherwise.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE:tgt&gt;</span></code></dt><dd><p>Full path to the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> binary file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_BASE_NAME:tgt&gt;</span></code></dt><dd><p>Base name of <code class="docutils literal notranslate"><span class="pre">tgt</span></code>, i.e. <code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_NAME:tgt&gt;</span></code> without prefix and
+suffix.
+For example, if the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> filename is <code class="docutils literal notranslate"><span class="pre">libbase.so</span></code>, the base name is <code class="docutils literal notranslate"><span class="pre">base</span></code>.</p>
+<p>See also the <span class="target" id="index-0-prop_tgt:OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/OUTPUT_NAME.html#prop_tgt:OUTPUT_NAME" title="OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">OUTPUT_NAME</span></code></a>, <span class="target" id="index-0-prop_tgt:ARCHIVE_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_NAME.html#prop_tgt:ARCHIVE_OUTPUT_NAME" title="ARCHIVE_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_NAME</span></code></a>,
+<span class="target" id="index-0-prop_tgt:LIBRARY_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_NAME.html#prop_tgt:LIBRARY_OUTPUT_NAME" title="LIBRARY_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_NAME</span></code></a> and <span class="target" id="index-0-prop_tgt:RUNTIME_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/RUNTIME_OUTPUT_NAME.html#prop_tgt:RUNTIME_OUTPUT_NAME" title="RUNTIME_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RUNTIME_OUTPUT_NAME</span></code></a>
+target properties and their configuration specific variants
+<span class="target" id="index-0-prop_tgt:OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/OUTPUT_NAME_CONFIG.html#prop_tgt:OUTPUT_NAME_&lt;CONFIG&gt;" title="OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a>, <span class="target" id="index-0-prop_tgt:ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_NAME_CONFIG.html#prop_tgt:ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;" title="ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a>,
+<span class="target" id="index-0-prop_tgt:LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_NAME_CONFIG.html#prop_tgt:LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;" title="LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a> and
+<span class="target" id="index-0-prop_tgt:RUNTIME_OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/RUNTIME_OUTPUT_NAME_CONFIG.html#prop_tgt:RUNTIME_OUTPUT_NAME_&lt;CONFIG&gt;" title="RUNTIME_OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">RUNTIME_OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a>.</p>
+<p>The <span class="target" id="index-0-prop_tgt:&lt;CONFIG&gt;_POSTFIX"></span><a class="reference internal" href="../prop_tgt/CONFIG_POSTFIX.html#prop_tgt:&lt;CONFIG&gt;_POSTFIX" title="&lt;CONFIG&gt;_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;_POSTFIX</span></code></a> and <span class="target" id="index-0-prop_tgt:DEBUG_POSTFIX"></span><a class="reference internal" href="../prop_tgt/DEBUG_POSTFIX.html#prop_tgt:DEBUG_POSTFIX" title="DEBUG_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DEBUG_POSTFIX</span></code></a> target
+properties can also be considered.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_PREFIX:tgt&gt;</span></code></dt><dd><p>Prefix of the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> filename (such as <code class="docutils literal notranslate"><span class="pre">lib</span></code>).</p>
+<p>See also the <span class="target" id="index-0-prop_tgt:PREFIX"></span><a class="reference internal" href="../prop_tgt/PREFIX.html#prop_tgt:PREFIX" title="PREFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PREFIX</span></code></a> target property.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_SUFFIX:tgt&gt;</span></code></dt><dd><p>Suffix of the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> filename (extension such as <code class="docutils literal notranslate"><span class="pre">.so</span></code> or <code class="docutils literal notranslate"><span class="pre">.exe</span></code>).</p>
+<p>See also the <span class="target" id="index-0-prop_tgt:SUFFIX"></span><a class="reference internal" href="../prop_tgt/SUFFIX.html#prop_tgt:SUFFIX" title="SUFFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SUFFIX</span></code></a> target property.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_NAME:tgt&gt;</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">tgt</span></code> filename.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-0-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_FILE_DIR:tgt&gt;</span></code></dt><dd><p>Directory of the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> binary file.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-1-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE:tgt&gt;</span></code></dt><dd><p>File used when linking to the <code class="docutils literal notranslate"><span class="pre">tgt</span></code> target.  This will usually
+be the library that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> represents (<code class="docutils literal notranslate"><span class="pre">.a</span></code>, <code class="docutils literal notranslate"><span class="pre">.lib</span></code>, <code class="docutils literal notranslate"><span class="pre">.so</span></code>),
+but for a shared library on DLL platforms, it would be the <code class="docutils literal notranslate"><span class="pre">.lib</span></code>
+import library associated with the DLL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_BASE_NAME:tgt&gt;</span></code></dt><dd><p>Base name of file used to link the target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>, i.e.
+<code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_NAME:tgt&gt;</span></code> without prefix and suffix. For example,
+if target file name is <code class="docutils literal notranslate"><span class="pre">libbase.a</span></code>, the base name is <code class="docutils literal notranslate"><span class="pre">base</span></code>.</p>
+<p>See also the <span class="target" id="index-1-prop_tgt:OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/OUTPUT_NAME.html#prop_tgt:OUTPUT_NAME" title="OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">OUTPUT_NAME</span></code></a>, <span class="target" id="index-1-prop_tgt:ARCHIVE_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_NAME.html#prop_tgt:ARCHIVE_OUTPUT_NAME" title="ARCHIVE_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_NAME</span></code></a>,
+and <span class="target" id="index-1-prop_tgt:LIBRARY_OUTPUT_NAME"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_NAME.html#prop_tgt:LIBRARY_OUTPUT_NAME" title="LIBRARY_OUTPUT_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_NAME</span></code></a> target properties and their configuration
+specific variants <span class="target" id="index-1-prop_tgt:OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/OUTPUT_NAME_CONFIG.html#prop_tgt:OUTPUT_NAME_&lt;CONFIG&gt;" title="OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a>,
+<span class="target" id="index-1-prop_tgt:ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/ARCHIVE_OUTPUT_NAME_CONFIG.html#prop_tgt:ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;" title="ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">ARCHIVE_OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a> and
+<span class="target" id="index-1-prop_tgt:LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/LIBRARY_OUTPUT_NAME_CONFIG.html#prop_tgt:LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;" title="LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LIBRARY_OUTPUT_NAME_&lt;CONFIG&gt;</span></code></a>.</p>
+<p>The <span class="target" id="index-1-prop_tgt:&lt;CONFIG&gt;_POSTFIX"></span><a class="reference internal" href="../prop_tgt/CONFIG_POSTFIX.html#prop_tgt:&lt;CONFIG&gt;_POSTFIX" title="&lt;CONFIG&gt;_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;_POSTFIX</span></code></a> and <span class="target" id="index-1-prop_tgt:DEBUG_POSTFIX"></span><a class="reference internal" href="../prop_tgt/DEBUG_POSTFIX.html#prop_tgt:DEBUG_POSTFIX" title="DEBUG_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DEBUG_POSTFIX</span></code></a> target
+properties can also be considered.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_PREFIX:tgt&gt;</span></code></dt><dd><p>Prefix of file used to link target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<p>See also the <span class="target" id="index-1-prop_tgt:PREFIX"></span><a class="reference internal" href="../prop_tgt/PREFIX.html#prop_tgt:PREFIX" title="PREFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PREFIX</span></code></a> and <span class="target" id="index-0-prop_tgt:IMPORT_PREFIX"></span><a class="reference internal" href="../prop_tgt/IMPORT_PREFIX.html#prop_tgt:IMPORT_PREFIX" title="IMPORT_PREFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORT_PREFIX</span></code></a> target
+properties.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_SUFFIX:tgt&gt;</span></code></dt><dd><p>Suffix of file used to link where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a target.</p>
+<p>The suffix corresponds to the file extension (such as “.so” or “.lib”).</p>
+<p>See also the <span class="target" id="index-1-prop_tgt:SUFFIX"></span><a class="reference internal" href="../prop_tgt/SUFFIX.html#prop_tgt:SUFFIX" title="SUFFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">SUFFIX</span></code></a> and <span class="target" id="index-0-prop_tgt:IMPORT_SUFFIX"></span><a class="reference internal" href="../prop_tgt/IMPORT_SUFFIX.html#prop_tgt:IMPORT_SUFFIX" title="IMPORT_SUFFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORT_SUFFIX</span></code></a> target
+properties.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_NAME:tgt&gt;</span></code></dt><dd><p>Name of file used to link target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-2-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_LINKER_FILE_DIR:tgt&gt;</span></code></dt><dd><p>Directory of file used to link target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-3-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_SONAME_FILE:tgt&gt;</span></code></dt><dd><p>File with soname (<code class="docutils literal notranslate"><span class="pre">.so.3</span></code>) where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_SONAME_FILE_NAME:tgt&gt;</span></code></dt><dd><p>Name of file with soname (<code class="docutils literal notranslate"><span class="pre">.so.3</span></code>).</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-4-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_SONAME_FILE_DIR:tgt&gt;</span></code></dt><dd><p>Directory of with soname (<code class="docutils literal notranslate"><span class="pre">.so.3</span></code>).</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-5-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PDB_FILE:tgt&gt;</span></code></dt><dd><p>Full path to the linker generated program database file (.pdb)
+where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a target.</p>
+<p>See also the <span class="target" id="index-0-prop_tgt:PDB_NAME"></span><a class="reference internal" href="../prop_tgt/PDB_NAME.html#prop_tgt:PDB_NAME" title="PDB_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_NAME</span></code></a> and <span class="target" id="index-0-prop_tgt:PDB_OUTPUT_DIRECTORY"></span><a class="reference internal" href="../prop_tgt/PDB_OUTPUT_DIRECTORY.html#prop_tgt:PDB_OUTPUT_DIRECTORY" title="PDB_OUTPUT_DIRECTORY"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_OUTPUT_DIRECTORY</span></code></a>
+target properties and their configuration specific variants
+<span class="target" id="index-0-prop_tgt:PDB_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/PDB_NAME_CONFIG.html#prop_tgt:PDB_NAME_&lt;CONFIG&gt;" title="PDB_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_NAME_&lt;CONFIG&gt;</span></code></a> and <span class="target" id="index-0-prop_tgt:PDB_OUTPUT_DIRECTORY_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/PDB_OUTPUT_DIRECTORY_CONFIG.html#prop_tgt:PDB_OUTPUT_DIRECTORY_&lt;CONFIG&gt;" title="PDB_OUTPUT_DIRECTORY_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_OUTPUT_DIRECTORY_&lt;CONFIG&gt;</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PDB_FILE_BASE_NAME:tgt&gt;</span></code></dt><dd><p>Base name of the linker generated program database file (.pdb)
+where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a target.</p>
+<p>The base name corresponds to the target PDB file name (see
+<code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PDB_FILE_NAME:tgt&gt;</span></code>) without prefix and suffix. For example,
+if target file name is <code class="docutils literal notranslate"><span class="pre">base.pdb</span></code>, the base name is <code class="docutils literal notranslate"><span class="pre">base</span></code>.</p>
+<p>See also the <span class="target" id="index-1-prop_tgt:PDB_NAME"></span><a class="reference internal" href="../prop_tgt/PDB_NAME.html#prop_tgt:PDB_NAME" title="PDB_NAME"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_NAME</span></code></a> target property and its configuration
+specific variant <span class="target" id="index-1-prop_tgt:PDB_NAME_&lt;CONFIG&gt;"></span><a class="reference internal" href="../prop_tgt/PDB_NAME_CONFIG.html#prop_tgt:PDB_NAME_&lt;CONFIG&gt;" title="PDB_NAME_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PDB_NAME_&lt;CONFIG&gt;</span></code></a>.</p>
+<p>The <span class="target" id="index-2-prop_tgt:&lt;CONFIG&gt;_POSTFIX"></span><a class="reference internal" href="../prop_tgt/CONFIG_POSTFIX.html#prop_tgt:&lt;CONFIG&gt;_POSTFIX" title="&lt;CONFIG&gt;_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;CONFIG&gt;_POSTFIX</span></code></a> and <span class="target" id="index-2-prop_tgt:DEBUG_POSTFIX"></span><a class="reference internal" href="../prop_tgt/DEBUG_POSTFIX.html#prop_tgt:DEBUG_POSTFIX" title="DEBUG_POSTFIX"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">DEBUG_POSTFIX</span></code></a> target
+properties can also be considered.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PDB_FILE_NAME:tgt&gt;</span></code></dt><dd><p>Name of the linker generated program database file (.pdb).</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-6-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PDB_FILE_DIR:tgt&gt;</span></code></dt><dd><p>Directory of the linker generated program database file (.pdb).</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-7-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_BUNDLE_DIR:tgt&gt;</span></code></dt><dd><p>Full path to the bundle directory (<code class="docutils literal notranslate"><span class="pre">my.app</span></code>, <code class="docutils literal notranslate"><span class="pre">my.framework</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">my.bundle</span></code>) where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a target.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-8-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_BUNDLE_CONTENT_DIR:tgt&gt;</span></code></dt><dd><p>Full path to the bundle content directory where <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is the name of a
+target. For the macOS SDK it leads to <code class="docutils literal notranslate"><span class="pre">my.app/Contents</span></code>, <code class="docutils literal notranslate"><span class="pre">my.framework</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">my.bundle/Contents</span></code>. For all other SDKs (e.g. iOS) it leads to
+<code class="docutils literal notranslate"><span class="pre">my.app</span></code>, <code class="docutils literal notranslate"><span class="pre">my.framework</span></code>, or <code class="docutils literal notranslate"><span class="pre">my.bundle</span></code> due to the flat bundle
+structure.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on (see policy <span class="target" id="index-9-policy:CMP0112"></span><a class="reference internal" href="../policy/CMP0112.html#policy:CMP0112" title="CMP0112"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0112</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PROPERTY:tgt,prop&gt;</span></code></dt><dd><p>Value of the property <code class="docutils literal notranslate"><span class="pre">prop</span></code> on the target <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">tgt</span></code> is not added as a dependency of the target this
+expression is evaluated on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_PROPERTY:prop&gt;</span></code></dt><dd><p>Value of the property <code class="docutils literal notranslate"><span class="pre">prop</span></code> on the target for which the expression
+is being evaluated. Note that for generator expressions in
+<a class="reference internal" href="cmake-buildsystem.7.html#target-usage-requirements"><span class="std std-ref">Transitive Usage Requirements</span></a> this is the consuming target rather
+than the target specifying the requirement.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;INSTALL_PREFIX&gt;</span></code></dt><dd><p>Content of the install prefix when the target is exported via
+<span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a>, or when evaluated in
+<span class="target" id="index-0-prop_tgt:INSTALL_NAME_DIR"></span><a class="reference internal" href="../prop_tgt/INSTALL_NAME_DIR.html#prop_tgt:INSTALL_NAME_DIR" title="INSTALL_NAME_DIR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INSTALL_NAME_DIR</span></code></a>, and empty otherwise.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="output-related-expressions">
+<h3><a class="toc-backref" href="#id15">Output-Related Expressions</a><a class="headerlink" href="#output-related-expressions" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_NAME:...&gt;</span></code></dt><dd><p>Marks <code class="docutils literal notranslate"><span class="pre">...</span></code> as being the name of a target.  This is required if exporting
+targets to multiple dependent export sets.  The <code class="docutils literal notranslate"><span class="pre">...</span></code> must be a literal
+name of a target- it may not contain generator expressions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;LINK_ONLY:...&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">...</span></code> except when evaluated in a link interface while
+propagating <a class="reference internal" href="cmake-buildsystem.7.html#target-usage-requirements"><span class="std std-ref">Transitive Usage Requirements</span></a>, in which case it is the
+empty string.
+Intended for use only in an <span class="target" id="index-0-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a> target
+property, perhaps via the <span class="target" id="index-1-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command,
+to specify private link dependencies without other usage requirements.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;INSTALL_INTERFACE:...&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">...</span></code> when the property is exported using <span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a>,
+and empty otherwise.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;BUILD_INTERFACE:...&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">...</span></code> when the property is exported using <span class="target" id="index-0-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a>, or
+when the target is used by another target in the same buildsystem. Expands to
+the empty string otherwise.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;MAKE_C_IDENTIFIER:...&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">...</span></code> converted to a C identifier.  The conversion follows the
+same behavior as <span class="target" id="index-0-command:string"></span><a class="reference internal" href="../command/string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string(MAKE_C_IDENTIFIER)</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;TARGET_OBJECTS:objLib&gt;</span></code></dt><dd><p>List of objects resulting from build of <code class="docutils literal notranslate"><span class="pre">objLib</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">$&lt;SHELL_PATH:...&gt;</span></code></dt><dd><p>Content of <code class="docutils literal notranslate"><span class="pre">...</span></code> converted to shell path style. For example, slashes are
+converted to backslashes in Windows shells and drive letters are converted
+to posix paths in MSYS shells. The <code class="docutils literal notranslate"><span class="pre">...</span></code> must be an absolute path.
+The <code class="docutils literal notranslate"><span class="pre">...</span></code> may be a <a class="reference internal" href="cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a>
+of paths, in which case each path is converted individually and a result
+list is generated using the shell path separator (<code class="docutils literal notranslate"><span class="pre">:</span></code> on POSIX and
+<code class="docutils literal notranslate"><span class="pre">;</span></code> on Windows).  Be sure to enclose the argument containing this genex
+in double quotes in CMake source code so that <code class="docutils literal notranslate"><span class="pre">;</span></code> does not split arguments.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="debugging">
+<h2><a class="toc-backref" href="#id16">Debugging</a><a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<p>Since generator expressions are evaluated during generation of the buildsystem,
+and not during processing of <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files, it is not possible to
+inspect their result with the <span class="target" id="index-0-command:message"></span><a class="reference internal" href="../command/message.html#command:message" title="message"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">message()</span></code></a> command.</p>
+<p>One possible way to generate debug messages is to add a custom target,</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_custom_target(</span><span class="nb">genexdebug</span><span class="w"> </span><span class="no">COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;$&lt;...&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The shell command <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">genexdebug</span></code> (invoked after execution of <code class="docutils literal notranslate"><span class="pre">cmake</span></code>)
+would then print the result of <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.</p>
+<p>Another way is to write debug messages to a file:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">file(</span><span class="no">GENERATE</span><span class="w"> </span><span class="no">OUTPUT</span><span class="w"> </span><span class="nb">filename</span><span class="w"> </span><span class="no">CONTENT</span><span class="w"> </span><span class="s">&quot;$&lt;...&gt;&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-generator-expressions(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#boolean-generator-expressions">Boolean Generator Expressions</a><ul>
+<li><a class="reference internal" href="#logical-operators">Logical Operators</a></li>
+<li><a class="reference internal" href="#string-comparisons">String Comparisons</a></li>
+<li><a class="reference internal" href="#variable-queries">Variable Queries</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#string-valued-generator-expressions">String-Valued Generator Expressions</a><ul>
+<li><a class="reference internal" href="#escaped-characters">Escaped Characters</a></li>
+<li><a class="reference internal" href="#conditional-expressions">Conditional Expressions</a></li>
+<li><a class="reference internal" href="#string-transformations">String Transformations</a></li>
+<li><a class="reference internal" href="#id2">Variable Queries</a></li>
+<li><a class="reference internal" href="#target-dependent-queries">Target-Dependent Queries</a></li>
+<li><a class="reference internal" href="#output-related-expressions">Output-Related Expressions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#debugging">Debugging</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake-file-api.7.html"
+                        title="previous chapter">cmake-file-api(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-generators.7.html"
+                        title="next chapter">cmake-generators(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-generator-expressions.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-generators.7.html" title="cmake-generators(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake-file-api.7.html" title="cmake-file-api(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-generator-expressions(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

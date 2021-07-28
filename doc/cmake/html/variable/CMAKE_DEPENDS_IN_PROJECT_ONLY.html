@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_DEPENDS_IN_PROJECT_ONLY &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_DISABLE_FIND_PACKAGE_&lt;PackageName&gt;" href="CMAKE_DISABLE_FIND_PACKAGE_PackageName.html" />
+    <link rel="prev" title="CMAKE_CONFIGURATION_TYPES" href="CMAKE_CONFIGURATION_TYPES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_DISABLE_FIND_PACKAGE_PackageName.html" title="CMAKE_DISABLE_FIND_PACKAGE_&lt;PackageName&gt;"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CONFIGURATION_TYPES.html" title="CMAKE_CONFIGURATION_TYPES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_DEPENDS_IN_PROJECT_ONLY</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-depends-in-project-only">
+<span id="variable:CMAKE_DEPENDS_IN_PROJECT_ONLY"></span><h1>CMAKE_DEPENDS_IN_PROJECT_ONLY<a class="headerlink" href="#cmake-depends-in-project-only" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.6.</span></p>
+</div>
+<p>When set to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> in a directory, the build system produced by the
+<a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> is set up to only consider dependencies on source
+files that appear either in the source or in the binary directories.  Changes
+to source files outside of these directories will not cause rebuilds.</p>
+<p>This should be used carefully in cases where some source files are picked up
+through external headers during the build.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_CONFIGURATION_TYPES.html"
+                        title="previous chapter">CMAKE_CONFIGURATION_TYPES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_DISABLE_FIND_PACKAGE_PackageName.html"
+                        title="next chapter">CMAKE_DISABLE_FIND_PACKAGE_&lt;PackageName&gt;</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_DEPENDS_IN_PROJECT_ONLY.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_DISABLE_FIND_PACKAGE_PackageName.html" title="CMAKE_DISABLE_FIND_PACKAGE_&lt;PackageName&gt;"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CONFIGURATION_TYPES.html" title="CMAKE_CONFIGURATION_TYPES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_DEPENDS_IN_PROJECT_ONLY</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,543 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-presets(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-properties(7)" href="cmake-properties.7.html" />
+    <link rel="prev" title="CMP0000" href="../policy/CMP0000.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-properties.7.html" title="cmake-properties(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../policy/CMP0000.html" title="CMP0000"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-presets(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-presets(7)"></span><div class="section" id="cmake-presets-7">
+<h1><a class="toc-backref" href="#id1">cmake-presets(7)</a><a class="headerlink" href="#cmake-presets-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-presets-7" id="id1">cmake-presets(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#format" id="id3">Format</a></p></li>
+<li><p><a class="reference internal" href="#schema" id="id4">Schema</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>One problem that CMake users often face is sharing settings with other people
+for common ways to configure a project. This may be done to support CI builds,
+or for users who frequently use the same build. CMake supports two files,
+<code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> and <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>, that allow users to
+specify common configure options and share them with others.</p>
+<p><code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> and <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> live in the project’s root
+directory. They both have exactly the same format, and both are optional
+(though at least one must be present if <code class="docutils literal notranslate"><span class="pre">--preset</span></code> is specified.)
+<code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> is meant to save project-wide builds, while
+<code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> is meant for developers to save their own local
+builds. <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> may be checked into a version control system, and
+<code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> should NOT be checked in. For example, if a project
+is using Git, <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> may be tracked, and
+<code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> should be added to the <code class="docutils literal notranslate"><span class="pre">.gitignore</span></code>.</p>
+</div>
+<div class="section" id="format">
+<h2><a class="toc-backref" href="#id3">Format</a><a class="headerlink" href="#format" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>The files are a JSON document with an object as the root:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;cmakeMinimumRequired&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+    <span class="nt">&quot;patch&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;configurePresets&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;displayName&quot;</span><span class="p">:</span> <span class="s2">&quot;Default Config&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Default build using Ninja generator&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;generator&quot;</span><span class="p">:</span> <span class="s2">&quot;Ninja&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;binaryDir&quot;</span><span class="p">:</span> <span class="s2">&quot;${sourceDir}/build/default&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;cacheVariables&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;FIRST_CACHE_VARIABLE&quot;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;BOOL&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;SECOND_CACHE_VARIABLE&quot;</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span>
+      <span class="p">},</span>
+      <span class="nt">&quot;environment&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;MY_ENVIRONMENT_VARIABLE&quot;</span><span class="p">:</span> <span class="s2">&quot;Test&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;PATH&quot;</span><span class="p">:</span> <span class="s2">&quot;$env{HOME}/ninja/bin:$penv{PATH}&quot;</span>
+      <span class="p">},</span>
+      <span class="nt">&quot;vendor&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;example.com/ExampleIDE/1.0&quot;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="nt">&quot;autoFormat&quot;</span><span class="p">:</span> <span class="kc">true</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ninja-multi&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;inherits&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;displayName&quot;</span><span class="p">:</span> <span class="s2">&quot;Ninja Multi-Config&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Default build using Ninja Multi-Config generator&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;generator&quot;</span><span class="p">:</span> <span class="s2">&quot;Ninja Multi-Config&quot;</span>
+    <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;vendor&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;example.com/ExampleIDE/1.0&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;autoFormat&quot;</span><span class="p">:</span> <span class="kc">false</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The root object recognizes the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">version</span></code></p>
+<blockquote>
+<div><p>A required integer representing the version of the JSON schema. Currently,
+the only supported version is 1.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">cmakeMinimumRequired</span></code></p>
+<blockquote>
+<div><p>An optional object representing the minimum version of CMake needed to
+build this project. This object consists of the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">major</span></code></p>
+<blockquote>
+<div><p>An optional integer representing the major version.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">minor</span></code></p>
+<blockquote>
+<div><p>An optional integer representing the minor version.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">patch</span></code></p>
+<blockquote>
+<div><p>An optional integer representing the patch version.</p>
+</div></blockquote>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">vendor</span></code></p>
+<blockquote>
+<div><p>An optional map containing vendor-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map if
+it does exist. However, the keys should be a vendor-specific domain name
+followed by a <code class="docutils literal notranslate"><span class="pre">/</span></code>-separated path. For example, the Example IDE 1.0 could
+use <code class="docutils literal notranslate"><span class="pre">example.com/ExampleIDE/1.0</span></code>. The value of each field can be anything
+desired by the vendor, though will typically be a map.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">configurePresets</span></code></p>
+<blockquote>
+<div><p>An optional array of configure preset objects. Each preset may contain the
+following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code></p>
+<blockquote>
+<div><p>A required string representing the machine-friendly name of the preset.
+This identifier is used in the <code class="docutils literal notranslate"><span class="pre">--preset</span></code> argument. There must not be
+two presets in the union of <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> and
+<code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> in the same directory with the same name.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">hidden</span></code></p>
+<blockquote>
+<div><p>An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the <code class="docutils literal notranslate"><span class="pre">--preset=</span></code> argument,
+will not show up in the <span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">GUI</span></code></a>, and does not
+have to have a valid <code class="docutils literal notranslate"><span class="pre">generator</span></code> or <code class="docutils literal notranslate"><span class="pre">binaryDir</span></code>, even from
+inheritance. <code class="docutils literal notranslate"><span class="pre">hidden</span></code> presets are intended to be used as a base for
+other presets to inherit via the <code class="docutils literal notranslate"><span class="pre">inherits</span></code> field.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">inherits</span></code></p>
+<blockquote>
+<div><p>An optional array of strings representing the names of presets to inherit
+from. The preset will inherit all of the fields from the <code class="docutils literal notranslate"><span class="pre">inherits</span></code>
+presets by default (except <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">hidden</span></code>, <code class="docutils literal notranslate"><span class="pre">inherits</span></code>,
+<code class="docutils literal notranslate"><span class="pre">description</span></code>, and <code class="docutils literal notranslate"><span class="pre">displayName</span></code>), but can override them as
+desired. If multiple <code class="docutils literal notranslate"><span class="pre">inherits</span></code> presets provide conflicting values for
+the same field, the earlier preset in the <code class="docutils literal notranslate"><span class="pre">inherits</span></code> list will be
+preferred. Presets in <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> may not inherit from presets
+in <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>.</p>
+<p>This field can also be a string, which is equivalent to an array
+containing one string.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">vendor</span></code></p>
+<blockquote>
+<div><p>An optional map containing vendor-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root-level <code class="docutils literal notranslate"><span class="pre">vendor</span></code> field. If vendors use their own per-preset
+<code class="docutils literal notranslate"><span class="pre">vendor</span></code> field, they should implement inheritance in a sensible manner
+when appropriate.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">displayName</span></code></p>
+<blockquote>
+<div><p>An optional string with a human-friendly name of the preset.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">description</span></code></p>
+<blockquote>
+<div><p>An optional string with a human-friendly description of the preset.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">generator</span></code></p>
+<blockquote>
+<div><p>An optional string representing the generator to use for the preset. If
+<code class="docutils literal notranslate"><span class="pre">generator</span></code> is not specified, it must be inherited from the
+<code class="docutils literal notranslate"><span class="pre">inherits</span></code> preset (unless this preset is <code class="docutils literal notranslate"><span class="pre">hidden</span></code>).</p>
+<p>Note that for Visual Studio generators, unlike in the command line <code class="docutils literal notranslate"><span class="pre">-G</span></code>
+argument, you cannot include the platform name in the generator name. Use
+the <code class="docutils literal notranslate"><span class="pre">architecture</span></code> field instead.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">architecture</span></code>
+<code class="docutils literal notranslate"><span class="pre">toolset</span></code></p>
+<blockquote>
+<div><p>Optional fields representing the platform and toolset, respectively, for
+generators that support them. Each may be either a string or an object
+with the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">value</span></code></p>
+<blockquote>
+<div><p>An optional string representing the value.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">strategy</span></code></p>
+<blockquote>
+<div><p>An optional string telling CMake how to handle the <code class="docutils literal notranslate"><span class="pre">architecture</span></code> or
+<code class="docutils literal notranslate"><span class="pre">toolset</span></code> field. Valid values are:</p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;set&quot;</span></code></p>
+<blockquote>
+<div><p>Set the respective value. This will result in an error for generators
+that do not support the respective field.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;external&quot;</span></code></p>
+<blockquote>
+<div><p>Do not set the value, even if the generator supports it. This is
+useful if, for example, a preset uses the Ninja generator, and an IDE
+knows how to set up the Visual C++ environment from the
+<code class="docutils literal notranslate"><span class="pre">architecture</span></code> and <code class="docutils literal notranslate"><span class="pre">toolset</span></code> fields. In that case, CMake will
+ignore the field, but the IDE can use them to set up the environment
+before invoking CMake.</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">binaryDir</span></code></p>
+<blockquote>
+<div><p>An optional string representing the path to the output binary directory.
+This field supports macro expansion. If a relative path is specified, it
+is calculated relative to the source directory. If <code class="docutils literal notranslate"><span class="pre">binaryDir</span></code> is not
+specified, it must be inherited from the <code class="docutils literal notranslate"><span class="pre">inherits</span></code> preset (unless this
+preset is <code class="docutils literal notranslate"><span class="pre">hidden</span></code>).</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">cmakeExecutable</span></code></p>
+<blockquote>
+<div><p>An optional string representing the path to the CMake executable to use
+for this preset. This is reserved for use by IDEs, and is not used by
+CMake itself. IDEs that use this field should expand any macros in it.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">cacheVariables</span></code></p>
+<blockquote>
+<div><p>An optional map of cache variables. The key is the variable name (which
+may not be an empty string), and the value is either <code class="docutils literal notranslate"><span class="pre">null</span></code>, a boolean
+(which is equivalent to a value of <code class="docutils literal notranslate"><span class="pre">&quot;TRUE&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;FALSE&quot;</span></code> and a type
+of <code class="docutils literal notranslate"><span class="pre">BOOL</span></code>), a string representing the value of the variable (which
+supports macro expansion), or an object with the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">type</span></code></p>
+<blockquote>
+<div><p>An optional string representing the type of the variable.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">value</span></code></p>
+<blockquote>
+<div><p>A required string or boolean representing the value of the variable.
+A boolean is equivalent to <code class="docutils literal notranslate"><span class="pre">&quot;TRUE&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;FALSE&quot;</span></code>. This field
+supports macro expansion.</p>
+</div></blockquote>
+<p>Cache variables are inherited through the <code class="docutils literal notranslate"><span class="pre">inherits</span></code> field, and the
+preset’s variables will be the union of its own <code class="docutils literal notranslate"><span class="pre">cacheVariables</span></code> and
+the <code class="docutils literal notranslate"><span class="pre">cacheVariables</span></code> from all its parents. If multiple presets in this
+union define the same variable, the standard rules of <code class="docutils literal notranslate"><span class="pre">inherits</span></code> are
+applied. Setting a variable to <code class="docutils literal notranslate"><span class="pre">null</span></code> causes it to not be set, even if
+a value was inherited from another preset.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">environment</span></code></p>
+<blockquote>
+<div><p>An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either <code class="docutils literal notranslate"><span class="pre">null</span></code> or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process’s
+environment. This field supports macro expansion, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example,
+if <code class="docutils literal notranslate"><span class="pre">ENV_1</span></code> is <code class="docutils literal notranslate"><span class="pre">$env{ENV_2}</span></code>, <code class="docutils literal notranslate"><span class="pre">ENV_2</span></code> may not be <code class="docutils literal notranslate"><span class="pre">$env{ENV_1}</span></code>.)</p>
+<p>Environment variables are inherited through the <code class="docutils literal notranslate"><span class="pre">inherits</span></code> field, and
+the preset’s environment will be the union of its own <code class="docutils literal notranslate"><span class="pre">environment</span></code> and
+the <code class="docutils literal notranslate"><span class="pre">environment</span></code> from all its parents. If multiple presets in this
+union define the same variable, the standard rules of <code class="docutils literal notranslate"><span class="pre">inherits</span></code> are
+applied. Setting a variable to <code class="docutils literal notranslate"><span class="pre">null</span></code> causes it to not be set, even if
+a value was inherited from another preset.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">warnings</span></code></p>
+<blockquote>
+<div><p>An optional object specifying the warnings to enable. The object may
+contain the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">dev</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Equivalent to passing <code class="docutils literal notranslate"><span class="pre">-Wdev</span></code> or <code class="docutils literal notranslate"><span class="pre">-Wno-dev</span></code>
+on the command line. This may not be set to <code class="docutils literal notranslate"><span class="pre">false</span></code> if <code class="docutils literal notranslate"><span class="pre">errors.dev</span></code>
+is set to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">deprecated</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Equivalent to passing <code class="docutils literal notranslate"><span class="pre">-Wdeprecated</span></code> or
+<code class="docutils literal notranslate"><span class="pre">-Wno-deprecated</span></code> on the command line. This may not be set to
+<code class="docutils literal notranslate"><span class="pre">false</span></code> if <code class="docutils literal notranslate"><span class="pre">errors.deprecated</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">uninitialized</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">true</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--warn-uninitialized</span></code> on the command line.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">unusedCli</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">false</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--no-warn-unused-cli</span></code> on the command line.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">systemVars</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">true</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--check-system-vars</span></code> on the command line.</p>
+</div></blockquote>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">errors</span></code></p>
+<blockquote>
+<div><p>An optional object specifying the errors to enable. The object may
+contain the following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">dev</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Equivalent to passing <code class="docutils literal notranslate"><span class="pre">-Werror=dev</span></code> or
+<code class="docutils literal notranslate"><span class="pre">-Wno-error=dev</span></code> on the command line. This may not be set to <code class="docutils literal notranslate"><span class="pre">true</span></code>
+if <code class="docutils literal notranslate"><span class="pre">warnings.dev</span></code> is set to <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">deprecated</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Equivalent to passing <code class="docutils literal notranslate"><span class="pre">-Werror=deprecated</span></code> or
+<code class="docutils literal notranslate"><span class="pre">-Wno-error=deprecated</span></code> on the command line. This may not be set to
+<code class="docutils literal notranslate"><span class="pre">true</span></code> if <code class="docutils literal notranslate"><span class="pre">warnings.deprecated</span></code> is set to <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
+</div></blockquote>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">debug</span></code></p>
+<blockquote>
+<div><p>An optional object specifying debug options. The object may contain the
+following fields:</p>
+<p><code class="docutils literal notranslate"><span class="pre">output</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">true</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--debug-output</span></code> on the command line.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">tryCompile</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">true</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--debug-trycompile</span></code> on the command line.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">find</span></code></p>
+<blockquote>
+<div><p>An optional boolean. Setting this to <code class="docutils literal notranslate"><span class="pre">true</span></code> is equivalent to passing
+<code class="docutils literal notranslate"><span class="pre">--debug-find</span></code> on the command line.</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<p>As mentioned above, some fields support macro expansion. Macros are
+recognized in the form <code class="docutils literal notranslate"><span class="pre">$&lt;macro-namespace&gt;{&lt;macro-name&gt;}</span></code>. All macros are
+evaluated in the context of the preset being used, even if the macro is in a
+field that was inherited from another preset. For example, if the <code class="docutils literal notranslate"><span class="pre">Base</span></code>
+preset sets variable <code class="docutils literal notranslate"><span class="pre">PRESET_NAME</span></code> to <code class="docutils literal notranslate"><span class="pre">${presetName}</span></code>, and the
+<code class="docutils literal notranslate"><span class="pre">Derived</span></code> preset inherits from <code class="docutils literal notranslate"><span class="pre">Base</span></code>, <code class="docutils literal notranslate"><span class="pre">PRESET_NAME</span></code> will be set to
+<code class="docutils literal notranslate"><span class="pre">Derived</span></code>.</p>
+<p>It is an error to not put a closing brace at the end of a macro name. For
+example, <code class="docutils literal notranslate"><span class="pre">${sourceDir</span></code> is invalid. A dollar sign (<code class="docutils literal notranslate"><span class="pre">$</span></code>) followed by
+anything other than a left curly brace (<code class="docutils literal notranslate"><span class="pre">{</span></code>) with a possible namespace is
+interpreted as a literal dollar sign.</p>
+<p>Recognized macros include:</p>
+<p><code class="docutils literal notranslate"><span class="pre">${sourceDir}</span></code></p>
+<blockquote>
+<div><p>Path to the project source directory.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">${sourceParentDir}</span></code></p>
+<blockquote>
+<div><p>Path to the project source directory’s parent directory.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">${sourceDirName}</span></code></p>
+<blockquote>
+<div><p>The last filename component of <code class="docutils literal notranslate"><span class="pre">${sourceDir}</span></code>. For example, if
+<code class="docutils literal notranslate"><span class="pre">${sourceDir}</span></code> is <code class="docutils literal notranslate"><span class="pre">/path/to/source</span></code>, this would be <code class="docutils literal notranslate"><span class="pre">source</span></code>.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">${presetName}</span></code></p>
+<blockquote>
+<div><p>Name specified in the preset’s <code class="docutils literal notranslate"><span class="pre">name</span></code> field.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">${generator}</span></code></p>
+<blockquote>
+<div><p>Generator specified in the preset’s <code class="docutils literal notranslate"><span class="pre">generator</span></code> field.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">${dollar}</span></code></p>
+<blockquote>
+<div><p>A literal dollar sign (<code class="docutils literal notranslate"><span class="pre">$</span></code>).</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">$env{&lt;variable-name&gt;}</span></code></p>
+<blockquote>
+<div><p>Environment variable with name <code class="docutils literal notranslate"><span class="pre">&lt;variable-name&gt;</span></code>. The variable name may
+not be an empty string. If the variable is defined in the <code class="docutils literal notranslate"><span class="pre">environment</span></code>
+field, that value is used instead of the value from the parent environment.
+If the environment variable is not defined, this evaluates as an empty
+string.</p>
+<p>Note that while Windows environment variable names are case-insensitive,
+variable names within a preset are still case-sensitive. This may lead to
+unexpected results when using inconsistent casing. For best results, keep
+the casing of environment variable names consistent.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">$penv{&lt;variable-name&gt;}</span></code></p>
+<blockquote>
+<div><p>Similar to <code class="docutils literal notranslate"><span class="pre">$env{&lt;variable-name&gt;}</span></code>, except that the value only comes from
+the parent environment, and never from the <code class="docutils literal notranslate"><span class="pre">environment</span></code> field. This
+allows you to prepend or append values to existing environment variables.
+For example, setting <code class="docutils literal notranslate"><span class="pre">PATH</span></code> to <code class="docutils literal notranslate"><span class="pre">/path/to/ninja/bin:$penv{PATH}</span></code> will
+prepend <code class="docutils literal notranslate"><span class="pre">/path/to/ninja/bin</span></code> to the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> environment variable. This
+is needed because <code class="docutils literal notranslate"><span class="pre">$env{&lt;variable-name&gt;}</span></code> does not allow circular
+references.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">$vendor{&lt;macro-name&gt;}</span></code></p>
+<blockquote>
+<div><p>An extension point for vendors to insert their own macros. CMake will not
+be able to use presets which have a <code class="docutils literal notranslate"><span class="pre">$vendor{&lt;macro-name&gt;}</span></code> macro, and
+effectively ignores such presets. However, it will still be able to use
+other presets from the same file.</p>
+<p>CMake does not make any attempt to interpret <code class="docutils literal notranslate"><span class="pre">$vendor{&lt;macro-name&gt;}</span></code>
+macros. However, to avoid name collisions, IDE vendors should prefix
+<code class="docutils literal notranslate"><span class="pre">&lt;macro-name&gt;</span></code> with a very short (preferably &lt;= 4 characters) vendor
+identifier prefix, followed by a <code class="docutils literal notranslate"><span class="pre">.</span></code>, followed by the macro name. For
+example, the Example IDE could have <code class="docutils literal notranslate"><span class="pre">$vendor{xide.ideInstallDir}</span></code>.</p>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="schema">
+<h2><a class="toc-backref" href="#id4">Schema</a><a class="headerlink" href="#schema" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference download internal" download="" href="../_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json"><code class="xref download docutils literal notranslate"><span class="pre">This</span> <span class="pre">file</span></code></a> provides a machine-readable
+JSON schema for the <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> format.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-presets(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#format">Format</a></li>
+<li><a class="reference internal" href="#schema">Schema</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../policy/CMP0000.html"
+                        title="previous chapter">CMP0000</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-properties.7.html"
+                        title="next chapter">cmake-properties(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-presets.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-properties.7.html" title="cmake-properties(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../policy/CMP0000.html" title="CMP0000"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-presets(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

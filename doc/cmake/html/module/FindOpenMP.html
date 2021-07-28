@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindOpenMP &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindOpenSceneGraph" href="FindOpenSceneGraph.html" />
+    <link rel="prev" title="FindOpenGL" href="FindOpenGL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindOpenSceneGraph.html" title="FindOpenSceneGraph"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenGL.html" title="FindOpenGL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenMP</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findopenmp">
+<span id="module:FindOpenMP"></span><h1>FindOpenMP<a class="headerlink" href="#findopenmp" title="Permalink to this headline">¶</a></h1>
+<p>Finds Open Multi-Processing (OpenMP) support.</p>
+<p>This module can be used to detect OpenMP support in a compiler.  If
+the compiler supports OpenMP, the flags required to compile with
+OpenMP support are returned in variables for the different languages.
+The variables may be empty if the compiler does not need a special
+flag to support OpenMP.</p>
+<div class="section" id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<p>The module exposes the components <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CXX</span></code>, and <code class="docutils literal notranslate"><span class="pre">Fortran</span></code>.
+Each of these controls the various languages to search OpenMP support for.</p>
+<p>Depending on the enabled components the following variables will be set:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_FOUND</span></code></dt><dd><p>Variable indicating that OpenMP flags for all requested languages have been found.
+If no components are specified, this is true if OpenMP settings for all enabled languages
+were detected.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_VERSION</span></code></dt><dd><p>Minimal version of the OpenMP standard detected among the requested languages,
+or all enabled languages if no components were specified.</p>
+</dd>
+</dl>
+<p>This module will set the following variables per language in your
+project, where <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> is one of C, CXX, or Fortran:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_FOUND</span></code></dt><dd><p>Variable indicating if OpenMP support for <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> was detected.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_FLAGS</span></code></dt><dd><p>OpenMP compiler flags for <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>, separated by spaces.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_INCLUDE_DIRS</span></code></dt><dd><p>Directories that must be added to the header search path for <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>
+when using OpenMP.</p>
+</dd>
+</dl>
+<p>For linking with OpenMP code written in <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>, the following
+variables are provided:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_LIB_NAMES</span></code></dt><dd><p><a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of libraries for OpenMP programs for <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;libname&gt;_LIBRARY</span></code></dt><dd><p>Location of the individual libraries needed for OpenMP support in <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_LIBRARIES</span></code></dt><dd><p>A list of libraries needed to link with OpenMP code written in <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>.</p>
+</dd>
+</dl>
+<p>Additionally, the module provides <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP::OpenMP_&lt;lang&gt;</span></code></dt><dd><p>Target for using OpenMP from <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code>.</p>
+</dd>
+</dl>
+<p>Specifically for Fortran, the module sets the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_Fortran_HAVE_OMPLIB_HEADER</span></code></dt><dd><p>Boolean indicating if OpenMP is accessible through <code class="docutils literal notranslate"><span class="pre">omp_lib.h</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_Fortran_HAVE_OMPLIB_MODULE</span></code></dt><dd><p>Boolean indicating if OpenMP is accessible through the <code class="docutils literal notranslate"><span class="pre">omp_lib</span></code> Fortran module.</p>
+</dd>
+</dl>
+<p>The module will also try to provide the OpenMP version variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_SPEC_DATE</span></code></dt><dd><p>Date of the OpenMP specification implemented by the <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_VERSION_MAJOR</span></code></dt><dd><p>Major version of OpenMP implemented by the <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_VERSION_MINOR</span></code></dt><dd><p>Minor version of OpenMP implemented by the <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_VERSION</span></code></dt><dd><p>OpenMP version implemented by the <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> compiler.</p>
+</dd>
+</dl>
+<p>The specification date is formatted as given in the OpenMP standard:
+<code class="docutils literal notranslate"><span class="pre">yyyymm</span></code> where <code class="docutils literal notranslate"><span class="pre">yyyy</span></code> and <code class="docutils literal notranslate"><span class="pre">mm</span></code> represents the year and month of
+the OpenMP specification implemented by the <code class="docutils literal notranslate"><span class="pre">&lt;lang&gt;</span></code> compiler.</p>
+<p>For some compilers, it may be necessary to add a header search path to find
+the relevant OpenMP headers.  This location may be language-specific.  Where
+this is needed, the module may attempt to find the location, but it can be
+provided directly by setting the <code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_INCLUDE_DIR</span></code> cache variable.
+Note that this variable is an _input_ control to the module.  Project code
+should use the <code class="docutils literal notranslate"><span class="pre">OpenMP_&lt;lang&gt;_INCLUDE_DIRS</span></code> _output_ variable if it needs
+to know what include directories are needed.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindOpenMP</a><ul>
+<li><a class="reference internal" href="#variables">Variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindOpenGL.html"
+                        title="previous chapter">FindOpenGL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindOpenSceneGraph.html"
+                        title="next chapter">FindOpenSceneGraph</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindOpenMP.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindOpenSceneGraph.html" title="FindOpenSceneGraph"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindOpenGL.html" title="FindOpenGL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindOpenMP</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

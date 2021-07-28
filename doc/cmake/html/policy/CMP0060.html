@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMP0060 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMP0059" href="CMP0059.html" />
+    <link rel="prev" title="CMP0061" href="CMP0061.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMP0059.html" title="CMP0059"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMP0061.html" title="CMP0061"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" accesskey="U">cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0060</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmp0060">
+<span id="policy:CMP0060"></span><h1>CMP0060<a class="headerlink" href="#cmp0060" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.3.</span></p>
+</div>
+<p>Link libraries by full path even in implicit directories.</p>
+<p>Policy <span class="target" id="index-0-policy:CMP0003"></span><a class="reference internal" href="CMP0003.html#policy:CMP0003" title="CMP0003"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0003</span></code></a> was introduced with the intention of always
+linking library files by full path when a full path is given to the
+<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> command.  However, on some platforms
+(e.g. HP-UX) the compiler front-end adds alternative library search paths
+for the current architecture (e.g. <code class="docutils literal notranslate"><span class="pre">/usr/lib/&lt;arch&gt;</span></code> has alternatives
+to libraries in <code class="docutils literal notranslate"><span class="pre">/usr/lib</span></code> for the current architecture).
+On such platforms the <span class="target" id="index-0-command:find_library"></span><a class="reference internal" href="../command/find_library.html#command:find_library" title="find_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_library()</span></code></a> may find a library such as
+<code class="docutils literal notranslate"><span class="pre">/usr/lib/libfoo.so</span></code> that does not belong to the current architecture.</p>
+<p>Prior to policy <span class="target" id="index-1-policy:CMP0003"></span><a class="reference internal" href="CMP0003.html#policy:CMP0003" title="CMP0003"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0003</span></code></a> projects would still build in such
+cases because the incorrect library path would be converted to <code class="docutils literal notranslate"><span class="pre">-lfoo</span></code>
+on the link line and the linker would find the proper library in the
+arch-specific search path provided by the compiler front-end implicitly.
+At the time we chose to remain compatible with such projects by always
+converting library files found in implicit link directories to <code class="docutils literal notranslate"><span class="pre">-lfoo</span></code>
+flags to ask the linker to search for them.  This approach allowed existing
+projects to continue to build while still linking to libraries outside
+implicit link directories via full path (such as those in the build tree).</p>
+<p>CMake does allow projects to override this behavior by using an
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">IMPORTED library target</span></a> with its
+<span class="target" id="index-0-prop_tgt:IMPORTED_LOCATION"></span><a class="reference internal" href="../prop_tgt/IMPORTED_LOCATION.html#prop_tgt:IMPORTED_LOCATION" title="IMPORTED_LOCATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED_LOCATION</span></code></a> property set to the desired full path to
+a library file.  In fact, many <a class="reference internal" href="../manual/cmake-developer.7.html#find-modules"><span class="std std-ref">Find Modules</span></a> are learning to provide
+<a class="reference internal" href="../manual/cmake-buildsystem.7.html#imported-targets"><span class="std std-ref">Imported Targets</span></a> instead of just the traditional <code class="docutils literal notranslate"><span class="pre">Foo_LIBRARIES</span></code>
+variable listing library files.  However, this makes the link line
+generated for a library found by a Find Module depend on whether it
+is linked through an imported target or not, which is inconsistent.
+Furthermore, this behavior has been a source of confusion because the
+generated link line for a library file depends on its location.  It is
+also problematic for projects trying to link statically because flags
+like <code class="docutils literal notranslate"><span class="pre">-Wl,-Bstatic</span> <span class="pre">-lfoo</span> <span class="pre">-Wl,-Bdynamic</span></code> may be used to help the linker
+select <code class="docutils literal notranslate"><span class="pre">libfoo.a</span></code> instead of <code class="docutils literal notranslate"><span class="pre">libfoo.so</span></code> but then leak dynamic linking
+to following libraries.  (See the <span class="target" id="index-0-prop_tgt:LINK_SEARCH_END_STATIC"></span><a class="reference internal" href="../prop_tgt/LINK_SEARCH_END_STATIC.html#prop_tgt:LINK_SEARCH_END_STATIC" title="LINK_SEARCH_END_STATIC"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_SEARCH_END_STATIC</span></code></a>
+target property for a solution typically used for that problem.)</p>
+<p>When the special case for libraries in implicit link directories was first
+introduced the list of implicit link directories was simply hard-coded
+(e.g. <code class="docutils literal notranslate"><span class="pre">/lib</span></code>, <code class="docutils literal notranslate"><span class="pre">/usr/lib</span></code>, and a few others).  Since that time, CMake
+has learned to detect the implicit link directories used by the compiler
+front-end.  If necessary, the <span class="target" id="index-1-command:find_library"></span><a class="reference internal" href="../command/find_library.html#command:find_library" title="find_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_library()</span></code></a> command could be
+taught to use this information to help find libraries of the proper
+architecture.</p>
+<p>For these reasons, CMake 3.3 and above prefer to drop the special case
+and link libraries by full path even when they are in implicit link
+directories.  Policy <code class="docutils literal notranslate"><span class="pre">CMP0060</span></code> provides compatibility for existing
+projects.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior for this policy is to ask the linker to search for
+libraries whose full paths are known to be in implicit link directories.
+The <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior for this policy is to link libraries by full path even
+if they are in implicit link directories.</p>
+<p>This policy was introduced in CMake version 3.3.  Unlike most policies,
+CMake version 3.19.6 does <em>not</em> warn by default when this policy
+is not set and simply uses <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior.  See documentation of the
+<span class="target" id="index-0-variable:CMAKE_POLICY_WARNING_CMP&lt;NNNN&gt;"></span><a class="reference internal" href="../variable/CMAKE_POLICY_WARNING_CMPNNNN.html#variable:CMAKE_POLICY_WARNING_CMP&lt;NNNN&gt;" title="CMAKE_POLICY_WARNING_CMP&lt;NNNN&gt;"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_POLICY_WARNING_CMP0060</span></code></a>
+variable to control the warning.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">OLD</span></code> behavior of a policy is
+<span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="../manual/cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">deprecated</span> <span class="pre">by</span> <span class="pre">definition</span></code></a>
+and may be removed in a future version of CMake.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMP0061.html"
+                        title="previous chapter">CMP0061</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMP0059.html"
+                        title="next chapter">CMP0059</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/policy/CMP0060.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMP0059.html" title="CMP0059"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMP0061.html" title="CMP0061"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-policies.7.html" >cmake-policies(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMP0060</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

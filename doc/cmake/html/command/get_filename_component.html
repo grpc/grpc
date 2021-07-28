@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>get_filename_component &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="get_property" href="get_property.html" />
+    <link rel="prev" title="get_directory_property" href="get_directory_property.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="get_property.html" title="get_property"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="get_directory_property.html" title="get_directory_property"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_filename_component</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="get-filename-component">
+<span id="command:get_filename_component"></span><h1>get_filename_component<a class="headerlink" href="#get-filename-component" title="Permalink to this headline">¶</a></h1>
+<p>Get a specific component of a full filename.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_filename_component(</span><span class="nv">&lt;var&gt;</span><span class="w"> </span><span class="nv">&lt;FileName&gt;</span><span class="w"> </span><span class="nv">&lt;mode&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">CACHE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets <code class="docutils literal notranslate"><span class="pre">&lt;var&gt;</span></code> to a component of <code class="docutils literal notranslate"><span class="pre">&lt;FileName&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;mode&gt;</span></code> is one of:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>DIRECTORY = Directory without file name
+NAME      = File name without directory
+EXT       = File name longest extension (.b.c from d/a.b.c)
+NAME_WE   = File name with neither the directory nor the longest extension
+LAST_EXT  = File name last extension (.c from d/a.b.c)
+NAME_WLE  = File name with neither the directory nor the last extension
+PATH      = Legacy alias for DIRECTORY (use for CMake &lt;= 2.8.11)
+</pre></div>
+</div>
+<p>Paths are returned with forward slashes and have no trailing slashes.
+If the optional <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> argument is specified, the result variable is
+added to the cache.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_filename_component(</span><span class="nv">&lt;var&gt;</span><span class="w"> </span><span class="nv">&lt;FileName&gt;</span><span class="w"> </span><span class="nv">&lt;mode&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">BASE_DIR</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">CACHE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets <code class="docutils literal notranslate"><span class="pre">&lt;var&gt;</span></code> to the absolute path of <code class="docutils literal notranslate"><span class="pre">&lt;FileName&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;mode&gt;</span></code> is one
+of:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ABSOLUTE  = Full path to file
+REALPATH  = Full path to existing file with symlinks resolved
+</pre></div>
+</div>
+<p>If the provided <code class="docutils literal notranslate"><span class="pre">&lt;FileName&gt;</span></code> is a relative path, it is evaluated relative
+to the given base directory <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code>.  If no base directory is
+provided, the default base directory will be
+<span class="target" id="index-0-variable:CMAKE_CURRENT_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_SOURCE_DIR.html#variable:CMAKE_CURRENT_SOURCE_DIR" title="CMAKE_CURRENT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_SOURCE_DIR</span></code></a>.</p>
+<p>Paths are returned with forward slashes and have no trailing slashes.  If the
+optional <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> argument is specified, the result variable is added to the
+cache.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_filename_component(</span><span class="nv">&lt;var&gt;</span><span class="w"> </span><span class="nv">&lt;FileName&gt;</span><span class="w"> </span><span class="no">PROGRAM</span><span class="w"> </span><span class="p">[</span><span class="no">PROGRAM_ARGS</span><span class="w"> </span><span class="nv">&lt;arg_var&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">CACHE</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The program in <code class="docutils literal notranslate"><span class="pre">&lt;FileName&gt;</span></code> will be found in the system search path or
+left as a full path.  If <code class="docutils literal notranslate"><span class="pre">PROGRAM_ARGS</span></code> is present with <code class="docutils literal notranslate"><span class="pre">PROGRAM</span></code>, then
+any command-line arguments present in the <code class="docutils literal notranslate"><span class="pre">&lt;FileName&gt;</span></code> string are split
+from the program name and stored in <code class="docutils literal notranslate"><span class="pre">&lt;arg_var&gt;</span></code>.  This is used to
+separate a program name from its arguments in a command line string.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">REALPATH</span></code> and <code class="docutils literal notranslate"><span class="pre">PROGRAM</span></code> subcommands had been superseded,
+respectively, by <a class="reference internal" href="file.html#real-path"><span class="std std-ref">file(REAL_PATH)</span></a> and
+<span class="target" id="index-0-command:separate_arguments"></span><a class="reference internal" href="separate_arguments.html#command:separate_arguments" title="separate_arguments"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">separate_arguments(PROGRAM)</span></code></a> commands.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="get_directory_property.html"
+                        title="previous chapter">get_directory_property</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="get_property.html"
+                        title="next chapter">get_property</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/get_filename_component.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="get_property.html" title="get_property"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="get_directory_property.html" title="get_directory_property"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_filename_component</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

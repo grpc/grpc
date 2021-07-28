@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CUDA_ARCHITECTURES &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CUDA_EXTENSIONS" href="CUDA_EXTENSIONS.html" />
+    <link rel="prev" title="CROSSCOMPILING_EMULATOR" href="CROSSCOMPILING_EMULATOR.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CUDA_EXTENSIONS.html" title="CUDA_EXTENSIONS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CROSSCOMPILING_EMULATOR.html" title="CROSSCOMPILING_EMULATOR"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CUDA_ARCHITECTURES</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cuda-architectures">
+<span id="prop_tgt:CUDA_ARCHITECTURES"></span><h1>CUDA_ARCHITECTURES<a class="headerlink" href="#cuda-architectures" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.18.</span></p>
+</div>
+<p>List of architectures to generate device code for.</p>
+<p>An architecture can be suffixed by either <code class="docutils literal notranslate"><span class="pre">-real</span></code> or <code class="docutils literal notranslate"><span class="pre">-virtual</span></code> to specify
+the kind of architecture to generate code for.
+If no suffix is given then code is generated for both real and virtual
+architectures.</p>
+<p>A non-empty false value (e.g. <code class="docutils literal notranslate"><span class="pre">OFF</span></code>) disables adding architectures.
+This is intended to support packagers and rare cases where full control
+over the passed flags is required.</p>
+<p>This property is initialized by the value of the <span class="target" id="index-0-variable:CMAKE_CUDA_ARCHITECTURES"></span><a class="reference internal" href="../variable/CMAKE_CUDA_ARCHITECTURES.html#variable:CMAKE_CUDA_ARCHITECTURES" title="CMAKE_CUDA_ARCHITECTURES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CUDA_ARCHITECTURES</span></code></a>
+variable if it is set when a target is created.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">CUDA_ARCHITECTURES</span></code> target property must be set to a non-empty value on targets
+that compile CUDA sources, or it is an error.  See policy <span class="target" id="index-0-policy:CMP0104"></span><a class="reference internal" href="../policy/CMP0104.html#policy:CMP0104" title="CMP0104"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0104</span></code></a>.</p>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">CUDA_ARCHITECTURES</span><span class="w"> </span><span class="m">35</span><span class="w"> </span><span class="m">50</span><span class="w"> </span><span class="m">72</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generates code for real and virtual architectures <code class="docutils literal notranslate"><span class="pre">30</span></code>, <code class="docutils literal notranslate"><span class="pre">50</span></code> and <code class="docutils literal notranslate"><span class="pre">72</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">CUDA_ARCHITECTURES</span><span class="w"> </span><span class="m">70</span><span class="p">-</span><span class="nb">real</span><span class="w"> </span><span class="m">72</span><span class="p">-</span><span class="nb">virtual</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Generates code for real architecture <code class="docutils literal notranslate"><span class="pre">70</span></code> and virtual architecture <code class="docutils literal notranslate"><span class="pre">72</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="nb">tgt</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">CUDA_ARCHITECTURES</span><span class="w"> </span><span class="no">OFF</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>CMake will not pass any architecture flags to the compiler.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CUDA_ARCHITECTURES</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CROSSCOMPILING_EMULATOR.html"
+                        title="previous chapter">CROSSCOMPILING_EMULATOR</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CUDA_EXTENSIONS.html"
+                        title="next chapter">CUDA_EXTENSIONS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/CUDA_ARCHITECTURES.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CUDA_EXTENSIONS.html" title="CUDA_EXTENSIONS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CROSSCOMPILING_EMULATOR.html" title="CROSSCOMPILING_EMULATOR"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CUDA_ARCHITECTURES</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

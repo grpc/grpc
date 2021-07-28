@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WIN32_EXECUTABLE &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="WINDOWS_EXPORT_ALL_SYMBOLS" href="WINDOWS_EXPORT_ALL_SYMBOLS.html" />
+    <link rel="prev" title="VS_WINRT_REFERENCES" href="VS_WINRT_REFERENCES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="WINDOWS_EXPORT_ALL_SYMBOLS.html" title="WINDOWS_EXPORT_ALL_SYMBOLS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="VS_WINRT_REFERENCES.html" title="VS_WINRT_REFERENCES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WIN32_EXECUTABLE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="win32-executable">
+<span id="prop_tgt:WIN32_EXECUTABLE"></span><h1>WIN32_EXECUTABLE<a class="headerlink" href="#win32-executable" title="Permalink to this headline">¶</a></h1>
+<p>Build an executable with a WinMain entry point on windows.</p>
+<p>When this property is set to true the executable when linked on
+Windows will be created with a WinMain() entry point instead of just
+main().  This makes it a GUI executable instead of a console application.
+See the <span class="target" id="index-0-variable:CMAKE_MFC_FLAG"></span><a class="reference internal" href="../variable/CMAKE_MFC_FLAG.html#variable:CMAKE_MFC_FLAG" title="CMAKE_MFC_FLAG"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MFC_FLAG</span></code></a> variable documentation to
+configure use of the Microsoft Foundation Classes (MFC) for WinMain
+executables.  This property is initialized by the value of the
+<span class="target" id="index-0-variable:CMAKE_WIN32_EXECUTABLE"></span><a class="reference internal" href="../variable/CMAKE_WIN32_EXECUTABLE.html#variable:CMAKE_WIN32_EXECUTABLE" title="CMAKE_WIN32_EXECUTABLE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_WIN32_EXECUTABLE</span></code></a> variable if it is set when
+a target is created.</p>
+<p>This property supports
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>, except if the
+target is managed (contains C# code.)</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="VS_WINRT_REFERENCES.html"
+                        title="previous chapter">VS_WINRT_REFERENCES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="WINDOWS_EXPORT_ALL_SYMBOLS.html"
+                        title="next chapter">WINDOWS_EXPORT_ALL_SYMBOLS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/WIN32_EXECUTABLE.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="WINDOWS_EXPORT_ALL_SYMBOLS.html" title="WINDOWS_EXPORT_ALL_SYMBOLS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="VS_WINRT_REFERENCES.html" title="VS_WINRT_REFERENCES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">WIN32_EXECUTABLE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

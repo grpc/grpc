@@ -1,0 +1,1042 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake(1) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ctest(1)" href="ctest.1.html" />
+    <link rel="prev" title="Introduction" href="../index.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ctest.1.html" title="ctest(1)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake(1)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake(1)"></span><div class="section" id="cmake-1">
+<h1>cmake(1)<a class="headerlink" href="#cmake-1" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<pre class="literal-block"><a class="reference internal" href="#generate-a-project-buildsystem">Generate a Project Buildsystem</a>
+ cmake [&lt;options&gt;] &lt;path-to-source&gt;
+ cmake [&lt;options&gt;] &lt;path-to-existing-build&gt;
+ cmake [&lt;options&gt;] -S &lt;path-to-source&gt; -B &lt;path-to-build&gt;
+
+<a class="reference internal" href="#build-a-project">Build a Project</a>
+ cmake --build &lt;dir&gt; [&lt;options&gt;] [-- &lt;build-tool-options&gt;]
+
+<a class="reference internal" href="#install-a-project">Install a Project</a>
+ cmake --install &lt;dir&gt; [&lt;options&gt;]
+
+<a class="reference internal" href="#open-a-project">Open a Project</a>
+ cmake --open &lt;dir&gt;
+
+<a class="reference internal" href="#run-a-script">Run a Script</a>
+ cmake [{-D &lt;var&gt;=&lt;value&gt;}...] -P &lt;cmake-script-file&gt;
+
+<a class="reference internal" href="#run-a-command-line-tool">Run a Command-Line Tool</a>
+ cmake -E &lt;command&gt; [&lt;options&gt;]
+
+<a class="reference internal" href="#run-the-find-package-tool">Run the Find-Package Tool</a>
+ cmake --find-package [&lt;options&gt;]
+
+<a class="reference internal" href="#view-help">View Help</a>
+ cmake --help[-&lt;topic&gt;]</pre>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>cmake</strong> executable is the command-line interface of the cross-platform
+buildsystem generator CMake.  The above <a class="reference internal" href="#synopsis">Synopsis</a> lists various actions
+the tool can perform as described in sections below.</p>
+<p>To build a software project with CMake, <a class="reference internal" href="#generate-a-project-buildsystem">Generate a Project Buildsystem</a>.
+Optionally use <strong>cmake</strong> to <a class="reference internal" href="#build-a-project">Build a Project</a>, <a class="reference internal" href="#install-a-project">Install a Project</a> or just
+run the corresponding build tool (e.g. <code class="docutils literal notranslate"><span class="pre">make</span></code>) directly.  <strong>cmake</strong> can also
+be used to <a class="reference internal" href="#view-help">View Help</a>.</p>
+<p>The other actions are meant for use by software developers writing
+scripts in the <span class="target" id="index-0-manual:cmake-language(7)"></span><a class="reference internal" href="cmake-language.7.html#manual:cmake-language(7)" title="cmake-language(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">language</span></code></a> to support
+their builds.</p>
+<p>For graphical user interfaces that may be used in place of <strong>cmake</strong>,
+see <span class="target" id="index-0-manual:ccmake(1)"></span><a class="reference internal" href="ccmake.1.html#manual:ccmake(1)" title="ccmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ccmake</span></code></a> and <span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui</span></code></a>.
+For command-line interfaces to the CMake testing and packaging facilities,
+see <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest</span></code></a> and <span class="target" id="index-0-manual:cpack(1)"></span><a class="reference internal" href="cpack.1.html#manual:cpack(1)" title="cpack(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cpack</span></code></a>.</p>
+<p>For more information on CMake at large, <a class="reference internal" href="#see-also">see also</a> the links at the end
+of this manual.</p>
+</div>
+<div class="section" id="introduction-to-cmake-buildsystems">
+<h2>Introduction to CMake Buildsystems<a class="headerlink" href="#introduction-to-cmake-buildsystems" title="Permalink to this headline">¶</a></h2>
+<p>A <em>buildsystem</em> describes how to build a project’s executables and libraries
+from its source code using a <em>build tool</em> to automate the process.  For
+example, a buildsystem may be a <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> for use with a command-line
+<code class="docutils literal notranslate"><span class="pre">make</span></code> tool or a project file for an Integrated Development Environment
+(IDE).  In order to avoid maintaining multiple such buildsystems, a project
+may specify its buildsystem abstractly using files written in the
+<span class="target" id="index-1-manual:cmake-language(7)"></span><a class="reference internal" href="cmake-language.7.html#manual:cmake-language(7)" title="cmake-language(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">language</span></code></a>.  From these files CMake
+generates a preferred buildsystem locally for each user through a backend
+called a <em>generator</em>.</p>
+<p>To generate a buildsystem with CMake, the following must be selected:</p>
+<dl>
+<dt>Source Tree</dt><dd><p>The top-level directory containing source files provided by the project.
+The project specifies its buildsystem using files as described in the
+<span class="target" id="index-2-manual:cmake-language(7)"></span><a class="reference internal" href="cmake-language.7.html#manual:cmake-language(7)" title="cmake-language(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-language(7)</span></code></a> manual, starting with a top-level file named
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>.  These files specify build targets and their
+dependencies as described in the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a> manual.</p>
+</dd>
+<dt>Build Tree</dt><dd><p>The top-level directory in which buildsystem files and build output
+artifacts (e.g. executables and libraries) are to be stored.
+CMake will write a <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file to identify the directory
+as a build tree and store persistent information such as buildsystem
+configuration options.</p>
+<p>To maintain a pristine source tree, perform an <em>out-of-source</em> build
+by using a separate dedicated build tree.  An <em>in-source</em> build in
+which the build tree is placed in the same directory as the source
+tree is also supported, but discouraged.</p>
+</dd>
+<dt>Generator</dt><dd><p>This chooses the kind of buildsystem to generate.  See the
+<span class="target" id="index-0-manual:cmake-generators(7)"></span><a class="reference internal" href="cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generators(7)</span></code></a> manual for documentation of all generators.
+Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--help</span></code> to see a list of generators available locally.
+Optionally use the <code class="docutils literal notranslate"><span class="pre">-G</span></code> option below to specify a generator, or simply
+accept the default CMake chooses for the current platform.</p>
+<p>When using one of the <a class="reference internal" href="cmake-generators.7.html#command-line-build-tool-generators"><span class="std std-ref">Command-Line Build Tool Generators</span></a>
+CMake expects that the environment needed by the compiler toolchain
+is already configured in the shell.  When using one of the
+<a class="reference internal" href="cmake-generators.7.html#ide-build-tool-generators"><span class="std std-ref">IDE Build Tool Generators</span></a>, no particular environment is needed.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="generate-a-project-buildsystem">
+<h2>Generate a Project Buildsystem<a class="headerlink" href="#generate-a-project-buildsystem" title="Permalink to this headline">¶</a></h2>
+<p>Run CMake with one of the following command signatures to specify the
+source and build trees and generate a buildsystem:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">[&lt;options&gt;]</span> <span class="pre">&lt;path-to-source&gt;</span></code></dt><dd><p>Uses the current working directory as the build tree, and
+<code class="docutils literal notranslate"><span class="pre">&lt;path-to-source&gt;</span></code> as the source tree.  The specified path may
+be absolute or relative to the current working directory.
+The source tree must contain a <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file and must
+<em>not</em> contain a <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file because the latter
+identifies an existing build tree.  For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> mkdir build <span class="p">;</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake ../src
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">[&lt;options&gt;]</span> <span class="pre">&lt;path-to-existing-build&gt;</span></code></dt><dd><p>Uses <code class="docutils literal notranslate"><span class="pre">&lt;path-to-existing-build&gt;</span></code> as the build tree, and loads the
+path to the source tree from its <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file, which must
+have already been generated by a previous run of CMake.  The specified
+path may be absolute or relative to the current working directory.
+For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> build
+<span class="gp">$</span> cmake .
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">[&lt;options&gt;]</span> <span class="pre">-S</span> <span class="pre">&lt;path-to-source&gt;</span> <span class="pre">-B</span> <span class="pre">&lt;path-to-build&gt;</span></code></dt><dd><p>Uses <code class="docutils literal notranslate"><span class="pre">&lt;path-to-build&gt;</span></code> as the build tree and <code class="docutils literal notranslate"><span class="pre">&lt;path-to-source&gt;</span></code>
+as the source tree.  The specified paths may be absolute or relative
+to the current working directory.  The source tree must contain a
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.  The build tree will be created automatically
+if it does not already exist.  For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> cmake -S src -B build
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>In all cases the <code class="docutils literal notranslate"><span class="pre">&lt;options&gt;</span></code> may be zero or more of the <a class="reference internal" href="#options">Options</a> below.</p>
+<p>After generating a buildsystem one may use the corresponding native
+build tool to build the project.  For example, after using the
+<span class="target" id="index-0-generator:Unix Makefiles"></span><a class="reference internal" href="../generator/Unix%20Makefiles.html#generator:Unix Makefiles" title="Unix Makefiles"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code></a> generator one may run <code class="docutils literal notranslate"><span class="pre">make</span></code> directly:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> make
+<span class="gp">$</span> make install
+</pre></div>
+</div>
+</div></blockquote>
+<p>Alternatively, one may use <strong>cmake</strong> to <a class="reference internal" href="#build-a-project">Build a Project</a> by
+automatically choosing and invoking the appropriate native build tool.</p>
+<div class="section" id="options">
+<span id="cmake-options"></span><h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-S</span> <span class="pre">&lt;path-to-source&gt;</span></code></dt><dd><p>Path to root directory of the CMake project to build.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-B</span> <span class="pre">&lt;path-to-build&gt;</span></code></dt><dd><p>Path to directory which CMake will use as the root of build directory.</p>
+<p>If the directory doesn’t already exist CMake will make it.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-C</span> <span class="pre">&lt;initial-cache&gt;</span></code></dt><dd><p>Pre-load a script to populate the cache.</p>
+<p>When CMake is first run in an empty build tree, it creates a
+<code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file and populates it with customizable settings for
+the project.  This option may be used to specify a file from which
+to load cache entries before the first pass through the project’s
+CMake listfiles.  The loaded entries take priority over the
+project’s default values.  The given file should be a CMake script
+containing <span class="target" id="index-0-command:set"></span><a class="reference internal" href="../command/set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> commands that use the <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> option, not a
+cache-format file.</p>
+<p>References to <span class="target" id="index-0-variable:CMAKE_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_SOURCE_DIR.html#variable:CMAKE_SOURCE_DIR" title="CMAKE_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SOURCE_DIR</span></code></a> and <span class="target" id="index-0-variable:CMAKE_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_BINARY_DIR.html#variable:CMAKE_BINARY_DIR" title="CMAKE_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BINARY_DIR</span></code></a>
+within the script evaluate to the top-level source and build tree.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">&lt;var&gt;:&lt;type&gt;=&lt;value&gt;,</span> <span class="pre">-D</span> <span class="pre">&lt;var&gt;=&lt;value&gt;</span></code></dt><dd><p>Create or update a CMake <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> entry.</p>
+<p>When CMake is first run in an empty build tree, it creates a
+<code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file and populates it with customizable settings for
+the project.  This option may be used to specify a setting that
+takes priority over the project’s default value.  The option may be
+repeated for as many <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> entries as desired.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">:&lt;type&gt;</span></code> portion is given it must be one of the types
+specified by the <span class="target" id="index-1-command:set"></span><a class="reference internal" href="../command/set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> command documentation for its
+<code class="docutils literal notranslate"><span class="pre">CACHE</span></code> signature.
+If the <code class="docutils literal notranslate"><span class="pre">:&lt;type&gt;</span></code> portion is omitted the entry will be created
+with no type if it does not exist with a type already.  If a
+command in the project sets the type to <code class="docutils literal notranslate"><span class="pre">PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">FILEPATH</span></code>
+then the <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code> will be converted to an absolute path.</p>
+<p>This option may also be given as a single argument:
+<code class="docutils literal notranslate"><span class="pre">-D&lt;var&gt;:&lt;type&gt;=&lt;value&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">-D&lt;var&gt;=&lt;value&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-U</span> <span class="pre">&lt;globbing_expr&gt;</span></code></dt><dd><p>Remove matching entries from CMake <code class="docutils literal notranslate"><span class="pre">CACHE</span></code>.</p>
+<p>This option may be used to remove one or more variables from the
+<code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> file, globbing expressions using <code class="docutils literal notranslate"><span class="pre">*</span></code> and <code class="docutils literal notranslate"><span class="pre">?</span></code> are
+supported.  The option may be repeated for as many <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> entries as
+desired.</p>
+<p>Use with care, you can make your <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code> non-working.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-G</span> <span class="pre">&lt;generator-name&gt;</span></code></dt><dd><p>Specify a build system generator.</p>
+<p>CMake may support multiple native build systems on certain
+platforms.  A generator is responsible for generating a particular
+build system.  Possible generator names are specified in the
+<span class="target" id="index-1-manual:cmake-generators(7)"></span><a class="reference internal" href="cmake-generators.7.html#manual:cmake-generators(7)" title="cmake-generators(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generators(7)</span></code></a> manual.</p>
+<p>If not specified, CMake checks the <span class="target" id="index-0-envvar:CMAKE_GENERATOR"></span><a class="reference internal" href="../envvar/CMAKE_GENERATOR.html#envvar:CMAKE_GENERATOR" title="CMAKE_GENERATOR"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span></code></a> environment
+variable and otherwise falls back to a builtin default selection.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-T</span> <span class="pre">&lt;toolset-spec&gt;</span></code></dt><dd><p>Toolset specification for the generator, if supported.</p>
+<p>Some CMake generators support a toolset specification to tell
+the native build system how to choose a compiler.  See the
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> variable for details.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-A</span> <span class="pre">&lt;platform-name&gt;</span></code></dt><dd><p>Specify platform name if supported by generator.</p>
+<p>Some CMake generators support a platform name to be given to the
+native build system to choose a compiler or SDK.  See the
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a> variable for details.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wno-dev</span></code></dt><dd><p>Suppress developer warnings.</p>
+<p>Suppress warnings that are meant for the author of the
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files. By default this will also turn off
+deprecation warnings.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wdev</span></code></dt><dd><p>Enable developer warnings.</p>
+<p>Enable warnings that are meant for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>
+files. By default this will also turn on deprecation warnings.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Werror=dev</span></code></dt><dd><p>Make developer warnings errors.</p>
+<p>Make warnings that are meant for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files
+errors. By default this will also turn on deprecated warnings as errors.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wno-error=dev</span></code></dt><dd><p>Make developer warnings not errors.</p>
+<p>Make warnings that are meant for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files not
+errors. By default this will also turn off deprecated warnings as errors.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wdeprecated</span></code></dt><dd><p>Enable deprecated functionality warnings.</p>
+<p>Enable warnings for usage of deprecated functionality, that are meant
+for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wno-deprecated</span></code></dt><dd><p>Suppress deprecated functionality warnings.</p>
+<p>Suppress warnings for usage of deprecated functionality, that are meant
+for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Werror=deprecated</span></code></dt><dd><p>Make deprecated macro and function warnings errors.</p>
+<p>Make warnings for usage of deprecated macros and functions, that are meant
+for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files, errors.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-Wno-error=deprecated</span></code></dt><dd><p>Make deprecated macro and function warnings not errors.</p>
+<p>Make warnings for usage of deprecated macros and functions, that are meant
+for the author of the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files, not errors.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-L[A][H]</span></code></dt><dd><p>List non-advanced cached variables.</p>
+<p>List <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> variables will run CMake and list all the variables from
+the CMake <code class="docutils literal notranslate"><span class="pre">CACHE</span></code> that are not marked as <code class="docutils literal notranslate"><span class="pre">INTERNAL</span></code> or <span class="target" id="index-0-prop_cache:ADVANCED"></span><a class="reference internal" href="../prop_cache/ADVANCED.html#prop_cache:ADVANCED" title="ADVANCED"><code class="xref cmake cmake-prop_cache docutils literal notranslate"><span class="pre">ADVANCED</span></code></a>.
+This will effectively display current CMake settings, which can then be
+changed with <code class="docutils literal notranslate"><span class="pre">-D</span></code> option.  Changing some of the variables may result
+in more variables being created.  If <code class="docutils literal notranslate"><span class="pre">A</span></code> is specified, then it will
+display also advanced variables.  If <code class="docutils literal notranslate"><span class="pre">H</span></code> is specified, it will also
+display help for each variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-N</span></code></dt><dd><p>View mode only.</p>
+<p>Only load the cache.  Do not actually run configure and generate
+steps.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--graphviz=[file]</span></code></dt><dd><p>Generate graphviz of dependencies, see <span class="target" id="index-0-module:CMakeGraphVizOptions"></span><a class="reference internal" href="../module/CMakeGraphVizOptions.html#module:CMakeGraphVizOptions" title="CMakeGraphVizOptions"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CMakeGraphVizOptions</span></code></a> for more.</p>
+<p>Generate a graphviz input file that will contain all the library and
+executable dependencies in the project.  See the documentation for
+<span class="target" id="index-1-module:CMakeGraphVizOptions"></span><a class="reference internal" href="../module/CMakeGraphVizOptions.html#module:CMakeGraphVizOptions" title="CMakeGraphVizOptions"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CMakeGraphVizOptions</span></code></a> for more details.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--system-information</span> <span class="pre">[file]</span></code></dt><dd><p>Dump information about this system.</p>
+<p>Dump a wide range of information about the current system.  If run
+from the top of a binary tree for a CMake project it will dump
+additional information such as the cache, log files etc.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--log-level=&lt;ERROR|WARNING|NOTICE|STATUS|VERBOSE|DEBUG|TRACE&gt;</span></code></dt><dd><p>Set the log level.</p>
+<p>The <span class="target" id="index-0-command:message"></span><a class="reference internal" href="../command/message.html#command:message" title="message"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">message()</span></code></a> command will only output messages of the specified
+log level or higher.  The default log level is <code class="docutils literal notranslate"><span class="pre">STATUS</span></code>.</p>
+<p>To make a log level persist between CMake runs, set
+<span class="target" id="index-0-variable:CMAKE_MESSAGE_LOG_LEVEL"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_LOG_LEVEL.html#variable:CMAKE_MESSAGE_LOG_LEVEL" title="CMAKE_MESSAGE_LOG_LEVEL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_LOG_LEVEL</span></code></a> as a cache variable instead.
+If both the command line option and the variable are given, the command line
+option takes precedence.</p>
+<p>For backward compatibility reasons, <code class="docutils literal notranslate"><span class="pre">--loglevel</span></code> is also accepted as a
+synonym for this option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--log-context</span></code></dt><dd><p>Enable the <span class="target" id="index-1-command:message"></span><a class="reference internal" href="../command/message.html#command:message" title="message"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">message()</span></code></a> command outputting context attached to each
+message.</p>
+<p>This option turns on showing context for the current CMake run only.
+To make showing the context persistent for all subsequent CMake runs, set
+<span class="target" id="index-0-variable:CMAKE_MESSAGE_CONTEXT_SHOW"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_CONTEXT_SHOW.html#variable:CMAKE_MESSAGE_CONTEXT_SHOW" title="CMAKE_MESSAGE_CONTEXT_SHOW"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_CONTEXT_SHOW</span></code></a> as a cache variable instead.
+When this command line option is given, <span class="target" id="index-1-variable:CMAKE_MESSAGE_CONTEXT_SHOW"></span><a class="reference internal" href="../variable/CMAKE_MESSAGE_CONTEXT_SHOW.html#variable:CMAKE_MESSAGE_CONTEXT_SHOW" title="CMAKE_MESSAGE_CONTEXT_SHOW"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MESSAGE_CONTEXT_SHOW</span></code></a>
+is ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--debug-trycompile</span></code></dt><dd><p>Do not delete the <span class="target" id="index-0-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a> build tree.
+Only useful on one <span class="target" id="index-1-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a> at a time.</p>
+<p>Do not delete the files and directories created for <span class="target" id="index-2-command:try_compile"></span><a class="reference internal" href="../command/try_compile.html#command:try_compile" title="try_compile"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">try_compile()</span></code></a>
+calls.  This is useful in debugging failed try_compiles.  It may
+however change the results of the try-compiles as old junk from a
+previous try-compile may cause a different test to either pass or
+fail incorrectly.  This option is best used for one try-compile at a
+time, and only when debugging.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--debug-output</span></code></dt><dd><p>Put cmake in a debug mode.</p>
+<p>Print extra information during the cmake run like stack traces with
+<span class="target" id="index-2-command:message"></span><a class="reference internal" href="../command/message.html#command:message" title="message"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">message(SEND_ERROR)</span></code></a> calls.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--debug-find</span></code></dt><dd><p>Put cmake find commands in a debug mode.</p>
+<p>Print extra find call information during the cmake run to standard
+error. Output is designed for human consumption and not for parsing.
+See also the <span class="target" id="index-0-variable:CMAKE_FIND_DEBUG_MODE"></span><a class="reference internal" href="../variable/CMAKE_FIND_DEBUG_MODE.html#variable:CMAKE_FIND_DEBUG_MODE" title="CMAKE_FIND_DEBUG_MODE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_DEBUG_MODE</span></code></a> variable for debugging
+a more local part of the project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--trace</span></code></dt><dd><p>Put cmake in trace mode.</p>
+<p>Print a trace of all calls made and from where.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--trace-expand</span></code></dt><dd><p>Put cmake in trace mode.</p>
+<p>Like <code class="docutils literal notranslate"><span class="pre">--trace</span></code>, but with variables expanded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--trace-format=&lt;format&gt;</span></code></dt><dd><p>Put cmake in trace mode and sets the trace output format.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code> can be one of the following values.</p>
+<blockquote>
+<div><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">human</span></code></dt><dd><p>Prints each trace line in a human-readable format. This is the
+default format.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">json-v1</span></code></dt><dd><p>Prints each line as a separate JSON document. Each document is
+separated by a newline ( <code class="docutils literal notranslate"><span class="pre">\n</span></code> ). It is guaranteed that no
+newline characters will be present inside a JSON document.</p>
+<p>JSON trace format:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;file&quot;</span><span class="p">:</span> <span class="s2">&quot;/full/path/to/the/CMake/file.txt&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;line&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;add_executable&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="s2">&quot;bar&quot;</span><span class="p">],</span>
+  <span class="nt">&quot;time&quot;</span><span class="p">:</span> <span class="mf">1579512535.9687231</span><span class="p">,</span>
+  <span class="nt">&quot;frame&quot;</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">file</span></code></dt><dd><p>The full path to the CMake source file where the function
+was called.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">line</span></code></dt><dd><p>The line in <code class="docutils literal notranslate"><span class="pre">file</span></code> of the function call.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">defer</span></code></dt><dd><p>Optional member that is present when the function call was deferred
+by <span class="target" id="index-0-command:cmake_language"></span><a class="reference internal" href="../command/cmake_language.html#command:cmake_language" title="cmake_language"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_language(DEFER)</span></code></a>.  If present, its value is a
+string containing the deferred call <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cmd</span></code></dt><dd><p>The name of the function that was called.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">args</span></code></dt><dd><p>A string list of all function parameters.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">time</span></code></dt><dd><p>Timestamp (seconds since epoch) of the function call.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">frame</span></code></dt><dd><p>Stack frame depth of the function that was called.</p>
+</dd>
+</dl>
+<p>Additionally, the first JSON document outputted contains the
+<code class="docutils literal notranslate"><span class="pre">version</span></code> key for the current major and minor version of the</p>
+<p>JSON trace format:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">1</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>Indicates the version of the JSON format. The version has a
+major and minor components following semantic version conventions.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--trace-source=&lt;file&gt;</span></code></dt><dd><p>Put cmake in trace mode, but output only lines of a specified file.</p>
+<p>Multiple options are allowed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--trace-redirect=&lt;file&gt;</span></code></dt><dd><p>Put cmake in trace mode and redirect trace output to a file instead of stderr.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--warn-uninitialized</span></code></dt><dd><p>Warn about uninitialized values.</p>
+<p>Print a warning when an uninitialized variable is used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--warn-unused-vars</span></code></dt><dd><p>Does nothing.  In CMake versions 3.2 and below this enabled warnings about
+unused variables.  In CMake versions 3.3 through 3.18 the option was broken.
+In CMake 3.19 and above the option has been removed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--no-warn-unused-cli</span></code></dt><dd><p>Don’t warn about command line options.</p>
+<p>Don’t find variables that are declared on the command line, but not
+used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--check-system-vars</span></code></dt><dd><p>Find problems with variable usage in system files.</p>
+<p>Normally, unused and uninitialized variables are searched for only
+in <span class="target" id="index-1-variable:CMAKE_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_SOURCE_DIR.html#variable:CMAKE_SOURCE_DIR" title="CMAKE_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SOURCE_DIR</span></code></a> and <span class="target" id="index-1-variable:CMAKE_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_BINARY_DIR.html#variable:CMAKE_BINARY_DIR" title="CMAKE_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BINARY_DIR</span></code></a>.
+This flag tells CMake to warn about other files as well.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--profiling-output=&lt;path&gt;</span></code></dt><dd><p>Used in conjunction with <code class="docutils literal notranslate"><span class="pre">--profiling-format</span></code> to output to a given path.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--profiling-format=&lt;file&gt;</span></code></dt><dd><p>Enable the output of profiling data of CMake script in the given format.</p>
+<p>This can aid performance analysis of CMake scripts executed. Third party
+applications should be used to process the output into human readable format.</p>
+<p>Currently supported values are:
+<code class="docutils literal notranslate"><span class="pre">google-trace</span></code> Outputs in Google Trace Format, which can be parsed by the
+<a class="reference external" href="about:tracing">about:tracing</a> tab of Google Chrome or using a plugin for a tool like Trace
+Compass.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--preset=&lt;preset&gt;</span></code></dt><dd><p>Reads a <span class="target" id="index-0-manual:cmake-presets(7)"></span><a class="reference internal" href="cmake-presets.7.html#manual:cmake-presets(7)" title="cmake-presets(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">preset</span></code></a> from
+<code class="docutils literal notranslate"><span class="pre">&lt;path-to-source&gt;/CMakePresets.json</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;path-to-source&gt;/CMakeUserPresets.json</span></code>. The preset specifies the
+generator and the build directory, and optionally a list of variables and
+other arguments to pass to CMake. The <span class="target" id="index-1-manual:cmake-gui(1)"></span><a class="reference internal" href="cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">GUI</span></code></a> can
+also recognize <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> and <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code> files. For
+full details on these files, see <span class="target" id="index-1-manual:cmake-presets(7)"></span><a class="reference internal" href="cmake-presets.7.html#manual:cmake-presets(7)" title="cmake-presets(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-presets(7)</span></code></a>.</p>
+<p>The presets are read before all other command line options. The options
+specified by the preset (variables, generator, etc.) can all be overridden by
+manually specifying them on the command line. For example, if the preset sets
+a variable called <code class="docutils literal notranslate"><span class="pre">MYVAR</span></code> to <code class="docutils literal notranslate"><span class="pre">1</span></code>, but the user sets it to <code class="docutils literal notranslate"><span class="pre">2</span></code> with a
+<code class="docutils literal notranslate"><span class="pre">-D</span></code> argument, the value <code class="docutils literal notranslate"><span class="pre">2</span></code> is preferred.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="build-a-project">
+<span id="build-tool-mode"></span><h2>Build a Project<a class="headerlink" href="#build-a-project" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides a command-line signature to build an already-generated
+project binary tree:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake --build &lt;dir&gt; <span class="o">[</span>&lt;options&gt;<span class="o">]</span> <span class="o">[</span>-- &lt;build-tool-options&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>This abstracts a native build tool’s command-line interface with the
+following options:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">--build</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Project binary directory to be built.  This is required and must be first.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--parallel</span> <span class="pre">[&lt;jobs&gt;],</span> <span class="pre">-j</span> <span class="pre">[&lt;jobs&gt;]</span></code></dt><dd><p>The maximum number of concurrent processes to use when building.
+If <code class="docutils literal notranslate"><span class="pre">&lt;jobs&gt;</span></code> is omitted the native build tool’s default number is used.</p>
+<p>The <span class="target" id="index-0-envvar:CMAKE_BUILD_PARALLEL_LEVEL"></span><a class="reference internal" href="../envvar/CMAKE_BUILD_PARALLEL_LEVEL.html#envvar:CMAKE_BUILD_PARALLEL_LEVEL" title="CMAKE_BUILD_PARALLEL_LEVEL"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_BUILD_PARALLEL_LEVEL</span></code></a> environment variable, if set,
+specifies a default parallel level when this option is not given.</p>
+<p>Some native build tools always build in parallel.  The use of <code class="docutils literal notranslate"><span class="pre">&lt;jobs&gt;</span></code>
+value of <code class="docutils literal notranslate"><span class="pre">1</span></code> can be used to limit to a single job.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--target</span> <span class="pre">&lt;tgt&gt;...,</span> <span class="pre">-t</span> <span class="pre">&lt;tgt&gt;...</span></code></dt><dd><p>Build <code class="docutils literal notranslate"><span class="pre">&lt;tgt&gt;</span></code> instead of the default target.  Multiple targets may be
+given, separated by spaces.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">&lt;cfg&gt;</span></code></dt><dd><p>For multi-configuration tools, choose configuration <code class="docutils literal notranslate"><span class="pre">&lt;cfg&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--clean-first</span></code></dt><dd><p>Build target <code class="docutils literal notranslate"><span class="pre">clean</span></code> first, then build.
+(To clean only, use <code class="docutils literal notranslate"><span class="pre">--target</span> <span class="pre">clean</span></code>.)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--use-stderr</span></code></dt><dd><p>Ignored.  Behavior is default in CMake &gt;= 3.0.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--verbose,</span> <span class="pre">-v</span></code></dt><dd><p>Enable verbose output - if supported - including the build commands to be
+executed.</p>
+<p>This option can be omitted if <span class="target" id="index-0-envvar:VERBOSE"></span><a class="reference internal" href="../envvar/VERBOSE.html#envvar:VERBOSE" title="VERBOSE"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">VERBOSE</span></code></a> environment variable or
+<span class="target" id="index-0-variable:CMAKE_VERBOSE_MAKEFILE"></span><a class="reference internal" href="../variable/CMAKE_VERBOSE_MAKEFILE.html#variable:CMAKE_VERBOSE_MAKEFILE" title="CMAKE_VERBOSE_MAKEFILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VERBOSE_MAKEFILE</span></code></a> cached variable is set.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--</span></code></dt><dd><p>Pass remaining options to the native tool.</p>
+</dd>
+</dl>
+<p>Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code> with no options for quick help.</p>
+</div>
+<div class="section" id="install-a-project">
+<h2>Install a Project<a class="headerlink" href="#install-a-project" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides a command-line signature to install an already-generated
+project binary tree:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake --install &lt;dir&gt; <span class="o">[</span>&lt;options&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>This may be used after building a project to run installation without
+using the generated build system or the native build tool.
+The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">--install</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Project binary directory to install. This is required and must be first.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">&lt;cfg&gt;</span></code></dt><dd><p>For multi-configuration generators, choose configuration <code class="docutils literal notranslate"><span class="pre">&lt;cfg&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--component</span> <span class="pre">&lt;comp&gt;</span></code></dt><dd><p>Component-based install. Only install component <code class="docutils literal notranslate"><span class="pre">&lt;comp&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--default-directory-permissions</span> <span class="pre">&lt;permissions&gt;</span></code></dt><dd><p>Default directory install permissions. Permissions in format <code class="docutils literal notranslate"><span class="pre">&lt;u=rwx,g=rx,o=rx&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--prefix</span> <span class="pre">&lt;prefix&gt;</span></code></dt><dd><p>Override the installation prefix, <span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--strip</span></code></dt><dd><p>Strip before installing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-v,</span> <span class="pre">--verbose</span></code></dt><dd><p>Enable verbose output.</p>
+<p>This option can be omitted if <span class="target" id="index-1-envvar:VERBOSE"></span><a class="reference internal" href="../envvar/VERBOSE.html#envvar:VERBOSE" title="VERBOSE"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">VERBOSE</span></code></a> environment variable is set.</p>
+</dd>
+</dl>
+<p>Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span></code> with no options for quick help.</p>
+</div>
+<div class="section" id="open-a-project">
+<h2>Open a Project<a class="headerlink" href="#open-a-project" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake --open &lt;dir&gt;
+</pre></div>
+</div>
+<p>Open the generated project in the associated application.  This is only
+supported by some generators.</p>
+</div>
+<div class="section" id="run-a-script">
+<span id="script-processing-mode"></span><h2>Run a Script<a class="headerlink" href="#run-a-script" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake <span class="o">[{</span>-D &lt;var&gt;<span class="o">=</span>&lt;value&gt;<span class="o">}</span>...<span class="o">]</span> -P &lt;cmake-script-file&gt; <span class="o">[</span>-- &lt;unparsed-options&gt;...<span class="o">]</span>
+</pre></div>
+</div>
+<p>Process the given cmake file as a script written in the CMake
+language.  No configure or generate step is performed and the cache
+is not modified.  If variables are defined using <code class="docutils literal notranslate"><span class="pre">-D</span></code>, this must be
+done before the <code class="docutils literal notranslate"><span class="pre">-P</span></code> argument.</p>
+<p>Any options after <code class="docutils literal notranslate"><span class="pre">--</span></code> are not parsed by CMake, but they are still included
+in the set of <span class="target" id="index-0-variable:CMAKE_ARGV0"></span><a class="reference internal" href="../variable/CMAKE_ARGV0.html#variable:CMAKE_ARGV0" title="CMAKE_ARGV0"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ARGV&lt;n&gt;</span></code></a> variables passed to the
+script (including the <code class="docutils literal notranslate"><span class="pre">--</span></code> itself).</p>
+</div>
+<div class="section" id="run-a-command-line-tool">
+<h2>Run a Command-Line Tool<a class="headerlink" href="#run-a-command-line-tool" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides builtin command-line tools through the signature</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake -E &lt;command&gt; <span class="o">[</span>&lt;options&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-E</span></code> or <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-E</span> <span class="pre">help</span></code> for a summary of commands.
+Available commands are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">capabilities</span></code></dt><dd><p>Report cmake capabilities in JSON format. The output is a JSON object
+with the following keys:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>A JSON object with version information. Keys are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">string</span></code></dt><dd><p>The full version string as displayed by cmake <code class="docutils literal notranslate"><span class="pre">--version</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">major</span></code></dt><dd><p>The major version number in integer form.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">minor</span></code></dt><dd><p>The minor version number in integer form.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">patch</span></code></dt><dd><p>The patch level in integer form.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">suffix</span></code></dt><dd><p>The cmake version suffix string.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isDirty</span></code></dt><dd><p>A bool that is set if the cmake build is from a dirty tree.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">generators</span></code></dt><dd><p>A list available generators. Each generator is a JSON object with the
+following keys:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string containing the name of the generator.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">toolsetSupport</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if the generator supports toolsets and <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">platformSupport</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if the generator supports platforms and <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">extraGenerators</span></code></dt><dd><p>A list of strings with all the extra generators compatible with
+the generator.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">fileApi</span></code></dt><dd><p>Optional member that is present when the <span class="target" id="index-0-manual:cmake-file-api(7)"></span><a class="reference internal" href="cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-file-api(7)</span></code></a>
+is available.  The value is a JSON object with one member:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">requests</span></code></dt><dd><p>A JSON array containing zero or more supported file-api requests.
+Each request is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">kind</span></code></dt><dd><p>Specifies one of the supported <a class="reference internal" href="cmake-file-api.7.html#file-api-object-kinds"><span class="std std-ref">Object Kinds</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>A JSON array whose elements are each a JSON object containing
+<code class="docutils literal notranslate"><span class="pre">major</span></code> and <code class="docutils literal notranslate"><span class="pre">minor</span></code> members specifying non-negative integer
+version components.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">serverMode</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if cmake supports server-mode and <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">&lt;files&gt;...</span></code></dt><dd><p>Concatenate files and print on the standard output.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">chdir</span> <span class="pre">&lt;dir&gt;</span> <span class="pre">&lt;cmd&gt;</span> <span class="pre">[&lt;arg&gt;...]</span></code></dt><dd><p>Change the current working directory and run a command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">compare_files</span> <span class="pre">[--ignore-eol]</span> <span class="pre">&lt;file1&gt;</span> <span class="pre">&lt;file2&gt;</span></code></dt><dd><p>Check if <code class="docutils literal notranslate"><span class="pre">&lt;file1&gt;</span></code> is same as <code class="docutils literal notranslate"><span class="pre">&lt;file2&gt;</span></code>. If files are the same,
+then returns <code class="docutils literal notranslate"><span class="pre">0</span></code>, if not it returns <code class="docutils literal notranslate"><span class="pre">1</span></code>.  In case of invalid
+arguments, it returns 2. The <code class="docutils literal notranslate"><span class="pre">--ignore-eol</span></code> option
+implies line-wise comparison and ignores LF/CRLF differences.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">copy</span> <span class="pre">&lt;file&gt;...</span> <span class="pre">&lt;destination&gt;</span></code></dt><dd><p>Copy files to <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> (either file or directory).
+If multiple files are specified, the <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> must be
+directory and it must exist. Wildcards are not supported.
+<code class="docutils literal notranslate"><span class="pre">copy</span></code> does follow symlinks. That means it does not copy symlinks,
+but the files or directories it point to.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">copy_directory</span> <span class="pre">&lt;dir&gt;...</span> <span class="pre">&lt;destination&gt;</span></code></dt><dd><p>Copy content of <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;...</span></code> directories to <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> directory.
+If <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> directory does not exist it will be created.
+<code class="docutils literal notranslate"><span class="pre">copy_directory</span></code> does follow symlinks.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">copy_if_different</span> <span class="pre">&lt;file&gt;...</span> <span class="pre">&lt;destination&gt;</span></code></dt><dd><p>Copy files to <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> (either file or directory) if
+they have changed.
+If multiple files are specified, the <code class="docutils literal notranslate"><span class="pre">&lt;destination&gt;</span></code> must be
+directory and it must exist.
+<code class="docutils literal notranslate"><span class="pre">copy_if_different</span></code> does follow symlinks.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">create_symlink</span> <span class="pre">&lt;old&gt;</span> <span class="pre">&lt;new&gt;</span></code></dt><dd><p>Create a symbolic link <code class="docutils literal notranslate"><span class="pre">&lt;new&gt;</span></code> naming <code class="docutils literal notranslate"><span class="pre">&lt;old&gt;</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Path to where <code class="docutils literal notranslate"><span class="pre">&lt;new&gt;</span></code> symbolic link will be created has to exist beforehand.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">create_hardlink</span> <span class="pre">&lt;old&gt;</span> <span class="pre">&lt;new&gt;</span></code></dt><dd><p>Create a hard link <code class="docutils literal notranslate"><span class="pre">&lt;new&gt;</span></code> naming <code class="docutils literal notranslate"><span class="pre">&lt;old&gt;</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Path to where <code class="docutils literal notranslate"><span class="pre">&lt;new&gt;</span></code> hard link will be created has to exist beforehand.
+<code class="docutils literal notranslate"><span class="pre">&lt;old&gt;</span></code> has to exist beforehand.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">echo</span> <span class="pre">[&lt;string&gt;...]</span></code></dt><dd><p>Displays arguments as text.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">echo_append</span> <span class="pre">[&lt;string&gt;...]</span></code></dt><dd><p>Displays arguments as text but no new line.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">env</span> <span class="pre">[--unset=NAME]...</span> <span class="pre">[NAME=VALUE]...</span> <span class="pre">COMMAND</span> <span class="pre">[ARG]...</span></code></dt><dd><p>Run command in a modified environment.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">environment</span></code></dt><dd><p>Display the current environment variables.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">false</span></code></dt><dd><p>Do nothing, with an exit code of 1.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">make_directory</span> <span class="pre">&lt;dir&gt;...</span></code></dt><dd><p>Create <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code> directories.  If necessary, create parent
+directories too.  If a directory already exists it will be
+silently ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">md5sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create MD5 checksum of files in <code class="docutils literal notranslate"><span class="pre">md5sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>351abe79cd3800b38cdfb25d45015a15  file1.txt
+052f86c15bbde68af55c7f7b340ab639  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sha1sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create SHA1 checksum of files in <code class="docutils literal notranslate"><span class="pre">sha1sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>4bb7932a29e6f73c97bb9272f2bdc393122f86e0  file1.txt
+1df4c8f318665f9a5f2ed38f55adadb7ef9f559c  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sha224sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create SHA224 checksum of files in <code class="docutils literal notranslate"><span class="pre">sha224sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>b9b9346bc8437bbda630b0b7ddfc5ea9ca157546dbbf4c613192f930  file1.txt
+6dfbe55f4d2edc5fe5c9197bca51ceaaf824e48eba0cc453088aee24  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sha256sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create SHA256 checksum of files in <code class="docutils literal notranslate"><span class="pre">sha256sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>76713b23615d31680afeb0e9efe94d47d3d4229191198bb46d7485f9cb191acc  file1.txt
+15b682ead6c12dedb1baf91231e1e89cfc7974b3787c1e2e01b986bffadae0ea  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sha384sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create SHA384 checksum of files in <code class="docutils literal notranslate"><span class="pre">sha384sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>acc049fedc091a22f5f2ce39a43b9057fd93c910e9afd76a6411a28a8f2b8a12c73d7129e292f94fc0329c309df49434  file1.txt
+668ddeb108710d271ee21c0f3acbd6a7517e2b78f9181c6a2ff3b8943af92b0195dcb7cce48aa3e17893173c0a39e23d  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sha512sum</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Create SHA512 checksum of files in <code class="docutils literal notranslate"><span class="pre">sha512sum</span></code> compatible format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>2a78d7a6c5328cfb1467c63beac8ff21794213901eaadafd48e7800289afbc08e5fb3e86aa31116c945ee3d7bf2a6194489ec6101051083d1108defc8e1dba89  file1.txt
+7a0b54896fe5e70cca6dd643ad6f672614b189bf26f8153061c4d219474b05dad08c4e729af9f4b009f1a1a280cb625454bf587c690f4617c27e3aebdf3b7a2d  file2.txt
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">remove</span> <span class="pre">[-f]</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.17.</span></p>
+</div>
+<p>Remove the file(s). The planned behaviour was that if any of the
+listed files already do not exist, the command returns a non-zero exit code,
+but no message is logged. The <code class="docutils literal notranslate"><span class="pre">-f</span></code> option changes the behavior to return a
+zero exit code (i.e. success) in such situations instead.
+<code class="docutils literal notranslate"><span class="pre">remove</span></code> does not follow symlinks. That means it remove only symlinks
+and not files it point to.</p>
+<p>The implementation was buggy and always returned 0. It cannot be fixed without
+breaking backwards compatibility. Use <code class="docutils literal notranslate"><span class="pre">rm</span></code> instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">remove_directory</span> <span class="pre">&lt;dir&gt;...</span></code></dt><dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.17.</span></p>
+</div>
+<p>Remove <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code> directories and their contents. If a directory does
+not exist it will be silently ignored.  If <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code> is a symlink to
+a directory, just the symlink will be removed.
+Use <code class="docutils literal notranslate"><span class="pre">rm</span></code> instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">rename</span> <span class="pre">&lt;oldname&gt;</span> <span class="pre">&lt;newname&gt;</span></code></dt><dd><p>Rename a file or directory (on one volume). If file with the <code class="docutils literal notranslate"><span class="pre">&lt;newname&gt;</span></code> name
+already exists, then it will be silently replaced.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">[-rRf]</span> <span class="pre">&lt;file&gt;</span> <span class="pre">&lt;dir&gt;...</span></code></dt><dd><p>Remove the files <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> or directories <code class="docutils literal notranslate"><span class="pre">dir</span></code>.
+Use <code class="docutils literal notranslate"><span class="pre">-r</span></code> or <code class="docutils literal notranslate"><span class="pre">-R</span></code> to remove directories and their contents recursively.
+If any of the listed files/directories do not exist, the command returns a
+non-zero exit code, but no message is logged. The <code class="docutils literal notranslate"><span class="pre">-f</span></code> option changes
+the behavior to return a zero exit code (i.e. success) in such
+situations instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">server</span></code></dt><dd><p>Launch <span class="target" id="index-0-manual:cmake-server(7)"></span><a class="reference internal" href="cmake-server.7.html#manual:cmake-server(7)" title="cmake-server(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-server(7)</span></code></a> mode.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sleep</span> <span class="pre">&lt;number&gt;...</span></code></dt><dd><p>Sleep for given number of seconds.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">tar</span> <span class="pre">[cxt][vf][zjJ]</span> <span class="pre">file.tar</span> <span class="pre">[&lt;options&gt;]</span> <span class="pre">[--]</span> <span class="pre">[&lt;pathname&gt;...]</span></code></dt><dd><p>Create or extract a tar or zip archive.  Options are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">c</span></code></dt><dd><p>Create a new archive containing the specified files.
+If used, the <code class="docutils literal notranslate"><span class="pre">&lt;pathname&gt;...</span></code> argument is mandatory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">x</span></code></dt><dd><p>Extract to disk from the archive.
+The <code class="docutils literal notranslate"><span class="pre">&lt;pathname&gt;...</span></code> argument could be used to extract only selected files
+or directories.
+When extracting selected files or directories, you must provide their exact
+names including the path, as printed by list (<code class="docutils literal notranslate"><span class="pre">-t</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">t</span></code></dt><dd><p>List archive contents.
+The <code class="docutils literal notranslate"><span class="pre">&lt;pathname&gt;...</span></code> argument could be used to list only selected files
+or directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">v</span></code></dt><dd><p>Produce verbose output.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">z</span></code></dt><dd><p>Compress the resulting archive with gzip.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">j</span></code></dt><dd><p>Compress the resulting archive with bzip2.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">J</span></code></dt><dd><p>Compress the resulting archive with XZ.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--zstd</span></code></dt><dd><p>Compress the resulting archive with Zstandard.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--files-from=&lt;file&gt;</span></code></dt><dd><p>Read file names from the given file, one per line.
+Blank lines are ignored.  Lines may not start in <code class="docutils literal notranslate"><span class="pre">-</span></code>
+except for <code class="docutils literal notranslate"><span class="pre">--add-file=&lt;name&gt;</span></code> to add files whose
+names start in <code class="docutils literal notranslate"><span class="pre">-</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--format=&lt;format&gt;</span></code></dt><dd><p>Specify the format of the archive to be created.
+Supported formats are: <code class="docutils literal notranslate"><span class="pre">7zip</span></code>, <code class="docutils literal notranslate"><span class="pre">gnutar</span></code>, <code class="docutils literal notranslate"><span class="pre">pax</span></code>,
+<code class="docutils literal notranslate"><span class="pre">paxr</span></code> (restricted pax, default), and <code class="docutils literal notranslate"><span class="pre">zip</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--mtime=&lt;date&gt;</span></code></dt><dd><p>Specify modification time recorded in tarball entries.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--</span></code></dt><dd><p>Stop interpreting options and treat all remaining arguments
+as file names, even if they start with <code class="docutils literal notranslate"><span class="pre">-</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">time</span> <span class="pre">&lt;command&gt;</span> <span class="pre">[&lt;args&gt;...]</span></code></dt><dd><p>Run command and display elapsed time.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">touch</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Creates <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> if file do not exist.
+If <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> exists, it is changing <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> access and modification times.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">touch_nocreate</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Touch a file if it exists but do not create it.  If a file does
+not exist it will be silently ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">true</span></code></dt><dd><p>Do nothing, with an exit code of 0.</p>
+</dd>
+</dl>
+<div class="section" id="windows-specific-command-line-tools">
+<h3>Windows-specific Command-Line Tools<a class="headerlink" href="#windows-specific-command-line-tools" title="Permalink to this headline">¶</a></h3>
+<p>The following <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-E</span></code> commands are available only on Windows:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">delete_regv</span> <span class="pre">&lt;key&gt;</span></code></dt><dd><p>Delete Windows registry value.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">env_vs8_wince</span> <span class="pre">&lt;sdkname&gt;</span></code></dt><dd><p>Displays a batch file which sets the environment for the provided
+Windows CE SDK installed in VS2005.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">env_vs9_wince</span> <span class="pre">&lt;sdkname&gt;</span></code></dt><dd><p>Displays a batch file which sets the environment for the provided
+Windows CE SDK installed in VS2008.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">write_regv</span> <span class="pre">&lt;key&gt;</span> <span class="pre">&lt;value&gt;</span></code></dt><dd><p>Write Windows registry value.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="run-the-find-package-tool">
+<h2>Run the Find-Package Tool<a class="headerlink" href="#run-the-find-package-tool" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides a pkg-config like helper for Makefile-based projects:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake --find-package <span class="o">[</span>&lt;options&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>It searches a package using <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> and prints the
+resulting flags to stdout.  This can be used instead of pkg-config
+to find installed libraries in plain Makefile-based projects or in
+autoconf-based projects (via <code class="docutils literal notranslate"><span class="pre">share/aclocal/cmake.m4</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This mode is not well-supported due to some technical limitations.
+It is kept for compatibility but should not be used in new projects.</p>
+</div>
+</div>
+<div class="section" id="view-help">
+<h2>View Help<a class="headerlink" href="#view-help" title="Permalink to this headline">¶</a></h2>
+<p>To print selected pages from the CMake documentation, use</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake --help<span class="o">[</span>-&lt;topic&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>with one of the following options:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">--help,-help,-usage,-h,-H,/?</span></code></dt><dd><p>Print usage information and exit.</p>
+<p>Usage describes the basic command line interface and its options.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--version,-version,/V</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Show program name/version banner and exit.</p>
+<p>If a file is specified, the version is written into it.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-full</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print all help manuals and exit.</p>
+<p>All manuals are printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-manual</span> <span class="pre">&lt;man&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print one help manual and exit.</p>
+<p>The specified manual is printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-manual-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List help manuals available and exit.</p>
+<p>The list contains all manuals for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-manual</span></code> option followed by a manual name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-command</span> <span class="pre">&lt;cmd&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print help for one command and exit.</p>
+<p>The <span class="target" id="index-0-manual:cmake-commands(7)"></span><a class="reference internal" href="cmake-commands.7.html#manual:cmake-commands(7)" title="cmake-commands(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-commands(7)</span></code></a> manual entry for <code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;</span></code> is
+printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-command-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List commands with help available and exit.</p>
+<p>The list contains all commands for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-command</span></code> option followed by a command name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-commands</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print cmake-commands manual and exit.</p>
+<p>The <span class="target" id="index-1-manual:cmake-commands(7)"></span><a class="reference internal" href="cmake-commands.7.html#manual:cmake-commands(7)" title="cmake-commands(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-commands(7)</span></code></a> manual is printed in a
+human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-module</span> <span class="pre">&lt;mod&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print help for one module and exit.</p>
+<p>The <span class="target" id="index-0-manual:cmake-modules(7)"></span><a class="reference internal" href="cmake-modules.7.html#manual:cmake-modules(7)" title="cmake-modules(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-modules(7)</span></code></a> manual entry for <code class="docutils literal notranslate"><span class="pre">&lt;mod&gt;</span></code> is printed
+in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-module-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List modules with help available and exit.</p>
+<p>The list contains all modules for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-module</span></code> option followed by a module name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-modules</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print cmake-modules manual and exit.</p>
+<p>The <span class="target" id="index-1-manual:cmake-modules(7)"></span><a class="reference internal" href="cmake-modules.7.html#manual:cmake-modules(7)" title="cmake-modules(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-modules(7)</span></code></a> manual is printed in a human-readable
+text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-policy</span> <span class="pre">&lt;cmp&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print help for one policy and exit.</p>
+<p>The <span class="target" id="index-0-manual:cmake-policies(7)"></span><a class="reference internal" href="cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-policies(7)</span></code></a> manual entry for <code class="docutils literal notranslate"><span class="pre">&lt;cmp&gt;</span></code> is
+printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-policy-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List policies with help available and exit.</p>
+<p>The list contains all policies for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-policy</span></code> option followed by a policy name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-policies</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print cmake-policies manual and exit.</p>
+<p>The <span class="target" id="index-1-manual:cmake-policies(7)"></span><a class="reference internal" href="cmake-policies.7.html#manual:cmake-policies(7)" title="cmake-policies(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-policies(7)</span></code></a> manual is printed in a
+human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-property</span> <span class="pre">&lt;prop&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print help for one property and exit.</p>
+<p>The <span class="target" id="index-0-manual:cmake-properties(7)"></span><a class="reference internal" href="cmake-properties.7.html#manual:cmake-properties(7)" title="cmake-properties(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-properties(7)</span></code></a> manual entries for <code class="docutils literal notranslate"><span class="pre">&lt;prop&gt;</span></code> are
+printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-property-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List properties with help available and exit.</p>
+<p>The list contains all properties for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-property</span></code> option followed by a property name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-properties</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print cmake-properties manual and exit.</p>
+<p>The <span class="target" id="index-1-manual:cmake-properties(7)"></span><a class="reference internal" href="cmake-properties.7.html#manual:cmake-properties(7)" title="cmake-properties(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-properties(7)</span></code></a> manual is printed in a
+human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-variable</span> <span class="pre">&lt;var&gt;</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print help for one variable and exit.</p>
+<p>The <span class="target" id="index-0-manual:cmake-variables(7)"></span><a class="reference internal" href="cmake-variables.7.html#manual:cmake-variables(7)" title="cmake-variables(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-variables(7)</span></code></a> manual entry for <code class="docutils literal notranslate"><span class="pre">&lt;var&gt;</span></code> is
+printed in a human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-variable-list</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>List variables with help available and exit.</p>
+<p>The list contains all variables for which help may be obtained by
+using the <code class="docutils literal notranslate"><span class="pre">--help-variable</span></code> option followed by a variable name.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--help-variables</span> <span class="pre">[&lt;f&gt;]</span></code></dt><dd><p>Print cmake-variables manual and exit.</p>
+<p>The <span class="target" id="index-1-manual:cmake-variables(7)"></span><a class="reference internal" href="cmake-variables.7.html#manual:cmake-variables(7)" title="cmake-variables(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-variables(7)</span></code></a> manual is printed in a
+human-readable text format.
+The help is printed to a named &lt;f&gt;ile if given.</p>
+</dd>
+</dl>
+<p>To view the presets available for a project, use</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake &lt;source-dir&gt; --list-presets
+</pre></div>
+</div>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p>The following resources are available to get help using CMake:</p>
+<dl>
+<dt>Home Page</dt><dd><p><a class="reference external" href="https://cmake.org">https://cmake.org</a></p>
+<p>The primary starting point for learning about CMake.</p>
+</dd>
+<dt>Online Documentation and Community Resources</dt><dd><p><a class="reference external" href="https://cmake.org/documentation">https://cmake.org/documentation</a></p>
+<p>Links to available documentation and community resources may be
+found on this web page.</p>
+</dd>
+<dt>Discourse Forum</dt><dd><p><a class="reference external" href="https://discourse.cmake.org">https://discourse.cmake.org</a></p>
+<p>The Discourse Forum hosts discussion and questions about CMake.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake(1)</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#introduction-to-cmake-buildsystems">Introduction to CMake Buildsystems</a></li>
+<li><a class="reference internal" href="#generate-a-project-buildsystem">Generate a Project Buildsystem</a><ul>
+<li><a class="reference internal" href="#options">Options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#build-a-project">Build a Project</a></li>
+<li><a class="reference internal" href="#install-a-project">Install a Project</a></li>
+<li><a class="reference internal" href="#open-a-project">Open a Project</a></li>
+<li><a class="reference internal" href="#run-a-script">Run a Script</a></li>
+<li><a class="reference internal" href="#run-a-command-line-tool">Run a Command-Line Tool</a><ul>
+<li><a class="reference internal" href="#windows-specific-command-line-tools">Windows-specific Command-Line Tools</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#run-the-find-package-tool">Run the Find-Package Tool</a></li>
+<li><a class="reference internal" href="#view-help">View Help</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ctest.1.html"
+                        title="next chapter">ctest(1)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake.1.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ctest.1.html" title="ctest(1)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Introduction"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake(1)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

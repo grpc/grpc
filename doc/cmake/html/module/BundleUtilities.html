@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BundleUtilities &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CheckCCompilerFlag" href="CheckCCompilerFlag.html" />
+    <link rel="prev" title="AndroidTestUtilities" href="AndroidTestUtilities.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CheckCCompilerFlag.html" title="CheckCCompilerFlag"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AndroidTestUtilities.html" title="AndroidTestUtilities"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BundleUtilities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bundleutilities">
+<span id="module:BundleUtilities"></span><h1>BundleUtilities<a class="headerlink" href="#bundleutilities" title="Permalink to this headline">¶</a></h1>
+<p>Functions to help assemble a standalone bundle application.</p>
+<p>A collection of CMake utility functions useful for dealing with <code class="docutils literal notranslate"><span class="pre">.app</span></code>
+bundles on the Mac and bundle-like directories on any OS.</p>
+<p>The following functions are provided by this module:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">fixup_bundle</span><span class="w"></span>
+<span class="nb">copy_and_fixup_bundle</span><span class="w"></span>
+<span class="nb">verify_app</span><span class="w"></span>
+<span class="nb">get_bundle_main_executable</span><span class="w"></span>
+<span class="nb">get_dotapp_dir</span><span class="w"></span>
+<span class="nb">get_bundle_and_executable</span><span class="w"></span>
+<span class="nb">get_bundle_all_executables</span><span class="w"></span>
+<span class="nb">get_item_key</span><span class="w"></span>
+<span class="nb">get_item_rpaths</span><span class="w"></span>
+<span class="nb">clear_bundle_keys</span><span class="w"></span>
+<span class="nb">set_bundle_key_values</span><span class="w"></span>
+<span class="nb">get_bundle_keys</span><span class="w"></span>
+<span class="nb">copy_resolved_item_into_bundle</span><span class="w"></span>
+<span class="nb">copy_resolved_framework_into_bundle</span><span class="w"></span>
+<span class="nb">fixup_bundle_item</span><span class="w"></span>
+<span class="nb">verify_bundle_prerequisites</span><span class="w"></span>
+<span class="nb">verify_bundle_symlinks</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Requires CMake 2.6 or greater because it uses function, break and
+<code class="docutils literal notranslate"><span class="pre">PARENT_SCOPE</span></code>.  Also depends on <code class="docutils literal notranslate"><span class="pre">GetPrerequisites.cmake</span></code>.</p>
+<p>DO NOT USE THESE FUNCTIONS AT CONFIGURE TIME (from <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>)!
+Instead, invoke them from an <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(CODE)</span></code></a> or
+<span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(SCRIPT)</span></code></a> rule.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">fixup_bundle(</span><span class="nv">&lt;app&gt;</span><span class="w"> </span><span class="nv">&lt;libs&gt;</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Fix up <code class="docutils literal notranslate"><span class="pre">&lt;app&gt;</span></code> bundle in-place and make it standalone, such that it can be
+drag-n-drop copied to another machine and run on that machine as long
+as all of the system libraries are compatible.</p>
+<p>If you pass plugins to <code class="docutils literal notranslate"><span class="pre">fixup_bundle</span></code> as the libs parameter, you should
+install them or copy them into the bundle before calling <code class="docutils literal notranslate"><span class="pre">fixup_bundle</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">&lt;libs&gt;</span></code> parameter is a list of libraries that must be fixed up, but
+that cannot be determined by <code class="docutils literal notranslate"><span class="pre">otool</span></code> output analysis  (i.e. <code class="docutils literal notranslate"><span class="pre">plugins</span></code>).</p>
+<p>Gather all the keys for all the executables and libraries in a bundle,
+and then, for each key, copy each prerequisite into the bundle.  Then
+fix each one up according to its own list of prerequisites.</p>
+<p>Then clear all the keys and call <code class="docutils literal notranslate"><span class="pre">verify_app</span></code> on the final bundle to
+ensure that it is truly standalone.</p>
+<p>As an optional parameter (<code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span></code>) a list of file names can be passed,
+which are then ignored
+(e.g. <code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span> <span class="pre">&quot;vcredist_x86.exe;vcredist_x64.exe&quot;</span></code>).</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">copy_and_fixup_bundle(</span><span class="nv">&lt;src&gt;</span><span class="w"> </span><span class="nv">&lt;dst&gt;</span><span class="w"> </span><span class="nv">&lt;libs&gt;</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Makes a copy of the bundle <code class="docutils literal notranslate"><span class="pre">&lt;src&gt;</span></code> at location <code class="docutils literal notranslate"><span class="pre">&lt;dst&gt;</span></code> and then fixes up
+the new copied bundle in-place at <code class="docutils literal notranslate"><span class="pre">&lt;dst&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">verify_app(</span><span class="nv">&lt;app&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Verifies that an application <code class="docutils literal notranslate"><span class="pre">&lt;app&gt;</span></code> appears valid based on running
+analysis tools on it.  Calls <span class="target" id="index-0-command:message"></span><a class="reference internal" href="../command/message.html#command:message" title="message"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">message(FATAL_ERROR)</span></code></a> if the application
+is not verified.</p>
+<p>As an optional parameter (<code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span></code>) a list of file names can be passed,
+which are then ignored
+(e.g. <code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span> <span class="pre">&quot;vcredist_x86.exe;vcredist_x64.exe&quot;</span></code>)</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_bundle_main_executable(</span><span class="nv">&lt;bundle&gt;</span><span class="w"> </span><span class="nv">&lt;result_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The result will be the full path name of the bundle’s main executable
+file or an <code class="docutils literal notranslate"><span class="pre">error:</span></code> prefixed string if it could not be determined.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_dotapp_dir(</span><span class="nv">&lt;exe&gt;</span><span class="w"> </span><span class="nv">&lt;dotapp_dir_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns the nearest parent dir whose name ends with <code class="docutils literal notranslate"><span class="pre">.app</span></code> given the
+full path to an executable.  If there is no such parent dir, then
+simply return the dir containing the executable.</p>
+<p>The returned directory may or may not exist.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_bundle_and_executable(</span><span class="nv">&lt;app&gt;</span><span class="w"> </span><span class="nv">&lt;bundle_var&gt;</span><span class="w"> </span><span class="nv">&lt;executable_var&gt;</span><span class="w"> </span><span class="nv">&lt;valid_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Takes either a <code class="docutils literal notranslate"><span class="pre">.app</span></code> directory name or the name of an executable
+nested inside a <code class="docutils literal notranslate"><span class="pre">.app</span></code> directory and returns the path to the <code class="docutils literal notranslate"><span class="pre">.app</span></code>
+directory in <code class="docutils literal notranslate"><span class="pre">&lt;bundle_var&gt;</span></code> and the path to its main executable in
+<code class="docutils literal notranslate"><span class="pre">&lt;executable_var&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_bundle_all_executables(</span><span class="nv">&lt;bundle&gt;</span><span class="w"> </span><span class="nv">&lt;exes_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Scans <code class="docutils literal notranslate"><span class="pre">&lt;bundle&gt;</span></code> bundle recursively for all <code class="docutils literal notranslate"><span class="pre">&lt;exes_var&gt;</span></code> executable
+files and accumulates them into a variable.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_item_key(</span><span class="nv">&lt;item&gt;</span><span class="w"> </span><span class="nv">&lt;key_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Given <code class="docutils literal notranslate"><span class="pre">&lt;item&gt;</span></code> file name, generate <code class="docutils literal notranslate"><span class="pre">&lt;key_var&gt;</span></code> key that should be unique
+considering the set of libraries that need copying or fixing up to
+make a bundle standalone.  This is essentially the file name including
+extension with <code class="docutils literal notranslate"><span class="pre">.</span></code> replaced by <code class="docutils literal notranslate"><span class="pre">_</span></code></p>
+<p>This key is used as a prefix for CMake variables so that we can
+associate a set of variables with a given item based on its key.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">clear_bundle_keys(</span><span class="nv">&lt;keys_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Loop over the <code class="docutils literal notranslate"><span class="pre">&lt;keys_var&gt;</span></code> list of keys, clearing all the variables
+associated with each key.  After the loop, clear the list of keys itself.</p>
+<p>Caller of <code class="docutils literal notranslate"><span class="pre">get_bundle_keys</span></code> should call <code class="docutils literal notranslate"><span class="pre">clear_bundle_keys</span></code> when done with
+list of keys.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_bundle_key_values(</span><span class="nv">&lt;keys_var&gt;</span><span class="w"> </span><span class="nv">&lt;context&gt;</span><span class="w"> </span><span class="nv">&lt;item&gt;</span><span class="w"> </span><span class="nv">&lt;exepath&gt;</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="w"></span>
+<span class="w">                      </span><span class="nv">&lt;copyflag&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;rpaths&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Add <code class="docutils literal notranslate"><span class="pre">&lt;keys_var&gt;</span></code> key to the list (if necessary) for the given item.
+If added, also set all the variables associated with that key.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_bundle_keys(</span><span class="nv">&lt;app&gt;</span><span class="w"> </span><span class="nv">&lt;libs&gt;</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="w"> </span><span class="nv">&lt;keys_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Loop over all the executable and library files within <code class="docutils literal notranslate"><span class="pre">&lt;app&gt;</span></code> bundle (and
+given as extra <code class="docutils literal notranslate"><span class="pre">&lt;libs&gt;</span></code>) and accumulate a list of keys representing
+them.  Set values associated with each key such that we can loop over
+all of them and copy prerequisite libs into the bundle and then do
+appropriate <code class="docutils literal notranslate"><span class="pre">install_name_tool</span></code> fixups.</p>
+<p>As an optional parameter (<code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span></code>) a list of file names can be passed,
+which are then ignored
+(e.g. <code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span> <span class="pre">&quot;vcredist_x86.exe;vcredist_x64.exe&quot;</span></code>)</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">copy_resolved_item_into_bundle(</span><span class="nv">&lt;resolved_item&gt;</span><span class="w"> </span><span class="nv">&lt;resolved_embedded_item&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Copy a resolved item into the bundle if necessary.
+Copy is not necessary, if the <code class="docutils literal notranslate"><span class="pre">&lt;resolved_item&gt;</span></code> is “the same as” the
+<code class="docutils literal notranslate"><span class="pre">&lt;resolved_embedded_item&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">copy_resolved_framework_into_bundle(</span><span class="nv">&lt;resolved_item&gt;</span><span class="w"> </span><span class="nv">&lt;resolved_embedded_item&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Copy a resolved framework into the bundle if necessary.
+Copy is not necessary, if the <code class="docutils literal notranslate"><span class="pre">&lt;resolved_item&gt;</span></code> is “the same as” the
+<code class="docutils literal notranslate"><span class="pre">&lt;resolved_embedded_item&gt;</span></code>.</p>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">BU_COPY_FULL_FRAMEWORK_CONTENTS</span></code> is not set.  If you want
+full frameworks embedded in your bundles, set
+<code class="docutils literal notranslate"><span class="pre">BU_COPY_FULL_FRAMEWORK_CONTENTS</span></code> to <code class="docutils literal notranslate"><span class="pre">ON</span></code> before calling fixup_bundle.  By
+default, <code class="docutils literal notranslate"><span class="pre">COPY_RESOLVED_FRAMEWORK_INTO_BUNDLE</span></code> copies the framework
+dylib itself plus the framework <code class="docutils literal notranslate"><span class="pre">Resources</span></code> directory.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">fixup_bundle_item(</span><span class="nv">&lt;resolved_embedded_item&gt;</span><span class="w"> </span><span class="nv">&lt;exepath&gt;</span><span class="w"> </span><span class="nv">&lt;dirs&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Get the direct/non-system prerequisites of the <code class="docutils literal notranslate"><span class="pre">&lt;resolved_embedded_item&gt;</span></code>.
+For each prerequisite, change the way it is referenced to the value of
+the <code class="docutils literal notranslate"><span class="pre">_EMBEDDED_ITEM</span></code> keyed variable for that prerequisite.  (Most likely
+changing to an <code class="docutils literal notranslate"><span class="pre">&#64;executable_path</span></code> style reference.)</p>
+<p>This function requires that the <code class="docutils literal notranslate"><span class="pre">&lt;resolved_embedded_item&gt;</span></code> be <code class="docutils literal notranslate"><span class="pre">inside</span></code>
+the bundle already.  In other words, if you pass plugins to <code class="docutils literal notranslate"><span class="pre">fixup_bundle</span></code>
+as the libs parameter, you should install them or copy them into the
+bundle before calling <code class="docutils literal notranslate"><span class="pre">fixup_bundle</span></code>.  The <code class="docutils literal notranslate"><span class="pre">libs</span></code> parameter is a list of
+libraries that must be fixed up, but that cannot be determined by
+otool output analysis.  (i.e., <code class="docutils literal notranslate"><span class="pre">plugins</span></code>)</p>
+<p>Also, change the id of the item being fixed up to its own
+<code class="docutils literal notranslate"><span class="pre">_EMBEDDED_ITEM</span></code> value.</p>
+<p>Accumulate changes in a local variable and make <em>one</em> call to
+<code class="docutils literal notranslate"><span class="pre">install_name_tool</span></code> at the end of the function with all the changes at
+once.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">BU_CHMOD_BUNDLE_ITEMS</span></code> variable is set then bundle items will be
+marked writable before <code class="docutils literal notranslate"><span class="pre">install_name_tool</span></code> tries to change them.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">verify_bundle_prerequisites(</span><span class="nv">&lt;bundle&gt;</span><span class="w"> </span><span class="nv">&lt;result_var&gt;</span><span class="w"> </span><span class="nv">&lt;info_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Verifies that the sum of all prerequisites of all files inside the
+bundle are contained within the bundle or are <code class="docutils literal notranslate"><span class="pre">system</span></code> libraries,
+presumed to exist everywhere.</p>
+<p>As an optional parameter (<code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span></code>) a list of file names can be passed,
+which are then ignored
+(e.g. <code class="docutils literal notranslate"><span class="pre">IGNORE_ITEM</span> <span class="pre">&quot;vcredist_x86.exe;vcredist_x64.exe&quot;</span></code>)</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">verify_bundle_symlinks(</span><span class="nv">&lt;bundle&gt;</span><span class="w"> </span><span class="nv">&lt;result_var&gt;</span><span class="w"> </span><span class="nv">&lt;info_var&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Verifies that any symlinks found in the <code class="docutils literal notranslate"><span class="pre">&lt;bundle&gt;</span></code> bundle point to other files
+that are already also in the bundle…  Anything that points to an
+external file causes this function to fail the verification.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AndroidTestUtilities.html"
+                        title="previous chapter">AndroidTestUtilities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CheckCCompilerFlag.html"
+                        title="next chapter">CheckCCompilerFlag</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/BundleUtilities.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CheckCCompilerFlag.html" title="CheckCCompilerFlag"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AndroidTestUtilities.html" title="AndroidTestUtilities"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BundleUtilities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

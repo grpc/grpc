@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt; &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LINK_INTERFACE_MULTIPLICITY" href="LINK_INTERFACE_MULTIPLICITY.html" />
+    <link rel="prev" title="LINK_INTERFACE_LIBRARIES" href="LINK_INTERFACE_LIBRARIES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_MULTIPLICITY.html" title="LINK_INTERFACE_MULTIPLICITY"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_LIBRARIES.html" title="LINK_INTERFACE_LIBRARIES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="link-interface-libraries-config">
+<span id="prop_tgt:LINK_INTERFACE_LIBRARIES_<CONFIG>"></span><h1>LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt;<a class="headerlink" href="#link-interface-libraries-config" title="Permalink to this headline">¶</a></h1>
+<p>Per-configuration list of public interface libraries for a target.</p>
+<p>This is the configuration-specific version of
+<span class="target" id="index-0-prop_tgt:LINK_INTERFACE_LIBRARIES"></span><a class="reference internal" href="LINK_INTERFACE_LIBRARIES.html#prop_tgt:LINK_INTERFACE_LIBRARIES" title="LINK_INTERFACE_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">LINK_INTERFACE_LIBRARIES</span></code></a>.  If set, this property completely
+overrides the generic property for the named configuration.</p>
+<p>This property is overridden by the <span class="target" id="index-0-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a>
+property if policy <span class="target" id="index-0-policy:CMP0022"></span><a class="reference internal" href="../policy/CMP0022.html#policy:CMP0022" title="CMP0022"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0022</span></code></a> is <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+<p>This property is deprecated.  Use <span class="target" id="index-1-prop_tgt:INTERFACE_LINK_LIBRARIES"></span><a class="reference internal" href="INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES" title="INTERFACE_LINK_LIBRARIES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_LINK_LIBRARIES</span></code></a>
+instead.</p>
+<div class="section" id="creating-relocatable-packages">
+<h2>Creating Relocatable Packages<a class="headerlink" href="#creating-relocatable-packages" title="Permalink to this headline">¶</a></h2>
+<p>Note that it is not advisable to populate the
+<code class="docutils literal notranslate"><span class="pre">LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt;</span></code> of a target with absolute paths to dependencies.
+That would hard-code into installed packages the library file paths
+for dependencies <strong>as found on the machine the package was made on</strong>.</p>
+<p>See the <a class="reference internal" href="../manual/cmake-packages.7.html#creating-relocatable-packages"><span class="std std-ref">Creating Relocatable Packages</span></a> section of the
+<span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="../manual/cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-packages(7)</span></code></a> manual for discussion of additional care
+that must be taken when specifying usage requirements while creating
+packages for redistribution.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt;</a><ul>
+<li><a class="reference internal" href="#creating-relocatable-packages">Creating Relocatable Packages</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="LINK_INTERFACE_LIBRARIES.html"
+                        title="previous chapter">LINK_INTERFACE_LIBRARIES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="LINK_INTERFACE_MULTIPLICITY.html"
+                        title="next chapter">LINK_INTERFACE_MULTIPLICITY</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/LINK_INTERFACE_LIBRARIES_CONFIG.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_MULTIPLICITY.html" title="LINK_INTERFACE_MULTIPLICITY"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="LINK_INTERFACE_LIBRARIES.html" title="LINK_INTERFACE_LIBRARIES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">LINK_INTERFACE_LIBRARIES_&lt;CONFIG&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

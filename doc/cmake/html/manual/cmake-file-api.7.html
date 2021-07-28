@@ -1,0 +1,1266 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-file-api(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake-generator-expressions(7)" href="cmake-generator-expressions.7.html" />
+    <link rel="prev" title="CCMAKE_COLORS" href="../envvar/CCMAKE_COLORS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake-generator-expressions.7.html" title="cmake-generator-expressions(7)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../envvar/CCMAKE_COLORS.html" title="CCMAKE_COLORS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-file-api(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-file-api(7)"></span><div class="section" id="cmake-file-api-7">
+<h1><a class="toc-backref" href="#id1">cmake-file-api(7)</a><a class="headerlink" href="#cmake-file-api-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-file-api-7" id="id1">cmake-file-api(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#api-v1" id="id3">API v1</a></p>
+<ul>
+<li><p><a class="reference internal" href="#v1-shared-stateless-query-files" id="id4">v1 Shared Stateless Query Files</a></p></li>
+<li><p><a class="reference internal" href="#v1-client-stateless-query-files" id="id5">v1 Client Stateless Query Files</a></p></li>
+<li><p><a class="reference internal" href="#v1-client-stateful-query-files" id="id6">v1 Client Stateful Query Files</a></p></li>
+<li><p><a class="reference internal" href="#v1-reply-index-file" id="id7">v1 Reply Index File</a></p>
+<ul>
+<li><p><a class="reference internal" href="#v1-reply-file-reference" id="id8">v1 Reply File Reference</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#v1-reply-files" id="id9">v1 Reply Files</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#object-kinds" id="id10">Object Kinds</a></p>
+<ul>
+<li><p><a class="reference internal" href="#object-kind-codemodel" id="id11">Object Kind “codemodel”</a></p>
+<ul>
+<li><p><a class="reference internal" href="#codemodel-version-2" id="id12">“codemodel” version 2</a></p></li>
+<li><p><a class="reference internal" href="#codemodel-version-2-target-object" id="id13">“codemodel” version 2 “target” object</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#object-kind-cache" id="id14">Object Kind “cache”</a></p>
+<ul>
+<li><p><a class="reference internal" href="#cache-version-2" id="id15">“cache” version 2</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#object-kind-cmakefiles" id="id16">Object Kind “cmakeFiles”</a></p>
+<ul>
+<li><p><a class="reference internal" href="#cmakefiles-version-1" id="id17">“cmakeFiles” version 1</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>CMake provides a file-based API that clients may use to get semantic
+information about the buildsystems CMake generates.  Clients may use
+the API by writing query files to a specific location in a build tree
+to request zero or more <a class="reference internal" href="#object-kinds">Object Kinds</a>.  When CMake generates the
+buildsystem in that build tree it will read the query files and write
+reply files for the client to read.</p>
+<p>The file-based API uses a <code class="docutils literal notranslate"><span class="pre">&lt;build&gt;/.cmake/api/</span></code> directory at the top
+of a build tree.  The API is versioned to support changes to the layout
+of files within the API directory.  API file layout versioning is
+orthogonal to the versioning of <a class="reference internal" href="#object-kinds">Object Kinds</a> used in replies.
+This version of CMake supports only one API version, <a class="reference internal" href="#api-v1">API v1</a>.</p>
+</div>
+<div class="section" id="api-v1">
+<h2><a class="toc-backref" href="#id3">API v1</a><a class="headerlink" href="#api-v1" title="Permalink to this headline">¶</a></h2>
+<p>API v1 is housed in the <code class="docutils literal notranslate"><span class="pre">&lt;build&gt;/.cmake/api/v1/</span></code> directory.
+It has the following subdirectories:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">query/</span></code></dt><dd><p>Holds query files written by clients.
+These may be <a class="reference internal" href="#v1-shared-stateless-query-files">v1 Shared Stateless Query Files</a>,
+<a class="reference internal" href="#v1-client-stateless-query-files">v1 Client Stateless Query Files</a>, or <a class="reference internal" href="#v1-client-stateful-query-files">v1 Client Stateful Query Files</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">reply/</span></code></dt><dd><p>Holds reply files written by CMake whenever it runs to generate a build
+system.  These are indexed by a <a class="reference internal" href="#v1-reply-index-file">v1 Reply Index File</a> file that may
+reference additional <a class="reference internal" href="#v1-reply-files">v1 Reply Files</a>.  CMake owns all reply files.
+Clients must never remove them.</p>
+<p>Clients may look for and read a reply index file at any time.
+Clients may optionally create the <code class="docutils literal notranslate"><span class="pre">reply/</span></code> directory at any time
+and monitor it for the appearance of a new reply index file.</p>
+</dd>
+</dl>
+<div class="section" id="v1-shared-stateless-query-files">
+<h3><a class="toc-backref" href="#id4">v1 Shared Stateless Query Files</a><a class="headerlink" href="#v1-shared-stateless-query-files" title="Permalink to this headline">¶</a></h3>
+<p>Shared stateless query files allow clients to share requests for
+major versions of the <a class="reference internal" href="#object-kinds">Object Kinds</a> and get all requested versions
+recognized by the CMake that runs.</p>
+<p>Clients may create shared requests by creating empty files in the
+<code class="docutils literal notranslate"><span class="pre">v1/query/</span></code> directory.  The form is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;build&gt;/.cmake/api/v1/query/&lt;kind&gt;-v&lt;major&gt;
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;</span></code> is one of the <a class="reference internal" href="#object-kinds">Object Kinds</a>, <code class="docutils literal notranslate"><span class="pre">-v</span></code> is literal,
+and <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;</span></code> is the major version number.</p>
+<p>Files of this form are stateless shared queries not owned by any specific
+client.  Once created they should not be removed without external client
+coordination or human intervention.</p>
+</div>
+<div class="section" id="v1-client-stateless-query-files">
+<h3><a class="toc-backref" href="#id5">v1 Client Stateless Query Files</a><a class="headerlink" href="#v1-client-stateless-query-files" title="Permalink to this headline">¶</a></h3>
+<p>Client stateless query files allow clients to create owned requests for
+major versions of the <a class="reference internal" href="#object-kinds">Object Kinds</a> and get all requested versions
+recognized by the CMake that runs.</p>
+<p>Clients may create owned requests by creating empty files in
+client-specific query subdirectories.  The form is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;build&gt;/.cmake/api/v1/query/client-&lt;client&gt;/&lt;kind&gt;-v&lt;major&gt;
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">client-</span></code> is literal, <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code> is a string uniquely
+identifying the client, <code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;</span></code> is one of the <a class="reference internal" href="#object-kinds">Object Kinds</a>,
+<code class="docutils literal notranslate"><span class="pre">-v</span></code> is literal, and <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;</span></code> is the major version number.
+Each client must choose a unique <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code> identifier via its
+own means.</p>
+<p>Files of this form are stateless queries owned by the client <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code>.
+The owning client may remove them at any time.</p>
+</div>
+<div class="section" id="v1-client-stateful-query-files">
+<h3><a class="toc-backref" href="#id6">v1 Client Stateful Query Files</a><a class="headerlink" href="#v1-client-stateful-query-files" title="Permalink to this headline">¶</a></h3>
+<p>Stateful query files allow clients to request a list of versions of
+each of the <a class="reference internal" href="#object-kinds">Object Kinds</a> and get only the most recent version
+recognized by the CMake that runs.</p>
+<p>Clients may create owned stateful queries by creating <code class="docutils literal notranslate"><span class="pre">query.json</span></code>
+files in client-specific query subdirectories.  The form is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;build&gt;/.cmake/api/v1/query/client-&lt;client&gt;/query.json
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">client-</span></code> is literal, <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code> is a string uniquely
+identifying the client, and <code class="docutils literal notranslate"><span class="pre">query.json</span></code> is literal.  Each client
+must choose a unique <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code> identifier via its own means.</p>
+<p><code class="docutils literal notranslate"><span class="pre">query.json</span></code> files are stateful queries owned by the client <code class="docutils literal notranslate"><span class="pre">&lt;client&gt;</span></code>.
+The owning client may update or remove them at any time.  When a
+given client installation is updated it may then update the stateful
+query it writes to build trees to request newer object versions.
+This can be used to avoid asking CMake to generate multiple object
+versions unnecessarily.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file must contain a JSON object:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;requests&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span> <span class="p">,</span> <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span> <span class="p">,</span> <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="p">}</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span> <span class="p">,</span> <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span> <span class="p">,</span> <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="p">}]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span> <span class="p">,</span> <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;client&quot;</span><span class="p">:</span> <span class="p">{}</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span> <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;client&quot;</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">requests</span></code></dt><dd><p>A JSON array containing zero or more requests.  Each request is
+a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">kind</span></code></dt><dd><p>Specifies one of the <a class="reference internal" href="#object-kinds">Object Kinds</a> to be included in the reply.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>Indicates the version(s) of the object kind that the client
+understands.  Versions have major and minor components following
+semantic version conventions.  The value must be</p>
+<ul class="simple">
+<li><p>a JSON integer specifying a (non-negative) major version number, or</p></li>
+<li><p>a JSON object containing <code class="docutils literal notranslate"><span class="pre">major</span></code> and (optionally) <code class="docutils literal notranslate"><span class="pre">minor</span></code>
+members specifying non-negative integer version components, or</p></li>
+<li><p>a JSON array whose elements are each one of the above.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">client</span></code></dt><dd><p>Optional member reserved for use by the client.  This value is
+preserved in the reply written for the client in the
+<a class="reference internal" href="#v1-reply-index-file">v1 Reply Index File</a> but is otherwise ignored.  Clients may use
+this to pass custom information with a request through to its reply.</p>
+</dd>
+</dl>
+<p>For each requested object kind CMake will choose the <em>first</em> version
+that it recognizes for that kind among those listed in the request.
+The response will use the selected <em>major</em> version with the highest
+<em>minor</em> version known to the running CMake for that major version.
+Therefore clients should list all supported major versions in
+preferred order along with the minimal minor version required
+for each major version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">client</span></code></dt><dd><p>Optional member reserved for use by the client.  This value is
+preserved in the reply written for the client in the
+<a class="reference internal" href="#v1-reply-index-file">v1 Reply Index File</a> but is otherwise ignored.  Clients may use
+this to pass custom information with a query through to its reply.</p>
+</dd>
+</dl>
+<p>Other <code class="docutils literal notranslate"><span class="pre">query.json</span></code> top-level members are reserved for future use.
+If present they are ignored for forward compatibility.</p>
+</div>
+<div class="section" id="v1-reply-index-file">
+<h3><a class="toc-backref" href="#id7">v1 Reply Index File</a><a class="headerlink" href="#v1-reply-index-file" title="Permalink to this headline">¶</a></h3>
+<p>CMake writes an <code class="docutils literal notranslate"><span class="pre">index-*.json</span></code> file to the <code class="docutils literal notranslate"><span class="pre">v1/reply/</span></code> directory
+whenever it runs to generate a build system.  Clients must read the
+reply index file first and may read other <a class="reference internal" href="#v1-reply-files">v1 Reply Files</a> only by
+following references.  The form of the reply index file name is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;build&gt;/.cmake/api/v1/reply/index-&lt;unspecified&gt;.json
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">index-</span></code> is literal and <code class="docutils literal notranslate"><span class="pre">&lt;unspecified&gt;</span></code> is an unspecified
+name selected by CMake.  Whenever a new index file is generated it
+is given a new name and any old one is deleted.  During the short
+time between these steps there may be multiple index files present;
+the one with the largest name in lexicographic order is the current
+index file.</p>
+<p>The reply index file contains a JSON object:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;cmake&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span> <span class="nt">&quot;patch&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="nt">&quot;suffix&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;string&quot;</span><span class="p">:</span> <span class="s2">&quot;3.14.0&quot;</span><span class="p">,</span> <span class="nt">&quot;isDirty&quot;</span><span class="p">:</span> <span class="kc">false</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;cmake&quot;</span><span class="p">:</span> <span class="s2">&quot;/prefix/bin/cmake&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;ctest&quot;</span><span class="p">:</span> <span class="s2">&quot;/prefix/bin/ctest&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;cpack&quot;</span><span class="p">:</span> <span class="s2">&quot;/prefix/bin/cpack&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;root&quot;</span><span class="p">:</span> <span class="s2">&quot;/prefix/share/cmake-3.14&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;generator&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;multiConfig&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Unix Makefiles&quot;</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;objects&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+      <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;...&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span> <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;reply&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;&lt;kind&gt;-v&lt;major&gt;&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span><span class="p">,</span>
+                         <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+                         <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span> <span class="p">},</span>
+    <span class="nt">&quot;&lt;unknown&gt;&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown query file&quot;</span> <span class="p">},</span>
+    <span class="nt">&quot;...&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;client-&lt;client&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;&lt;kind&gt;-v&lt;major&gt;&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span><span class="p">,</span>
+                           <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+                           <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span> <span class="p">},</span>
+      <span class="nt">&quot;&lt;unknown&gt;&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown query file&quot;</span> <span class="p">},</span>
+      <span class="nt">&quot;...&quot;</span><span class="p">:</span> <span class="p">{},</span>
+      <span class="nt">&quot;query.json&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;requests&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="p">{},</span> <span class="p">{},</span> <span class="p">{}</span> <span class="p">],</span>
+        <span class="nt">&quot;responses&quot;</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span> <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+            <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span> <span class="p">},</span>
+          <span class="p">{</span> <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown query file&quot;</span> <span class="p">},</span>
+          <span class="p">{</span> <span class="nt">&quot;...&quot;</span><span class="p">:</span> <span class="p">{}</span> <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="nt">&quot;client&quot;</span><span class="p">:</span> <span class="p">{}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">cmake</span></code></dt><dd><p>A JSON object containing information about the instance of CMake that
+generated the reply.  It contains members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>A JSON object specifying the version of CMake with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">major</span></code>, <code class="docutils literal notranslate"><span class="pre">minor</span></code>, <code class="docutils literal notranslate"><span class="pre">patch</span></code></dt><dd><p>Integer values specifying the major, minor, and patch version components.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">suffix</span></code></dt><dd><p>A string specifying the version suffix, if any, e.g. <code class="docutils literal notranslate"><span class="pre">g0abc3</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">string</span></code></dt><dd><p>A string specifying the full version in the format
+<code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;[-&lt;suffix&gt;]</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isDirty</span></code></dt><dd><p>A boolean indicating whether the version was built from a version
+controlled source tree with local modifications.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">paths</span></code></dt><dd><p>A JSON object specifying paths to things that come with CMake.
+It has members for <code class="docutils literal notranslate"><span class="pre">cmake</span></code>, <code class="docutils literal notranslate"><span class="pre">ctest</span></code>, and <code class="docutils literal notranslate"><span class="pre">cpack</span></code> whose values
+are JSON strings specifying the absolute path to each tool,
+represented with forward slashes.  It also has a <code class="docutils literal notranslate"><span class="pre">root</span></code> member for
+the absolute path to the directory containing CMake resources like the
+<code class="docutils literal notranslate"><span class="pre">Modules/</span></code> directory (see <span class="target" id="index-0-variable:CMAKE_ROOT"></span><a class="reference internal" href="../variable/CMAKE_ROOT.html#variable:CMAKE_ROOT" title="CMAKE_ROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_ROOT</span></code></a>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">generator</span></code></dt><dd><p>A JSON object describing the CMake generator used for the build.
+It has members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">multiConfig</span></code></dt><dd><p>A boolean specifying whether the generator supports multiple output
+configurations.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the generator.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">platform</span></code></dt><dd><p>If the generator supports <span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a>,
+this is a string specifying the generator platform name.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">objects</span></code></dt><dd><p>A JSON array listing all versions of all <a class="reference internal" href="#object-kinds">Object Kinds</a> generated
+as part of the reply.  Each array entry is a
+<a class="reference internal" href="#v1-reply-file-reference">v1 Reply File Reference</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">reply</span></code></dt><dd><p>A JSON object mirroring the content of the <code class="docutils literal notranslate"><span class="pre">query/</span></code> directory
+that CMake loaded to produce the reply.  The members are of the form</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;-v&lt;major&gt;</span></code></dt><dd><p>A member of this form appears for each of the
+<a class="reference internal" href="#v1-shared-stateless-query-files">v1 Shared Stateless Query Files</a> that CMake recognized as a
+request for object kind <code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;</span></code> with major version <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;</span></code>.
+The value is a <a class="reference internal" href="#v1-reply-file-reference">v1 Reply File Reference</a> to the corresponding
+reply file for that object kind and version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;unknown&gt;</span></code></dt><dd><p>A member of this form appears for each of the
+<a class="reference internal" href="#v1-shared-stateless-query-files">v1 Shared Stateless Query Files</a> that CMake did not recognize.
+The value is a JSON object with a single <code class="docutils literal notranslate"><span class="pre">error</span></code> member
+containing a string with an error message indicating that the
+query file is unknown.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">client-&lt;client&gt;</span></code></dt><dd><p>A member of this form appears for each client-owned directory
+holding <a class="reference internal" href="#v1-client-stateless-query-files">v1 Client Stateless Query Files</a>.
+The value is a JSON object mirroring the content of the
+<code class="docutils literal notranslate"><span class="pre">query/client-&lt;client&gt;/</span></code> directory.  The members are of the form:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;-v&lt;major&gt;</span></code></dt><dd><p>A member of this form appears for each of the
+<a class="reference internal" href="#v1-client-stateless-query-files">v1 Client Stateless Query Files</a> that CMake recognized as a
+request for object kind <code class="docutils literal notranslate"><span class="pre">&lt;kind&gt;</span></code> with major version <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;</span></code>.
+The value is a <a class="reference internal" href="#v1-reply-file-reference">v1 Reply File Reference</a> to the corresponding
+reply file for that object kind and version.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;unknown&gt;</span></code></dt><dd><p>A member of this form appears for each of the
+<a class="reference internal" href="#v1-client-stateless-query-files">v1 Client Stateless Query Files</a> that CMake did not recognize.
+The value is a JSON object with a single <code class="docutils literal notranslate"><span class="pre">error</span></code> member
+containing a string with an error message indicating that the
+query file is unknown.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">query.json</span></code></dt><dd><p>This member appears for clients using
+<a class="reference internal" href="#v1-client-stateful-query-files">v1 Client Stateful Query Files</a>.
+If the <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file failed to read or parse as a JSON object,
+this member is a JSON object with a single <code class="docutils literal notranslate"><span class="pre">error</span></code> member
+containing a string with an error message.  Otherwise, this member
+is a JSON object mirroring the content of the <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file.
+The members are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">client</span></code></dt><dd><p>A copy of the <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file <code class="docutils literal notranslate"><span class="pre">client</span></code> member, if it exists.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">requests</span></code></dt><dd><p>A copy of the <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file <code class="docutils literal notranslate"><span class="pre">requests</span></code> member, if it exists.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">responses</span></code></dt><dd><p>If the <code class="docutils literal notranslate"><span class="pre">query.json</span></code> file <code class="docutils literal notranslate"><span class="pre">requests</span></code> member is missing or invalid,
+this member is a JSON object with a single <code class="docutils literal notranslate"><span class="pre">error</span></code> member
+containing a string with an error message.  Otherwise, this member
+contains a JSON array with a response for each entry of the
+<code class="docutils literal notranslate"><span class="pre">requests</span></code> array, in the same order.  Each response is</p>
+<ul class="simple">
+<li><p>a JSON object with a single <code class="docutils literal notranslate"><span class="pre">error</span></code> member containing a string
+with an error message, or</p></li>
+<li><p>a <a class="reference internal" href="#v1-reply-file-reference">v1 Reply File Reference</a> to the corresponding reply file for
+the requested object kind and selected version.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>After reading the reply index file, clients may read the other
+<a class="reference internal" href="#v1-reply-files">v1 Reply Files</a> it references.</p>
+<div class="section" id="v1-reply-file-reference">
+<h4><a class="toc-backref" href="#id8">v1 Reply File Reference</a><a class="headerlink" href="#v1-reply-file-reference" title="Permalink to this headline">¶</a></h4>
+<p>The reply index file represents each reference to another reply file
+using a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">kind</span></code></dt><dd><p>A string specifying one of the <a class="reference internal" href="#object-kinds">Object Kinds</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">version</span></code></dt><dd><p>A JSON object with members <code class="docutils literal notranslate"><span class="pre">major</span></code> and <code class="docutils literal notranslate"><span class="pre">minor</span></code> specifying
+integer version components of the object kind.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">jsonFile</span></code></dt><dd><p>A JSON string specifying a path relative to the reply index file
+to another JSON file containing the object.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="v1-reply-files">
+<h3><a class="toc-backref" href="#id9">v1 Reply Files</a><a class="headerlink" href="#v1-reply-files" title="Permalink to this headline">¶</a></h3>
+<p>Reply files containing specific <a class="reference internal" href="#object-kinds">Object Kinds</a> are written by CMake.
+The names of these files are unspecified and must not be interpreted
+by clients.  Clients must first read the <a class="reference internal" href="#v1-reply-index-file">v1 Reply Index File</a> and
+and follow references to the names of the desired response objects.</p>
+<p>Reply files (including the index file) will never be replaced by
+files of the same name but different content.  This allows a client
+to read the files concurrently with a running CMake that may generate
+a new reply.  However, after generating a new reply CMake will attempt
+to remove reply files from previous runs that it did not just write.
+If a client attempts to read a reply file referenced by the index but
+finds the file missing, that means a concurrent CMake has generated
+a new reply.  The client may simply start again by reading the new
+reply index file.</p>
+</div>
+</div>
+<div class="section" id="object-kinds">
+<span id="file-api-object-kinds"></span><h2><a class="toc-backref" href="#id10">Object Kinds</a><a class="headerlink" href="#object-kinds" title="Permalink to this headline">¶</a></h2>
+<p>The CMake file-based API reports semantic information about the build
+system using the following kinds of JSON objects.  Each kind of object
+is versioned independently using semantic versioning with major and
+minor components.  Every kind of object has the form:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;kind&gt;&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+  <span class="nt">&quot;...&quot;</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">kind</span></code> member is a string specifying the object kind name.
+The <code class="docutils literal notranslate"><span class="pre">version</span></code> member is a JSON object with <code class="docutils literal notranslate"><span class="pre">major</span></code> and <code class="docutils literal notranslate"><span class="pre">minor</span></code>
+members specifying integer components of the object kind’s version.
+Additional top-level members are specific to each object kind.</p>
+<div class="section" id="object-kind-codemodel">
+<h3><a class="toc-backref" href="#id11">Object Kind “codemodel”</a><a class="headerlink" href="#object-kind-codemodel" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">codemodel</span></code> object kind describes the build system structure as
+modeled by CMake.</p>
+<p>There is only one <code class="docutils literal notranslate"><span class="pre">codemodel</span></code> object major version, version 2.
+Version 1 does not exist to avoid confusion with that from
+<span class="target" id="index-0-manual:cmake-server(7)"></span><a class="reference internal" href="cmake-server.7.html#manual:cmake-server(7)" title="cmake-server(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-server(7)</span></code></a> mode.</p>
+<div class="section" id="codemodel-version-2">
+<h4><a class="toc-backref" href="#id12">“codemodel” version 2</a><a class="headerlink" href="#codemodel-version-2" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">codemodel</span></code> object version 2 is a JSON object:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;codemodel&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="p">},</span>
+  <span class="nt">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/top-level-source-dir&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;build&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/top-level-build-dir&quot;</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;configurations&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Debug&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;directories&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;build&quot;</span><span class="p">:</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;childIndexes&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">1</span> <span class="p">],</span>
+          <span class="nt">&quot;projectIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;targetIndexes&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">0</span> <span class="p">],</span>
+          <span class="nt">&quot;hasInstallRule&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+          <span class="nt">&quot;minimumCMakeVersion&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;string&quot;</span><span class="p">:</span> <span class="s2">&quot;3.14&quot;</span>
+          <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;sub&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;build&quot;</span><span class="p">:</span> <span class="s2">&quot;sub&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;parentIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;projectIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;targetIndexes&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">1</span> <span class="p">],</span>
+          <span class="nt">&quot;minimumCMakeVersion&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;string&quot;</span><span class="p">:</span> <span class="s2">&quot;3.14&quot;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">],</span>
+      <span class="nt">&quot;projects&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MyProject&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;directoryIndexes&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="p">],</span>
+          <span class="nt">&quot;targetIndexes&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="p">]</span>
+        <span class="p">}</span>
+      <span class="p">],</span>
+      <span class="nt">&quot;targets&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MyExecutable&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;directoryIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;projectIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MyLibrary&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;directoryIndex&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+          <span class="nt">&quot;projectIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nt">&quot;jsonFile&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;file&gt;&quot;</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members specific to <code class="docutils literal notranslate"><span class="pre">codemodel</span></code> objects are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">paths</span></code></dt><dd><p>A JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">source</span></code></dt><dd><p>A string specifying the absolute path to the top-level source directory,
+represented with forward slashes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">build</span></code></dt><dd><p>A string specifying the absolute path to the top-level build directory,
+represented with forward slashes.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">configurations</span></code></dt><dd><p>A JSON array of entries corresponding to available build configurations.
+On single-configuration generators there is one entry for the value
+of the <span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> variable.  For multi-configuration
+generators there is an entry for each configuration listed in the
+<span class="target" id="index-0-variable:CMAKE_CONFIGURATION_TYPES"></span><a class="reference internal" href="../variable/CMAKE_CONFIGURATION_TYPES.html#variable:CMAKE_CONFIGURATION_TYPES" title="CMAKE_CONFIGURATION_TYPES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CONFIGURATION_TYPES</span></code></a> variable.
+Each entry is a JSON object containing members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the configuration, e.g. <code class="docutils literal notranslate"><span class="pre">Debug</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">directories</span></code></dt><dd><p>A JSON array of entries each corresponding to a build system directory
+whose source directory contains a <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.  The first
+entry corresponds to the top-level directory.  Each entry is a
+JSON object containing members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">source</span></code></dt><dd><p>A string specifying the path to the source directory, represented
+with forward slashes.  If the directory is inside the top-level
+source directory then the path is specified relative to that
+directory (with <code class="docutils literal notranslate"><span class="pre">.</span></code> for the top-level source directory itself).
+Otherwise the path is absolute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">build</span></code></dt><dd><p>A string specifying the path to the build directory, represented
+with forward slashes.  If the directory is inside the top-level
+build directory then the path is specified relative to that
+directory (with <code class="docutils literal notranslate"><span class="pre">.</span></code> for the top-level build directory itself).
+Otherwise the path is absolute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">parentIndex</span></code></dt><dd><p>Optional member that is present when the directory is not top-level.
+The value is an unsigned integer 0-based index of another entry in
+the main <code class="docutils literal notranslate"><span class="pre">directories</span></code> array that corresponds to the parent
+directory that added this directory as a subdirectory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">childIndexes</span></code></dt><dd><p>Optional member that is present when the directory has subdirectories.
+The value is a JSON array of entries corresponding to child directories
+created by the <span class="target" id="index-0-command:add_subdirectory"></span><a class="reference internal" href="../command/add_subdirectory.html#command:add_subdirectory" title="add_subdirectory"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_subdirectory()</span></code></a> or <span class="target" id="index-0-command:subdirs"></span><a class="reference internal" href="../command/subdirs.html#command:subdirs" title="subdirs"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">subdirs()</span></code></a>
+command.  Each entry is an unsigned integer 0-based index of another
+entry in the main <code class="docutils literal notranslate"><span class="pre">directories</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">projectIndex</span></code></dt><dd><p>An unsigned integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">projects</span></code> array
+indicating the build system project to which the this directory belongs.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">targetIndexes</span></code></dt><dd><p>Optional member that is present when the directory itself has targets,
+excluding those belonging to subdirectories.  The value is a JSON
+array of entries corresponding to the targets.  Each entry is an
+unsigned integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">targets</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">minimumCMakeVersion</span></code></dt><dd><p>Optional member present when a minimum required version of CMake is
+known for the directory.  This is the <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> version given to the
+most local call to the <span class="target" id="index-0-command:cmake_minimum_required"></span><a class="reference internal" href="../command/cmake_minimum_required.html#command:cmake_minimum_required" title="cmake_minimum_required"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_minimum_required(VERSION)</span></code></a>
+command in the directory itself or one of its ancestors.
+The value is a JSON object with one member:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">string</span></code></dt><dd><p>A string specifying the minimum required version in the format:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;major&gt;.&lt;minor&gt;[.&lt;patch&gt;[.&lt;tweak&gt;]][&lt;suffix&gt;]
+</pre></div>
+</div>
+<p>Each component is an unsigned integer and the suffix may be an
+arbitrary string.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">hasInstallRule</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code> when
+the directory or one of its subdirectories contains any
+<span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> rules, i.e. whether a <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code>
+or equivalent rule is available.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">projects</span></code></dt><dd><p>A JSON array of entries corresponding to the top-level project
+and sub-projects defined in the build system.  Each (sub-)project
+corresponds to a source directory whose <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file
+calls the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command with a project name different
+from its parent directory.  The first entry corresponds to the
+top-level project.</p>
+<p>Each entry is a JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name given to the <span class="target" id="index-1-command:project"></span><a class="reference internal" href="../command/project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">parentIndex</span></code></dt><dd><p>Optional member that is present when the project is not top-level.
+The value is an unsigned integer 0-based index of another entry in
+the main <code class="docutils literal notranslate"><span class="pre">projects</span></code> array that corresponds to the parent project
+that added this project as a sub-project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">childIndexes</span></code></dt><dd><p>Optional member that is present when the project has sub-projects.
+The value is a JSON array of entries corresponding to the sub-projects.
+Each entry is an unsigned integer 0-based index of another
+entry in the main <code class="docutils literal notranslate"><span class="pre">projects</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">directoryIndexes</span></code></dt><dd><p>A JSON array of entries corresponding to build system directories
+that are part of the project.  The first entry corresponds to the
+top-level directory of the project.  Each entry is an unsigned
+integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">directories</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">targetIndexes</span></code></dt><dd><p>Optional member that is present when the project itself has targets,
+excluding those belonging to sub-projects.  The value is a JSON
+array of entries corresponding to the targets.  Each entry is an
+unsigned integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">targets</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">targets</span></code></dt><dd><p>A JSON array of entries corresponding to the build system targets.
+Such targets are created by calls to <span class="target" id="index-0-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>,
+<span class="target" id="index-0-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>, and <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>, excluding
+imported targets and interface libraries (which do not generate any
+build rules).  Each entry is a JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the target name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">id</span></code></dt><dd><p>A string uniquely identifying the target.  This matches the <code class="docutils literal notranslate"><span class="pre">id</span></code>
+field in the file referenced by <code class="docutils literal notranslate"><span class="pre">jsonFile</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">directoryIndex</span></code></dt><dd><p>An unsigned integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">directories</span></code> array
+indicating the build system directory in which the target is defined.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">projectIndex</span></code></dt><dd><p>An unsigned integer 0-based index into the main <code class="docutils literal notranslate"><span class="pre">projects</span></code> array
+indicating the build system project in which the target is defined.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">jsonFile</span></code></dt><dd><p>A JSON string specifying a path relative to the codemodel file
+to another JSON file containing a
+<a class="reference internal" href="#codemodel-version-2-target-object">“codemodel” version 2 “target” object</a>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section" id="codemodel-version-2-target-object">
+<h4><a class="toc-backref" href="#id13">“codemodel” version 2 “target” object</a><a class="headerlink" href="#codemodel-version-2-target-object" title="Permalink to this headline">¶</a></h4>
+<p>A codemodel “target” object is referenced by a <a class="reference internal" href="#codemodel-version-2">“codemodel” version 2</a>
+object’s <code class="docutils literal notranslate"><span class="pre">targets</span></code> array.  Each “target” object is a JSON object
+with members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the logical name of the target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">id</span></code></dt><dd><p>A string uniquely identifying the target.  The format is unspecified
+and should not be interpreted by clients.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">type</span></code></dt><dd><p>A string specifying the type of the target.  The value is one of
+<code class="docutils literal notranslate"><span class="pre">EXECUTABLE</span></code>, <code class="docutils literal notranslate"><span class="pre">STATIC_LIBRARY</span></code>, <code class="docutils literal notranslate"><span class="pre">SHARED_LIBRARY</span></code>,
+<code class="docutils literal notranslate"><span class="pre">MODULE_LIBRARY</span></code>, <code class="docutils literal notranslate"><span class="pre">OBJECT_LIBRARY</span></code>, <code class="docutils literal notranslate"><span class="pre">INTERFACE_LIBRARY</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">UTILITY</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the command in the source code that created the target is available.
+The value is an unsigned integer 0-based index into the
+<code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code> member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">folder</span></code></dt><dd><p>Optional member that is present when the <span class="target" id="index-0-prop_tgt:FOLDER"></span><a class="reference internal" href="../prop_tgt/FOLDER.html#prop_tgt:FOLDER" title="FOLDER"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">FOLDER</span></code></a> target
+property is set.  The value is a JSON object with one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the target folder.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">paths</span></code></dt><dd><p>A JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">source</span></code></dt><dd><p>A string specifying the path to the target’s source directory,
+represented with forward slashes.  If the directory is inside the
+top-level source directory then the path is specified relative to
+that directory (with <code class="docutils literal notranslate"><span class="pre">.</span></code> for the top-level source directory itself).
+Otherwise the path is absolute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">build</span></code></dt><dd><p>A string specifying the path to the target’s build directory,
+represented with forward slashes.  If the directory is inside the
+top-level build directory then the path is specified relative to
+that directory (with <code class="docutils literal notranslate"><span class="pre">.</span></code> for the top-level build directory itself).
+Otherwise the path is absolute.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">nameOnDisk</span></code></dt><dd><p>Optional member that is present for executable and library targets
+that are linked or archived into a single primary artifact.
+The value is a string specifying the file name of that artifact on disk.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">artifacts</span></code></dt><dd><p>Optional member that is present for executable and library targets
+that produce artifacts on disk meant for consumption by dependents.
+The value is a JSON array of entries corresponding to the artifacts.
+Each entry is a JSON object containing one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the path to the file on disk, represented with
+forward slashes.  If the file is inside the top-level build directory
+then the path is specified relative to that directory.
+Otherwise the path is absolute.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isGeneratorProvided</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code> if the
+target is provided by CMake’s build system generator rather than by
+a command in the source code.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">install</span></code></dt><dd><p>Optional member that is present when the target has an <span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a>
+rule.  The value is a JSON object with members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">prefix</span></code></dt><dd><p>A JSON object specifying the installation prefix.  It has one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the value of <span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">destinations</span></code></dt><dd><p>A JSON array of entries specifying an install destination path.
+Each entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the install destination path.  The path may
+be absolute or relative to the install prefix.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-2-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command invocation that specified this
+destination is available.  The value is an unsigned integer 0-based
+index into the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code> member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">link</span></code></dt><dd><p>Optional member that is present for executables and shared library
+targets that link into a runtime binary.  The value is a JSON object
+with members describing the link step:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">language</span></code></dt><dd><p>A string specifying the language (e.g. <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CXX</span></code>, <code class="docutils literal notranslate"><span class="pre">Fortran</span></code>)
+of the toolchain is used to invoke the linker.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">commandFragments</span></code></dt><dd><p>Optional member that is present when fragments of the link command
+line invocation are available.  The value is a JSON array of entries
+specifying ordered fragments.  Each entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fragment</span></code></dt><dd><p>A string specifying a fragment of the link command line invocation.
+The value is encoded in the build system’s native shell format.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">role</span></code></dt><dd><p>A string specifying the role of the fragment’s content:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flags</span></code>: link flags.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">libraries</span></code>: link library file paths or flags.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">libraryPath</span></code>: library search path flags.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frameworkPath</span></code>: macOS framework search path flags.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">lto</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code>
+when link-time optimization (a.k.a. interprocedural optimization
+or link-time code generation) is enabled.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sysroot</span></code></dt><dd><p>Optional member that is present when the <span class="target" id="index-0-variable:CMAKE_SYSROOT_LINK"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT_LINK.html#variable:CMAKE_SYSROOT_LINK" title="CMAKE_SYSROOT_LINK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT_LINK</span></code></a>
+or <span class="target" id="index-0-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> variable is defined.  The value is a
+JSON object with one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the absolute path to the sysroot, represented
+with forward slashes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">archive</span></code></dt><dd><p>Optional member that is present for static library targets.  The value
+is a JSON object with members describing the archive step:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">commandFragments</span></code></dt><dd><p>Optional member that is present when fragments of the archiver command
+line invocation are available.  The value is a JSON array of entries
+specifying the fragments.  Each entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fragment</span></code></dt><dd><p>A string specifying a fragment of the archiver command line invocation.
+The value is encoded in the build system’s native shell format.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">role</span></code></dt><dd><p>A string specifying the role of the fragment’s content:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flags</span></code>: archiver flags.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">lto</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code>
+when link-time optimization (a.k.a. interprocedural optimization
+or link-time code generation) is enabled.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dependencies</span></code></dt><dd><p>Optional member that is present when the target depends on other targets.
+The value is a JSON array of entries corresponding to the dependencies.
+Each entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">id</span></code></dt><dd><p>A string uniquely identifying the target on which this target depends.
+This matches the main <code class="docutils literal notranslate"><span class="pre">id</span></code> member of the other target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-0-command:add_dependencies"></span><a class="reference internal" href="../command/add_dependencies.html#command:add_dependencies" title="add_dependencies"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_dependencies()</span></code></a>, <span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="../command/target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a>,
+or other command invocation that created this dependency is
+available.  The value is an unsigned integer 0-based index into
+the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code> member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sources</span></code></dt><dd><p>A JSON array of entries corresponding to the target’s source files.
+Each entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the path to the source file on disk, represented
+with forward slashes.  If the file is inside the top-level source
+directory then the path is specified relative to that directory.
+Otherwise the path is absolute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">compileGroupIndex</span></code></dt><dd><p>Optional member that is present when the source is compiled.
+The value is an unsigned integer 0-based index into the
+<code class="docutils literal notranslate"><span class="pre">compileGroups</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sourceGroupIndex</span></code></dt><dd><p>Optional member that is present when the source is part of a source
+group either via the <span class="target" id="index-0-command:source_group"></span><a class="reference internal" href="../command/source_group.html#command:source_group" title="source_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">source_group()</span></code></a> command or by default.
+The value is an unsigned integer 0-based index into the
+<code class="docutils literal notranslate"><span class="pre">sourceGroups</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isGenerated</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code> if
+the source is <span class="target" id="index-0-prop_sf:GENERATED"></span><a class="reference internal" href="../prop_sf/GENERATED.html#prop_sf:GENERATED" title="GENERATED"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">GENERATED</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-0-command:target_sources"></span><a class="reference internal" href="../command/target_sources.html#command:target_sources" title="target_sources"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_sources()</span></code></a>, <span class="target" id="index-1-command:add_executable"></span><a class="reference internal" href="../command/add_executable.html#command:add_executable" title="add_executable"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_executable()</span></code></a>,
+<span class="target" id="index-1-command:add_library"></span><a class="reference internal" href="../command/add_library.html#command:add_library" title="add_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_library()</span></code></a>, <span class="target" id="index-1-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>, or other
+command invocation that added this source to the target is
+available.  The value is an unsigned integer 0-based index into
+the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code> member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sourceGroups</span></code></dt><dd><p>Optional member that is present when sources are grouped together by
+the <span class="target" id="index-1-command:source_group"></span><a class="reference internal" href="../command/source_group.html#command:source_group" title="source_group"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">source_group()</span></code></a> command or by default.  The value is a
+JSON array of entries corresponding to the groups.  Each entry is
+a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the source group.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sourceIndexes</span></code></dt><dd><p>A JSON array listing the sources belonging to the group.
+Each entry is an unsigned integer 0-based index into the
+main <code class="docutils literal notranslate"><span class="pre">sources</span></code> array for the target.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">compileGroups</span></code></dt><dd><p>Optional member that is present when the target has sources that compile.
+The value is a JSON array of entries corresponding to groups of sources
+that all compile with the same settings.  Each entry is a JSON object
+with members:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">sourceIndexes</span></code></dt><dd><p>A JSON array listing the sources belonging to the group.
+Each entry is an unsigned integer 0-based index into the
+main <code class="docutils literal notranslate"><span class="pre">sources</span></code> array for the target.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">language</span></code></dt><dd><p>A string specifying the language (e.g. <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CXX</span></code>, <code class="docutils literal notranslate"><span class="pre">Fortran</span></code>)
+of the toolchain is used to compile the source file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">languageStandard</span></code></dt><dd><p>Optional member that is present when the language standard is set
+explicitly (e.g. via <span class="target" id="index-0-prop_tgt:CXX_STANDARD"></span><a class="reference internal" href="../prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD" title="CXX_STANDARD"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CXX_STANDARD</span></code></a>) or implicitly by
+compile features.  Each entry is a JSON object with two members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">backtraces</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <code class="docutils literal notranslate"><span class="pre">&lt;LANG&gt;_STANDARD</span></code> setting is available.  If the language
+standard was set implicitly by compile features those are used as
+the backtrace(s).  It’s possible for multiple compile features to
+require the same language standard so there could be multiple
+backtraces. The value is a JSON array with each entry being an
+unsigned integer 0-based index into the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code>
+member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">standard</span></code></dt><dd><p>String representing the language standard.</p>
+</dd>
+</dl>
+<p>This field was added in codemodel version 2.2.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">compileCommandFragments</span></code></dt><dd><p>Optional member that is present when fragments of the compiler command
+line invocation are available.  The value is a JSON array of entries
+specifying ordered fragments.  Each entry is a JSON object with
+one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fragment</span></code></dt><dd><p>A string specifying a fragment of the compile command line invocation.
+The value is encoded in the build system’s native shell format.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">includes</span></code></dt><dd><p>Optional member that is present when there are include directories.
+The value is a JSON array with an entry for each directory.  Each
+entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the path to the include directory,
+represented with forward slashes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isSystem</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code> if
+the include directory is marked as a system include directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-0-command:target_include_directories"></span><a class="reference internal" href="../command/target_include_directories.html#command:target_include_directories" title="target_include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_include_directories()</span></code></a> or other command invocation
+that added this include directory is available.  The value is
+an unsigned integer 0-based index into the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code>
+member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">precompileHeaders</span></code></dt><dd><p>Optional member that is present when <span class="target" id="index-0-command:target_precompile_headers"></span><a class="reference internal" href="../command/target_precompile_headers.html#command:target_precompile_headers" title="target_precompile_headers"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_precompile_headers()</span></code></a>
+or other command invocations set <span class="target" id="index-0-prop_tgt:PRECOMPILE_HEADERS"></span><a class="reference internal" href="../prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS" title="PRECOMPILE_HEADERS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">PRECOMPILE_HEADERS</span></code></a> on the
+target.  The value is a JSON array with an entry for each header.  Each
+entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">header</span></code></dt><dd><p>Full path to the precompile header file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-1-command:target_precompile_headers"></span><a class="reference internal" href="../command/target_precompile_headers.html#command:target_precompile_headers" title="target_precompile_headers"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_precompile_headers()</span></code></a> or other command invocation
+that added this precompiled header is available.  The value is an
+unsigned integer 0-based index into the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code> member’s
+<code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+<p>This field was added in codemodel version 2.1.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">defines</span></code></dt><dd><p>Optional member that is present when there are preprocessor definitions.
+The value is a JSON array with an entry for each definition.  Each
+entry is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">define</span></code></dt><dd><p>A string specifying the preprocessor definition in the format
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;[=&lt;value&gt;]</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">DEF</span></code> or <code class="docutils literal notranslate"><span class="pre">DEF=1</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtrace</span></code></dt><dd><p>Optional member that is present when a CMake language backtrace to
+the <span class="target" id="index-0-command:target_compile_definitions"></span><a class="reference internal" href="../command/target_compile_definitions.html#command:target_compile_definitions" title="target_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_compile_definitions()</span></code></a> or other command invocation
+that added this preprocessor definition is available.  The value is
+an unsigned integer 0-based index into the <code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code>
+member’s <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sysroot</span></code></dt><dd><p>Optional member that is present when the
+<span class="target" id="index-0-variable:CMAKE_SYSROOT_COMPILE"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT_COMPILE.html#variable:CMAKE_SYSROOT_COMPILE" title="CMAKE_SYSROOT_COMPILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT_COMPILE</span></code></a> or <span class="target" id="index-1-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a>
+variable is defined.  The value is a JSON object with one member:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the absolute path to the sysroot, represented
+with forward slashes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">backtraceGraph</span></code></dt><dd><p>A JSON object describing the graph of backtraces whose nodes are
+referenced from <code class="docutils literal notranslate"><span class="pre">backtrace</span></code> members elsewhere.  The members are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">nodes</span></code></dt><dd><p>A JSON array listing nodes in the backtrace graph.  Each entry
+is a JSON object with members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">file</span></code></dt><dd><p>An unsigned integer 0-based index into the backtrace <code class="docutils literal notranslate"><span class="pre">files</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">line</span></code></dt><dd><p>An optional member present when the node represents a line within
+the file.  The value is an unsigned integer 1-based line number.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">command</span></code></dt><dd><p>An optional member present when the node represents a command
+invocation within the file.  The value is an unsigned integer
+0-based index into the backtrace <code class="docutils literal notranslate"><span class="pre">commands</span></code> array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">parent</span></code></dt><dd><p>An optional member present when the node is not the bottom of
+the call stack.  The value is an unsigned integer 0-based index
+of another entry in the backtrace <code class="docutils literal notranslate"><span class="pre">nodes</span></code> array.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">commands</span></code></dt><dd><p>A JSON array listing command names referenced by backtrace nodes.
+Each entry is a string specifying a command name.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">files</span></code></dt><dd><p>A JSON array listing CMake language files referenced by backtrace nodes.
+Each entry is a string specifying the path to a file, represented
+with forward slashes.  If the file is inside the top-level source
+directory then the path is specified relative to that directory.
+Otherwise the path is absolute.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="object-kind-cache">
+<h3><a class="toc-backref" href="#id14">Object Kind “cache”</a><a class="headerlink" href="#object-kind-cache" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">cache</span></code> object kind lists cache entries.  These are the
+<a class="reference internal" href="cmake-language.7.html#cmake-language-variables"><span class="std std-ref">Variables</span></a> stored in the persistent cache
+(<code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>) for the build tree.</p>
+<p>There is only one <code class="docutils literal notranslate"><span class="pre">cache</span></code> object major version, version 2.
+Version 1 does not exist to avoid confusion with that from
+<span class="target" id="index-1-manual:cmake-server(7)"></span><a class="reference internal" href="cmake-server.7.html#manual:cmake-server(7)" title="cmake-server(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-server(7)</span></code></a> mode.</p>
+<div class="section" id="cache-version-2">
+<h4><a class="toc-backref" href="#id15">“cache” version 2</a><a class="headerlink" href="#cache-version-2" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">cache</span></code> object version 2 is a JSON object:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;cache&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+  <span class="nt">&quot;entries&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;BUILD_SHARED_LIBS&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;BOOL&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;HELPSTRING&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;Build shared libraries&quot;</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;CMAKE_GENERATOR&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;Unix Makefiles&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;INTERNAL&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;HELPSTRING&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of generator.&quot;</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members specific to <code class="docutils literal notranslate"><span class="pre">cache</span></code> objects are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">entries</span></code></dt><dd><p>A JSON array whose entries are each a JSON object specifying a
+cache entry.  The members of each entry are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the entry.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">value</span></code></dt><dd><p>A string specifying the value of the entry.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">type</span></code></dt><dd><p>A string specifying the type of the entry used by
+<span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> to choose a widget for editing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">properties</span></code></dt><dd><p>A JSON array of entries specifying associated
+<a class="reference internal" href="cmake-properties.7.html#cache-entry-properties"><span class="std std-ref">cache entry properties</span></a>.
+Each entry is a JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>A string specifying the name of the cache entry property.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">value</span></code></dt><dd><p>A string specifying the value of the cache entry property.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="object-kind-cmakefiles">
+<h3><a class="toc-backref" href="#id16">Object Kind “cmakeFiles”</a><a class="headerlink" href="#object-kind-cmakefiles" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">cmakeFiles</span></code> object kind lists files used by CMake while
+configuring and generating the build system.  These include the
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> files as well as included <code class="docutils literal notranslate"><span class="pre">.cmake</span></code> files.</p>
+<p>There is only one <code class="docutils literal notranslate"><span class="pre">cmakeFiles</span></code> object major version, version 1.</p>
+<div class="section" id="cmakefiles-version-1">
+<h4><a class="toc-backref" href="#id17">“cmakeFiles” version 1</a><a class="headerlink" href="#cmakefiles-version-1" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">cmakeFiles</span></code> object version 1 is a JSON object:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;cmakeFiles&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="p">},</span>
+  <span class="nt">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;build&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/top-level-build-dir&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/top-level-source-dir&quot;</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;inputs&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;CMakeLists.txt&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;isGenerated&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/top-level-build-dir/.../CMakeSystem.cmake&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;isExternal&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/external/third-party/module.cmake&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;isCMake&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;isExternal&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/cmake/Modules/CMakeGenericSystem.cmake&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The members specific to <code class="docutils literal notranslate"><span class="pre">cmakeFiles</span></code> objects are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">paths</span></code></dt><dd><p>A JSON object containing members:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">source</span></code></dt><dd><p>A string specifying the absolute path to the top-level source directory,
+represented with forward slashes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">build</span></code></dt><dd><p>A string specifying the absolute path to the top-level build directory,
+represented with forward slashes.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inputs</span></code></dt><dd><p>A JSON array whose entries are each a JSON object specifying an input
+file used by CMake when configuring and generating the build system.
+The members of each entry are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">path</span></code></dt><dd><p>A string specifying the path to an input file to CMake, represented
+with forward slashes.  If the file is inside the top-level source
+directory then the path is specified relative to that directory.
+Otherwise the path is absolute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isGenerated</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code>
+if the path specifies a file that is under the top-level
+build directory and the build is out-of-source.
+This member is not available on in-source builds.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isExternal</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code>
+if the path specifies a file that is not under the top-level
+source or build directories.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">isCMake</span></code></dt><dd><p>Optional member that is present with boolean value <code class="docutils literal notranslate"><span class="pre">true</span></code>
+if the path specifies a file in the CMake installation.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-file-api(7)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#api-v1">API v1</a><ul>
+<li><a class="reference internal" href="#v1-shared-stateless-query-files">v1 Shared Stateless Query Files</a></li>
+<li><a class="reference internal" href="#v1-client-stateless-query-files">v1 Client Stateless Query Files</a></li>
+<li><a class="reference internal" href="#v1-client-stateful-query-files">v1 Client Stateful Query Files</a></li>
+<li><a class="reference internal" href="#v1-reply-index-file">v1 Reply Index File</a><ul>
+<li><a class="reference internal" href="#v1-reply-file-reference">v1 Reply File Reference</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-reply-files">v1 Reply Files</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#object-kinds">Object Kinds</a><ul>
+<li><a class="reference internal" href="#object-kind-codemodel">Object Kind “codemodel”</a><ul>
+<li><a class="reference internal" href="#codemodel-version-2">“codemodel” version 2</a></li>
+<li><a class="reference internal" href="#codemodel-version-2-target-object">“codemodel” version 2 “target” object</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#object-kind-cache">Object Kind “cache”</a><ul>
+<li><a class="reference internal" href="#cache-version-2">“cache” version 2</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#object-kind-cmakefiles">Object Kind “cmakeFiles”</a><ul>
+<li><a class="reference internal" href="#cmakefiles-version-1">“cmakeFiles” version 1</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../envvar/CCMAKE_COLORS.html"
+                        title="previous chapter">CCMAKE_COLORS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake-generator-expressions.7.html"
+                        title="next chapter">cmake-generator-expressions(7)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-file-api.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake-generator-expressions.7.html" title="cmake-generator-expressions(7)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../envvar/CCMAKE_COLORS.html" title="CCMAKE_COLORS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-file-api(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

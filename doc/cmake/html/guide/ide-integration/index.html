@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IDE Integration Guide &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CMake Release Notes" href="../../release/index.html" />
+    <link rel="prev" title="Importing and Exporting Guide" href="../importing-exporting/index.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../release/index.html" title="CMake Release Notes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../importing-exporting/index.html" title="Importing and Exporting Guide"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">IDE Integration Guide</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="guide:IDE Integration Guide">
+<span id="ide-integration-guide"></span><h1><a class="toc-backref" href="#id1">IDE Integration Guide</a><a class="headerlink" href="#guide:IDE Integration Guide" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#guide:IDE Integration Guide" id="id1">IDE Integration Guide</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#bundling" id="id3">Bundling</a></p></li>
+<li><p><a class="reference internal" href="#presets" id="id4">Presets</a></p></li>
+<li><p><a class="reference internal" href="#configuring" id="id5">Configuring</a></p></li>
+<li><p><a class="reference internal" href="#building" id="id6">Building</a></p></li>
+<li><p><a class="reference internal" href="#testing" id="id7">Testing</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Integrated development environments (IDEs) may want to integrate with CMake to
+improve the development experience for CMake users. This document lays out the
+recommended best practices for such integration.</p>
+</div>
+<div class="section" id="bundling">
+<h2><a class="toc-backref" href="#id3">Bundling</a><a class="headerlink" href="#bundling" title="Permalink to this headline">¶</a></h2>
+<p>Many IDE vendors will want to bundle a copy of CMake with their IDE. IDEs that
+bundle CMake should present the user with the option of using an external CMake
+installation instead of the bundled one, in case the bundled copy becomes
+outdated and the user wants to use a newer version.</p>
+<p>While IDE vendors may be tempted to bundle different versions of CMake with
+their application, such practice is not recommended. CMake has strong
+guarantees of backwards compatibility, and there is no reason not to use a
+newer version of CMake than what a project requires, or indeed, the very latest
+version. Therefore, it is recommended that IDE vendors that bundle CMake with
+their application always include the very latest patch version of CMake
+available at the time of release.</p>
+<p>As a suggestion, IDEs may also ship a copy of the Ninja buildsystem alongside
+CMake. Ninja is highly performant and well-supported on all platforms that
+support CMake. IDEs that bundle Ninja should use Ninja 1.10 or later, which
+contains features needed to support Fortran builds.</p>
+</div>
+<div class="section" id="presets">
+<h2><a class="toc-backref" href="#id4">Presets</a><a class="headerlink" href="#presets" title="Permalink to this headline">¶</a></h2>
+<p>CMake supports a file format called <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code>, and its
+user-specific counterpart, <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>. This file contains
+information on the various configure presets that a user may want. Each preset
+may have a different compiler, build flags, etc. The details of this format are
+explained in the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> manual.</p>
+<p>IDE vendors are encouraged to read and evaluate this file the same way CMake
+does, and present the user with the presets listed in the file. Users should be
+able to see (and possibly edit) the CMake cache variables, environment
+variables, and command line options that are defined for a given preset. The
+IDE should then construct the list of appropriate <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> command
+line arguments based on these settings, rather than using the <code class="docutils literal notranslate"><span class="pre">--preset=</span></code>
+option directly. The <code class="docutils literal notranslate"><span class="pre">--preset=</span></code> option is intended only as a convenient
+frontend for command line users, and should not be used by the IDE.</p>
+<p>For example, if a preset named <code class="docutils literal notranslate"><span class="pre">ninja</span></code> specifies <code class="docutils literal notranslate"><span class="pre">Ninja</span></code> as the generator
+and <code class="docutils literal notranslate"><span class="pre">${sourceDir}/build</span></code> as the build directory, instead of running:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake -S /path/to/source --preset=ninja</span>
+</pre></div>
+</div>
+<p>the IDE should instead calculate the settings of the <code class="docutils literal notranslate"><span class="pre">ninja</span></code> preset, and then
+run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cmake -S /path/to/source -B /path/to/source/build -G Ninja</span>
+</pre></div>
+</div>
+<p>While reading, parsing, and evaluating the contents of <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> is
+straightforward, it is not trivial. In addition to the documentation, IDE
+vendors may also wish to refer to the CMake source code and test cases for a
+better understanding of how to implement the format.
+<a class="reference download internal" download="" href="../../_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json"><code class="xref download docutils literal notranslate"><span class="pre">This</span> <span class="pre">file</span></code></a> provides a machine-readable
+JSON schema for the <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code> format that IDE vendors may find
+useful for validation and providing editing assistance.</p>
+</div>
+<div class="section" id="configuring">
+<h2><a class="toc-backref" href="#id5">Configuring</a><a class="headerlink" href="#configuring" title="Permalink to this headline">¶</a></h2>
+<p>IDEs that invoke <span class="target" id="index-2-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> to run the configure step may wish to
+receive information about the artifacts that the build will produce, as well
+as the include directories, compile definitions, etc. used to build the
+artifacts. Such information can be obtained by using the
+<span class="target" id="index-0-manual:cmake-file-api(7)"></span><a class="reference internal" href="../../manual/cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">File</span> <span class="pre">API</span></code></a>. The manual page for the File API
+contains more information about the API and how to invoke it.
+<span class="target" id="index-0-manual:cmake-server(7)"></span><a class="reference internal" href="../../manual/cmake-server.7.html#manual:cmake-server(7)" title="cmake-server(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Server</span> <span class="pre">mode</span></code></a> is deprecated and should not be
+used on CMake 3.14 or later.</p>
+<p>IDEs should avoid creating more build trees than necessary, and only create
+multiple build trees if the user wishes to switch to a different compiler,
+use different compile flags, etc. In particular, IDEs should NOT create
+multiple single-config build trees which all have the same properties except
+for a differing <span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a>, effectively creating a
+multi-config environment. Instead, the <span class="target" id="index-0-generator:Ninja Multi-Config"></span><a class="reference internal" href="../../generator/Ninja%20Multi-Config.html#generator:Ninja Multi-Config" title="Ninja Multi-Config"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span> <span class="pre">Multi-Config</span></code></a>
+generator, in conjunction with the <span class="target" id="index-1-manual:cmake-file-api(7)"></span><a class="reference internal" href="../../manual/cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">File</span> <span class="pre">API</span></code></a> to
+get the list of build configurations, should be used for this purpose.</p>
+<p>IDEs should not use the “extra generators” with Makefile or Ninja generators,
+which generate IDE project files in addition to the Makefile or Ninja files.
+Instead the <span class="target" id="index-2-manual:cmake-file-api(7)"></span><a class="reference internal" href="../../manual/cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">File</span> <span class="pre">API</span></code></a> should be used to get the
+list of build artifacts.</p>
+</div>
+<div class="section" id="building">
+<h2><a class="toc-backref" href="#id6">Building</a><a class="headerlink" href="#building" title="Permalink to this headline">¶</a></h2>
+<p>If a Makefile or Ninja generator is used to generate the build tree, it is not
+recommended to invoke <code class="docutils literal notranslate"><span class="pre">make</span></code> or <code class="docutils literal notranslate"><span class="pre">ninja</span></code> directly. Instead, it is
+recommended that the IDE invoke <span class="target" id="index-3-manual:cmake(1)"></span><a class="reference internal" href="../../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">--build</span></code>
+argument, which will in turn invoke the appropriate build tool.</p>
+<p>If an IDE project generator is used, such as <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> or one of the
+Visual Studio generators, and the IDE understands the project format used, the
+IDE should read the project file and build it the same way it would otherwise.</p>
+<p>The <span class="target" id="index-3-manual:cmake-file-api(7)"></span><a class="reference internal" href="../../manual/cmake-file-api.7.html#manual:cmake-file-api(7)" title="cmake-file-api(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">File</span> <span class="pre">API</span></code></a> can be used to obtain a list of
+build configurations from the build tree, and the IDE should present this list
+to the user to select a build configuration.</p>
+</div>
+<div class="section" id="testing">
+<h2><a class="toc-backref" href="#id7">Testing</a><a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p><span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> supports outputting a JSON format with information about the
+available tests and test configurations. IDEs which want to run CTest should
+obtain this information and use it to present the user with a list of tests.</p>
+<p>IDEs should not invoke the <code class="docutils literal notranslate"><span class="pre">test</span></code> target of the generated buildsystem.
+Instead, they should invoke <span class="target" id="index-1-manual:ctest(1)"></span><a class="reference internal" href="../../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> directly.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">IDE Integration Guide</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#bundling">Bundling</a></li>
+<li><a class="reference internal" href="#presets">Presets</a></li>
+<li><a class="reference internal" href="#configuring">Configuring</a></li>
+<li><a class="reference internal" href="#building">Building</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../importing-exporting/index.html"
+                        title="previous chapter">Importing and Exporting Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../../release/index.html"
+                        title="next chapter">CMake Release Notes</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/guide/ide-integration/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../release/index.html" title="CMake Release Notes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../importing-exporting/index.html" title="Importing and Exporting Guide"
+             >previous</a> |</li>
+  <li>
+    <img src="../../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">IDE Integration Guide</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

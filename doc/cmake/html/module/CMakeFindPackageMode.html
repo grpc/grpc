@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMakeFindPackageMode &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMakeGraphVizOptions" href="CMakeGraphVizOptions.html" />
+    <link rel="prev" title="CMakeFindFrameworks" href="CMakeFindFrameworks.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMakeGraphVizOptions.html" title="CMakeGraphVizOptions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMakeFindFrameworks.html" title="CMakeFindFrameworks"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeFindPackageMode</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmakefindpackagemode">
+<span id="module:CMakeFindPackageMode"></span><h1>CMakeFindPackageMode<a class="headerlink" href="#cmakefindpackagemode" title="Permalink to this headline">¶</a></h1>
+<p>This file is executed by cmake when invoked with –find-package.  It
+expects that the following variables are set using -D:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">NAME</span></code></dt><dd><p>name of the package</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMPILER_ID</span></code></dt><dd><p>the CMake compiler ID for which the result is,
+i.e. GNU/Intel/Clang/MSVC, etc.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LANGUAGE</span></code></dt><dd><p>language for which the result will be used,
+i.e. C/CXX/Fortran/ASM</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">MODE</span></code></dt><dd><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">EXIST</span></code></dt><dd><p>only check for existence of the given package</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMPILE</span></code></dt><dd><p>print the flags needed for compiling an object file which uses
+the given package</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LINK</span></code></dt><dd><p>print the flags needed for linking when using the given package</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">QUIET</span></code></dt><dd><p>if TRUE, don’t print anything</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMakeFindFrameworks.html"
+                        title="previous chapter">CMakeFindFrameworks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMakeGraphVizOptions.html"
+                        title="next chapter">CMakeGraphVizOptions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CMakeFindPackageMode.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMakeGraphVizOptions.html" title="CMakeGraphVizOptions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMakeFindFrameworks.html" title="CMakeFindFrameworks"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMakeFindPackageMode</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

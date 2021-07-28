@@ -1,0 +1,343 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>find_library &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="find_package" href="find_package.html" />
+    <link rel="prev" title="find_file" href="find_file.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="find_package.html" title="find_package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="find_file.html" title="find_file"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">find_library</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="find-library">
+<span id="command:find_library"></span><h1>find_library<a class="headerlink" href="#find-library" title="Permalink to this headline">¶</a></h1>
+<p>A short-hand signature is:</p>
+<pre class="literal-block">find_library (&lt;VAR&gt; name1 [path1 path2 ...])</pre>
+<p>The general signature is:</p>
+<pre class="literal-block">find_library (
+          &lt;VAR&gt;
+          name | NAMES name1 [name2 ...] [NAMES_PER_DIR]
+          [HINTS path1 [path2 ... ENV var]]
+          [PATHS path1 [path2 ... ENV var]]
+          [PATH_SUFFIXES suffix1 [suffix2 ...]]
+          [DOC &quot;cache documentation string&quot;]
+          [REQUIRED]
+          [NO_DEFAULT_PATH]
+          [NO_PACKAGE_ROOT_PATH]
+          [NO_CMAKE_PATH]
+          [NO_CMAKE_ENVIRONMENT_PATH]
+          [NO_SYSTEM_ENVIRONMENT_PATH]
+          [NO_CMAKE_SYSTEM_PATH]
+          [CMAKE_FIND_ROOT_PATH_BOTH |
+           ONLY_CMAKE_FIND_ROOT_PATH |
+           NO_CMAKE_FIND_ROOT_PATH]
+         )</pre>
+<p>This command is used to find a library.
+A cache entry named by <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;</span></code> is created to store the result
+of this command.
+If the library is found the result is stored in the variable
+and the search will not be repeated unless the variable is cleared.
+If nothing is found, the result will be <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;-NOTFOUND</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code> option stops processing with an error message if nothing
+is found, otherwise the search will be attempted again the
+next time find_library is invoked with the same variable.</p>
+<p>Options include:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">NAMES</span></code></dt><dd><p>Specify one or more possible names for the library.</p>
+<p>When using this to specify names with and without a version
+suffix, we recommend specifying the unversioned name first
+so that locally-built packages can be found before those
+provided by distributions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HINTS</span></code>, <code class="docutils literal notranslate"><span class="pre">PATHS</span></code></dt><dd><p>Specify directories to search in addition to the default locations.
+The <code class="docutils literal notranslate"><span class="pre">ENV</span> <span class="pre">var</span></code> sub-option reads paths from a system environment
+variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PATH_SUFFIXES</span></code></dt><dd><p>Specify additional subdirectories to check below each directory
+location otherwise considered.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOC</span></code></dt><dd><p>Specify the documentation string for the <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;</span></code> cache entry.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code></dt><dd><p>Stop processing with an error message if nothing is found.</p>
+</dd>
+</dl>
+<p>If <code class="docutils literal notranslate"><span class="pre">NO_DEFAULT_PATH</span></code> is specified, then no additional paths are
+added to the search.
+If <code class="docutils literal notranslate"><span class="pre">NO_DEFAULT_PATH</span></code> is not specified, the search process is as follows:</p>
+<ol class="arabic">
+<li><p>If called from within a find module or any other script loaded by a call to
+<span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package(&lt;PackageName&gt;)</span></code></a>, search prefixes unique to the
+current package being found.  Specifically, look in the
+<span class="target" id="index-0-variable:&lt;PackageName&gt;_ROOT"></span><a class="reference internal" href="../variable/PackageName_ROOT.html#variable:&lt;PackageName&gt;_ROOT" title="&lt;PackageName&gt;_ROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PackageName&gt;_ROOT</span></code></a> CMake variable and the
+<span class="target" id="index-0-envvar:&lt;PackageName&gt;_ROOT"></span><a class="reference internal" href="../envvar/PackageName_ROOT.html#envvar:&lt;PackageName&gt;_ROOT" title="&lt;PackageName&gt;_ROOT"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">&lt;PackageName&gt;_ROOT</span></code></a> environment variable.
+The package root variables are maintained as a stack, so if called from
+nested find modules or config packages, root paths from the parent’s find
+module or config package will be searched after paths from the current
+module or package.  In other words, the search order would be
+<code class="docutils literal notranslate"><span class="pre">&lt;CurrentPackage&gt;_ROOT</span></code>, <code class="docutils literal notranslate"><span class="pre">ENV{&lt;CurrentPackage&gt;_ROOT}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&lt;ParentPackage&gt;_ROOT</span></code>, <code class="docutils literal notranslate"><span class="pre">ENV{&lt;ParentPackage&gt;_ROOT}</span></code>, etc.
+This can be skipped if <code class="docutils literal notranslate"><span class="pre">NO_PACKAGE_ROOT_PATH</span></code> is passed or by setting
+the <span class="target" id="index-0-variable:CMAKE_FIND_USE_PACKAGE_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_USE_PACKAGE_ROOT_PATH.html#variable:CMAKE_FIND_USE_PACKAGE_ROOT_PATH" title="CMAKE_FIND_USE_PACKAGE_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_USE_PACKAGE_ROOT_PATH</span></code></a> to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.
+See policy <span class="target" id="index-0-policy:CMP0074"></span><a class="reference internal" href="../policy/CMP0074.html#policy:CMP0074" title="CMP0074"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0074</span></code></a>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib/&lt;arch&gt;</span></code> if <span class="target" id="index-0-variable:CMAKE_LIBRARY_ARCHITECTURE"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_ARCHITECTURE.html#variable:CMAKE_LIBRARY_ARCHITECTURE" title="CMAKE_LIBRARY_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_ARCHITECTURE</span></code></a> is set,
+and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib</span></code> for each <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> in the
+<span class="target" id="index-1-variable:&lt;PackageName&gt;_ROOT"></span><a class="reference internal" href="../variable/PackageName_ROOT.html#variable:&lt;PackageName&gt;_ROOT" title="&lt;PackageName&gt;_ROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PackageName&gt;_ROOT</span></code></a> CMake variable and the
+<span class="target" id="index-1-envvar:&lt;PackageName&gt;_ROOT"></span><a class="reference internal" href="../envvar/PackageName_ROOT.html#envvar:&lt;PackageName&gt;_ROOT" title="&lt;PackageName&gt;_ROOT"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">&lt;PackageName&gt;_ROOT</span></code></a> environment variable if
+called from within a find module loaded by
+<span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package(&lt;PackageName&gt;)</span></code></a></p></li>
+</ul>
+</li>
+<li><p>Search paths specified in cmake-specific cache variables.
+These are intended to be used on the command line with a <code class="docutils literal notranslate"><span class="pre">-DVAR=value</span></code>.
+The values are interpreted as <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated lists</span></a>.
+This can be skipped if <code class="docutils literal notranslate"><span class="pre">NO_CMAKE_PATH</span></code> is passed or by setting the
+<span class="target" id="index-0-variable:CMAKE_FIND_USE_CMAKE_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_USE_CMAKE_PATH.html#variable:CMAKE_FIND_USE_CMAKE_PATH" title="CMAKE_FIND_USE_CMAKE_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_USE_CMAKE_PATH</span></code></a> to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib/&lt;arch&gt;</span></code> if <span class="target" id="index-1-variable:CMAKE_LIBRARY_ARCHITECTURE"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_ARCHITECTURE.html#variable:CMAKE_LIBRARY_ARCHITECTURE" title="CMAKE_LIBRARY_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_ARCHITECTURE</span></code></a> is set,
+and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib</span></code> for each <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> in <span class="target" id="index-0-variable:CMAKE_PREFIX_PATH"></span><a class="reference internal" href="../variable/CMAKE_PREFIX_PATH.html#variable:CMAKE_PREFIX_PATH" title="CMAKE_PREFIX_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_LIBRARY_PATH"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_PATH.html#variable:CMAKE_LIBRARY_PATH" title="CMAKE_LIBRARY_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_FRAMEWORK_PATH"></span><a class="reference internal" href="../variable/CMAKE_FRAMEWORK_PATH.html#variable:CMAKE_FRAMEWORK_PATH" title="CMAKE_FRAMEWORK_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FRAMEWORK_PATH</span></code></a></p></li>
+</ul>
+</li>
+<li><p>Search paths specified in cmake-specific environment variables.
+These are intended to be set in the user’s shell configuration,
+and therefore use the host’s native path separator
+(<code class="docutils literal notranslate"><span class="pre">;</span></code> on Windows and <code class="docutils literal notranslate"><span class="pre">:</span></code> on UNIX).
+This can be skipped if <code class="docutils literal notranslate"><span class="pre">NO_CMAKE_ENVIRONMENT_PATH</span></code> is passed or
+by setting the <span class="target" id="index-0-variable:CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH.html#variable:CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH" title="CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH</span></code></a> to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib/&lt;arch&gt;</span></code> if <span class="target" id="index-2-variable:CMAKE_LIBRARY_ARCHITECTURE"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_ARCHITECTURE.html#variable:CMAKE_LIBRARY_ARCHITECTURE" title="CMAKE_LIBRARY_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_ARCHITECTURE</span></code></a> is set,
+and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib</span></code> for each <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> in <span class="target" id="index-1-variable:CMAKE_PREFIX_PATH"></span><a class="reference internal" href="../variable/CMAKE_PREFIX_PATH.html#variable:CMAKE_PREFIX_PATH" title="CMAKE_PREFIX_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-1-variable:CMAKE_LIBRARY_PATH"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_PATH.html#variable:CMAKE_LIBRARY_PATH" title="CMAKE_LIBRARY_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-1-variable:CMAKE_FRAMEWORK_PATH"></span><a class="reference internal" href="../variable/CMAKE_FRAMEWORK_PATH.html#variable:CMAKE_FRAMEWORK_PATH" title="CMAKE_FRAMEWORK_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FRAMEWORK_PATH</span></code></a></p></li>
+</ul>
+</li>
+<li><p>Search the paths specified by the <code class="docutils literal notranslate"><span class="pre">HINTS</span></code> option.
+These should be paths computed by system introspection, such as a
+hint provided by the location of another item already found.
+Hard-coded guesses should be specified with the <code class="docutils literal notranslate"><span class="pre">PATHS</span></code> option.</p></li>
+<li><p>Search the standard system environment variables.
+This can be skipped if <code class="docutils literal notranslate"><span class="pre">NO_SYSTEM_ENVIRONMENT_PATH</span></code> is passed or by
+setting the <span class="target" id="index-0-variable:CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html#variable:CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH" title="CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH</span></code></a> to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.</p>
+<ul class="simple">
+<li><p>The directories in <code class="docutils literal notranslate"><span class="pre">LIB</span></code>
+and <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p></li>
+<li><p>On Windows hosts:
+<code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib/&lt;arch&gt;</span></code> if <span class="target" id="index-3-variable:CMAKE_LIBRARY_ARCHITECTURE"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_ARCHITECTURE.html#variable:CMAKE_LIBRARY_ARCHITECTURE" title="CMAKE_LIBRARY_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_ARCHITECTURE</span></code></a>
+is set, and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib</span></code> for each <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/[s]bin</span></code> in <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">&lt;entry&gt;/lib</span></code> for other entries in <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p></li>
+</ul>
+</li>
+<li><p>Search cmake variables defined in the Platform files
+for the current system.  This can be skipped if <code class="docutils literal notranslate"><span class="pre">NO_CMAKE_SYSTEM_PATH</span></code>
+is passed or by setting the <span class="target" id="index-0-variable:CMAKE_FIND_USE_CMAKE_SYSTEM_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_USE_CMAKE_SYSTEM_PATH.html#variable:CMAKE_FIND_USE_CMAKE_SYSTEM_PATH" title="CMAKE_FIND_USE_CMAKE_SYSTEM_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_USE_CMAKE_SYSTEM_PATH</span></code></a>
+to <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib/&lt;arch&gt;</span></code> if <span class="target" id="index-4-variable:CMAKE_LIBRARY_ARCHITECTURE"></span><a class="reference internal" href="../variable/CMAKE_LIBRARY_ARCHITECTURE.html#variable:CMAKE_LIBRARY_ARCHITECTURE" title="CMAKE_LIBRARY_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_LIBRARY_ARCHITECTURE</span></code></a> is set,
+and <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/lib</span></code> for each <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;</span></code> in
+<span class="target" id="index-0-variable:CMAKE_SYSTEM_PREFIX_PATH"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_PREFIX_PATH.html#variable:CMAKE_SYSTEM_PREFIX_PATH" title="CMAKE_SYSTEM_PREFIX_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_PREFIX_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_SYSTEM_LIBRARY_PATH"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_LIBRARY_PATH.html#variable:CMAKE_SYSTEM_LIBRARY_PATH" title="CMAKE_SYSTEM_LIBRARY_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_LIBRARY_PATH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:CMAKE_SYSTEM_FRAMEWORK_PATH"></span><a class="reference internal" href="../variable/CMAKE_SYSTEM_FRAMEWORK_PATH.html#variable:CMAKE_SYSTEM_FRAMEWORK_PATH" title="CMAKE_SYSTEM_FRAMEWORK_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSTEM_FRAMEWORK_PATH</span></code></a></p></li>
+</ul>
+<p>The platform paths that these variables contain are locations that
+typically include installed software. An example being <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> for
+UNIX based platforms.</p>
+</li>
+<li><p>Search the paths specified by the PATHS option
+or in the short-hand version of the command.
+These are typically hard-coded guesses.</p></li>
+</ol>
+<p>On macOS the <span class="target" id="index-0-variable:CMAKE_FIND_FRAMEWORK"></span><a class="reference internal" href="../variable/CMAKE_FIND_FRAMEWORK.html#variable:CMAKE_FIND_FRAMEWORK" title="CMAKE_FIND_FRAMEWORK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_FRAMEWORK</span></code></a> and
+<span class="target" id="index-0-variable:CMAKE_FIND_APPBUNDLE"></span><a class="reference internal" href="../variable/CMAKE_FIND_APPBUNDLE.html#variable:CMAKE_FIND_APPBUNDLE" title="CMAKE_FIND_APPBUNDLE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_APPBUNDLE</span></code></a> variables determine the order of
+preference between Apple-style and unix-style package components.</p>
+<p>The CMake variable <span class="target" id="index-0-variable:CMAKE_FIND_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH.html#variable:CMAKE_FIND_ROOT_PATH" title="CMAKE_FIND_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH</span></code></a> specifies one or more
+directories to be prepended to all other search directories.  This
+effectively “re-roots” the entire search under given locations.
+Paths which are descendants of the <span class="target" id="index-0-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_STAGING_PREFIX.html#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a> are excluded
+from this re-rooting, because that variable is always a path on the host system.
+By default the <span class="target" id="index-1-variable:CMAKE_FIND_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH.html#variable:CMAKE_FIND_ROOT_PATH" title="CMAKE_FIND_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH</span></code></a> is empty.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> variable can also be used to specify exactly one
+directory to use as a prefix.  Setting <span class="target" id="index-1-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> also has other
+effects.  See the documentation for that variable for more.</p>
+<p>These variables are especially useful when cross-compiling to
+point to the root directory of the target environment and CMake will
+search there too.  By default at first the directories listed in
+<span class="target" id="index-2-variable:CMAKE_FIND_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH.html#variable:CMAKE_FIND_ROOT_PATH" title="CMAKE_FIND_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH</span></code></a> are searched, then the <span class="target" id="index-2-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="../variable/CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a>
+directory is searched, and then the non-rooted directories will be
+searched.  The default behavior can be adjusted by setting
+<span class="target" id="index-0-variable:CMAKE_FIND_ROOT_PATH_MODE_LIBRARY"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH_MODE_LIBRARY.html#variable:CMAKE_FIND_ROOT_PATH_MODE_LIBRARY" title="CMAKE_FIND_ROOT_PATH_MODE_LIBRARY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH_MODE_LIBRARY</span></code></a>.  This behavior can be manually
+overridden on a per-call basis using options:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH_BOTH</span></code></dt><dd><p>Search in the order described above.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NO_CMAKE_FIND_ROOT_PATH</span></code></dt><dd><p>Do not use the <span class="target" id="index-3-variable:CMAKE_FIND_ROOT_PATH"></span><a class="reference internal" href="../variable/CMAKE_FIND_ROOT_PATH.html#variable:CMAKE_FIND_ROOT_PATH" title="CMAKE_FIND_ROOT_PATH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_ROOT_PATH</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ONLY_CMAKE_FIND_ROOT_PATH</span></code></dt><dd><p>Search only the re-rooted directories and directories below
+<span class="target" id="index-1-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="../variable/CMAKE_STAGING_PREFIX.html#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a>.</p>
+</dd>
+</dl>
+<p>The default search order is designed to be most-specific to
+least-specific for common use cases.
+Projects may override the order by simply calling the command
+multiple times and using the <code class="docutils literal notranslate"><span class="pre">NO_*</span></code> options:</p>
+<pre class="literal-block">find_library (&lt;VAR&gt; NAMES name PATHS paths... NO_DEFAULT_PATH)
+find_library (&lt;VAR&gt; NAMES name)</pre>
+<p>Once one of the calls succeeds the result variable will be set
+and stored in the cache so that no call will search again.</p>
+<p>When more than one value is given to the <code class="docutils literal notranslate"><span class="pre">NAMES</span></code> option this command by
+default will consider one name at a time and search every directory
+for it.  The <code class="docutils literal notranslate"><span class="pre">NAMES_PER_DIR</span></code> option tells this command to consider one
+directory at a time and search for all names in it.</p>
+<p>Each library name given to the <code class="docutils literal notranslate"><span class="pre">NAMES</span></code> option is first considered
+as a library file name and then considered with platform-specific
+prefixes (e.g. <code class="docutils literal notranslate"><span class="pre">lib</span></code>) and suffixes (e.g. <code class="docutils literal notranslate"><span class="pre">.so</span></code>).  Therefore one
+may specify library file names such as <code class="docutils literal notranslate"><span class="pre">libfoo.a</span></code> directly.
+This can be used to locate static libraries on UNIX-like systems.</p>
+<p>If the library found is a framework, then <code class="docutils literal notranslate"><span class="pre">&lt;VAR&gt;</span></code> will be set to the full
+path to the framework <code class="docutils literal notranslate"><span class="pre">&lt;fullPath&gt;/A.framework</span></code>.  When a full path to a
+framework is used as a library, CMake will use a <code class="docutils literal notranslate"><span class="pre">-framework</span> <span class="pre">A</span></code>, and a
+<code class="docutils literal notranslate"><span class="pre">-F&lt;fullPath&gt;</span></code> to link the framework to the target.</p>
+<p>If the <span class="target" id="index-0-variable:CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX"></span><a class="reference internal" href="../variable/CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX.html#variable:CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX" title="CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX</span></code></a> variable is set all
+search paths will be tested as normal, with the suffix appended, and with
+all matches of <code class="docutils literal notranslate"><span class="pre">lib/</span></code> replaced with
+<code class="docutils literal notranslate"><span class="pre">lib${CMAKE_FIND_LIBRARY_CUSTOM_LIB_SUFFIX}/</span></code>.  This variable overrides
+the <span class="target" id="index-0-prop_gbl:FIND_LIBRARY_USE_LIB32_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIB32_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIB32_PATHS" title="FIND_LIBRARY_USE_LIB32_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIB32_PATHS</span></code></a>,
+<span class="target" id="index-0-prop_gbl:FIND_LIBRARY_USE_LIBX32_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIBX32_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIBX32_PATHS" title="FIND_LIBRARY_USE_LIBX32_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIBX32_PATHS</span></code></a>,
+and <span class="target" id="index-0-prop_gbl:FIND_LIBRARY_USE_LIB64_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIB64_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIB64_PATHS" title="FIND_LIBRARY_USE_LIB64_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIB64_PATHS</span></code></a> global properties.</p>
+<p>If the <span class="target" id="index-1-prop_gbl:FIND_LIBRARY_USE_LIB32_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIB32_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIB32_PATHS" title="FIND_LIBRARY_USE_LIB32_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIB32_PATHS</span></code></a> global property is set
+all search paths will be tested as normal, with <code class="docutils literal notranslate"><span class="pre">32/</span></code> appended, and
+with all matches of <code class="docutils literal notranslate"><span class="pre">lib/</span></code> replaced with <code class="docutils literal notranslate"><span class="pre">lib32/</span></code>.  This property is
+automatically set for the platforms that are known to need it if at
+least one of the languages supported by the <span class="target" id="index-0-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command
+is enabled.</p>
+<p>If the <span class="target" id="index-1-prop_gbl:FIND_LIBRARY_USE_LIBX32_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIBX32_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIBX32_PATHS" title="FIND_LIBRARY_USE_LIBX32_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIBX32_PATHS</span></code></a> global property is set
+all search paths will be tested as normal, with <code class="docutils literal notranslate"><span class="pre">x32/</span></code> appended, and
+with all matches of <code class="docutils literal notranslate"><span class="pre">lib/</span></code> replaced with <code class="docutils literal notranslate"><span class="pre">libx32/</span></code>.  This property is
+automatically set for the platforms that are known to need it if at
+least one of the languages supported by the <span class="target" id="index-1-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command
+is enabled.</p>
+<p>If the <span class="target" id="index-1-prop_gbl:FIND_LIBRARY_USE_LIB64_PATHS"></span><a class="reference internal" href="../prop_gbl/FIND_LIBRARY_USE_LIB64_PATHS.html#prop_gbl:FIND_LIBRARY_USE_LIB64_PATHS" title="FIND_LIBRARY_USE_LIB64_PATHS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">FIND_LIBRARY_USE_LIB64_PATHS</span></code></a> global property is set
+all search paths will be tested as normal, with <code class="docutils literal notranslate"><span class="pre">64/</span></code> appended, and
+with all matches of <code class="docutils literal notranslate"><span class="pre">lib/</span></code> replaced with <code class="docutils literal notranslate"><span class="pre">lib64/</span></code>.  This property is
+automatically set for the platforms that are known to need it if at
+least one of the languages supported by the <span class="target" id="index-2-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command
+is enabled.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="find_file.html"
+                        title="previous chapter">find_file</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="find_package.html"
+                        title="next chapter">find_package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/find_library.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="find_package.html" title="find_package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="find_file.html" title="find_file"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">find_library</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

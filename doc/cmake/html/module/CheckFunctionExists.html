@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CheckFunctionExists &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CheckIncludeFileCXX" href="CheckIncludeFileCXX.html" />
+    <link rel="prev" title="CheckFortranSourceRuns" href="CheckFortranSourceRuns.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CheckIncludeFileCXX.html" title="CheckIncludeFileCXX"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CheckFortranSourceRuns.html" title="CheckFortranSourceRuns"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckFunctionExists</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="checkfunctionexists">
+<span id="module:CheckFunctionExists"></span><h1>CheckFunctionExists<a class="headerlink" href="#checkfunctionexists" title="Permalink to this headline">¶</a></h1>
+<p>Check if a C function can be linked</p>
+<dl class="cmake command">
+<dt id="command:check_function_exists">
+<code class="sig-name descname">check_function_exists</code><a class="headerlink" href="#command:check_function_exists" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">check_function_exists(</span><span class="nv">&lt;function&gt;</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Checks that the <code class="docutils literal notranslate"><span class="pre">&lt;function&gt;</span></code> is provided by libraries on the system and store
+the result in a <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>, which will be created as an internal
+cache variable.</p>
+</dd></dl>
+
+<p>The following variables may be set before calling this macro to modify the
+way the check is run:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_FLAGS</span></code></dt><dd><p>string of compile command line flags.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_DEFINITIONS</span></code></dt><dd><p>a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of macros to define (-DFOO=bar).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_INCLUDES</span></code></dt><dd><p>a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of header search paths to pass to
+the compiler.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_LINK_OPTIONS</span></code></dt><dd><p>a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of options to add to the link command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_LIBRARIES</span></code></dt><dd><p>a <a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">;-list</span></a> of libraries to add to the link
+command. See policy <span class="target" id="index-0-policy:CMP0075"></span><a class="reference internal" href="../policy/CMP0075.html#policy:CMP0075" title="CMP0075"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0075</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_REQUIRED_QUIET</span></code></dt><dd><p>execute quietly without messages.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Prefer using <span class="target" id="index-0-module:CheckSymbolExists"></span><a class="reference internal" href="CheckSymbolExists.html#module:CheckSymbolExists" title="CheckSymbolExists"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckSymbolExists</span></code></a> instead of this module,
+for the following reasons:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">check_function_exists()</span></code> can’t detect functions that are inlined
+in headers or specified as a macro.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">check_function_exists()</span></code> can’t detect anything in the 32-bit
+versions of the Win32 API, because of a mismatch in calling conventions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">check_function_exists()</span></code> only verifies linking, it does not verify
+that the function is declared in system headers.</p></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CheckFortranSourceRuns.html"
+                        title="previous chapter">CheckFortranSourceRuns</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CheckIncludeFileCXX.html"
+                        title="next chapter">CheckIncludeFileCXX</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CheckFunctionExists.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CheckIncludeFileCXX.html" title="CheckIncludeFileCXX"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CheckFortranSourceRuns.html" title="CheckFortranSourceRuns"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CheckFunctionExists</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

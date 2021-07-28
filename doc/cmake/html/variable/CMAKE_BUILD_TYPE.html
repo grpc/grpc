@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_BUILD_TYPE &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_CLANG_VFS_OVERLAY" href="CMAKE_CLANG_VFS_OVERLAY.html" />
+    <link rel="prev" title="CMAKE_BACKWARDS_COMPATIBILITY" href="CMAKE_BACKWARDS_COMPATIBILITY.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_CLANG_VFS_OVERLAY.html" title="CMAKE_CLANG_VFS_OVERLAY"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_BACKWARDS_COMPATIBILITY.html" title="CMAKE_BACKWARDS_COMPATIBILITY"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_BUILD_TYPE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-build-type">
+<span id="variable:CMAKE_BUILD_TYPE"></span><h1>CMAKE_BUILD_TYPE<a class="headerlink" href="#cmake-build-type" title="Permalink to this headline">¶</a></h1>
+<p>Specifies the build type on single-configuration generators.</p>
+<p>This statically specifies what build type (configuration) will be
+built in this build tree.  Possible values are empty, <code class="docutils literal notranslate"><span class="pre">Debug</span></code>, <code class="docutils literal notranslate"><span class="pre">Release</span></code>,
+<code class="docutils literal notranslate"><span class="pre">RelWithDebInfo</span></code>, <code class="docutils literal notranslate"><span class="pre">MinSizeRel</span></code>, …  This variable is only meaningful to
+single-configuration generators (such as <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> and
+<span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a>) i.e.  those which choose a single configuration when CMake
+runs to generate a build tree as opposed to multi-configuration generators
+which offer selection of the build configuration within the generated build
+environment.  There are many per-config properties and variables
+(usually following clean <code class="docutils literal notranslate"><span class="pre">SOME_VAR_&lt;CONFIG&gt;</span></code> order conventions), such as
+<code class="docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS_&lt;CONFIG&gt;</span></code>, specified as uppercase:
+<code class="docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS_[DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL|...]</span></code>.  For example,
+in a build tree configured to build type <code class="docutils literal notranslate"><span class="pre">Debug</span></code>, CMake will see to
+having <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS_DEBUG"></span><a class="reference internal" href="CMAKE_LANG_FLAGS_DEBUG.html#variable:CMAKE_&lt;LANG&gt;_FLAGS_DEBUG" title="CMAKE_&lt;LANG&gt;_FLAGS_DEBUG"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS_DEBUG</span></code></a> settings get
+added to the <span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_FLAGS"></span><a class="reference internal" href="CMAKE_LANG_FLAGS.html#variable:CMAKE_&lt;LANG&gt;_FLAGS" title="CMAKE_&lt;LANG&gt;_FLAGS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_C_FLAGS</span></code></a> settings.  See
+also <span class="target" id="index-0-variable:CMAKE_CONFIGURATION_TYPES"></span><a class="reference internal" href="CMAKE_CONFIGURATION_TYPES.html#variable:CMAKE_CONFIGURATION_TYPES" title="CMAKE_CONFIGURATION_TYPES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CONFIGURATION_TYPES</span></code></a>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_BACKWARDS_COMPATIBILITY.html"
+                        title="previous chapter">CMAKE_BACKWARDS_COMPATIBILITY</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_CLANG_VFS_OVERLAY.html"
+                        title="next chapter">CMAKE_CLANG_VFS_OVERLAY</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_BUILD_TYPE.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_CLANG_VFS_OVERLAY.html" title="CMAKE_CLANG_VFS_OVERLAY"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_BACKWARDS_COMPATIBILITY.html" title="CMAKE_BACKWARDS_COMPATIBILITY"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_BUILD_TYPE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

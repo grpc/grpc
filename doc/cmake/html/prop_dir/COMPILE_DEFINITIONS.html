@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COMPILE_DEFINITIONS &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="COMPILE_OPTIONS" href="COMPILE_OPTIONS.html" />
+    <link rel="prev" title="CMAKE_CONFIGURE_DEPENDS" href="CMAKE_CONFIGURE_DEPENDS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="COMPILE_OPTIONS.html" title="COMPILE_OPTIONS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CONFIGURE_DEPENDS.html" title="CMAKE_CONFIGURE_DEPENDS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">COMPILE_DEFINITIONS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="compile-definitions">
+<span id="prop_dir:COMPILE_DEFINITIONS"></span><h1>COMPILE_DEFINITIONS<a class="headerlink" href="#compile-definitions" title="Permalink to this headline">¶</a></h1>
+<p>Preprocessor definitions for compiling a directory’s sources.</p>
+<p>This property specifies the list of options given so far to the
+<span class="target" id="index-0-command:add_compile_definitions"></span><a class="reference internal" href="../command/add_compile_definitions.html#command:add_compile_definitions" title="add_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_definitions()</span></code></a> (or <span class="target" id="index-0-command:add_definitions"></span><a class="reference internal" href="../command/add_definitions.html#command:add_definitions" title="add_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_definitions()</span></code></a>) command.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code> property may be set to a semicolon-separated
+list of preprocessor definitions using the syntax <code class="docutils literal notranslate"><span class="pre">VAR</span></code> or <code class="docutils literal notranslate"><span class="pre">VAR=value</span></code>.
+Function-style definitions are not supported.  CMake will
+automatically escape the value correctly for the native build system
+(note that CMake language syntax may require escapes to specify some
+values).</p>
+<p>This property will be initialized in each directory by its value in the
+directory’s parent.</p>
+<p>CMake will automatically drop some definitions that are not supported
+by the native build tool.</p>
+<p>Disclaimer: Most native build tools have poor support for escaping
+certain values.  CMake has work-arounds for many cases but some values
+may just not be possible to pass correctly.  If a value does not seem
+to be escaped correctly, do not attempt to work-around the problem by
+adding escape sequences to the value.  Your work-around may break in a
+future version of CMake that has improved escape support.  Instead
+consider defining the macro in a (configured) header file.  Then
+report the limitation.  Known limitations include:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>#          - broken almost everywhere
+;          - broken in VS IDE 7.0 and Borland Makefiles
+,          - broken in VS IDE
+%          - broken in some cases in NMake
+&amp; |        - broken in some cases on MinGW
+^ &lt; &gt; \&quot;   - broken in most Make tools on Windows
+</pre></div>
+</div>
+<p>CMake does not reject these values outright because they do work in
+some cases.  Use with caution.</p>
+<p>Contents of <code class="docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code> may use “generator expressions” with
+the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a>
+manual for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+manual for more on defining buildsystem properties.</p>
+<p>The corresponding <span class="target" id="index-0-prop_dir:COMPILE_DEFINITIONS_&lt;CONFIG&gt;"></span><a class="reference internal" href="COMPILE_DEFINITIONS_CONFIG.html#prop_dir:COMPILE_DEFINITIONS_&lt;CONFIG&gt;" title="COMPILE_DEFINITIONS_&lt;CONFIG&gt;"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS_&lt;CONFIG&gt;</span></code></a> property may
+be set to specify per-configuration definitions.  Generator expressions
+should be preferred instead of setting the alternative property.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_CONFIGURE_DEPENDS.html"
+                        title="previous chapter">CMAKE_CONFIGURE_DEPENDS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="COMPILE_OPTIONS.html"
+                        title="next chapter">COMPILE_OPTIONS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_dir/COMPILE_DEFINITIONS.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="COMPILE_OPTIONS.html" title="COMPILE_OPTIONS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_CONFIGURE_DEPENDS.html" title="CMAKE_CONFIGURE_DEPENDS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">COMPILE_DEFINITIONS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

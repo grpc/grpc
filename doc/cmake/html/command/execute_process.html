@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>execute_process &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="file" href="file.html" />
+    <link rel="prev" title="endwhile" href="endwhile.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="file.html" title="file"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="endwhile.html" title="endwhile"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">execute_process</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="execute-process">
+<span id="command:execute_process"></span><h1>execute_process<a class="headerlink" href="#execute-process" title="Permalink to this headline">¶</a></h1>
+<p>Execute one or more child processes.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">execute_process(</span><span class="no">COMMAND</span><span class="w"> </span><span class="nv">&lt;cmd1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;arguments&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">COMMAND</span><span class="w"> </span><span class="nv">&lt;cmd2&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;arguments&gt;</span><span class="p">]]...</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">WORKING_DIRECTORY</span><span class="w"> </span><span class="nv">&lt;directory&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">TIMEOUT</span><span class="w"> </span><span class="nv">&lt;seconds&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">RESULT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">RESULTS_VARIABLE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ERROR_VARIABLE</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">INPUT_FILE</span><span class="w"> </span><span class="nv">&lt;file&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">OUTPUT_FILE</span><span class="w"> </span><span class="nv">&lt;file&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ERROR_FILE</span><span class="w"> </span><span class="nv">&lt;file&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">OUTPUT_QUIET</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ERROR_QUIET</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">COMMAND_ECHO</span><span class="w"> </span><span class="nv">&lt;where&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">OUTPUT_STRIP_TRAILING_WHITESPACE</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ERROR_STRIP_TRAILING_WHITESPACE</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ENCODING</span><span class="w"> </span><span class="nv">&lt;name&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ECHO_OUTPUT_VARIABLE</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">ECHO_ERROR_VARIABLE</span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">[</span><span class="no">COMMAND_ERROR_IS_FATAL</span><span class="w"> </span><span class="o">&lt;</span><span class="no">ANY</span><span class="p">|</span><span class="no">LAST</span><span class="o">&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Runs the given sequence of one or more commands.</p>
+<p>Commands are executed concurrently as a pipeline, with the standard
+output of each process piped to the standard input of the next.
+A single standard error pipe is used for all processes.</p>
+<p>Options:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND</span></code></dt><dd><p>A child process command line.</p>
+<p>CMake executes the child process using operating system APIs directly.
+All arguments are passed VERBATIM to the child process.
+No intermediate shell is used, so shell operators such as <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>
+are treated as normal arguments.
+(Use the <code class="docutils literal notranslate"><span class="pre">INPUT_*</span></code>, <code class="docutils literal notranslate"><span class="pre">OUTPUT_*</span></code>, and <code class="docutils literal notranslate"><span class="pre">ERROR_*</span></code> options to
+redirect stdin, stdout, and stderr.)</p>
+<p>If a sequential execution of multiple commands is required, use multiple
+<span class="target" id="index-0-command:execute_process"></span><a class="reference internal" href="#command:execute_process" title="execute_process"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">execute_process()</span></code></a> calls with a single <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> argument.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span></code></dt><dd><p>The named directory will be set as the current working directory of
+the child processes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code></dt><dd><p>After the specified number of seconds (fractions allowed), all unfinished
+child processes will be terminated, and the <code class="docutils literal notranslate"><span class="pre">RESULT_VARIABLE</span></code> will be
+set to a string mentioning the “timeout”.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RESULT_VARIABLE</span></code></dt><dd><p>The variable will be set to contain the result of last child process.
+This will be an integer return code from the last child or a string
+describing an error condition.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">RESULTS_VARIABLE</span> <span class="pre">&lt;variable&gt;</span></code></dt><dd><p>The variable will be set to contain the result of all processes as a
+<a class="reference internal" href="../manual/cmake-language.7.html#cmake-language-lists"><span class="std std-ref">semicolon-separated list</span></a>, in order of the
+given <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> arguments.  Each entry will be an integer return code
+from the corresponding child or a string describing an error condition.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_VARIABLE</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR_VARIABLE</span></code></dt><dd><p>The variable named will be set with the contents of the standard output
+and standard error pipes, respectively.  If the same variable is named
+for both pipes their output will be merged in the order produced.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INPUT_FILE,</span> <span class="pre">OUTPUT_FILE</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR_FILE</span></code></dt><dd><p>The file named will be attached to the standard input of the first
+process, standard output of the last process, or standard error of
+all processes, respectively.  If the same file is named for both
+output and error then it will be used for both.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OUTPUT_QUIET</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR_QUIET</span></code></dt><dd><p>The standard output or standard error results will be quietly ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND_ECHO</span> <span class="pre">&lt;where&gt;</span></code></dt><dd><p>The command being run will be echo’ed to <code class="docutils literal notranslate"><span class="pre">&lt;where&gt;</span></code> with <code class="docutils literal notranslate"><span class="pre">&lt;where&gt;</span></code>
+being set to one of <code class="docutils literal notranslate"><span class="pre">STDERR</span></code>, <code class="docutils literal notranslate"><span class="pre">STDOUT</span></code> or <code class="docutils literal notranslate"><span class="pre">NONE</span></code>.
+See the <span class="target" id="index-0-variable:CMAKE_EXECUTE_PROCESS_COMMAND_ECHO"></span><a class="reference internal" href="../variable/CMAKE_EXECUTE_PROCESS_COMMAND_ECHO.html#variable:CMAKE_EXECUTE_PROCESS_COMMAND_ECHO" title="CMAKE_EXECUTE_PROCESS_COMMAND_ECHO"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_EXECUTE_PROCESS_COMMAND_ECHO</span></code></a> variable for a way
+to control the default behavior when this option is not present.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ENCODING</span> <span class="pre">&lt;name&gt;</span></code></dt><dd><p>On Windows, the encoding that is used to decode output from the process.
+Ignored on other platforms.
+Valid encoding names are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">NONE</span></code></dt><dd><p>Perform no decoding.  This assumes that the process output is encoded
+in the same way as CMake’s internal encoding (UTF-8).
+This is the default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">AUTO</span></code></dt><dd><p>Use the current active console’s codepage or if that isn’t
+available then use ANSI.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ANSI</span></code></dt><dd><p>Use the ANSI codepage.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OEM</span></code></dt><dd><p>Use the original equipment manufacturer (OEM) code page.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UTF8</span></code> or <code class="docutils literal notranslate"><span class="pre">UTF-8</span></code></dt><dd><p>Use the UTF-8 codepage. Prior to CMake 3.11.0, only <code class="docutils literal notranslate"><span class="pre">UTF8</span></code> was accepted
+for this encoding. In CMake 3.11.0, <code class="docutils literal notranslate"><span class="pre">UTF-8</span></code> was added for consistency with
+the <a class="reference external" href="https://www.ietf.org/rfc/rfc3629">UTF-8 RFC</a> naming convention.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ECHO_OUTPUT_VARIABLE</span></code>, <code class="docutils literal notranslate"><span class="pre">ECHO_ERROR_VARIABLE</span></code></dt><dd><p>The standard output or standard error will not be exclusively redirected to
+the configured variables.</p>
+<p>The output will be duplicated, it will be sent into the configured variables
+and also on standard output or standard error.</p>
+<p>This is analogous to the <code class="docutils literal notranslate"><span class="pre">tee</span></code> Unix command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND_ERROR_IS_FATAL</span> <span class="pre">&lt;ANY|LAST&gt;</span></code></dt><dd><p>The option following <code class="docutils literal notranslate"><span class="pre">COMMAND_ERROR_IS_FATAL</span></code> determines the behavior when
+an error is encountered:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ANY</span></code>
+If any of the commands in the list of commands fail, the
+<code class="docutils literal notranslate"><span class="pre">execute_process()</span></code> command halts with an error.</p>
+<p><code class="docutils literal notranslate"><span class="pre">LAST</span></code>
+If the last command in the list of commands fails, the
+<code class="docutils literal notranslate"><span class="pre">execute_process()</span></code> command halts with an error.  Commands earlier in the
+list will not cause a fatal error.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>If more than one <code class="docutils literal notranslate"><span class="pre">OUTPUT_*</span></code> or <code class="docutils literal notranslate"><span class="pre">ERROR_*</span></code> option is given for the
+same pipe the precedence is not specified.
+If no <code class="docutils literal notranslate"><span class="pre">OUTPUT_*</span></code> or <code class="docutils literal notranslate"><span class="pre">ERROR_*</span></code> options are given the output will
+be shared with the corresponding pipes of the CMake process itself.</p>
+<p>The <span class="target" id="index-1-command:execute_process"></span><a class="reference internal" href="#command:execute_process" title="execute_process"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">execute_process()</span></code></a> command is a newer more powerful version of
+<span class="target" id="index-0-command:exec_program"></span><a class="reference internal" href="exec_program.html#command:exec_program" title="exec_program"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">exec_program()</span></code></a>, but the old command has been kept for compatibility.
+Both commands run while CMake is processing the project prior to build
+system generation.  Use <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a> and
+<span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a> to create custom commands that run at
+build time.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="endwhile.html"
+                        title="previous chapter">endwhile</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="file.html"
+                        title="next chapter">file</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/execute_process.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="file.html" title="file"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="endwhile.html" title="endwhile"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">execute_process</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

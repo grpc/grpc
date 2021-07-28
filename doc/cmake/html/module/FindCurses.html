@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindCurses &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindCVS" href="FindCVS.html" />
+    <link rel="prev" title="FindCURL" href="FindCURL.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindCVS.html" title="FindCVS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindCURL.html" title="FindCURL"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindCurses</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findcurses">
+<span id="module:FindCurses"></span><h1>FindCurses<a class="headerlink" href="#findcurses" title="Permalink to this headline">¶</a></h1>
+<p>Find the curses or ncurses include file and library.</p>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_FOUND</span></code></dt><dd><p>True if Curses is found.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_INCLUDE_DIRS</span></code></dt><dd><p>The include directories needed to use Curses.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_LIBRARIES</span></code></dt><dd><p>The libraries needed to use Curses.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_CFLAGS</span></code></dt><dd><p>Parameters which ought be given to C/C++ compilers when using Curses.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_HAVE_CURSES_H</span></code></dt><dd><p>True if curses.h is available.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_HAVE_NCURSES_H</span></code></dt><dd><p>True if ncurses.h is available.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_HAVE_NCURSES_NCURSES_H</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">ncurses/ncurses.h</span></code> is available.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_HAVE_NCURSES_CURSES_H</span></code></dt><dd><p>True if <code class="docutils literal notranslate"><span class="pre">ncurses/curses.h</span></code> is available.</p>
+</dd>
+</dl>
+<p>Set <code class="docutils literal notranslate"><span class="pre">CURSES_NEED_NCURSES</span></code> to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> before the
+<code class="docutils literal notranslate"><span class="pre">find_package(Curses)</span></code> call if NCurses functionality is required.
+Set <code class="docutils literal notranslate"><span class="pre">CURSES_NEED_WIDE</span></code> to <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> before the
+<code class="docutils literal notranslate"><span class="pre">find_package(Curses)</span></code> call if unicode functionality is required.</p>
+</div>
+<div class="section" id="backward-compatibility">
+<h2>Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Permalink to this headline">¶</a></h2>
+<p>The following variable are provided for backward compatibility:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_INCLUDE_DIR</span></code></dt><dd><p>Path to Curses include.  Use <code class="docutils literal notranslate"><span class="pre">CURSES_INCLUDE_DIRS</span></code> instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CURSES_LIBRARY</span></code></dt><dd><p>Path to Curses library.  Use <code class="docutils literal notranslate"><span class="pre">CURSES_LIBRARIES</span></code> instead.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindCurses</a><ul>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#backward-compatibility">Backward Compatibility</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindCURL.html"
+                        title="previous chapter">FindCURL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindCVS.html"
+                        title="next chapter">FindCVS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindCurses.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindCVS.html" title="FindCVS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindCURL.html" title="FindCURL"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindCurses</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

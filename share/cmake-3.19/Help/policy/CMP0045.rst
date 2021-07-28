@@ -1,0 +1,19 @@
+CMP0045
+-------
+
+Error on non-existent target in get_target_property.
+
+In CMake 2.8.12 and lower, the :command:`get_target_property` command accepted
+a non-existent target argument without issuing any error or warning.  The
+result variable is set to a ``-NOTFOUND`` value.
+
+The ``OLD`` behavior for this policy is to issue no warning and set the result
+variable to a ``-NOTFOUND`` value.  The ``NEW`` behavior
+for this policy is to issue a ``FATAL_ERROR`` if the command is called with a
+non-existent target.
+
+This policy was introduced in CMake version 3.0.  CMake version
+|release| warns when the policy is not set and uses ``OLD`` behavior.  Use
+the :command:`cmake_policy` command to set it to ``OLD`` or ``NEW`` explicitly.
+
+.. include:: DEPRECATED.txt

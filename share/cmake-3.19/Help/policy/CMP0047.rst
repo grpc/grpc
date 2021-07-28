@@ -1,0 +1,30 @@
+CMP0047
+-------
+
+Use ``QCC`` compiler id for the qcc drivers on QNX.
+
+CMake 3.0 and above recognize that the QNX qcc compiler driver is
+different from the GNU compiler.
+CMake now prefers to present this to projects by setting the
+:variable:`CMAKE_<LANG>_COMPILER_ID` variable to ``QCC`` instead
+of ``GNU``.  However, existing projects may assume the compiler id for
+QNX qcc is just ``GNU`` as it was in CMake versions prior to 3.0.
+Therefore this policy determines for QNX qcc which compiler id to
+report in the :variable:`CMAKE_<LANG>_COMPILER_ID` variable after
+language ``<LANG>`` is enabled by the :command:`project` or
+:command:`enable_language` command.  The policy must be set prior
+to the invocation of either command.
+
+The ``OLD`` behavior for this policy is to use the ``GNU`` compiler id
+for the qcc and QCC compiler drivers. The ``NEW`` behavior for this policy
+is to use the ``QCC`` compiler id for those drivers.
+
+This policy was introduced in CMake version 3.0.  Use the
+:command:`cmake_policy` command to set this policy to ``OLD`` or ``NEW``
+explicitly.  Unlike most policies, CMake version |release| does *not* warn
+by default when this policy is not set and simply uses ``OLD`` behavior.
+See documentation of the
+:variable:`CMAKE_POLICY_WARNING_CMP0047 <CMAKE_POLICY_WARNING_CMP<NNNN>>`
+variable to control the warning.
+
+.. include:: DEPRECATED.txt

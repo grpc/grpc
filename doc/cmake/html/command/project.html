@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>project &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="remove_definitions" href="remove_definitions.html" />
+    <link rel="prev" title="load_cache" href="load_cache.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="remove_definitions.html" title="remove_definitions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="load_cache.html" title="load_cache"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">project</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="project">
+<span id="command:project"></span><h1>project<a class="headerlink" href="#project" title="Permalink to this headline">¶</a></h1>
+<p>Set the name of the project.</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">project(</span><span class="nv">&lt;PROJECT-NAME&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;language-name&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">project(</span><span class="nv">&lt;PROJECT-NAME&gt;</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">VERSION</span><span class="w"> </span><span class="nv">&lt;major&gt;</span><span class="p">[.</span><span class="nv">&lt;minor&gt;</span><span class="p">[.</span><span class="nv">&lt;patch&gt;</span><span class="p">[.</span><span class="nv">&lt;tweak&gt;</span><span class="p">]]]]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">DESCRIPTION</span><span class="w"> </span><span class="nv">&lt;project-description-string&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">HOMEPAGE_URL</span><span class="w"> </span><span class="nv">&lt;url-string&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">[</span><span class="no">LANGUAGES</span><span class="w"> </span><span class="nv">&lt;language-name&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets the name of the project, and stores it in the variable
+<span class="target" id="index-0-variable:PROJECT_NAME"></span><a class="reference internal" href="../variable/PROJECT_NAME.html#variable:PROJECT_NAME" title="PROJECT_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_NAME</span></code></a>. When called from the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> also stores the project name in the
+variable <span class="target" id="index-0-variable:CMAKE_PROJECT_NAME"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_NAME.html#variable:CMAKE_PROJECT_NAME" title="CMAKE_PROJECT_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_NAME</span></code></a>.</p>
+<p>Also sets the variables</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-variable:PROJECT_SOURCE_DIR"></span><a class="reference internal" href="../variable/PROJECT_SOURCE_DIR.html#variable:PROJECT_SOURCE_DIR" title="PROJECT_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_SOURCE_DIR</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_SOURCE_DIR"></span><a class="reference internal" href="../variable/PROJECT-NAME_SOURCE_DIR.html#variable:&lt;PROJECT-NAME&gt;_SOURCE_DIR" title="&lt;PROJECT-NAME&gt;_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_SOURCE_DIR</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:PROJECT_BINARY_DIR"></span><a class="reference internal" href="../variable/PROJECT_BINARY_DIR.html#variable:PROJECT_BINARY_DIR" title="PROJECT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_BINARY_DIR</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_BINARY_DIR"></span><a class="reference internal" href="../variable/PROJECT-NAME_BINARY_DIR.html#variable:&lt;PROJECT-NAME&gt;_BINARY_DIR" title="&lt;PROJECT-NAME&gt;_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_BINARY_DIR</span></code></a></p></li>
+</ul>
+<p>Further variables are set by the optional arguments described in the following.
+If any of these arguments is not used, then the corresponding variables are
+set to the empty string.</p>
+</div>
+<div class="section" id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<p>The options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">VERSION</span> <span class="pre">&lt;version&gt;</span></code></dt><dd><p>Optional; may not be used unless policy <span class="target" id="index-0-policy:CMP0048"></span><a class="reference internal" href="../policy/CMP0048.html#policy:CMP0048" title="CMP0048"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0048</span></code></a> is
+set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+<p>Takes a <code class="docutils literal notranslate"><span class="pre">&lt;version&gt;</span></code> argument composed of non-negative integer components,
+i.e. <code class="docutils literal notranslate"><span class="pre">&lt;major&gt;[.&lt;minor&gt;[.&lt;patch&gt;[.&lt;tweak&gt;]]]</span></code>,
+and sets the variables</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-variable:PROJECT_VERSION"></span><a class="reference internal" href="../variable/PROJECT_VERSION.html#variable:PROJECT_VERSION" title="PROJECT_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_VERSION"></span><a class="reference internal" href="../variable/PROJECT-NAME_VERSION.html#variable:&lt;PROJECT-NAME&gt;_VERSION" title="&lt;PROJECT-NAME&gt;_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_VERSION</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:PROJECT_VERSION_MAJOR"></span><a class="reference internal" href="../variable/PROJECT_VERSION_MAJOR.html#variable:PROJECT_VERSION_MAJOR" title="PROJECT_VERSION_MAJOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION_MAJOR</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_VERSION_MAJOR"></span><a class="reference internal" href="../variable/PROJECT-NAME_VERSION_MAJOR.html#variable:&lt;PROJECT-NAME&gt;_VERSION_MAJOR" title="&lt;PROJECT-NAME&gt;_VERSION_MAJOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_VERSION_MAJOR</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:PROJECT_VERSION_MINOR"></span><a class="reference internal" href="../variable/PROJECT_VERSION_MINOR.html#variable:PROJECT_VERSION_MINOR" title="PROJECT_VERSION_MINOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION_MINOR</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_VERSION_MINOR"></span><a class="reference internal" href="../variable/PROJECT-NAME_VERSION_MINOR.html#variable:&lt;PROJECT-NAME&gt;_VERSION_MINOR" title="&lt;PROJECT-NAME&gt;_VERSION_MINOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_VERSION_MINOR</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:PROJECT_VERSION_PATCH"></span><a class="reference internal" href="../variable/PROJECT_VERSION_PATCH.html#variable:PROJECT_VERSION_PATCH" title="PROJECT_VERSION_PATCH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION_PATCH</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_VERSION_PATCH"></span><a class="reference internal" href="../variable/PROJECT-NAME_VERSION_PATCH.html#variable:&lt;PROJECT-NAME&gt;_VERSION_PATCH" title="&lt;PROJECT-NAME&gt;_VERSION_PATCH"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_VERSION_PATCH</span></code></a></p></li>
+<li><p><span class="target" id="index-0-variable:PROJECT_VERSION_TWEAK"></span><a class="reference internal" href="../variable/PROJECT_VERSION_TWEAK.html#variable:PROJECT_VERSION_TWEAK" title="PROJECT_VERSION_TWEAK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_VERSION_TWEAK</span></code></a>,
+<span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_VERSION_TWEAK"></span><a class="reference internal" href="../variable/PROJECT-NAME_VERSION_TWEAK.html#variable:&lt;PROJECT-NAME&gt;_VERSION_TWEAK" title="&lt;PROJECT-NAME&gt;_VERSION_TWEAK"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_VERSION_TWEAK</span></code></a>.</p></li>
+</ul>
+<p>When the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command is called from the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>,
+then the version is also stored in the variable <span class="target" id="index-0-variable:CMAKE_PROJECT_VERSION"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_VERSION.html#variable:CMAKE_PROJECT_VERSION" title="CMAKE_PROJECT_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_VERSION</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span> <span class="pre">&lt;project-description-string&gt;</span></code></dt><dd><p>Optional.
+Sets the variables</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-variable:PROJECT_DESCRIPTION"></span><a class="reference internal" href="../variable/PROJECT_DESCRIPTION.html#variable:PROJECT_DESCRIPTION" title="PROJECT_DESCRIPTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_DESCRIPTION</span></code></a>, <span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_DESCRIPTION"></span><a class="reference internal" href="../variable/PROJECT-NAME_DESCRIPTION.html#variable:&lt;PROJECT-NAME&gt;_DESCRIPTION" title="&lt;PROJECT-NAME&gt;_DESCRIPTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_DESCRIPTION</span></code></a></p></li>
+</ul>
+<p>to <code class="docutils literal notranslate"><span class="pre">&lt;project-description-string&gt;</span></code>.
+It is recommended that this description is a relatively short string,
+usually no more than a few words.</p>
+<p>When the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command is called from the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>,
+then the description is also stored in the variable <span class="target" id="index-0-variable:CMAKE_PROJECT_DESCRIPTION"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_DESCRIPTION.html#variable:CMAKE_PROJECT_DESCRIPTION" title="CMAKE_PROJECT_DESCRIPTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_DESCRIPTION</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HOMEPAGE_URL</span> <span class="pre">&lt;url-string&gt;</span></code></dt><dd><p>Optional.
+Sets the variables</p>
+<ul class="simple">
+<li><p><span class="target" id="index-0-variable:PROJECT_HOMEPAGE_URL"></span><a class="reference internal" href="../variable/PROJECT_HOMEPAGE_URL.html#variable:PROJECT_HOMEPAGE_URL" title="PROJECT_HOMEPAGE_URL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">PROJECT_HOMEPAGE_URL</span></code></a>, <span class="target" id="index-0-variable:&lt;PROJECT-NAME&gt;_HOMEPAGE_URL"></span><a class="reference internal" href="../variable/PROJECT-NAME_HOMEPAGE_URL.html#variable:&lt;PROJECT-NAME&gt;_HOMEPAGE_URL" title="&lt;PROJECT-NAME&gt;_HOMEPAGE_URL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">&lt;PROJECT-NAME&gt;_HOMEPAGE_URL</span></code></a></p></li>
+</ul>
+<p>to <code class="docutils literal notranslate"><span class="pre">&lt;url-string&gt;</span></code>, which should be the canonical home URL for the project.</p>
+<p>When the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command is called from the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>,
+then the URL also is stored in the variable <span class="target" id="index-0-variable:CMAKE_PROJECT_HOMEPAGE_URL"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_HOMEPAGE_URL.html#variable:CMAKE_PROJECT_HOMEPAGE_URL" title="CMAKE_PROJECT_HOMEPAGE_URL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_HOMEPAGE_URL</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LANGUAGES</span> <span class="pre">&lt;language-name&gt;...</span></code></dt><dd><p>Optional.
+Can also be specified without <code class="docutils literal notranslate"><span class="pre">LANGUAGES</span></code> keyword per the first, short signature.</p>
+<p>Selects which programming languages are needed to build the project.
+Supported languages include <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">CXX</span></code> (i.e.  C++), <code class="docutils literal notranslate"><span class="pre">CUDA</span></code>,
+<code class="docutils literal notranslate"><span class="pre">OBJC</span></code> (i.e. Objective-C), <code class="docutils literal notranslate"><span class="pre">OBJCXX</span></code>, <code class="docutils literal notranslate"><span class="pre">Fortran</span></code>, <code class="docutils literal notranslate"><span class="pre">ISPC</span></code>, and <code class="docutils literal notranslate"><span class="pre">ASM</span></code>.
+By default <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code> are enabled if no language options are given.
+Specify language <code class="docutils literal notranslate"><span class="pre">NONE</span></code>, or use the <code class="docutils literal notranslate"><span class="pre">LANGUAGES</span></code> keyword and list no languages,
+to skip enabling any languages.</p>
+<p>If enabling <code class="docutils literal notranslate"><span class="pre">ASM</span></code>, list it last so that CMake can check whether
+compilers for other languages like <code class="docutils literal notranslate"><span class="pre">C</span></code> work for assembly too.</p>
+</dd>
+</dl>
+<p>The variables set through the <code class="docutils literal notranslate"><span class="pre">VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">DESCRIPTION</span></code> and <code class="docutils literal notranslate"><span class="pre">HOMEPAGE_URL</span></code>
+options are intended for use as default values in package metadata and documentation.</p>
+</div>
+<div class="section" id="code-injection">
+<h2>Code Injection<a class="headerlink" href="#code-injection" title="Permalink to this headline">¶</a></h2>
+<p>If the <span class="target" id="index-0-variable:CMAKE_PROJECT_INCLUDE_BEFORE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_INCLUDE_BEFORE.html#variable:CMAKE_PROJECT_INCLUDE_BEFORE" title="CMAKE_PROJECT_INCLUDE_BEFORE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_INCLUDE_BEFORE</span></code></a> or
+<span class="target" id="index-0-variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_PROJECT-NAME_INCLUDE_BEFORE.html#variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE" title="CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE</span></code></a> variables are set,
+the files they point to will be included as the first step of the
+<code class="docutils literal notranslate"><span class="pre">project()</span></code> command.
+If both are set, then <span class="target" id="index-1-variable:CMAKE_PROJECT_INCLUDE_BEFORE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_INCLUDE_BEFORE.html#variable:CMAKE_PROJECT_INCLUDE_BEFORE" title="CMAKE_PROJECT_INCLUDE_BEFORE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_INCLUDE_BEFORE</span></code></a> will be
+included before <span class="target" id="index-1-variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_PROJECT-NAME_INCLUDE_BEFORE.html#variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE" title="CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE_BEFORE</span></code></a>.</p>
+<p>If the <span class="target" id="index-0-variable:CMAKE_PROJECT_INCLUDE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_INCLUDE.html#variable:CMAKE_PROJECT_INCLUDE" title="CMAKE_PROJECT_INCLUDE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_INCLUDE</span></code></a> or
+<span class="target" id="index-0-variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_PROJECT-NAME_INCLUDE.html#variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE" title="CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE</span></code></a> variables are set, the files
+they point to will be included as the last step of the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command.
+If both are set, then <span class="target" id="index-1-variable:CMAKE_PROJECT_INCLUDE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_INCLUDE.html#variable:CMAKE_PROJECT_INCLUDE" title="CMAKE_PROJECT_INCLUDE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_INCLUDE</span></code></a> will be included before
+<span class="target" id="index-1-variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_PROJECT-NAME_INCLUDE.html#variable:CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE" title="CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_&lt;PROJECT-NAME&gt;_INCLUDE</span></code></a>.</p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>The top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file for a project must contain a
+literal, direct call to the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command; loading one
+through the <span class="target" id="index-0-command:include"></span><a class="reference internal" href="include.html#command:include" title="include"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include()</span></code></a> command is not sufficient.  If no such
+call exists, CMake will issue a warning and pretend there is a
+<code class="docutils literal notranslate"><span class="pre">project(Project)</span></code> at the top to enable the default languages
+(<code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">CXX</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Call the <code class="docutils literal notranslate"><span class="pre">project()</span></code> command near the top of the top-level
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>, but <em>after</em> calling <span class="target" id="index-0-command:cmake_minimum_required"></span><a class="reference internal" href="cmake_minimum_required.html#command:cmake_minimum_required" title="cmake_minimum_required"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_minimum_required()</span></code></a>.
+It is important to establish version and policy settings before invoking
+other commands whose behavior they may affect.
+See also policy <span class="target" id="index-0-policy:CMP0000"></span><a class="reference internal" href="../policy/CMP0000.html#policy:CMP0000" title="CMP0000"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0000</span></code></a>.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">project</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#code-injection">Code Injection</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="load_cache.html"
+                        title="previous chapter">load_cache</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="remove_definitions.html"
+                        title="next chapter">remove_definitions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/project.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="remove_definitions.html" title="remove_definitions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="load_cache.html" title="load_cache"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">project</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

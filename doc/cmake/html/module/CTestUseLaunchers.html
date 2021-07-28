@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTestUseLaunchers &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dart" href="Dart.html" />
+    <link rel="prev" title="CTestScriptMode" href="CTestScriptMode.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Dart.html" title="Dart"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CTestScriptMode.html" title="CTestScriptMode"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTestUseLaunchers</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ctestuselaunchers">
+<span id="module:CTestUseLaunchers"></span><h1>CTestUseLaunchers<a class="headerlink" href="#ctestuselaunchers" title="Permalink to this headline">¶</a></h1>
+<p>Set the RULE_LAUNCH_* global properties when CTEST_USE_LAUNCHERS is on.</p>
+<p>CTestUseLaunchers is automatically included when you include(CTest).
+However, it is split out into its own module file so projects can use
+the CTEST_USE_LAUNCHERS functionality independently.</p>
+<p>To use launchers, set CTEST_USE_LAUNCHERS to ON in a ctest -S
+dashboard script, and then also set it in the cache of the configured
+project.  Both cmake and ctest need to know the value of it for the
+launchers to work properly.  CMake needs to know in order to generate
+proper build rules, and ctest, in order to produce the proper error
+and warning analysis.</p>
+<p>For convenience, you may set the ENV variable
+CTEST_USE_LAUNCHERS_DEFAULT in your ctest -S script, too.  Then, as
+long as your CMakeLists uses include(CTest) or
+include(CTestUseLaunchers), it will use the value of the ENV variable
+to initialize a CTEST_USE_LAUNCHERS cache variable.  This cache
+variable initialization only occurs if CTEST_USE_LAUNCHERS is not
+already defined. If CTEST_USE_LAUNCHERS is on in a ctest -S script
+the ctest_configure command will add -DCTEST_USE_LAUNCHERS:BOOL=TRUE
+to the cmake command used to configure the project.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CTestScriptMode.html"
+                        title="previous chapter">CTestScriptMode</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Dart.html"
+                        title="next chapter">Dart</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CTestUseLaunchers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Dart.html" title="Dart"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CTestScriptMode.html" title="CTestScriptMode"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CTestUseLaunchers</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

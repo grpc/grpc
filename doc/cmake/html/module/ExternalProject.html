@@ -1,0 +1,1065 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExternalProject &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FeatureSummary" href="FeatureSummary.html" />
+    <link rel="prev" title="ExternalData" href="ExternalData.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FeatureSummary.html" title="FeatureSummary"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ExternalData.html" title="ExternalData"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ExternalProject</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="externalproject">
+<span id="module:ExternalProject"></span><h1><a class="toc-backref" href="#id1">ExternalProject</a><a class="headerlink" href="#externalproject" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#externalproject" id="id1">ExternalProject</a></p>
+<ul>
+<li><p><a class="reference internal" href="#commands" id="id2">Commands</a></p>
+<ul>
+<li><p><a class="reference internal" href="#external-project-definition" id="id3">External Project Definition</a></p></li>
+<li><p><a class="reference internal" href="#obtaining-project-properties" id="id4">Obtaining Project Properties</a></p></li>
+<li><p><a class="reference internal" href="#explicit-step-management" id="id5">Explicit Step Management</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#examples" id="id6">Examples</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="commands">
+<h2><a class="toc-backref" href="#id2">Commands</a><a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="external-project-definition">
+<h3><a class="toc-backref" href="#id3">External Project Definition</a><a class="headerlink" href="#external-project-definition" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:externalproject_add">
+<code class="sig-name descname">ExternalProject_Add</code><a class="headerlink" href="#command:externalproject_add" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code> function creates a custom target to drive
+download, update/patch, configure, build, install and test steps of an
+external project:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;option&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The individual steps within the process can be driven independently if
+required (e.g. for CDash submission) and extra custom steps can be defined,
+along with the ability to control the step dependencies. The directory
+structure used for the management of the external project can also be
+customized. The function supports a large number of options which can be used
+to tailor the external project behavior.</p>
+<dl>
+<dt><strong>Directory Options:</strong></dt><dd><p>Most of the time, the default directory layout is sufficient. It is largely
+an implementation detail that the main project usually doesn’t need to
+change. In some circumstances, however, control over the directory layout
+can be useful or necessary. The directory options are potentially more
+useful from the point of view that the main build can use the
+<span class="target" id="index-0-command:externalproject_get_property"></span><a class="reference internal" href="#command:externalproject_get_property" title="externalproject_get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Get_Property()</span></code></a> command to retrieve their values,
+thereby allowing the main project to refer to build artifacts of the
+external project.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">PREFIX</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Root directory for the external project. Unless otherwise noted below,
+all other directories associated with the external project will be
+created under here.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TMP_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Directory in which to store temporary files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STAMP_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Directory in which to store the timestamps of each step. Log files from
+individual steps are also created in here unless overridden by LOG_DIR
+(see <em>Logging Options</em> below).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Directory in which to store the logs of each step.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOWNLOAD_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Directory in which to store downloaded files before unpacking them. This
+directory is only used by the URL download method, all other download
+methods use <code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code> directly instead.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Source directory into which downloaded contents will be unpacked, or for
+non-URL download methods, the directory in which the repository should be
+checked out, cloned, etc. If no download method is specified, this must
+point to an existing directory where the external project has already
+been unpacked or cloned/checked out.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a download method is specified, any existing contents of the source
+directory may be deleted. Only the URL download method checks whether
+this directory is either missing or empty before initiating the
+download, stopping with an error if it is not empty. All other
+download methods silently discard any previous contents of the source
+directory.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BINARY_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Specify the build directory location. This option is ignored if
+<code class="docutils literal notranslate"><span class="pre">BUILD_IN_SOURCE</span></code> is enabled.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INSTALL_DIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Installation prefix to be placed in the <code class="docutils literal notranslate"><span class="pre">&lt;INSTALL_DIR&gt;</span></code> placeholder.
+This does not actually configure the external project to install to
+the given prefix. That must be done by passing appropriate arguments
+to the external project configuration step, e.g. using <code class="docutils literal notranslate"><span class="pre">&lt;INSTALL_DIR&gt;</span></code>.</p>
+</dd>
+</dl>
+<p>If any of the above <code class="docutils literal notranslate"><span class="pre">..._DIR</span></code> options are not specified, their defaults
+are computed as follows. If the <code class="docutils literal notranslate"><span class="pre">PREFIX</span></code> option is given or the
+<code class="docutils literal notranslate"><span class="pre">EP_PREFIX</span></code> directory property is set, then an external project is built
+and installed under the specified prefix:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>TMP_DIR      = &lt;prefix&gt;/tmp
+STAMP_DIR    = &lt;prefix&gt;/src/&lt;name&gt;-stamp
+DOWNLOAD_DIR = &lt;prefix&gt;/src
+SOURCE_DIR   = &lt;prefix&gt;/src/&lt;name&gt;
+BINARY_DIR   = &lt;prefix&gt;/src/&lt;name&gt;-build
+INSTALL_DIR  = &lt;prefix&gt;
+LOG_DIR      = &lt;STAMP_DIR&gt;
+</pre></div>
+</div>
+<p>Otherwise, if the <code class="docutils literal notranslate"><span class="pre">EP_BASE</span></code> directory property is set then components
+of an external project are stored under the specified base:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>TMP_DIR      = &lt;base&gt;/tmp/&lt;name&gt;
+STAMP_DIR    = &lt;base&gt;/Stamp/&lt;name&gt;
+DOWNLOAD_DIR = &lt;base&gt;/Download/&lt;name&gt;
+SOURCE_DIR   = &lt;base&gt;/Source/&lt;name&gt;
+BINARY_DIR   = &lt;base&gt;/Build/&lt;name&gt;
+INSTALL_DIR  = &lt;base&gt;/Install/&lt;name&gt;
+LOG_DIR      = &lt;STAMP_DIR&gt;
+</pre></div>
+</div>
+<p>If no <code class="docutils literal notranslate"><span class="pre">PREFIX</span></code>, <code class="docutils literal notranslate"><span class="pre">EP_PREFIX</span></code>, or <code class="docutils literal notranslate"><span class="pre">EP_BASE</span></code> is specified, then the
+default is to set <code class="docutils literal notranslate"><span class="pre">PREFIX</span></code> to <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;-prefix</span></code>. Relative paths are
+interpreted with respect to <span class="target" id="index-0-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a> at the
+point where <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code> is called.</p>
+</dd>
+<dt><strong>Download Step Options:</strong></dt><dd><p>A download method can be omitted if the <code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code> option is used to
+point to an existing non-empty directory. Otherwise, one of the download
+methods below must be specified (multiple download methods should not be
+given) or a custom <code class="docutils literal notranslate"><span class="pre">DOWNLOAD_COMMAND</span></code> provided.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">DOWNLOAD_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Overrides the command used for the download step
+(<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). If this option is specified, all other download options will
+be ignored. Providing an empty string for <code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;</span></code> effectively disables
+the download step.</p>
+</dd>
+<dt><em>URL Download</em></dt><dd><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">URL</span> <span class="pre">&lt;url1&gt;</span> <span class="pre">[&lt;url2&gt;...]</span></code></dt><dd><p>List of paths and/or URL(s) of the external project’s source. When more
+than one URL is given, they are tried in turn until one succeeds. A URL
+may be an ordinary path in the local file system (in which case it
+must be the only URL provided) or any downloadable URL supported by the
+<span class="target" id="index-0-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code></a> command. A local filesystem path may refer to
+either an existing directory or to an archive file, whereas a URL is
+expected to point to a file which can be treated as an archive. When an
+archive is used, it will be unpacked automatically unless the
+<code class="docutils literal notranslate"><span class="pre">DOWNLOAD_NO_EXTRACT</span></code> option is set to prevent it. The archive type
+is determined by inspecting the actual content rather than using logic
+based on the file extension.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">URL_HASH</span> <span class="pre">&lt;algo&gt;=&lt;hashValue&gt;</span></code></dt><dd><p>Hash of the archive file to be downloaded. The argument should be of
+the form <code class="docutils literal notranslate"><span class="pre">&lt;algo&gt;=&lt;hashValue&gt;</span></code> where <code class="docutils literal notranslate"><span class="pre">algo</span></code> can be any of the hashing
+algorithms supported by the <span class="target" id="index-1-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file()</span></code></a> command. Specifying this
+option is strongly recommended for URL downloads, as it ensures the
+integrity of the downloaded content. It is also used as a check for a
+previously downloaded file, allowing connection to the remote location
+to be avoided altogether if the local directory already has a file from
+an earlier download that matches the specified hash.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">URL_MD5</span> <span class="pre">&lt;md5&gt;</span></code></dt><dd><p>Equivalent to <code class="docutils literal notranslate"><span class="pre">URL_HASH</span> <span class="pre">MD5=&lt;md5&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOWNLOAD_NAME</span> <span class="pre">&lt;fname&gt;</span></code></dt><dd><p>File name to use for the downloaded file. If not given, the end of the
+URL is used to determine the file name. This option is rarely needed,
+the default name is generally suitable and is not normally used outside
+of code internal to the <code class="docutils literal notranslate"><span class="pre">ExternalProject</span></code> module.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOWNLOAD_NO_EXTRACT</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Allows the extraction part of the download step to be disabled by
+passing a boolean true value for this option. If this option is not
+given, the downloaded contents will be unpacked automatically if
+required. If extraction has been disabled, the full path to the
+downloaded file is available as <code class="docutils literal notranslate"><span class="pre">&lt;DOWNLOADED_FILE&gt;</span></code> in subsequent
+steps or as the property <code class="docutils literal notranslate"><span class="pre">DOWNLOADED_FILE</span></code> with the
+<span class="target" id="index-1-command:externalproject_get_property"></span><a class="reference internal" href="#command:externalproject_get_property" title="externalproject_get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Get_Property()</span></code></a> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DOWNLOAD_NO_PROGRESS</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Can be used to disable logging the download progress. If this option is
+not given, download progress messages will be logged.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TIMEOUT</span> <span class="pre">&lt;seconds&gt;</span></code></dt><dd><p>Maximum time allowed for file download operations.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INACTIVITY_TIMEOUT</span> <span class="pre">&lt;seconds&gt;</span></code></dt><dd><p>Terminate the operation after a period of inactivity.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HTTP_USERNAME</span> <span class="pre">&lt;username&gt;</span></code></dt><dd><p>Username for the download operation if authentication is required.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HTTP_PASSWORD</span> <span class="pre">&lt;password&gt;</span></code></dt><dd><p>Password for the download operation if authentication is required.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HTTP_HEADER</span> <span class="pre">&lt;header1&gt;</span> <span class="pre">[&lt;header2&gt;...]</span></code></dt><dd><p>Provides an arbitrary list of HTTP headers for the download operation.
+This can be useful for accessing content in systems like AWS, etc.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TLS_VERIFY</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Specifies whether certificate verification should be performed for
+https URLs. If this option is not provided, the default behavior is
+determined by the <code class="docutils literal notranslate"><span class="pre">CMAKE_TLS_VERIFY</span></code> variable (see
+<span class="target" id="index-2-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code></a>). If that is also not set, certificate
+verification will not be performed. In situations where <code class="docutils literal notranslate"><span class="pre">URL_HASH</span></code>
+cannot be provided, this option can be an alternative verification
+measure.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TLS_CAINFO</span> <span class="pre">&lt;file&gt;</span></code></dt><dd><p>Specify a custom certificate authority file to use if <code class="docutils literal notranslate"><span class="pre">TLS_VERIFY</span></code>
+is enabled. If this option is not specified, the value of the
+<code class="docutils literal notranslate"><span class="pre">CMAKE_TLS_CAINFO</span></code> variable will be used instead (see
+<span class="target" id="index-3-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code></a>)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NETRC</span> <span class="pre">&lt;level&gt;</span></code></dt><dd><p>Specify whether the <code class="docutils literal notranslate"><span class="pre">.netrc</span></code> file is to be used for operation.
+If this option is not specified, the value of the <code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC</span></code>
+variable will be used instead (see <span class="target" id="index-4-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code></a>)
+Valid levels are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IGNORED</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">.netrc</span></code> file is ignored.
+This is the default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">OPTIONAL</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">.netrc</span></code> file is optional, and information in the URL
+is preferred.  The file will be scanned to find which ever
+information is not specified in the URL.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">.netrc</span></code> file is required, and information in the URL
+is ignored.</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">NETRC_FILE</span> <span class="pre">&lt;file&gt;</span></code></dt><dd><p>Specify an alternative <code class="docutils literal notranslate"><span class="pre">.netrc</span></code> file to the one in your home directory
+if the <code class="docutils literal notranslate"><span class="pre">NETRC</span></code> level is <code class="docutils literal notranslate"><span class="pre">OPTIONAL</span></code> or <code class="docutils literal notranslate"><span class="pre">REQUIRED</span></code>. If this option
+is not specified, the value of the <code class="docutils literal notranslate"><span class="pre">CMAKE_NETRC_FILE</span></code> variable will
+be used instead (see <span class="target" id="index-5-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(DOWNLOAD)</span></code></a>)</p>
+</dd>
+</dl>
+</dd>
+<dt><em>Git</em></dt><dd><p>NOTE: A git version of 1.6.5 or later is required if this download method
+is used.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_REPOSITORY</span> <span class="pre">&lt;url&gt;</span></code></dt><dd><p>URL of the git repository. Any URL understood by the <code class="docutils literal notranslate"><span class="pre">git</span></code> command
+may be used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_TAG</span> <span class="pre">&lt;tag&gt;</span></code></dt><dd><p>Git branch name, tag or commit hash. Note that branch names and tags
+should generally be specified as remote names (i.e. <code class="docutils literal notranslate"><span class="pre">origin/myBranch</span></code>
+rather than simply <code class="docutils literal notranslate"><span class="pre">myBranch</span></code>). This ensures that if the remote end
+has its tag moved or branch rebased or history rewritten, the local
+clone will still be updated correctly. In general, however, specifying
+a commit hash should be preferred for a number of reasons:</p>
+<ul class="simple">
+<li><p>If the local clone already has the commit corresponding to the hash,
+no <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">fetch</span></code> needs to be performed to check for changes each time
+CMake is re-run. This can result in a significant speed up if many
+external projects are being used.</p></li>
+<li><p>Using a specific git hash ensures that the main project’s own history
+is fully traceable to a specific point in the external project’s
+evolution. If a branch or tag name is used instead, then checking out
+a specific commit of the main project doesn’t necessarily pin the
+whole build to a specific point in the life of the external project.
+The lack of such deterministic behavior makes the main project lose
+traceability and repeatability.</p></li>
+</ul>
+<p>If <code class="docutils literal notranslate"><span class="pre">GIT_SHALLOW</span></code> is enabled then <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> works only with
+branch names and tags.  A commit hash is not allowed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_REMOTE_NAME</span> <span class="pre">&lt;name&gt;</span></code></dt><dd><p>The optional name of the remote. If this option is not specified, it
+defaults to <code class="docutils literal notranslate"><span class="pre">origin</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_SUBMODULES</span> <span class="pre">&lt;module&gt;...</span></code></dt><dd><p>Specific git submodules that should also be updated. If this option is
+not provided, all git submodules will be updated. When <span class="target" id="index-0-policy:CMP0097"></span><a class="reference internal" href="../policy/CMP0097.html#policy:CMP0097" title="CMP0097"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0097</span></code></a>
+is set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code> if this value is set to an empty string then no submodules
+are initialized or updated.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_SUBMODULES_RECURSE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Specify whether git submodules (if any) should update recursively by
+passing the <code class="docutils literal notranslate"><span class="pre">--recursive</span></code> flag to <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">submodule</span> <span class="pre">update</span></code>.
+If not specified, the default is on.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_SHALLOW</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When this option is enabled, the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> operation will be given
+the <code class="docutils literal notranslate"><span class="pre">--depth</span> <span class="pre">1</span></code> option. This performs a shallow clone, which avoids
+downloading the whole history and instead retrieves just the commit
+denoted by the <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_PROGRESS</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, this option instructs the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> operation to
+report its progress by passing it the <code class="docutils literal notranslate"><span class="pre">--progress</span></code> option. Without
+this option, the clone step for large projects may appear to make the
+build stall, since nothing will be logged until the clone operation
+finishes. While this option can be used to provide progress to prevent
+the appearance of the build having stalled, it may also make the build
+overly noisy if lots of external projects are used.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_CONFIG</span> <span class="pre">&lt;option1&gt;</span> <span class="pre">[&lt;option2&gt;...]</span></code></dt><dd><p>Specify a list of config options to pass to <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code>. Each option
+listed will be transformed into its own <code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">&lt;option&gt;</span></code> on the
+<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> command line, with each option required to be in the
+form <code class="docutils literal notranslate"><span class="pre">key=value</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">GIT_REMOTE_UPDATE_STRATEGY</span> <span class="pre">&lt;strategy&gt;</span></code></dt><dd><p>When <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> refers to a remote branch, this option can be used to
+specify how the update step behaves.  The <code class="docutils literal notranslate"><span class="pre">&lt;strategy&gt;</span></code> must be one of
+the following:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CHECKOUT</span></code></dt><dd><p>Ignore the local branch and always checkout the branch specified by
+<code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REBASE</span></code></dt><dd><p>Try to rebase the current branch to the one specified by <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code>.
+If there are local uncommitted changes, they will be stashed first
+and popped again after rebasing.  If rebasing or popping stashed
+changes fail, abort the rebase and halt with an error.
+When <code class="docutils literal notranslate"><span class="pre">GIT_REMOTE_UPDATE_STRATEGY</span></code> is not present, this is the
+default strategy unless the default has been overridden with
+<code class="docutils literal notranslate"><span class="pre">CMAKE_EP_GIT_REMOTE_UPDATE_STRATEGY</span></code> (see below).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">REBASE_CHECKOUT</span></code></dt><dd><p>Same as <code class="docutils literal notranslate"><span class="pre">REBASE</span></code> except if the rebase fails, an annotated tag will
+be created at the original <code class="docutils literal notranslate"><span class="pre">HEAD</span></code> position from before the rebase
+and then checkout <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> just like the <code class="docutils literal notranslate"><span class="pre">CHECKOUT</span></code> strategy.
+The message stored on the annotated tag will give information about
+what was attempted and the tag name will include a timestamp so that
+each failed run will add a new tag.  This strategy ensures no changes
+will be lost, but updates should always succeed if <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> refers
+to a valid ref unless there are uncommitted changes that cannot be
+popped successfully.</p>
+</dd>
+</dl>
+<p>The variable <code class="docutils literal notranslate"><span class="pre">CMAKE_EP_GIT_REMOTE_UPDATE_STRATEGY</span></code> can be set to
+override the default strategy.  This variable should not be set by a
+project, it is intended for the user to set.  It is primarily intended
+for use in continuous integration scripts to ensure that when history
+is rewritten on a remote branch, the build doesn’t end up with unintended
+changes or failed builds resulting from conflicts during rebase operations.</p>
+</dd>
+</dl>
+</dd>
+<dt><em>Subversion</em></dt><dd><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">SVN_REPOSITORY</span> <span class="pre">&lt;url&gt;</span></code></dt><dd><p>URL of the Subversion repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SVN_REVISION</span> <span class="pre">-r&lt;rev&gt;</span></code></dt><dd><p>Revision to checkout from the Subversion repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SVN_USERNAME</span> <span class="pre">&lt;username&gt;</span></code></dt><dd><p>Username for the Subversion checkout and update.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SVN_PASSWORD</span> <span class="pre">&lt;password&gt;</span></code></dt><dd><p>Password for the Subversion checkout and update.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SVN_TRUST_CERT</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Specifies whether to trust the Subversion server site certificate. If
+enabled, the <code class="docutils literal notranslate"><span class="pre">--trust-server-cert</span></code> option is passed to the <code class="docutils literal notranslate"><span class="pre">svn</span></code>
+checkout and update commands.</p>
+</dd>
+</dl>
+</dd>
+<dt><em>Mercurial</em></dt><dd><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">HG_REPOSITORY</span> <span class="pre">&lt;url&gt;</span></code></dt><dd><p>URL of the mercurial repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">HG_TAG</span> <span class="pre">&lt;tag&gt;</span></code></dt><dd><p>Mercurial branch name, tag or commit id.</p>
+</dd>
+</dl>
+</dd>
+<dt><em>CVS</em></dt><dd><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">CVS_REPOSITORY</span> <span class="pre">&lt;cvsroot&gt;</span></code></dt><dd><p>CVSROOT of the CVS repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CVS_MODULE</span> <span class="pre">&lt;mod&gt;</span></code></dt><dd><p>Module to checkout from the CVS repository.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CVS_TAG</span> <span class="pre">&lt;tag&gt;</span></code></dt><dd><p>Tag to checkout from the CVS repository.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt><strong>Update/Patch Step Options:</strong></dt><dd><p>Whenever CMake is re-run, by default the external project’s sources will be
+updated if the download method supports updates (e.g. a git repository
+would be checked if the <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> does not refer to a specific commit).</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">UPDATE_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Overrides the download method’s update step with a custom command.
+The command may use
+<span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UPDATE_DISCONNECTED</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, this option causes the update step to be skipped. It does
+not, however, prevent the download step. The update step can still be
+added as a step target (see <span class="target" id="index-0-command:externalproject_add_steptargets"></span><a class="reference internal" href="#command:externalproject_add_steptargets" title="externalproject_add_steptargets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code></a>)
+and called manually. This is useful if you want to allow developers to
+build the project when disconnected from the network (the network may
+still be needed for the download step though).</p>
+<p>When this option is present, it is generally advisable to make the value
+a cache variable under the developer’s control rather than hard-coding
+it. If this option is not present, the default value is taken from the
+<code class="docutils literal notranslate"><span class="pre">EP_UPDATE_DISCONNECTED</span></code> directory property. If that is also not
+defined, updates are performed as normal. The <code class="docutils literal notranslate"><span class="pre">EP_UPDATE_DISCONNECTED</span></code>
+directory property is intended as a convenience for controlling the
+<code class="docutils literal notranslate"><span class="pre">UPDATE_DISCONNECTED</span></code> behavior for an entire section of a project’s
+directory hierarchy and may be a more convenient method of giving
+developers control over whether or not to perform updates (assuming the
+project also provides a cache variable or some other convenient method
+for setting the directory property).</p>
+<p>This may cause a step target to be created automatically for the
+<code class="docutils literal notranslate"><span class="pre">download</span></code> step.  See policy <span class="target" id="index-0-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PATCH_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Specifies a custom command to patch the sources after an update. By
+default, no patch command is defined. Note that it can be quite difficult
+to define an appropriate patch command that performs robustly, especially
+for download methods such as git where changing the <code class="docutils literal notranslate"><span class="pre">GIT_TAG</span></code> will not
+discard changes from a previous patch, but the patch command will be
+called again after updating to the new tag.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Configure Step Options:</strong></dt><dd><p>The configure step is run after the download and update steps. By default,
+the external project is assumed to be a CMake project, but this can be
+overridden if required.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">CONFIGURE_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>The default configure command runs CMake with options based on the main
+project. For non-CMake external projects, the <code class="docutils literal notranslate"><span class="pre">CONFIGURE_COMMAND</span></code>
+option must be used to override this behavior
+(<span class="target" id="index-2-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). For projects that require no configure step, specify this
+option with an empty string as the command to execute.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_COMMAND</span> <span class="pre">/.../cmake</span></code></dt><dd><p>Specify an alternative cmake executable for the configure step (use an
+absolute path). This is generally not recommended, since it is
+usually desirable to use the same CMake version throughout the whole
+build. This option is ignored if a custom configure command has been
+specified with <code class="docutils literal notranslate"><span class="pre">CONFIGURE_COMMAND</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span> <span class="pre">&lt;gen&gt;</span></code></dt><dd><p>Override the CMake generator used for the configure step. Without this
+option, the same generator as the main build will be used. This option is
+ignored if a custom configure command has been specified with the
+<code class="docutils literal notranslate"><span class="pre">CONFIGURE_COMMAND</span></code> option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span> <span class="pre">&lt;platform&gt;</span></code></dt><dd><p>Pass a generator-specific platform name to the CMake command (see
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_PLATFORM"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_PLATFORM.html#variable:CMAKE_GENERATOR_PLATFORM" title="CMAKE_GENERATOR_PLATFORM"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_PLATFORM</span></code></a>). It is an error to provide this
+option without the <code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span></code> option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span> <span class="pre">&lt;toolset&gt;</span></code></dt><dd><p>Pass a generator-specific toolset name to the CMake command (see
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_TOOLSET.html#variable:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a>). It is an error to provide this
+option without the <code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span></code> option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_INSTANCE</span> <span class="pre">&lt;instance&gt;</span></code></dt><dd><p>Pass a generator-specific instance selection to the CMake command (see
+<span class="target" id="index-0-variable:CMAKE_GENERATOR_INSTANCE"></span><a class="reference internal" href="../variable/CMAKE_GENERATOR_INSTANCE.html#variable:CMAKE_GENERATOR_INSTANCE" title="CMAKE_GENERATOR_INSTANCE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_INSTANCE</span></code></a>). It is an error to provide this
+option without the <code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR</span></code> option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_ARGS</span> <span class="pre">&lt;arg&gt;...</span></code></dt><dd><p>The specified arguments are passed to the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command line. They
+can be any argument the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command understands, not just cache
+values defined by <code class="docutils literal notranslate"><span class="pre">-D...</span></code> arguments (see also
+<span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">CMake</span> <span class="pre">Options</span></code></a>). In addition, arguments may use
+<span class="target" id="index-3-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_CACHE_ARGS</span> <span class="pre">&lt;arg&gt;...</span></code></dt><dd><p>This is an alternate way of specifying cache variables where command line
+length issues may become a problem. The arguments are expected to be in
+the form <code class="docutils literal notranslate"><span class="pre">-Dvar:STRING=value</span></code>, which are then transformed into
+CMake <span class="target" id="index-0-command:set"></span><a class="reference internal" href="../command/set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> commands with the <code class="docutils literal notranslate"><span class="pre">FORCE</span></code> option used. These
+<code class="docutils literal notranslate"><span class="pre">set()</span></code> commands are written to a pre-load script which is then applied
+using the <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-C</span></code></a> command line option. Arguments
+may use <span class="target" id="index-4-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">CMAKE_CACHE_DEFAULT_ARGS</span> <span class="pre">&lt;arg&gt;...</span></code></dt><dd><p>This is the same as the <code class="docutils literal notranslate"><span class="pre">CMAKE_CACHE_ARGS</span></code> option except the <code class="docutils literal notranslate"><span class="pre">set()</span></code>
+commands do not include the <code class="docutils literal notranslate"><span class="pre">FORCE</span></code> keyword. This means the values act
+as initial defaults only and will not override any variables already set
+from a previous run. Use this option with care, as it can lead to
+different behavior depending on whether the build starts from a fresh
+build directory or re-uses previous build contents.</p>
+<p>If the CMake generator is the <code class="docutils literal notranslate"><span class="pre">Green</span> <span class="pre">Hills</span> <span class="pre">MULTI</span></code> and not overridden then
+the original project’s settings for the GHS toolset and target system
+customization cache variables are propagated into the external project.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SOURCE_SUBDIR</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>When no <code class="docutils literal notranslate"><span class="pre">CONFIGURE_COMMAND</span></code> option is specified, the configure step
+assumes the external project has a <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file at the top of
+its source tree (i.e. in <code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code>). The <code class="docutils literal notranslate"><span class="pre">SOURCE_SUBDIR</span></code> option
+can be used to point to an alternative directory within the source tree
+to use as the top of the CMake source tree instead. This must be a
+relative path and it will be interpreted as being relative to
+<code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code>.  When <code class="docutils literal notranslate"><span class="pre">BUILD_IN_SOURCE</span> <span class="pre">1</span></code> is specified, the
+<code class="docutils literal notranslate"><span class="pre">BUILD_COMMAND</span></code> is used to point to an alternative directory within the
+source tree.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Build Step Options:</strong></dt><dd><p>If the configure step assumed the external project uses CMake as its build
+system, the build step will also. Otherwise, the build step will assume a
+Makefile-based build and simply run <code class="docutils literal notranslate"><span class="pre">make</span></code> with no arguments as the
+default build step. This can be overridden with custom build commands if
+required.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Overrides the default build command
+(<span class="target" id="index-5-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). If this option is not given, the default build command will
+be chosen to integrate with the main build in the most appropriate way
+(e.g. using recursive <code class="docutils literal notranslate"><span class="pre">make</span></code> for Makefile generators or
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code> if the project uses a CMake build). This option can be
+specified with an empty string as the command to make the build step do
+nothing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD_IN_SOURCE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When this option is enabled, the build will be done directly within the
+external project’s source tree. This should generally be avoided, the use
+of a separate build directory is usually preferred, but it can be useful
+when the external project assumes an in-source build. The <code class="docutils literal notranslate"><span class="pre">BINARY_DIR</span></code>
+option should not be specified if building in-source.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD_ALWAYS</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Enabling this option forces the build step to always be run. This can be
+the easiest way to robustly ensure that the external project’s own build
+dependencies are evaluated rather than relying on the default
+success timestamp-based method. This option is not normally needed unless
+developers are expected to modify something the external project’s build
+depends on in a way that is not detectable via the step target
+dependencies (e.g. <code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code> is used without a download method and
+developers might modify the sources in <code class="docutils literal notranslate"><span class="pre">SOURCE_DIR</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BUILD_BYPRODUCTS</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Specifies files that will be generated by the build command but which
+might or might not have their modification time updated by subsequent
+builds. These ultimately get passed through as <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> to the
+build step’s own underlying call to <span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Install Step Options:</strong></dt><dd><p>If the configure step assumed the external project uses CMake as its build
+system, the install step will also. Otherwise, the install step will assume
+a Makefile-based build and simply run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> as the default build
+step. This can be overridden with custom install commands if required.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">INSTALL_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>The external project’s own install step is invoked as part of the main
+project’s <em>build</em>. It is done after the external project’s build step
+and may be before or after the external project’s test step (see the
+<code class="docutils literal notranslate"><span class="pre">TEST_BEFORE_INSTALL</span></code> option below). The external project’s install
+rules are not part of the main project’s install rules, so if anything
+from the external project should be installed as part of the main build,
+these need to be specified in the main build as additional
+<span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> commands. The default install step builds the
+<code class="docutils literal notranslate"><span class="pre">install</span></code> target of the external project, but this can be overridden
+with a custom command using this option
+(<span class="target" id="index-6-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). Passing an empty string as the <code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;</span></code> makes the install
+step do nothing.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Test Step Options:</strong></dt><dd><p>The test step is only defined if at least one of the following <code class="docutils literal notranslate"><span class="pre">TEST_...</span></code>
+options are provided.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Overrides the default test command
+(<span class="target" id="index-7-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). If this option is not given, the default behavior of the test
+step is to build the external project’s own <code class="docutils literal notranslate"><span class="pre">test</span></code> target. This option
+can be specified with <code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;</span></code> as an empty string, which allows the test
+step to still be defined, but it will do nothing. Do not specify any of
+the other <code class="docutils literal notranslate"><span class="pre">TEST_...</span></code> options if providing an empty string as the test
+command, but prefer to omit all <code class="docutils literal notranslate"><span class="pre">TEST_...</span></code> options altogether if the
+test step target is not needed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_BEFORE_INSTALL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When this option is enabled, the test step will be executed before the
+install step. The default behavior is for the test step to run after the
+install step.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_AFTER_INSTALL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>This option is mainly useful as a way to indicate that the test step is
+desired but all default behavior is sufficient. Specifying this option
+with a boolean true value ensures the test step is defined and that it
+comes after the install step. If both <code class="docutils literal notranslate"><span class="pre">TEST_BEFORE_INSTALL</span></code> and
+<code class="docutils literal notranslate"><span class="pre">TEST_AFTER_INSTALL</span></code> are enabled, the latter is silently ignored.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TEST_EXCLUDE_FROM_MAIN</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>If enabled, the main build’s default ALL target will not depend on the
+test step. This can be a useful way of ensuring the test step is defined
+but only gets invoked when manually requested.
+This may cause a step target to be created automatically for either
+the <code class="docutils literal notranslate"><span class="pre">install</span></code> or <code class="docutils literal notranslate"><span class="pre">build</span></code> step.  See policy <span class="target" id="index-1-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Output Logging Options:</strong></dt><dd><p>Each of the following <code class="docutils literal notranslate"><span class="pre">LOG_...</span></code> options can be used to wrap the relevant
+step in a script to capture its output to files. The log files will be
+created in <code class="docutils literal notranslate"><span class="pre">LOG_DIR</span></code> if supplied or otherwise the <code class="docutils literal notranslate"><span class="pre">STAMP_DIR</span></code>
+directory with step-specific file names.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_DOWNLOAD</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the download step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_UPDATE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the update step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_PATCH</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the patch step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_CONFIGURE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the configure step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_BUILD</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the build step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_INSTALL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the install step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_TEST</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, the output of the test step is logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_MERGED_STDOUTERR</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, stdout and stderr will be merged for any step whose
+output is being logged to files.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG_OUTPUT_ON_FAILURE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>This option only has an effect if at least one of the other <code class="docutils literal notranslate"><span class="pre">LOG_&lt;step&gt;</span></code>
+options is enabled.  If an error occurs for a step which has logging to
+file enabled, that step’s output will be printed to the console if
+<code class="docutils literal notranslate"><span class="pre">LOG_OUTPUT_ON_FAILURE</span></code> is set to true.  For cases where a large amount
+of output is recorded, just the end of that output may be printed to the
+console.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Terminal Access Options:</strong></dt><dd><p>Steps can be given direct access to the terminal in some cases. Giving a
+step access to the terminal may allow it to receive terminal input if
+required, such as for authentication details not provided by other options.
+With the <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator, these options place the steps in the
+<code class="docutils literal notranslate"><span class="pre">console</span></code> <span class="target" id="index-0-prop_gbl:JOB_POOLS"></span><a class="reference internal" href="../prop_gbl/JOB_POOLS.html#prop_gbl:JOB_POOLS" title="JOB_POOLS"><code class="xref cmake cmake-prop_gbl docutils literal notranslate"><span class="pre">job</span> <span class="pre">pool</span></code></a>. Each step can be given access
+to the terminal individually via the following options:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_DOWNLOAD</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the download step access to the terminal.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_UPDATE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the update step access to the terminal.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_CONFIGURE</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the configure step access to the terminal.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_BUILD</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the build step access to the terminal.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_INSTALL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the install step access to the terminal.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL_TEST</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Give the test step access to the terminal.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Target Options:</strong></dt><dd><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span> <span class="pre">&lt;targets&gt;...</span></code></dt><dd><p>Specify other targets on which the external project depends. The other
+targets will be brought up to date before any of the external project’s
+steps are executed. Because the external project uses additional custom
+targets internally for each step, the <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option is the most
+convenient way to ensure all of those steps depend on the other targets.
+Simply doing
+<span class="target" id="index-0-command:add_dependencies"></span><a class="reference internal" href="../command/add_dependencies.html#command:add_dependencies" title="add_dependencies"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_dependencies(&lt;name&gt;</span> <span class="pre">&lt;targets&gt;)</span></code></a> will
+not make any of the steps dependent on <code class="docutils literal notranslate"><span class="pre">&lt;targets&gt;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, this option excludes the external project from the default
+ALL target of the main build.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">STEP_TARGETS</span> <span class="pre">&lt;step-target&gt;...</span></code></dt><dd><p>Generate custom targets for the specified steps. This is required if the
+steps need to be triggered manually or if they need to be used as
+dependencies of other targets. If this option is not specified, the
+default value is taken from the <code class="docutils literal notranslate"><span class="pre">EP_STEP_TARGETS</span></code> directory property.
+See <span class="target" id="index-1-command:externalproject_add_steptargets"></span><a class="reference internal" href="#command:externalproject_add_steptargets" title="externalproject_add_steptargets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code></a> below for further
+discussion of the effects of this option.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INDEPENDENT_STEP_TARGETS</span> <span class="pre">&lt;step-target&gt;...</span></code></dt><dd><p>Deprecated.  This is allowed only if policy <span class="target" id="index-2-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a> is not set
+to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.
+Generates custom targets for the specified steps and prevent these targets
+from having the usual dependencies applied to them. If this option is not
+specified, the default value is taken from the
+<code class="docutils literal notranslate"><span class="pre">EP_INDEPENDENT_STEP_TARGETS</span></code> directory property. This option is mostly
+useful for allowing individual steps to be driven independently, such as
+for a CDash setup where each step should be initiated and reported
+individually rather than as one whole build. See
+<span class="target" id="index-2-command:externalproject_add_steptargets"></span><a class="reference internal" href="#command:externalproject_add_steptargets" title="externalproject_add_steptargets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code></a> below for further discussion
+of the effects of this option.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>Miscellaneous Options:</strong></dt><dd><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">LIST_SEPARATOR</span> <span class="pre">&lt;sep&gt;</span></code></dt><dd><p>For any of the various <code class="docutils literal notranslate"><span class="pre">..._COMMAND</span></code> options, replace <code class="docutils literal notranslate"><span class="pre">;</span></code> with
+<code class="docutils literal notranslate"><span class="pre">&lt;sep&gt;</span></code> in the specified command lines. This can be useful where list
+variables may be given in commands where they should end up as
+space-separated arguments (<code class="docutils literal notranslate"><span class="pre">&lt;sep&gt;</span></code> would be a single space character
+string in this case).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>Any of the other <code class="docutils literal notranslate"><span class="pre">..._COMMAND</span></code> options can have additional commands
+appended to them by following them with as many <code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">...</span></code> options
+as needed
+(<span class="target" id="index-8-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add(</span><span class="nb">example</span><span class="w"></span>
+<span class="w">  </span><span class="p">...</span><span class="w"> </span><span class="c"># Download options, etc.</span>
+<span class="w">  </span><span class="no">BUILD_COMMAND</span><span class="w"> </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;Starting $&lt;CONFIG&gt; build&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w">       </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">--</span><span class="nb">build</span><span class="w"> </span><span class="nv">&lt;BINARY_DIR&gt;</span><span class="w"> </span><span class="p">--</span><span class="nb">config</span><span class="w"> </span><span class="o">$&lt;</span><span class="no">CONFIG</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w">       </span><span class="o">${</span><span class="nt">CMAKE_COMMAND</span><span class="o">}</span><span class="w"> </span><span class="p">-</span><span class="no">E</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;$&lt;CONFIG&gt; build complete&quot;</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>It should also be noted that each build step is created via a call to
+<span class="target" id="index-0-command:externalproject_add_step"></span><a class="reference internal" href="#command:externalproject_add_step" title="externalproject_add_step"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code></a>. See that command’s documentation for the
+automatic substitutions that are supported for some options.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="obtaining-project-properties">
+<h3><a class="toc-backref" href="#id4">Obtaining Project Properties</a><a class="headerlink" href="#obtaining-project-properties" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:externalproject_get_property">
+<code class="sig-name descname">ExternalProject_Get_Property</code><a class="headerlink" href="#command:externalproject_get_property" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Get_Property()</span></code> function retrieves external project
+target properties:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Get_Property(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="nv">&lt;prop1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;prop2&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The function stores property values in variables of the same name. Property
+names correspond to the keyword argument names of <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code>.
+For example, the source directory might be retrieved like so:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Get_property(</span><span class="nb">myExtProj</span><span class="w"> </span><span class="no">SOURCE_DIR</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">message(</span><span class="s">&quot;Source dir of myExtProj = ${SOURCE_DIR}&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="explicit-step-management">
+<h3><a class="toc-backref" href="#id5">Explicit Step Management</a><a class="headerlink" href="#explicit-step-management" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code> function on its own is often sufficient for
+incorporating an external project into the main build. Certain scenarios
+require additional work to implement desired behavior, such as adding in a
+custom step or making steps available as manually triggerable targets. The
+<code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code>, <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepDependencies</span></code> functions provide the lower level
+control needed to implement such step-level capabilities.</p>
+<dl class="cmake command">
+<dt id="command:externalproject_add_step">
+<code class="sig-name descname">ExternalProject_Add_Step</code><a class="headerlink" href="#command:externalproject_add_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code> function specifies an additional custom
+step for an external project defined by an earlier call to
+<span class="target" id="index-0-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_Step(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="nv">&lt;step&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;option&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> is the same as the name passed to the original call to
+<span class="target" id="index-1-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>. The specified <code class="docutils literal notranslate"><span class="pre">&lt;step&gt;</span></code> must not be one of
+the pre-defined steps (<code class="docutils literal notranslate"><span class="pre">mkdir</span></code>, <code class="docutils literal notranslate"><span class="pre">download</span></code>, <code class="docutils literal notranslate"><span class="pre">update</span></code>,
+<code class="docutils literal notranslate"><span class="pre">patch</span></code>, <code class="docutils literal notranslate"><span class="pre">configure</span></code>, <code class="docutils literal notranslate"><span class="pre">build</span></code>, <code class="docutils literal notranslate"><span class="pre">install</span></code> or <code class="docutils literal notranslate"><span class="pre">test</span></code>). The supported
+options are:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">&lt;cmd&gt;...</span></code></dt><dd><p>The command line to be executed by this custom step
+(<span class="target" id="index-9-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> are
+supported). This option can be repeated multiple times to specify multiple
+commands to be executed in order.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">COMMENT</span> <span class="pre">&quot;&lt;text&gt;...&quot;</span></code></dt><dd><p>Text to be printed when the custom step executes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDEES</span> <span class="pre">&lt;step&gt;...</span></code></dt><dd><p>Other steps (custom or pre-defined) on which this step depends.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDERS</span> <span class="pre">&lt;step&gt;...</span></code></dt><dd><p>Other steps (custom or pre-defined) that depend on this new custom step.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DEPENDS</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Files on which this custom step depends.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">INDEPENDENT</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>Specifies whether this step is independent of the external dependencies
+specified by the <span class="target" id="index-2-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>’s <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option.
+The default is <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>.  Steps marked as independent may depend only
+on other steps marked independent.  See policy <span class="target" id="index-3-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a>.</p>
+<p>Note that this use of the term “independent” refers only to independence
+from external targets specified by the <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option and is
+orthogonal to a step’s dependencies on other steps.</p>
+<p>If a step target is created for an independent step by the
+<span class="target" id="index-3-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a> <code class="docutils literal notranslate"><span class="pre">STEP_TARGETS</span></code> option or by the
+<span class="target" id="index-3-command:externalproject_add_steptargets"></span><a class="reference internal" href="#command:externalproject_add_steptargets" title="externalproject_add_steptargets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code></a> function, it will not depend
+on the external targets, but may depend on targets for other steps.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span> <span class="pre">&lt;file&gt;...</span></code></dt><dd><p>Files that will be generated by this custom step but which might or might
+not have their modification time updated by subsequent builds. This list of
+files will ultimately be passed through as the <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> option to the
+<span class="target" id="index-1-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a> used to implement the custom step internally.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ALWAYS</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, this option specifies that the custom step should always be
+run (i.e. that it is always considered out of date).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_MAIN</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>When enabled, this option specifies that the external project’s main target
+does not depend on the custom step.
+This may cause step targets to be created automatically for the steps on
+which this step depends.  See policy <span class="target" id="index-4-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WORKING_DIRECTORY</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>Specifies the working directory to set before running the custom step’s
+command. If this option is not specified, the directory will be the value
+of the <span class="target" id="index-1-variable:CMAKE_CURRENT_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_CURRENT_BINARY_DIR.html#variable:CMAKE_CURRENT_BINARY_DIR" title="CMAKE_CURRENT_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CURRENT_BINARY_DIR</span></code></a> at the point where
+<code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code> was called.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">LOG</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>If set, this causes the output from the custom step to be captured to files
+in the external project’s <code class="docutils literal notranslate"><span class="pre">LOG_DIR</span></code> if supplied or <code class="docutils literal notranslate"><span class="pre">STAMP_DIR</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">USES_TERMINAL</span> <span class="pre">&lt;bool&gt;</span></code></dt><dd><p>If enabled, this gives the custom step direct access to the terminal if
+possible.</p>
+</dd>
+</dl>
+<p>The command line, comment, working directory and byproducts of every
+standard and custom step are processed to replace the tokens
+<code class="docutils literal notranslate"><span class="pre">&lt;SOURCE_DIR&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;SOURCE_SUBDIR&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;BINARY_DIR&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;INSTALL_DIR&gt;</span></code>
+<code class="docutils literal notranslate"><span class="pre">&lt;TMP_DIR&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;DOWNLOAD_DIR&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;DOWNLOADED_FILE&gt;</span></code> with their
+corresponding property values defined in the original call to
+<span class="target" id="index-4-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:externalproject_add_steptargets">
+<code class="sig-name descname">ExternalProject_Add_StepTargets</code><a class="headerlink" href="#command:externalproject_add_steptargets" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code> function generates targets for the
+steps listed. The name of each created target will be of the form
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;-&lt;step&gt;</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_StepTargets(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="nv">&lt;step1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;step2&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Creating a target for a step allows it to be used as a dependency of another
+target or to be triggered manually. Having targets for specific steps also
+allows them to be driven independently of each other by specifying targets on
+build command lines. For example, you may be submitting to a sub-project
+based dashboard where you want to drive the configure portion of the build,
+then submit to the dashboard, followed by the build portion, followed
+by tests. If you invoke a custom target that depends on a step halfway
+through the step dependency chain, then all the previous steps will also run
+to ensure everything is up to date.</p>
+<p>Internally, <span class="target" id="index-5-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a> calls
+<span class="target" id="index-1-command:externalproject_add_step"></span><a class="reference internal" href="#command:externalproject_add_step" title="externalproject_add_step"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code></a> to create each step. If any
+<code class="docutils literal notranslate"><span class="pre">STEP_TARGETS</span></code> were specified, then <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code>
+will also be called after <span class="target" id="index-2-command:externalproject_add_step"></span><a class="reference internal" href="#command:externalproject_add_step" title="externalproject_add_step"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code></a>.  Even if a
+step is not mentioned in the <code class="docutils literal notranslate"><span class="pre">STEP_TARGETS</span></code> option,
+<code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code> can still be called later to manually
+define a target for the step.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">STEP_TARGETS</span></code> option for <span class="target" id="index-6-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a> is generally
+the easiest way to ensure targets are created for specific steps of interest.
+For custom steps, <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code> must be called
+explicitly if a target should also be created for that custom step.
+An alternative to these two options is to populate the <code class="docutils literal notranslate"><span class="pre">EP_STEP_TARGETS</span></code>
+directory property.  It acts as a default for the step target options and
+can save having to repeatedly specify the same set of step targets when
+multiple external projects are being defined.</p>
+<p>If <span class="target" id="index-5-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a> is set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>, step targets are fully responsible
+for holding the custom commands implementing their steps.  The primary target
+created by <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add</span></code> depends on the step targets, and the
+step targets depend on each other.  The target-level dependencies match
+the file-level dependencies used by the custom commands for each step.
+The targets for steps created with <span class="target" id="index-3-command:externalproject_add_step"></span><a class="reference internal" href="#command:externalproject_add_step" title="externalproject_add_step"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_Step()</span></code></a>’s
+<code class="docutils literal notranslate"><span class="pre">INDEPENDENT</span></code> option do not depend on the external targets specified
+by <span class="target" id="index-7-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>’s <code class="docutils literal notranslate"><span class="pre">DEPENDS</span></code> option.  The predefined
+steps <code class="docutils literal notranslate"><span class="pre">mkdir</span></code>, <code class="docutils literal notranslate"><span class="pre">download</span></code>, <code class="docutils literal notranslate"><span class="pre">update</span></code>, and <code class="docutils literal notranslate"><span class="pre">patch</span></code> are independent.</p>
+<p>If <span class="target" id="index-6-policy:CMP0114"></span><a class="reference internal" href="../policy/CMP0114.html#policy:CMP0114" title="CMP0114"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0114</span></code></a> is not <code class="docutils literal notranslate"><span class="pre">NEW</span></code>, the following deprecated behavior
+is available:</p>
+<ul class="simple">
+<li><p>A deprecated <code class="docutils literal notranslate"><span class="pre">NO_DEPENDS</span></code> option may be specified immediately after the
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> and before the first step.
+If the <code class="docutils literal notranslate"><span class="pre">NO_DEPENDS</span></code> option is specified, the step target will not depend on
+the dependencies of the external project (i.e. on any dependencies of the
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> custom target created by <span class="target" id="index-8-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>). This is
+usually safe for the <code class="docutils literal notranslate"><span class="pre">download</span></code>, <code class="docutils literal notranslate"><span class="pre">update</span></code> and <code class="docutils literal notranslate"><span class="pre">patch</span></code> steps, since they
+do not typically require that the dependencies are updated and built. Using
+<code class="docutils literal notranslate"><span class="pre">NO_DEPENDS</span></code> for any of the other pre-defined steps, however, may break
+parallel builds. Only use <code class="docutils literal notranslate"><span class="pre">NO_DEPENDS</span></code> where it is certain that the named
+steps genuinely do not have dependencies. For custom steps, consider whether
+or not the custom commands require the dependencies to be configured, built
+and installed.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">INDEPENDENT_STEP_TARGETS</span></code> option for <span class="target" id="index-9-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>,
+or the <code class="docutils literal notranslate"><span class="pre">EP_INDEPENDENT_STEP_TARGETS</span></code> directory property, tells the
+function to call <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code> internally
+using the <code class="docutils literal notranslate"><span class="pre">NO_DEPENDS</span></code> option for the specified steps.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake command">
+<dt id="command:externalproject_add_stepdependencies">
+<code class="sig-name descname">ExternalProject_Add_StepDependencies</code><a class="headerlink" href="#command:externalproject_add_stepdependencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">ExternalProject_Add_StepDependencies()</span></code> function can be used to add
+dependencies to a step. The dependencies added must be targets CMake already
+knows about (these can be ordinary executable or library targets, custom
+targets or even step targets of another external project):</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_StepDependencies(</span><span class="nv">&lt;name&gt;</span><span class="w"> </span><span class="nv">&lt;step&gt;</span><span class="w"> </span><span class="nv">&lt;target1&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;target2&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This function takes care to set both target and file level dependencies and
+will ensure that parallel builds will not break. It should be used instead of
+<span class="target" id="index-1-command:add_dependencies"></span><a class="reference internal" href="../command/add_dependencies.html#command:add_dependencies" title="add_dependencies"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_dependencies()</span></code></a> whenever adding a dependency for some of the step
+targets generated by the <code class="docutils literal notranslate"><span class="pre">ExternalProject</span></code> module.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="examples">
+<h2><a class="toc-backref" href="#id6">Examples</a><a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>The following example shows how to download and build a hypothetical project
+called <em>FooBar</em> from github:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">include(</span><span class="nb">ExternalProject</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">ExternalProject_Add(</span><span class="nb">foobar</span><span class="w"></span>
+<span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w">    </span><span class="na">git@github.com:FooCo/FooBar.git</span><span class="w"></span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w">           </span><span class="na">origin/release/1.2.3</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For the sake of the example, also define a second hypothetical external project
+called <em>SecretSauce</em>, which is downloaded from a web server. Two URLs are given
+to take advantage of a faster internal network if available, with a fallback to
+a slower external server. The project is a typical <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> project with no
+configure step, so some of the default commands are overridden. The build is
+only required to build the <em>sauce</em> target:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">find_program(</span><span class="no">MAKE_EXE</span><span class="w"> </span><span class="no">NAMES</span><span class="w"> </span><span class="nb">gmake</span><span class="w"> </span><span class="nb">nmake</span><span class="w"> </span><span class="nb">make</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">ExternalProject_Add(</span><span class="nb">secretsauce</span><span class="w"></span>
+<span class="w">  </span><span class="no">URL</span><span class="w">               </span><span class="na">http://intranet.somecompany.com/artifacts/sauce-2.7.tgz</span><span class="w"></span>
+<span class="w">                    </span><span class="na">https://www.somecompany.com/downloads/sauce-2.7.zip</span><span class="w"></span>
+<span class="w">  </span><span class="no">URL_HASH</span><span class="w">          </span><span class="no">MD5</span><span class="p">=</span><span class="nb">d41d8cd98f00b204e9800998ecf8427e</span><span class="w"></span>
+<span class="w">  </span><span class="no">CONFIGURE_COMMAND</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">BUILD_COMMAND</span><span class="w">     </span><span class="o">${</span><span class="nt">MAKE_EXE</span><span class="o">}</span><span class="w"> </span><span class="nb">sauce</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Suppose the build step of <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> requires that <code class="docutils literal notranslate"><span class="pre">foobar</span></code> must already
+be built. This could be enforced like so:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_StepDependencies(</span><span class="nb">secretsauce</span><span class="w"> </span><span class="nb">build</span><span class="w"> </span><span class="nb">foobar</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Another alternative would be to create a custom target for <code class="docutils literal notranslate"><span class="pre">foobar</span></code>’s build
+step and make <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> depend on that rather than the whole <code class="docutils literal notranslate"><span class="pre">foobar</span></code>
+project. This would mean <code class="docutils literal notranslate"><span class="pre">foobar</span></code> only needs to be built, it doesn’t need to
+run its install or test steps before <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> can be built. The
+dependency can also be defined along with the <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> project:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_StepTargets(</span><span class="nb">foobar</span><span class="w"> </span><span class="nb">build</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">ExternalProject_Add(</span><span class="nb">secretsauce</span><span class="w"></span>
+<span class="w">  </span><span class="no">URL</span><span class="w">               </span><span class="na">http://intranet.somecompany.com/artifacts/sauce-2.7.tgz</span><span class="w"></span>
+<span class="w">                    </span><span class="na">https://www.somecompany.com/downloads/sauce-2.7.zip</span><span class="w"></span>
+<span class="w">  </span><span class="no">URL_HASH</span><span class="w">          </span><span class="no">MD5</span><span class="p">=</span><span class="nb">d41d8cd98f00b204e9800998ecf8427e</span><span class="w"></span>
+<span class="w">  </span><span class="no">CONFIGURE_COMMAND</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">BUILD_COMMAND</span><span class="w">     </span><span class="o">${</span><span class="nt">MAKE_EXE</span><span class="o">}</span><span class="w"> </span><span class="nb">sauce</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPENDS</span><span class="w">           </span><span class="nb">foobar-build</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Instead of calling <span class="target" id="index-4-command:externalproject_add_steptargets"></span><a class="reference internal" href="#command:externalproject_add_steptargets" title="externalproject_add_steptargets"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add_StepTargets()</span></code></a>, the target could
+be defined along with the <code class="docutils literal notranslate"><span class="pre">foobar</span></code> project itself:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add(</span><span class="nb">foobar</span><span class="w"></span>
+<span class="w">  </span><span class="no">GIT_REPOSITORY</span><span class="w"> </span><span class="na">git@github.com:FooCo/FooBar.git</span><span class="w"></span>
+<span class="w">  </span><span class="no">GIT_TAG</span><span class="w">        </span><span class="na">origin/release/1.2.3</span><span class="w"></span>
+<span class="w">  </span><span class="no">STEP_TARGETS</span><span class="w">   </span><span class="nb">build</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If many external projects should have the same set of step targets, setting a
+directory property may be more convenient. The <code class="docutils literal notranslate"><span class="pre">build</span></code> step target could be
+created automatically by setting the <code class="docutils literal notranslate"><span class="pre">EP_STEP_TARGETS</span></code> directory property
+before creating the external projects with <span class="target" id="index-10-command:externalproject_add"></span><a class="reference internal" href="#command:externalproject_add" title="externalproject_add"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ExternalProject_Add()</span></code></a>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">DIRECTORY</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"> </span><span class="no">EP_STEP_TARGETS</span><span class="w"> </span><span class="nb">build</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Lastly, suppose that <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> provides a script called <code class="docutils literal notranslate"><span class="pre">makedoc</span></code> which
+can be used to generate its own documentation. Further suppose that the script
+expects the output directory to be provided as the only parameter and that it
+should be run from the <code class="docutils literal notranslate"><span class="pre">secretsauce</span></code> source directory. A custom step and a
+custom target to trigger the script can be defined like so:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">ExternalProject_Add_Step(</span><span class="nb">secretsauce</span><span class="w"> </span><span class="nb">docs</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMAND</span><span class="w">           </span><span class="nv">&lt;SOURCE_DIR&gt;</span><span class="na">/makedoc</span><span class="w"> </span><span class="nv">&lt;BINARY_DIR&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="no">WORKING_DIRECTORY</span><span class="w"> </span><span class="nv">&lt;SOURCE_DIR&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="no">COMMENT</span><span class="w">           </span><span class="s">&quot;Building secretsauce docs&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="no">ALWAYS</span><span class="w">            </span><span class="no">TRUE</span><span class="w"></span>
+<span class="w">  </span><span class="no">EXCLUDE_FROM_MAIN</span><span class="w"> </span><span class="no">TRUE</span><span class="w"></span>
+<span class="nf">)</span><span class="w"></span>
+<span class="nf">ExternalProject_Add_StepTargets(</span><span class="nb">secretsauce</span><span class="w"> </span><span class="nb">docs</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The custom step could then be triggered from the main build like so:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cmake --build . --target secretsauce-docs
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">ExternalProject</a><ul>
+<li><a class="reference internal" href="#commands">Commands</a><ul>
+<li><a class="reference internal" href="#external-project-definition">External Project Definition</a></li>
+<li><a class="reference internal" href="#obtaining-project-properties">Obtaining Project Properties</a></li>
+<li><a class="reference internal" href="#explicit-step-management">Explicit Step Management</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ExternalData.html"
+                        title="previous chapter">ExternalData</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FeatureSummary.html"
+                        title="next chapter">FeatureSummary</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/ExternalProject.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FeatureSummary.html" title="FeatureSummary"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ExternalData.html" title="ExternalData"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ExternalProject</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

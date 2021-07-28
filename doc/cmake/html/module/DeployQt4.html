@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeployQt4 &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Documentation" href="Documentation.html" />
+    <link rel="prev" title="Dart" href="Dart.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Documentation.html" title="Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Dart.html" title="Dart"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DeployQt4</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="deployqt4">
+<span id="module:DeployQt4"></span><h1>DeployQt4<a class="headerlink" href="#deployqt4" title="Permalink to this headline">¶</a></h1>
+<p>Functions to help assemble a standalone Qt4 executable.</p>
+<p>A collection of CMake utility functions useful for deploying Qt4
+executables.</p>
+<p>The following functions are provided by this module:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>write_qt4_conf
+resolve_qt4_paths
+fixup_qt4_executable
+install_qt4_plugin_path
+install_qt4_plugin
+install_qt4_executable
+</pre></div>
+</div>
+<p>Requires CMake 2.6 or greater because it uses function and
+PARENT_SCOPE.  Also depends on BundleUtilities.cmake.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>write_qt4_conf(&lt;qt_conf_dir&gt; &lt;qt_conf_contents&gt;)
+</pre></div>
+</div>
+<p>Writes a qt.conf file with the &lt;qt_conf_contents&gt; into &lt;qt_conf_dir&gt;.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>resolve_qt4_paths(&lt;paths_var&gt; [&lt;executable_path&gt;])
+</pre></div>
+</div>
+<p>Loop through &lt;paths_var&gt; list and if any don’t exist resolve them
+relative to the &lt;executable_path&gt; (if supplied) or the
+CMAKE_INSTALL_PREFIX.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>fixup_qt4_executable(&lt;executable&gt;
+  [&lt;qtplugins&gt; &lt;libs&gt; &lt;dirs&gt; &lt;plugins_dir&gt; &lt;request_qt_conf&gt;])
+</pre></div>
+</div>
+<p>Copies Qt plugins, writes a Qt configuration file (if needed) and
+fixes up a Qt4 executable using BundleUtilities so it is standalone
+and can be drag-and-drop copied to another machine as long as all of
+the system libraries are compatible.</p>
+<p>&lt;executable&gt; should point to the executable to be fixed-up.</p>
+<p>&lt;qtplugins&gt; should contain a list of the names or paths of any Qt
+plugins to be installed.</p>
+<p>&lt;libs&gt; will be passed to BundleUtilities and should be a list of any
+already installed plugins, libraries or executables to also be
+fixed-up.</p>
+<p>&lt;dirs&gt; will be passed to BundleUtilities and should contain and
+directories to be searched to find library dependencies.</p>
+<p>&lt;plugins_dir&gt; allows an custom plugins directory to be used.</p>
+<p>&lt;request_qt_conf&gt; will force a qt.conf file to be written even if not
+needed.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>install_qt4_plugin_path(plugin executable copy installed_plugin_path_var
+                        &lt;plugins_dir&gt; &lt;component&gt; &lt;configurations&gt;)
+</pre></div>
+</div>
+<p>Install (or copy) a resolved &lt;plugin&gt; to the default plugins directory
+(or &lt;plugins_dir&gt;) relative to &lt;executable&gt; and store the result in
+&lt;installed_plugin_path_var&gt;.</p>
+<p>If &lt;copy&gt; is set to TRUE then the plugins will be copied rather than
+installed.  This is to allow this module to be used at CMake time
+rather than install time.</p>
+<p>If &lt;component&gt; is set then anything installed will use this COMPONENT.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>install_qt4_plugin(plugin executable copy installed_plugin_path_var
+                   &lt;plugins_dir&gt; &lt;component&gt;)
+</pre></div>
+</div>
+<p>Install (or copy) an unresolved &lt;plugin&gt; to the default plugins
+directory (or &lt;plugins_dir&gt;) relative to &lt;executable&gt; and store the
+result in &lt;installed_plugin_path_var&gt;.  See documentation of
+INSTALL_QT4_PLUGIN_PATH.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>install_qt4_executable(&lt;executable&gt;
+  [&lt;qtplugins&gt; &lt;libs&gt; &lt;dirs&gt; &lt;plugins_dir&gt; &lt;request_qt_conf&gt; &lt;component&gt;])
+</pre></div>
+</div>
+<p>Installs Qt plugins, writes a Qt configuration file (if needed) and
+fixes up a Qt4 executable using BundleUtilities so it is standalone
+and can be drag-and-drop copied to another machine as long as all of
+the system libraries are compatible.  The executable will be fixed-up
+at install time.  &lt;component&gt; is the COMPONENT used for bundle fixup
+and plugin installation.  See documentation of FIXUP_QT4_BUNDLE.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Dart.html"
+                        title="previous chapter">Dart</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Documentation.html"
+                        title="next chapter">Documentation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/DeployQt4.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Documentation.html" title="Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Dart.html" title="Dart"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DeployQt4</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

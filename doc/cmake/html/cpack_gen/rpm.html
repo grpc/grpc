@@ -1,0 +1,1278 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPack RPM Generator &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPack WIX Generator" href="wix.html" />
+    <link rel="prev" title="CPack productbuild Generator" href="productbuild.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="wix.html" title="CPack WIX Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="productbuild.html" title="CPack productbuild Generator"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" accesskey="U">cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack RPM Generator</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpack-rpm-generator">
+<span id="cpack_gen:CPack RPM Generator"></span><h1>CPack RPM Generator<a class="headerlink" href="#cpack-rpm-generator" title="Permalink to this headline">¶</a></h1>
+<p>The built in (binary) CPack RPM generator (Unix only)</p>
+<div class="section" id="variables-specific-to-cpack-rpm-generator">
+<h2>Variables specific to CPack RPM generator<a class="headerlink" href="#variables-specific-to-cpack-rpm-generator" title="Permalink to this headline">¶</a></h2>
+<p>The CPack RPM generator may be used to create RPM packages using <span class="target" id="index-0-module:CPack"></span><a class="reference internal" href="../module/CPack.html#module:CPack" title="CPack"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CPack</span></code></a>.
+The CPack RPM generator is a <span class="target" id="index-1-module:CPack"></span><a class="reference internal" href="../module/CPack.html#module:CPack" title="CPack"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CPack</span></code></a> generator thus it uses the
+<code class="docutils literal notranslate"><span class="pre">CPACK_XXX</span></code> variables used by <span class="target" id="index-2-module:CPack"></span><a class="reference internal" href="../module/CPack.html#module:CPack" title="CPack"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CPack</span></code></a>.</p>
+<p>The CPack RPM generator has specific features which are controlled by the specifics
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_XXX</span></code> variables.</p>
+<p><code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_XXXX</span></code> variables may be used in order to have
+<strong>component</strong> specific values.  Note however that <code class="docutils literal notranslate"><span class="pre">&lt;COMPONENT&gt;</span></code> refers to the
+<strong>grouping name</strong> written in upper case. It may be either a component name or
+a component GROUP name. Usually those variables correspond to RPM spec file
+entities. One may find information about spec files here
+<a class="reference external" href="http://www.rpm.org/wiki/Docs">http://www.rpm.org/wiki/Docs</a></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><cite>&lt;COMPONENT&gt;</cite> part of variables is preferred to be in upper case (e.g. if
+component is named <code class="docutils literal notranslate"><span class="pre">foo</span></code> then use <code class="docutils literal notranslate"><span class="pre">CPACK_RPM_FOO_XXXX</span></code> variable name format)
+as is with other <code class="docutils literal notranslate"><span class="pre">CPACK_&lt;COMPONENT&gt;_XXXX</span></code> variables.
+For the purposes of back compatibility (CMake/CPack version 3.5 and lower)
+support for same cased component (e.g. <code class="docutils literal notranslate"><span class="pre">fOo</span></code> would be used as
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_fOo_XXXX</span></code>) is still supported for variables defined in older
+versions of CMake/CPack but is not guaranteed for variables that
+will be added in the future. For the sake of back compatibility same cased
+component variables also override upper cased versions where both are
+present.</p>
+</div>
+<p>Here are some CPack RPM generator wiki resources that are here for historic
+reasons and are no longer maintained but may still prove useful:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://gitlab.kitware.com/cmake/community/-/wikis/doc/cpack/Configuration">https://gitlab.kitware.com/cmake/community/-/wikis/doc/cpack/Configuration</a></p></li>
+<li><p><a class="reference external" href="https://gitlab.kitware.com/cmake/community/-/wikis/doc/cpack/PackageGenerators#rpm-unix-only">https://gitlab.kitware.com/cmake/community/-/wikis/doc/cpack/PackageGenerators#rpm-unix-only</a></p></li>
+</ul>
+</div></blockquote>
+<p>List of CPack RPM generator specific variables:</p>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_COMPONENT_INSTALL">
+<code class="sig-name descname">CPACK_RPM_COMPONENT_INSTALL</code><a class="headerlink" href="#variable:CPACK_RPM_COMPONENT_INSTALL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable component packaging for CPack RPM generator</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : OFF</p></li>
+</ul>
+<p>If enabled (<code class="docutils literal notranslate"><span class="pre">ON</span></code>) multiple packages are generated. By default
+a single package containing files of all components is generated.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_SUMMARY">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_SUMMARY</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_SUMMARY" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_SUMMARY">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_SUMMARY</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_SUMMARY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package summary.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : <span class="target" id="index-0-variable:CPACK_PACKAGE_DESCRIPTION_SUMMARY"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_DESCRIPTION_SUMMARY" title="CPACK_PACKAGE_DESCRIPTION_SUMMARY"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_DESCRIPTION_SUMMARY</span></code></a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_NAME">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_NAME" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_NAME">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package name.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : <span class="target" id="index-0-variable:CPACK_PACKAGE_NAME"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_NAME" title="CPACK_PACKAGE_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_NAME</span></code></a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_FILE_NAME">
+<code class="sig-name descname">CPACK_RPM_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_FILE_NAME">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Package file name.</p>
+<ul>
+<li><p>Mandatory : YES</p></li>
+<li><dl>
+<dt>Default<span class="classifier"><code class="docutils literal notranslate"><span class="pre">&lt;CPACK_PACKAGE_FILE_NAME&gt;[-&lt;component&gt;].rpm</span></code> with spaces</span></dt><dd><p>replaced by ‘-‘</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>This may be set to <code class="docutils literal notranslate"><span class="pre">RPM-DEFAULT</span></code> to allow <code class="docutils literal notranslate"><span class="pre">rpmbuild</span></code> tool to generate package
+file name by itself.
+Alternatively provided package file name must end with <code class="docutils literal notranslate"><span class="pre">.rpm</span></code> suffix.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By using user provided spec file, rpm macro extensions such as for
+generating <code class="docutils literal notranslate"><span class="pre">debuginfo</span></code> packages or by simply using multiple components more
+than one rpm file may be generated, either from a single spec file or from
+multiple spec files (each component execution produces its own spec file).
+In such cases duplicate file names may occur as a result of this variable
+setting or spec file content structure. Duplicate files get overwritten
+and it is up to the packager to set the variables in a manner that will
+prevent such errors.</p>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_MAIN_COMPONENT">
+<code class="sig-name descname">CPACK_RPM_MAIN_COMPONENT</code><a class="headerlink" href="#variable:CPACK_RPM_MAIN_COMPONENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main component that is packaged without component suffix.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>This variable can be set to any component or group name so that component or
+group rpm package is generated without component suffix in filename and
+package name.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_EPOCH">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_EPOCH</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_EPOCH" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package epoch</p>
+<ul class="simple">
+<li><p>Mandatory : No</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>Optional number that should be incremented when changing versioning schemas
+or fixing mistakes in the version numbers of older packages.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_VERSION">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_VERSION</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_VERSION" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package version.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : <span class="target" id="index-0-variable:CPACK_PACKAGE_VERSION"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_VERSION" title="CPACK_PACKAGE_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_VERSION</span></code></a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_ARCHITECTURE">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_ARCHITECTURE</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_ARCHITECTURE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_ARCHITECTURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package architecture.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : Native architecture output by <code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code></p></li>
+</ul>
+<p>This may be set to <code class="docutils literal notranslate"><span class="pre">noarch</span></code> if you know you are building a <code class="docutils literal notranslate"><span class="pre">noarch</span></code> package.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_RELEASE">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_RELEASE</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_RELEASE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package release.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : 1</p></li>
+</ul>
+<p>This is the numbering of the RPM package itself, i.e. the version of the
+packaging and not the version of the content (see
+<span class="target" id="index-0-variable:CPACK_RPM_PACKAGE_VERSION"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_VERSION" title="CPACK_RPM_PACKAGE_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_VERSION</span></code></a>). One may change the default value if
+the previous packaging was buggy and/or you want to put here a fancy Linux
+distro specific numbering.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is the string that goes into the RPM <code class="docutils literal notranslate"><span class="pre">Release:</span></code> field. Some distros
+(e.g. Fedora, CentOS) require <code class="docutils literal notranslate"><span class="pre">1%{?dist}</span></code> format and not just a number.
+<code class="docutils literal notranslate"><span class="pre">%{?dist}</span></code> part can be added by setting <span class="target" id="index-0-variable:CPACK_RPM_PACKAGE_RELEASE_DIST"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_RELEASE_DIST" title="CPACK_RPM_PACKAGE_RELEASE_DIST"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_RELEASE_DIST</span></code></a>.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_RELEASE_DIST">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_RELEASE_DIST</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_RELEASE_DIST" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dist tag that is added  RPM <code class="docutils literal notranslate"><span class="pre">Release:</span></code> field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : OFF</p></li>
+</ul>
+<p>This is the reported <code class="docutils literal notranslate"><span class="pre">%{dist}</span></code> tag from the current distribution or empty
+<code class="docutils literal notranslate"><span class="pre">%{dist}</span></code> if RPM macro is not set. If this variable is set then RPM
+<code class="docutils literal notranslate"><span class="pre">Release:</span></code> field value is set to <code class="docutils literal notranslate"><span class="pre">${CPACK_RPM_PACKAGE_RELEASE}%{?dist}</span></code>.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_LICENSE">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_LICENSE</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_LICENSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package license policy.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : “unknown”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_GROUP">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_GROUP</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_GROUP" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_GROUP">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_GROUP</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_GROUP" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package group.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : “unknown”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_VENDOR">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_VENDOR</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_VENDOR" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPM package vendor.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : CPACK_PACKAGE_VENDOR if set or “unknown”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_URL">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_URL</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_URL" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_URL">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_URL</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_URL" title="Permalink to this definition">¶</a></dt>
+<dd><p>The projects URL.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : <span class="target" id="index-0-variable:CMAKE_PROJECT_HOMEPAGE_URL"></span><a class="reference internal" href="../variable/CMAKE_PROJECT_HOMEPAGE_URL.html#variable:CMAKE_PROJECT_HOMEPAGE_URL" title="CMAKE_PROJECT_HOMEPAGE_URL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_PROJECT_HOMEPAGE_URL</span></code></a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_DESCRIPTION">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_DESCRIPTION</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_DESCRIPTION" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_DESCRIPTION">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_DESCRIPTION</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_DESCRIPTION" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM package description.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default : <span class="target" id="index-0-variable:CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION"></span><a class="reference internal" href="../module/CPackComponent.html#variable:CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION" title="CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION</span></code></a> (component
+based installers only) if set, <span class="target" id="index-0-variable:CPACK_PACKAGE_DESCRIPTION_FILE"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_PACKAGE_DESCRIPTION_FILE" title="CPACK_PACKAGE_DESCRIPTION_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGE_DESCRIPTION_FILE</span></code></a>
+if set or “no package description available”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_COMPRESSION_TYPE">
+<code class="sig-name descname">CPACK_RPM_COMPRESSION_TYPE</code><a class="headerlink" href="#variable:CPACK_RPM_COMPRESSION_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM compression type.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to override RPM compression type to be used to build the
+RPM. For example some Linux distribution now default to <code class="docutils literal notranslate"><span class="pre">lzma</span></code> or <code class="docutils literal notranslate"><span class="pre">xz</span></code>
+compression whereas older cannot use such RPM. Using this one can enforce
+compression type to be used.</p>
+<p>Possible values are:</p>
+<ul class="simple">
+<li><p>lzma</p></li>
+<li><p>xz</p></li>
+<li><p>bzip2</p></li>
+<li><p>gzip</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_AUTOREQ">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_AUTOREQ</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_AUTOREQ" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOREQ">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOREQ</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_AUTOREQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec autoreq field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to enable (<code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>) or disable (<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">no</span></code>) automatic
+shared libraries dependency detection. Dependencies are added to requires list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default automatic dependency detection is enabled by rpm generator.</p>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_AUTOPROV">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_AUTOPROV</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_AUTOPROV" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOPROV">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOPROV</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_AUTOPROV" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec autoprov field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to enable (<code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>) or disable (<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">no</span></code>)
+automatic listing of shared libraries that are provided by the package.
+Shared libraries are added to provides list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default automatic provides detection is enabled by rpm generator.</p>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_AUTOREQPROV">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_AUTOREQPROV</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_AUTOREQPROV" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOREQPROV">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_AUTOREQPROV</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_AUTOREQPROV" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec autoreqprov field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>Variable enables/disables autoreq and autoprov at the same time.
+See <span class="target" id="index-0-variable:CPACK_RPM_PACKAGE_AUTOREQ"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_AUTOREQ" title="CPACK_RPM_PACKAGE_AUTOREQ"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_AUTOREQ</span></code></a> and
+<span class="target" id="index-0-variable:CPACK_RPM_PACKAGE_AUTOPROV"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_AUTOPROV" title="CPACK_RPM_PACKAGE_AUTOPROV"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_AUTOPROV</span></code></a> for more details.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default automatic detection feature is enabled by rpm.</p>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_REQUIRES">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_REQUIRES</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_REQUIRES" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_REQUIRES" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec requires field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM dependencies (requires). Note that you must enclose
+the complete requires string between quotes, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_REQUIRES &quot;python &gt;= 2.5.0, cmake &gt;= 2.8&quot;)
+</pre></div>
+</div>
+<p>The required package list of an RPM file could be printed with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm -qp --requires file.rpm
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_CONFLICTS">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_CONFLICTS</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_CONFLICTS" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_CONFLICTS">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_CONFLICTS</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_CONFLICTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec conflicts field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set negative RPM dependencies (conflicts). Note that you must
+enclose the complete requires string between quotes, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_CONFLICTS &quot;libxml2&quot;)
+</pre></div>
+</div>
+<p>The conflicting package list of an RPM file could be printed with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm -qp --conflicts file.rpm
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_REQUIRES_PRE">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_REQUIRES_PRE</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_REQUIRES_PRE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_PRE">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_PRE</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_REQUIRES_PRE" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec requires(pre) field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM preinstall dependencies (requires(pre)). Note that
+you must enclose the complete requires string between quotes, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_REQUIRES_PRE &quot;shadow-utils, initscripts&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_REQUIRES_POST">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_REQUIRES_POST</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_REQUIRES_POST" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_POST">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_POST</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_REQUIRES_POST" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec requires(post) field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM postinstall dependencies (requires(post)). Note that
+you must enclose the complete requires string between quotes, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_REQUIRES_POST &quot;shadow-utils, initscripts&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_REQUIRES_POSTUN">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_REQUIRES_POSTUN</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_REQUIRES_POSTUN" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_POSTUN">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_POSTUN</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_REQUIRES_POSTUN" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec requires(postun) field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM postuninstall dependencies (requires(postun)). Note
+that you must enclose the complete requires string between quotes, for
+example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_REQUIRES_POSTUN &quot;shadow-utils, initscripts&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_REQUIRES_PREUN">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_REQUIRES_PREUN</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_REQUIRES_PREUN" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_PREUN">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_REQUIRES_PREUN</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_REQUIRES_PREUN" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec requires(preun) field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM preuninstall dependencies (requires(preun)). Note that
+you must enclose the complete requires string between quotes, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_PACKAGE_REQUIRES_PREUN &quot;shadow-utils, initscripts&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_SUGGESTS">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_SUGGESTS</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_SUGGESTS" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_SUGGESTS">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_SUGGESTS</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_SUGGESTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec suggest field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set weak RPM dependencies (suggests). Note that you must
+enclose the complete requires string between quotes.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_PROVIDES">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_PROVIDES</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_PROVIDES" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_PROVIDES">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_PROVIDES</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_PROVIDES" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec provides field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM dependencies (provides). The provided package list
+of an RPM file could be printed with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm -qp --provides file.rpm
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_OBSOLETES">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_OBSOLETES</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_OBSOLETES" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_PACKAGE_OBSOLETES">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_PACKAGE_OBSOLETES</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_PACKAGE_OBSOLETES" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM spec obsoletes field.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set RPM packages that are obsoleted by this one.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_RELOCATABLE">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_RELOCATABLE</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_RELOCATABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>build a relocatable RPM.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : CPACK_PACKAGE_RELOCATABLE</p></li>
+</ul>
+<p>If this variable is set to TRUE or ON, the CPack RPM generator will try
+to build a relocatable RPM package. A relocatable RPM may
+be installed using:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm --prefix or --relocate
+</pre></div>
+</div>
+<p>in order to install it at an alternate place see rpm(8). Note that
+currently this may fail if <span class="target" id="index-0-variable:CPACK_SET_DESTDIR"></span><a class="reference internal" href="../variable/CPACK_SET_DESTDIR.html#variable:CPACK_SET_DESTDIR" title="CPACK_SET_DESTDIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code></a> is set to <code class="docutils literal notranslate"><span class="pre">ON</span></code>. If
+<span class="target" id="index-1-variable:CPACK_SET_DESTDIR"></span><a class="reference internal" href="../variable/CPACK_SET_DESTDIR.html#variable:CPACK_SET_DESTDIR" title="CPACK_SET_DESTDIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_SET_DESTDIR</span></code></a> is set then you will get a warning message but
+if there is file installed with absolute path you’ll get unexpected behavior.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_SPEC_INSTALL_POST">
+<code class="sig-name descname">CPACK_RPM_SPEC_INSTALL_POST</code><a class="headerlink" href="#variable:CPACK_RPM_SPEC_INSTALL_POST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated - use <span class="target" id="index-0-variable:CPACK_RPM_SPEC_MORE_DEFINE"></span><a class="reference internal" href="#variable:CPACK_RPM_SPEC_MORE_DEFINE" title="CPACK_RPM_SPEC_MORE_DEFINE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_SPEC_MORE_DEFINE</span></code></a> instead.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+<li><p>Deprecated: YES</p></li>
+</ul>
+<p>May be used to override the <code class="docutils literal notranslate"><span class="pre">__spec_install_post</span></code> section within the
+generated spec file.  This affects the install step during package creation,
+not during package installation.  For adding operations to be performed
+during package installation, use
+<span class="target" id="index-0-variable:CPACK_RPM_POST_INSTALL_SCRIPT_FILE"></span><a class="reference internal" href="#variable:CPACK_RPM_POST_INSTALL_SCRIPT_FILE" title="CPACK_RPM_POST_INSTALL_SCRIPT_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_POST_INSTALL_SCRIPT_FILE</span></code></a> instead.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_SPEC_MORE_DEFINE">
+<code class="sig-name descname">CPACK_RPM_SPEC_MORE_DEFINE</code><a class="headerlink" href="#variable:CPACK_RPM_SPEC_MORE_DEFINE" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM extended spec definitions lines.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to add any <code class="docutils literal notranslate"><span class="pre">%define</span></code> lines to the generated spec file.  An
+example of its use is to prevent stripping of executables (but note that
+this may also disable other default post install processing):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_SPEC_MORE_DEFINE &quot;%define __spec_install_post /bin/true&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_DEBUG">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_DEBUG</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_DEBUG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggle CPack RPM generator debug output.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be set when invoking cpack in order to trace debug information
+during CPack RPM run. For example you may launch CPack like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack -D CPACK_RPM_PACKAGE_DEBUG=1 -G RPM
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_USER_BINARY_SPECFILE">
+<code class="sig-name descname">CPACK_RPM_USER_BINARY_SPECFILE</code><a class="headerlink" href="#variable:CPACK_RPM_USER_BINARY_SPECFILE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;componentName&gt;_USER_BINARY_SPECFILE">
+<code class="sig-name descname">CPACK_RPM_&lt;componentName&gt;_USER_BINARY_SPECFILE</code><a class="headerlink" href="#variable:CPACK_RPM_<componentName>_USER_BINARY_SPECFILE" title="Permalink to this definition">¶</a></dt>
+<dd><p>A user provided spec file.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be set by the user in order to specify a USER binary spec file
+to be used by the CPack RPM generator instead of generating the file.
+The specified file will be processed by configure_file( &#64;ONLY).</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_GENERATE_USER_BINARY_SPECFILE_TEMPLATE">
+<code class="sig-name descname">CPACK_RPM_GENERATE_USER_BINARY_SPECFILE_TEMPLATE</code><a class="headerlink" href="#variable:CPACK_RPM_GENERATE_USER_BINARY_SPECFILE_TEMPLATE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spec file template.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>If set CPack will generate a template for USER specified binary
+spec file and stop with an error. For example launch CPack like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack -D CPACK_RPM_GENERATE_USER_BINARY_SPECFILE_TEMPLATE=1 -G RPM
+</pre></div>
+</div>
+<p>The user may then use this file in order to hand-craft is own
+binary spec file which may be used with
+<span class="target" id="index-0-variable:CPACK_RPM_USER_BINARY_SPECFILE"></span><a class="reference internal" href="#variable:CPACK_RPM_USER_BINARY_SPECFILE" title="CPACK_RPM_USER_BINARY_SPECFILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_USER_BINARY_SPECFILE</span></code></a>.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PRE_INSTALL_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_PRE_INSTALL_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_PRE_INSTALL_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_PRE_TRANS_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_PRE_TRANS_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_PRE_TRANS_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to file containing pre install/uninstall/transaction script.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to embed a pre installation/uninstallation/transaction script in the spec file.
+The referred script file (or both) will be read and directly
+put after the <code class="docutils literal notranslate"><span class="pre">%pre</span></code> or <code class="docutils literal notranslate"><span class="pre">%preun</span></code> section
+If <span class="target" id="index-0-variable:CPACK_RPM_COMPONENT_INSTALL"></span><a class="reference internal" href="#variable:CPACK_RPM_COMPONENT_INSTALL" title="CPACK_RPM_COMPONENT_INSTALL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_COMPONENT_INSTALL</span></code></a> is set to ON the install/uninstall/transaction
+script for each component can be overridden with
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_PRE_INSTALL_SCRIPT_FILE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_PRE_UNINSTALL_SCRIPT_FILE</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_PRE_TRANS_SCRIPT_FILE</span></code>
+One may verify which scriptlet has been included with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm -qp --scripts  package.rpm
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_POST_INSTALL_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_POST_INSTALL_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_POST_INSTALL_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_POST_TRANS_SCRIPT_FILE">
+<code class="sig-name descname">CPACK_RPM_POST_TRANS_SCRIPT_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_POST_TRANS_SCRIPT_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to file containing post install/uninstall/transaction script.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to embed a post installation/uninstallation/transaction script in the spec file.
+The referred script file (or both) will be read and directly
+put after the <code class="docutils literal notranslate"><span class="pre">%post</span></code> or <code class="docutils literal notranslate"><span class="pre">%postun</span></code> section.
+If <span class="target" id="index-1-variable:CPACK_RPM_COMPONENT_INSTALL"></span><a class="reference internal" href="#variable:CPACK_RPM_COMPONENT_INSTALL" title="CPACK_RPM_COMPONENT_INSTALL"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_COMPONENT_INSTALL</span></code></a> is set to ON the install/uninstall/transaction
+script for each component can be overridden with
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_POST_INSTALL_SCRIPT_FILE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_POST_UNINSTALL_SCRIPT_FILE</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_POST_TRANS_SCRIPT_FILE</span></code>
+One may verify which scriptlet has been included with:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>rpm -qp --scripts  package.rpm
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_USER_FILELIST">
+<code class="sig-name descname">CPACK_RPM_USER_FILELIST</code><a class="headerlink" href="#variable:CPACK_RPM_USER_FILELIST" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;COMPONENT&gt;_USER_FILELIST">
+<code class="sig-name descname">CPACK_RPM_&lt;COMPONENT&gt;_USER_FILELIST</code><a class="headerlink" href="#variable:CPACK_RPM_<COMPONENT>_USER_FILELIST" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to explicitly specify <code class="docutils literal notranslate"><span class="pre">%(&lt;directive&gt;)</span></code> file line
+in the spec file. Like <code class="docutils literal notranslate"><span class="pre">%config(noreplace)</span></code> or any other directive
+that be found in the <code class="docutils literal notranslate"><span class="pre">%files</span></code> section. You can have multiple directives
+per line, as in <code class="docutils literal notranslate"><span class="pre">%attr(600,root,root)</span> <span class="pre">%config(noreplace)</span></code>. Since
+the CPack RPM generator is generating the list of files (and directories) the
+user specified files of the <code class="docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_USER_FILELIST</span></code> list will
+be removed from the generated list. If referring to directories do
+not add a trailing slash.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_CHANGELOG_FILE">
+<code class="sig-name descname">CPACK_RPM_CHANGELOG_FILE</code><a class="headerlink" href="#variable:CPACK_RPM_CHANGELOG_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><p>RPM changelog file.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to embed a changelog in the spec file.
+The referred file will be read and directly put after the <code class="docutils literal notranslate"><span class="pre">%changelog</span></code>
+section.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST">
+<code class="sig-name descname">CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST</code><a class="headerlink" href="#variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of path to be excluded.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><dl class="simple">
+<dt>Default<span class="classifier">/etc /etc/init.d /usr /usr/bin /usr/include /usr/lib</span></dt><dd><p>/usr/libx32 /usr/lib64 /usr/share /usr/share/aclocal
+/usr/share/doc</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>May be used to exclude path (directories or files) from the auto-generated
+list of paths discovered by CPack RPM. The default value contains a
+reasonable set of values if the variable is not defined by the user. If the
+variable is defined by the user then the CPack RPM generator will NOT any of
+the default path. If you want to add some path to the default list then you
+can use <span class="target" id="index-0-variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION"></span><a class="reference internal" href="#variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION" title="CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION</span></code></a> variable.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION">
+<code class="sig-name descname">CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION</code><a class="headerlink" href="#variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION" title="Permalink to this definition">¶</a></dt>
+<dd><p>additional list of path to be excluded.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to add more exclude path (directories or files) from the initial
+default list of excluded paths. See
+<span class="target" id="index-0-variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST"></span><a class="reference internal" href="#variable:CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST" title="CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST</span></code></a>.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_RELOCATION_PATHS">
+<code class="sig-name descname">CPACK_RPM_RELOCATION_PATHS</code><a class="headerlink" href="#variable:CPACK_RPM_RELOCATION_PATHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Packages relocation paths list.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to specify more than one relocation path per relocatable RPM.
+Variable contains a list of relocation paths that if relative are prefixed
+by the value of <span class="target" id="index-0-variable:CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX"></span><a class="reference internal" href="#variable:CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX" title="CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX</span></code></a> or by the
+value of <span class="target" id="index-0-variable:CPACK_PACKAGING_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CPACK_PACKAGING_INSTALL_PREFIX.html#variable:CPACK_PACKAGING_INSTALL_PREFIX" title="CPACK_PACKAGING_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGING_INSTALL_PREFIX</span></code></a> if the component version
+is not provided.
+Variable is not component based as its content can be used to set a different
+path prefix for e.g. binary dir and documentation dir at the same time.
+Only prefixes that are required by a certain component are added to that
+component - component must contain at least one file/directory/symbolic link
+with <span class="target" id="index-0-variable:CPACK_RPM_RELOCATION_PATHS"></span><a class="reference internal" href="#variable:CPACK_RPM_RELOCATION_PATHS" title="CPACK_RPM_RELOCATION_PATHS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_RELOCATION_PATHS</span></code></a> prefix for a certain relocation
+path to be added. Package will not contain any relocation paths if there are
+no files/directories/symbolic links on any of the provided prefix locations.
+Packages that either do not contain any relocation paths or contain
+files/directories/symbolic links that are outside relocation paths print
+out an <code class="docutils literal notranslate"><span class="pre">AUTHOR_WARNING</span></code> that RPM will be partially relocatable.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX">
+<code class="sig-name descname">CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX</code><a class="headerlink" href="#variable:CPACK_RPM_<COMPONENT>_PACKAGE_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Per component relocation path install prefix.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : CPACK_PACKAGING_INSTALL_PREFIX</p></li>
+</ul>
+<p>May be used to set per component <span class="target" id="index-1-variable:CPACK_PACKAGING_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CPACK_PACKAGING_INSTALL_PREFIX.html#variable:CPACK_PACKAGING_INSTALL_PREFIX" title="CPACK_PACKAGING_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGING_INSTALL_PREFIX</span></code></a>
+for relocatable RPM packages.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_NO_INSTALL_PREFIX_RELOCATION">
+<code class="sig-name descname">CPACK_RPM_NO_INSTALL_PREFIX_RELOCATION</code><a class="headerlink" href="#variable:CPACK_RPM_NO_INSTALL_PREFIX_RELOCATION" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_NO_&lt;COMPONENT&gt;_INSTALL_PREFIX_RELOCATION">
+<code class="sig-name descname">CPACK_RPM_NO_&lt;COMPONENT&gt;_INSTALL_PREFIX_RELOCATION</code><a class="headerlink" href="#variable:CPACK_RPM_NO_<COMPONENT>_INSTALL_PREFIX_RELOCATION" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removal of default install prefix from relocation paths list.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><dl class="simple">
+<dt>Default<span class="classifier">CPACK_PACKAGING_INSTALL_PREFIX or CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX</span></dt><dd><p>are treated as one of relocation paths</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>May be used to remove CPACK_PACKAGING_INSTALL_PREFIX and CPACK_RPM_&lt;COMPONENT&gt;_PACKAGE_PREFIX
+from relocatable RPM prefix paths.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_ADDITIONAL_MAN_DIRS">
+<code class="sig-name descname">CPACK_RPM_ADDITIONAL_MAN_DIRS</code><a class="headerlink" href="#variable:CPACK_RPM_ADDITIONAL_MAN_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set additional man dirs that could potentially be compressed
+by brp-compress RPM macro. Variable content must be a list of regular
+expressions that point to directories containing man files or to man files
+directly. Note that in order to compress man pages a path must also be
+present in brp-compress RPM script and that brp-compress script must be
+added to RPM configuration by the operating system.</p>
+<p>Regular expressions that are added by default were taken from brp-compress
+RPM macro:</p>
+<ul class="simple">
+<li><p>/usr/man/man.*</p></li>
+<li><p>/usr/man/.*/man.*</p></li>
+<li><p>/usr/info.*</p></li>
+<li><p>/usr/share/man/man.*</p></li>
+<li><p>/usr/share/man/.*/man.*</p></li>
+<li><p>/usr/share/info.*</p></li>
+<li><p>/usr/kerberos/man.*</p></li>
+<li><p>/usr/X11R6/man/man.*</p></li>
+<li><p>/usr/lib/perl5/man/man.*</p></li>
+<li><p>/usr/share/doc/.*/man/man.*</p></li>
+<li><p>/usr/lib/.*/man/man.*</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEFAULT_USER">
+<code class="sig-name descname">CPACK_RPM_DEFAULT_USER</code><a class="headerlink" href="#variable:CPACK_RPM_DEFAULT_USER" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;compName&gt;_DEFAULT_USER">
+<code class="sig-name descname">CPACK_RPM_&lt;compName&gt;_DEFAULT_USER</code><a class="headerlink" href="#variable:CPACK_RPM_<compName>_DEFAULT_USER" title="Permalink to this definition">¶</a></dt>
+<dd><p>default user ownership of RPM content</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : root</p></li>
+</ul>
+<p>Value should be user name and not UID.
+Note that &lt;compName&gt; must be in upper-case.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEFAULT_GROUP">
+<code class="sig-name descname">CPACK_RPM_DEFAULT_GROUP</code><a class="headerlink" href="#variable:CPACK_RPM_DEFAULT_GROUP" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;compName&gt;_DEFAULT_GROUP">
+<code class="sig-name descname">CPACK_RPM_&lt;compName&gt;_DEFAULT_GROUP</code><a class="headerlink" href="#variable:CPACK_RPM_<compName>_DEFAULT_GROUP" title="Permalink to this definition">¶</a></dt>
+<dd><p>default group ownership of RPM content</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : root</p></li>
+</ul>
+<p>Value should be group name and not GID.
+Note that &lt;compName&gt; must be in upper-case.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEFAULT_FILE_PERMISSIONS">
+<code class="sig-name descname">CPACK_RPM_DEFAULT_FILE_PERMISSIONS</code><a class="headerlink" href="#variable:CPACK_RPM_DEFAULT_FILE_PERMISSIONS" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;compName&gt;_DEFAULT_FILE_PERMISSIONS">
+<code class="sig-name descname">CPACK_RPM_&lt;compName&gt;_DEFAULT_FILE_PERMISSIONS</code><a class="headerlink" href="#variable:CPACK_RPM_<compName>_DEFAULT_FILE_PERMISSIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>default permissions used for packaged files</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : - (system default)</p></li>
+</ul>
+<p>Accepted values are lists with <code class="docutils literal notranslate"><span class="pre">PERMISSIONS</span></code>. Valid permissions
+are:</p>
+<ul class="simple">
+<li><p>OWNER_READ</p></li>
+<li><p>OWNER_WRITE</p></li>
+<li><p>OWNER_EXECUTE</p></li>
+<li><p>GROUP_READ</p></li>
+<li><p>GROUP_WRITE</p></li>
+<li><p>GROUP_EXECUTE</p></li>
+<li><p>WORLD_READ</p></li>
+<li><p>WORLD_WRITE</p></li>
+<li><p>WORLD_EXECUTE</p></li>
+</ul>
+<p>Note that &lt;compName&gt; must be in upper-case.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEFAULT_DIR_PERMISSIONS">
+<code class="sig-name descname">CPACK_RPM_DEFAULT_DIR_PERMISSIONS</code><a class="headerlink" href="#variable:CPACK_RPM_DEFAULT_DIR_PERMISSIONS" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;compName&gt;_DEFAULT_DIR_PERMISSIONS">
+<code class="sig-name descname">CPACK_RPM_&lt;compName&gt;_DEFAULT_DIR_PERMISSIONS</code><a class="headerlink" href="#variable:CPACK_RPM_<compName>_DEFAULT_DIR_PERMISSIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>default permissions used for packaged directories</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : - (system default)</p></li>
+</ul>
+<p>Accepted values are lists with PERMISSIONS. Valid permissions
+are the same as for <span class="target" id="index-0-variable:CPACK_RPM_DEFAULT_FILE_PERMISSIONS"></span><a class="reference internal" href="#variable:CPACK_RPM_DEFAULT_FILE_PERMISSIONS" title="CPACK_RPM_DEFAULT_FILE_PERMISSIONS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEFAULT_FILE_PERMISSIONS</span></code></a>.
+Note that &lt;compName&gt; must be in upper-case.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_INSTALL_WITH_EXEC">
+<code class="sig-name descname">CPACK_RPM_INSTALL_WITH_EXEC</code><a class="headerlink" href="#variable:CPACK_RPM_INSTALL_WITH_EXEC" title="Permalink to this definition">¶</a></dt>
+<dd><p>force execute permissions on programs and shared libraries</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : - (system default)</p></li>
+</ul>
+<p>Force set owner, group and world execute permissions on programs and shared
+libraries. This can be used for creating valid rpm packages on systems such
+as Debian where shared libraries do not have execute permissions set.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Programs and shared libraries without execute permissions are ignored during
+separation of debug symbols from the binary for debuginfo packages.</p>
+</div>
+</div>
+<div class="section" id="packaging-of-symbolic-links">
+<h2>Packaging of Symbolic Links<a class="headerlink" href="#packaging-of-symbolic-links" title="Permalink to this headline">¶</a></h2>
+<p>The CPack RPM generator supports packaging of symbolic links:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>execute_process(COMMAND ${CMAKE_COMMAND}
+  -E create_symlink &lt;relative_path_location&gt; &lt;symlink_name&gt;)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/&lt;symlink_name&gt;
+  DESTINATION &lt;symlink_location&gt; COMPONENT libraries)
+</pre></div>
+</div>
+<p>Symbolic links will be optimized (paths will be shortened if possible)
+before being added to the package or if multiple relocation paths are
+detected, a post install symlink relocation script will be generated.</p>
+<p>Symbolic links may point to locations that are not packaged by the same
+package (either a different component or even not packaged at all) but
+those locations will be treated as if they were a part of the package
+while determining if symlink should be either created or present in a
+post install script - depending on relocation paths.</p>
+<p>Symbolic links that point to locations outside packaging path produce a
+warning and are treated as non relocatable permanent symbolic links.</p>
+<p>Currently there are a few limitations though:</p>
+<ul class="simple">
+<li><p>For component based packaging component interdependency is not checked
+when processing symbolic links. Symbolic links pointing to content of
+a different component are treated the same way as if pointing to location
+that will not be packaged.</p></li>
+<li><p>Symbolic links pointing to a location through one or more intermediate
+symbolic links will not be handled differently - if the intermediate
+symbolic link(s) is also on a relocatable path, relocating it during
+package installation may cause initial symbolic link to point to an
+invalid location.</p></li>
+</ul>
+</div>
+<div class="section" id="packaging-of-debug-information">
+<h2>Packaging of debug information<a class="headerlink" href="#packaging-of-debug-information" title="Permalink to this headline">¶</a></h2>
+<p>Debuginfo packages contain debug symbols and sources for debugging packaged
+binaries.</p>
+<p>Debuginfo RPM packaging has its own set of variables:</p>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEBUGINFO_PACKAGE">
+<code class="sig-name descname">CPACK_RPM_DEBUGINFO_PACKAGE</code><a class="headerlink" href="#variable:CPACK_RPM_DEBUGINFO_PACKAGE" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_DEBUGINFO_PACKAGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable generation of debuginfo RPM package(s).</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : OFF</p></li>
+</ul>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Binaries must contain debug symbols before packaging so use either <code class="docutils literal notranslate"><span class="pre">Debug</span></code>
+or <code class="docutils literal notranslate"><span class="pre">RelWithDebInfo</span></code> for <span class="target" id="index-0-variable:CMAKE_BUILD_TYPE"></span><a class="reference internal" href="../variable/CMAKE_BUILD_TYPE.html#variable:CMAKE_BUILD_TYPE" title="CMAKE_BUILD_TYPE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></a> variable value.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Packages generated from packages without binary files, with binary files but
+without execute permissions or without debug symbols will cause packaging
+termination.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_BUILD_SOURCE_DIRS">
+<code class="sig-name descname">CPACK_BUILD_SOURCE_DIRS</code><a class="headerlink" href="#variable:CPACK_BUILD_SOURCE_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides locations of root directories of source files from which binaries
+were built.</p>
+<ul class="simple">
+<li><p>Mandatory : YES if <span class="target" id="index-0-variable:CPACK_RPM_DEBUGINFO_PACKAGE"></span><a class="reference internal" href="#variable:CPACK_RPM_DEBUGINFO_PACKAGE" title="CPACK_RPM_DEBUGINFO_PACKAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEBUGINFO_PACKAGE</span></code></a> is set</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For CMake project <span class="target" id="index-0-variable:CPACK_BUILD_SOURCE_DIRS"></span><a class="reference internal" href="#variable:CPACK_BUILD_SOURCE_DIRS" title="CPACK_BUILD_SOURCE_DIRS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_BUILD_SOURCE_DIRS</span></code></a> is set by default to
+point to <span class="target" id="index-0-variable:CMAKE_SOURCE_DIR"></span><a class="reference internal" href="../variable/CMAKE_SOURCE_DIR.html#variable:CMAKE_SOURCE_DIR" title="CMAKE_SOURCE_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SOURCE_DIR</span></code></a> and <span class="target" id="index-0-variable:CMAKE_BINARY_DIR"></span><a class="reference internal" href="../variable/CMAKE_BINARY_DIR.html#variable:CMAKE_BINARY_DIR" title="CMAKE_BINARY_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_BINARY_DIR</span></code></a> paths.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Sources with path prefixes that do not fall under any location provided with
+<span class="target" id="index-1-variable:CPACK_BUILD_SOURCE_DIRS"></span><a class="reference internal" href="#variable:CPACK_BUILD_SOURCE_DIRS" title="CPACK_BUILD_SOURCE_DIRS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_BUILD_SOURCE_DIRS</span></code></a> will not be present in debuginfo package.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX">
+<code class="sig-name descname">CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX</code><a class="headerlink" href="#variable:CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_BUILD_SOURCE_DIRS_PREFIX">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_BUILD_SOURCE_DIRS_PREFIX</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_BUILD_SOURCE_DIRS_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prefix of location where sources will be placed during package installation.</p>
+<ul class="simple">
+<li><p>Mandatory : YES if <span class="target" id="index-1-variable:CPACK_RPM_DEBUGINFO_PACKAGE"></span><a class="reference internal" href="#variable:CPACK_RPM_DEBUGINFO_PACKAGE" title="CPACK_RPM_DEBUGINFO_PACKAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEBUGINFO_PACKAGE</span></code></a> is set</p></li>
+<li><dl class="simple">
+<dt>Default<span class="classifier">“/usr/src/debug/&lt;CPACK_PACKAGE_FILE_NAME&gt;” and</span></dt><dd><p>for component packaging “/usr/src/debug/&lt;CPACK_PACKAGE_FILE_NAME&gt;-&lt;component&gt;”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each source path prefix is additionally suffixed by <code class="docutils literal notranslate"><span class="pre">src_&lt;index&gt;</span></code> where
+index is index of the path used from <span class="target" id="index-2-variable:CPACK_BUILD_SOURCE_DIRS"></span><a class="reference internal" href="#variable:CPACK_BUILD_SOURCE_DIRS" title="CPACK_BUILD_SOURCE_DIRS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_BUILD_SOURCE_DIRS</span></code></a>
+variable. This produces <code class="docutils literal notranslate"><span class="pre">&lt;CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX&gt;/src_&lt;index&gt;</span></code>
+replacement path.
+Limitation is that replaced path part must be shorter or of equal
+length than the length of its replacement. If that is not the case either
+<span class="target" id="index-0-variable:CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX"></span><a class="reference internal" href="#variable:CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX" title="CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX</span></code></a> variable has to be set to
+a shorter path or source directories must be placed on a longer path.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS">
+<code class="sig-name descname">CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS</code><a class="headerlink" href="#variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Directories containing sources that should be excluded from debuginfo packages.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : “/usr /usr/src /usr/src/debug”</p></li>
+</ul>
+<p>Listed paths are owned by other RPM packages and should therefore not be
+deleted on debuginfo package uninstallation.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS_ADDITION">
+<code class="sig-name descname">CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS_ADDITION</code><a class="headerlink" href="#variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS_ADDITION" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paths that should be appended to <span class="target" id="index-0-variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS"></span><a class="reference internal" href="#variable:CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS" title="CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEBUGINFO_EXCLUDE_DIRS</span></code></a>
+for exclusion.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE">
+<code class="sig-name descname">CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE</code><a class="headerlink" href="#variable:CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a single debuginfo package even if components packaging is set.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : OFF</p></li>
+</ul>
+<p>When this variable is enabled it produces a single debuginfo package even if
+component packaging is enabled.</p>
+<p>When using this feature in combination with components packaging and there is
+more than one component this variable requires <span class="target" id="index-0-variable:CPACK_RPM_MAIN_COMPONENT"></span><a class="reference internal" href="#variable:CPACK_RPM_MAIN_COMPONENT" title="CPACK_RPM_MAIN_COMPONENT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_MAIN_COMPONENT</span></code></a>
+to be set.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If none of the <span class="target" id="index-0-variable:CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE"></span><a class="reference internal" href="#variable:CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE" title="CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;component&gt;_DEBUGINFO_PACKAGE</span></code></a> variables
+is set then <span class="target" id="index-2-variable:CPACK_RPM_DEBUGINFO_PACKAGE"></span><a class="reference internal" href="#variable:CPACK_RPM_DEBUGINFO_PACKAGE" title="CPACK_RPM_DEBUGINFO_PACKAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEBUGINFO_PACKAGE</span></code></a> is automatically set to
+<code class="docutils literal notranslate"><span class="pre">ON</span></code> when <span class="target" id="index-0-variable:CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE"></span><a class="reference internal" href="#variable:CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE" title="CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE</span></code></a> is set.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_DEBUGINFO_FILE_NAME">
+<code class="sig-name descname">CPACK_RPM_DEBUGINFO_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_DEBUGINFO_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dt id="variable:CPACK_RPM_&lt;component&gt;_DEBUGINFO_FILE_NAME">
+<code class="sig-name descname">CPACK_RPM_&lt;component&gt;_DEBUGINFO_FILE_NAME</code><a class="headerlink" href="#variable:CPACK_RPM_<component>_DEBUGINFO_FILE_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Debuginfo package file name.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : rpmbuild tool generated package file name</p></li>
+</ul>
+<p>Alternatively provided debuginfo package file name must end with <code class="docutils literal notranslate"><span class="pre">.rpm</span></code>
+suffix and should differ from file names of other generated packages.</p>
+<p>Variable may contain <code class="docutils literal notranslate"><span class="pre">&#64;cpack_component&#64;</span></code> placeholder which will be
+replaced by component name if component packaging is enabled otherwise it
+deletes the placeholder.</p>
+<p>Setting the variable to <code class="docutils literal notranslate"><span class="pre">RPM-DEFAULT</span></code> may be used to explicitly set
+filename generation to default.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><span class="target" id="index-0-variable:CPACK_RPM_FILE_NAME"></span><a class="reference internal" href="#variable:CPACK_RPM_FILE_NAME" title="CPACK_RPM_FILE_NAME"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_FILE_NAME</span></code></a> also supports rpmbuild tool generated package
+file name - disabled by default but can be enabled by setting the variable to
+<code class="docutils literal notranslate"><span class="pre">RPM-DEFAULT</span></code>.</p>
+</div>
+</div>
+<div class="section" id="packaging-of-sources-srpm">
+<h2>Packaging of sources (SRPM)<a class="headerlink" href="#packaging-of-sources-srpm" title="Permalink to this headline">¶</a></h2>
+<p>SRPM packaging is enabled by setting <span class="target" id="index-0-variable:CPACK_RPM_PACKAGE_SOURCES"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_SOURCES" title="CPACK_RPM_PACKAGE_SOURCES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_SOURCES</span></code></a>
+variable while usually using <span class="target" id="index-0-variable:CPACK_INSTALLED_DIRECTORIES"></span><a class="reference internal" href="../module/CPack.html#variable:CPACK_INSTALLED_DIRECTORIES" title="CPACK_INSTALLED_DIRECTORIES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_INSTALLED_DIRECTORIES</span></code></a> variable
+to provide directory containing CMakeLists.txt and source files.</p>
+<p>For CMake projects SRPM package would be produced by executing:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack -G RPM --config ./CPackSourceConfig.cmake
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Produced SRPM package is expected to be built with <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> executable
+and packaged with <span class="target" id="index-0-manual:cpack(1)"></span><a class="reference internal" href="../manual/cpack.1.html#manual:cpack(1)" title="cpack(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cpack(1)</span></code></a> executable so CMakeLists.txt has to be
+located in root source directory and must be able to generate binary rpm
+packages by executing <code class="docutils literal notranslate"><span class="pre">cpack</span> <span class="pre">-G</span></code> command. The two executables as well as
+rpmbuild must also be present when generating binary rpm packages from the
+produced SRPM package.</p>
+</div>
+<p>Once the SRPM package is generated it can be used to generate binary packages
+by creating a directory structure for rpm generation and executing rpmbuild
+tool:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mkdir -p build_dir/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+rpmbuild --define &quot;_topdir &lt;path_to_build_dir&gt;&quot; --rebuild &lt;SRPM_file_name&gt;
+</pre></div>
+</div>
+<p>Generated packages will be located in build_dir/RPMS directory or its sub
+directories.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SRPM package internally uses CPack/RPM generator to generate binary packages
+so CMakeScripts.txt can decide during the SRPM to binary rpm generation step
+what content the package(s) should have as well as how they should be packaged
+(monolithic or components). CMake can decide this for e.g. by reading environment
+variables set by the package manager before starting the process of generating
+binary rpm packages. This way a single SRPM package can be used to produce
+different binary rpm packages on different platforms depending on the platform’s
+packaging rules.</p>
+</div>
+<p>Source RPM packaging has its own set of variables:</p>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_PACKAGE_SOURCES">
+<code class="sig-name descname">CPACK_RPM_PACKAGE_SOURCES</code><a class="headerlink" href="#variable:CPACK_RPM_PACKAGE_SOURCES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Should the content be packaged as a source rpm (default is binary rpm).</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : OFF</p></li>
+</ul>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For cmake projects <span class="target" id="index-1-variable:CPACK_RPM_PACKAGE_SOURCES"></span><a class="reference internal" href="#variable:CPACK_RPM_PACKAGE_SOURCES" title="CPACK_RPM_PACKAGE_SOURCES"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_PACKAGE_SOURCES</span></code></a> variable is set
+to <code class="docutils literal notranslate"><span class="pre">OFF</span></code> in CPackConfig.cmake and <code class="docutils literal notranslate"><span class="pre">ON</span></code> in CPackSourceConfig.cmake
+generated files.</p>
+</div>
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_SOURCE_PKG_BUILD_PARAMS">
+<code class="sig-name descname">CPACK_RPM_SOURCE_PKG_BUILD_PARAMS</code><a class="headerlink" href="#variable:CPACK_RPM_SOURCE_PKG_BUILD_PARAMS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additional command-line parameters provided to <span class="target" id="index-1-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> executable.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_SOURCE_PKG_PACKAGING_INSTALL_PREFIX">
+<code class="sig-name descname">CPACK_RPM_SOURCE_PKG_PACKAGING_INSTALL_PREFIX</code><a class="headerlink" href="#variable:CPACK_RPM_SOURCE_PKG_PACKAGING_INSTALL_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Packaging install prefix that would be provided in <span class="target" id="index-2-variable:CPACK_PACKAGING_INSTALL_PREFIX"></span><a class="reference internal" href="../variable/CPACK_PACKAGING_INSTALL_PREFIX.html#variable:CPACK_PACKAGING_INSTALL_PREFIX" title="CPACK_PACKAGING_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_PACKAGING_INSTALL_PREFIX</span></code></a>
+variable for producing binary RPM packages.</p>
+<ul class="simple">
+<li><p>Mandatory : YES</p></li>
+<li><p>Default   : “/”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_RPM_BUILDREQUIRES">
+<code class="sig-name descname">CPACK_RPM_BUILDREQUIRES</code><a class="headerlink" href="#variable:CPACK_RPM_BUILDREQUIRES" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of source rpm build dependencies.</p>
+<ul class="simple">
+<li><p>Mandatory : NO</p></li>
+<li><p>Default   : -</p></li>
+</ul>
+<p>May be used to set source RPM build dependencies (BuildRequires). Note that
+you must enclose the complete build requirements string between quotes, for
+example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>set(CPACK_RPM_BUILDREQUIRES &quot;python &gt;= 2.5.0, cmake &gt;= 2.8&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPack RPM Generator</a><ul>
+<li><a class="reference internal" href="#variables-specific-to-cpack-rpm-generator">Variables specific to CPack RPM generator</a></li>
+<li><a class="reference internal" href="#packaging-of-symbolic-links">Packaging of Symbolic Links</a></li>
+<li><a class="reference internal" href="#packaging-of-debug-information">Packaging of debug information</a></li>
+<li><a class="reference internal" href="#packaging-of-sources-srpm">Packaging of sources (SRPM)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="productbuild.html"
+                        title="previous chapter">CPack productbuild Generator</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="wix.html"
+                        title="next chapter">CPack WIX Generator</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cpack_gen/rpm.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="wix.html" title="CPack WIX Generator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="productbuild.html" title="CPack productbuild Generator"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cpack-generators.7.html" >cpack-generators(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPack RPM Generator</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

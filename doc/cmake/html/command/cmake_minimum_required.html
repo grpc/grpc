@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake_minimum_required &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cmake_parse_arguments" href="cmake_parse_arguments.html" />
+    <link rel="prev" title="cmake_language" href="cmake_language.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cmake_parse_arguments.html" title="cmake_parse_arguments"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake_language.html" title="cmake_language"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">cmake_minimum_required</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-minimum-required">
+<span id="command:cmake_minimum_required"></span><h1>cmake_minimum_required<a class="headerlink" href="#cmake-minimum-required" title="Permalink to this headline">¶</a></h1>
+<p>Require a minimum version of cmake.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_minimum_required(</span><span class="no">VERSION</span><span class="w"> </span><span class="nv">&lt;min&gt;</span><span class="p">[...</span><span class="nv">&lt;max&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">FATAL_ERROR</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets the minimum required version of cmake for a project.
+Also updates the policy settings as explained below.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> and the optional <code class="docutils literal notranslate"><span class="pre">&lt;max&gt;</span></code> are each CMake versions of the form
+<code class="docutils literal notranslate"><span class="pre">major.minor[.patch[.tweak]]</span></code>, and the <code class="docutils literal notranslate"><span class="pre">...</span></code> is literal.</p>
+<p>If the running version of CMake is lower than the <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> required
+version it will stop processing the project and report an error.
+The optional <code class="docutils literal notranslate"><span class="pre">&lt;max&gt;</span></code> version, if specified, must be at least the
+<code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> version and affects policy settings as described below.
+If the running version of CMake is older than 3.12, the extra <code class="docutils literal notranslate"><span class="pre">...</span></code>
+dots will be seen as version component separators, resulting in the
+<code class="docutils literal notranslate"><span class="pre">...&lt;max&gt;</span></code> part being ignored and preserving the pre-3.12 behavior
+of basing policies on <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code>.</p>
+<p>This command will set the value of the
+<span class="target" id="index-0-variable:CMAKE_MINIMUM_REQUIRED_VERSION"></span><a class="reference internal" href="../variable/CMAKE_MINIMUM_REQUIRED_VERSION.html#variable:CMAKE_MINIMUM_REQUIRED_VERSION" title="CMAKE_MINIMUM_REQUIRED_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_MINIMUM_REQUIRED_VERSION</span></code></a> variable to <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">FATAL_ERROR</span></code> option is accepted but ignored by CMake 2.6 and
+higher.  It should be specified so CMake versions 2.4 and lower fail
+with an error instead of just a warning.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Call the <code class="docutils literal notranslate"><span class="pre">cmake_minimum_required()</span></code> command at the beginning of
+the top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file even before calling the
+<span class="target" id="index-0-command:project"></span><a class="reference internal" href="project.html#command:project" title="project"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">project()</span></code></a> command.  It is important to establish version
+and policy settings before invoking other commands whose behavior
+they may affect.  See also policy <span class="target" id="index-0-policy:CMP0000"></span><a class="reference internal" href="../policy/CMP0000.html#policy:CMP0000" title="CMP0000"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0000</span></code></a>.</p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">cmake_minimum_required()</span></code> inside a <span class="target" id="index-0-command:function"></span><a class="reference internal" href="function.html#command:function" title="function"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">function()</span></code></a>
+limits some effects to the function scope when invoked.  Such calls
+should not be made with the intention of having global effects.</p>
+</div>
+<div class="section" id="policy-settings">
+<h2>Policy Settings<a class="headerlink" href="#policy-settings" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">cmake_minimum_required(VERSION)</span></code> command implicitly invokes the
+<span class="target" id="index-0-command:cmake_policy"></span><a class="reference internal" href="cmake_policy.html#command:cmake_policy" title="cmake_policy"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">cmake_policy(VERSION)</span></code></a> command to specify that the current
+project code is written for the given range of CMake versions.
+All policies known to the running version of CMake and introduced
+in the <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> (or <code class="docutils literal notranslate"><span class="pre">&lt;max&gt;</span></code>, if specified) version or earlier will
+be set to use <code class="docutils literal notranslate"><span class="pre">NEW</span></code> behavior.  All policies introduced in later
+versions will be unset.  This effectively requests behavior preferred
+as of a given CMake version and tells newer CMake versions to warn
+about their new policies.</p>
+<p>When a <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> version higher than 2.4 is specified the command
+implicitly invokes</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_policy(</span><span class="no">VERSION</span><span class="w"> </span><span class="nv">&lt;min&gt;</span><span class="p">[...</span><span class="nv">&lt;max&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which sets CMake policies based on the range of versions specified.
+When a <code class="docutils literal notranslate"><span class="pre">&lt;min&gt;</span></code> version 2.4 or lower is given the command implicitly
+invokes</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">cmake_policy(</span><span class="no">VERSION</span><span class="w"> </span><span class="m">2.4</span><span class="p">[...</span><span class="nv">&lt;max&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which enables compatibility features for CMake 2.4 and lower.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake_minimum_required</a><ul>
+<li><a class="reference internal" href="#policy-settings">Policy Settings</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake_language.html"
+                        title="previous chapter">cmake_language</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmake_parse_arguments.html"
+                        title="next chapter">cmake_parse_arguments</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/cmake_minimum_required.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cmake_parse_arguments.html" title="cmake_parse_arguments"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake_language.html" title="cmake_language"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">cmake_minimum_required</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

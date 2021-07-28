@@ -1,0 +1,297 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CPACK" "1" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+cpack \- CPack Command-Line Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+cpack [<options>]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+The \fBcpack\fP executable is the CMake packaging program.  It generates
+installers and source packages in a variety of formats.
+.sp
+For each installer or package format, \fBcpack\fP has a specific backend,
+called “generator”. A generator is responsible for generating the required
+inputs and invoking the specific package creation tools. These installer
+or package generators are not to be confused with the makefile generators
+of the \fBcmake\fP command.
+.sp
+All supported generators are specified in the \fBcpack\-generators\fP manual.  The command \fBcpack \-\-help\fP prints a
+list of generators supported for the target platform.  Which of them are
+to be used can be selected through the \fBCPACK_GENERATOR\fP variable
+or through the command\-line option \fB\-G\fP\&.
+.sp
+The \fBcpack\fP program is steered by a configuration file written in the
+\fBCMake language\fP\&. Unless chosen differently
+through the command\-line option \fB\-\-config\fP, the file \fBCPackConfig.cmake\fP
+in the current directory is used.
+.sp
+In the standard CMake workflow, the file \fBCPackConfig.cmake\fP is generated
+by the \fBcmake\fP executable, provided the \fBCPack\fP
+module is included by the project’s \fBCMakeLists.txt\fP file.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-G <generators>\fP
+\fB<generators>\fP is a semicolon\-separated list
+of generator names.  \fBcpack\fP will iterate through this list and produce
+package(s) in that generator’s format according to the details provided in
+the \fBCPackConfig.cmake\fP configuration file.  If this option is not given,
+the \fBCPACK_GENERATOR\fP variable determines the default set of
+generators that will be used.
+.TP
+.B \fB\-C <configs>\fP
+Specify the project configuration(s) to be packaged (e.g. \fBDebug\fP,
+\fBRelease\fP, etc.), where \fB<configs>\fP is a
+semicolon\-separated list\&.
+When the CMake project uses a multi\-configuration
+generator such as Xcode or Visual Studio, this option is needed to tell
+\fBcpack\fP which built executables to include in the package.
+The user is responsible for ensuring that the configuration(s) listed
+have already been built before invoking \fBcpack\fP\&.
+.TP
+.B \fB\-D <var>=<value>\fP
+Set a CPack variable.  This will override any value set for \fB<var>\fP in the
+input file read by \fBcpack\fP\&.
+.TP
+.B \fB\-\-config <configFile>\fP
+Specify the configuration file read by \fBcpack\fP to provide the packaging
+details.  By default, \fBCPackConfig.cmake\fP in the current directory will
+be used.
+.TP
+.B \fB\-\-verbose, \-V\fP
+Run \fBcpack\fP with verbose output.  This can be used to show more details
+from the package generation tools and is suitable for project developers.
+.TP
+.B \fB\-\-debug\fP
+Run \fBcpack\fP with debug output.  This option is intended mainly for the
+developers of \fBcpack\fP itself and is not normally needed by project
+developers.
+.TP
+.B \fB\-\-trace\fP
+Put the underlying cmake scripts in trace mode.
+.TP
+.B \fB\-\-trace\-expand\fP
+Put the underlying cmake scripts in expanded trace mode.
+.TP
+.B \fB\-P <packageName>\fP
+Override/define the value of the \fBCPACK_PACKAGE_NAME\fP variable used
+for packaging.  Any value set for this variable in the \fBCPackConfig.cmake\fP
+file will then be ignored.
+.TP
+.B \fB\-R <packageVersion>\fP
+Override/define the value of the \fBCPACK_PACKAGE_VERSION\fP
+variable used for packaging.  It will override a value set in the
+\fBCPackConfig.cmake\fP file or one automatically computed from
+\fBCPACK_PACKAGE_VERSION_MAJOR\fP,
+\fBCPACK_PACKAGE_VERSION_MINOR\fP and
+\fBCPACK_PACKAGE_VERSION_PATCH\fP\&.
+.TP
+.B \fB\-B <packageDirectory>\fP
+Override/define \fBCPACK_PACKAGE_DIRECTORY\fP, which controls the
+directory where CPack will perform its packaging work.  The resultant
+package(s) will be created at this location by default and a
+\fB_CPack_Packages\fP subdirectory will also be created below this directory to
+use as a working area during package creation.
+.TP
+.B \fB\-\-vendor <vendorName>\fP
+Override/define \fBCPACK_PACKAGE_VENDOR\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fB\-\-help,\-help,\-usage,\-h,\-H,/?\fP
+Print usage information and exit.
+.sp
+Usage describes the basic command line interface and its options.
+.TP
+.B \fB\-\-version,\-version,/V [<f>]\fP
+Show program name/version banner and exit.
+.sp
+If a file is specified, the version is written into it.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-full [<f>]\fP
+Print all help manuals and exit.
+.sp
+All manuals are printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual <man> [<f>]\fP
+Print one help manual and exit.
+.sp
+The specified manual is printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual\-list [<f>]\fP
+List help manuals available and exit.
+.sp
+The list contains all manuals for which help may be obtained by
+using the \fB\-\-help\-manual\fP option followed by a manual name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command <cmd> [<f>]\fP
+Print help for one command and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual entry for \fB<cmd>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command\-list [<f>]\fP
+List commands with help available and exit.
+.sp
+The list contains all commands for which help may be obtained by
+using the \fB\-\-help\-command\fP option followed by a command name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-commands [<f>]\fP
+Print cmake\-commands manual and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module <mod> [<f>]\fP
+Print help for one module and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual entry for \fB<mod>\fP is printed
+in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module\-list [<f>]\fP
+List modules with help available and exit.
+.sp
+The list contains all modules for which help may be obtained by
+using the \fB\-\-help\-module\fP option followed by a module name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-modules [<f>]\fP
+Print cmake\-modules manual and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual is printed in a human\-readable
+text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy <cmp> [<f>]\fP
+Print help for one policy and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual entry for \fB<cmp>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy\-list [<f>]\fP
+List policies with help available and exit.
+.sp
+The list contains all policies for which help may be obtained by
+using the \fB\-\-help\-policy\fP option followed by a policy name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policies [<f>]\fP
+Print cmake\-policies manual and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property <prop> [<f>]\fP
+Print help for one property and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual entries for \fB<prop>\fP are
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property\-list [<f>]\fP
+List properties with help available and exit.
+.sp
+The list contains all properties for which help may be obtained by
+using the \fB\-\-help\-property\fP option followed by a property name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-properties [<f>]\fP
+Print cmake\-properties manual and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable <var> [<f>]\fP
+Print help for one variable and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual entry for \fB<var>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable\-list [<f>]\fP
+List variables with help available and exit.
+.sp
+The list contains all variables for which help may be obtained by
+using the \fB\-\-help\-variable\fP option followed by a variable name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variables [<f>]\fP
+Print cmake\-variables manual and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.UNINDENT
+.SH SEE ALSO
+.sp
+The following resources are available to get help using CMake:
+.INDENT 0.0
+.TP
+.B Home Page
+\fI\%https://cmake.org\fP
+.sp
+The primary starting point for learning about CMake.
+.TP
+.B Online Documentation and Community Resources
+\fI\%https://cmake.org/documentation\fP
+.sp
+Links to available documentation and community resources may be
+found on this web page.
+.TP
+.B Discourse Forum
+\fI\%https://discourse.cmake.org\fP
+.sp
+The Discourse Forum hosts discussion and questions about CMake.
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

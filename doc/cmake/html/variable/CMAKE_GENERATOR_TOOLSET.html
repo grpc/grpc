@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_GENERATOR_TOOLSET &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_IMPORT_LIBRARY_PREFIX" href="CMAKE_IMPORT_LIBRARY_PREFIX.html" />
+    <link rel="prev" title="CMAKE_GENERATOR_PLATFORM" href="CMAKE_GENERATOR_PLATFORM.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_IMPORT_LIBRARY_PREFIX.html" title="CMAKE_IMPORT_LIBRARY_PREFIX"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_GENERATOR_PLATFORM.html" title="CMAKE_GENERATOR_PLATFORM"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_GENERATOR_TOOLSET</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-generator-toolset">
+<span id="variable:CMAKE_GENERATOR_TOOLSET"></span><h1>CMAKE_GENERATOR_TOOLSET<a class="headerlink" href="#cmake-generator-toolset" title="Permalink to this headline">¶</a></h1>
+<p>Native build system toolset specification provided by user.</p>
+<p>Some CMake generators support a toolset specification to tell the
+native build system how to choose a compiler.  If the user specifies
+a toolset (e.g. via the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-T</span></code> option or via
+the <span class="target" id="index-0-envvar:CMAKE_GENERATOR_TOOLSET"></span><a class="reference internal" href="../envvar/CMAKE_GENERATOR_TOOLSET.html#envvar:CMAKE_GENERATOR_TOOLSET" title="CMAKE_GENERATOR_TOOLSET"><code class="xref cmake cmake-envvar docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code></a> environment variable) the value
+will be available in this variable.</p>
+<p>The value of this variable should never be modified by project code.
+A toolchain file specified by the <span class="target" id="index-0-variable:CMAKE_TOOLCHAIN_FILE"></span><a class="reference internal" href="CMAKE_TOOLCHAIN_FILE.html#variable:CMAKE_TOOLCHAIN_FILE" title="CMAKE_TOOLCHAIN_FILE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_TOOLCHAIN_FILE</span></code></a>
+variable may initialize <code class="docutils literal notranslate"><span class="pre">CMAKE_GENERATOR_TOOLSET</span></code>.  Once a given
+build tree has been initialized with a particular value for this
+variable, changing the value has undefined behavior.</p>
+<p>Toolset specification is supported only on specific generators:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../manual/cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> for VS 2010 and above</p></li>
+<li><p>The <span class="target" id="index-0-generator:Xcode"></span><a class="reference internal" href="../generator/Xcode.html#generator:Xcode" title="Xcode"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Xcode</span></code></a> generator for Xcode 3.0 and above</p></li>
+<li><p>The <span class="target" id="index-0-generator:Green Hills MULTI"></span><a class="reference internal" href="../generator/Green%20Hills%20MULTI.html#generator:Green Hills MULTI" title="Green Hills MULTI"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Green</span> <span class="pre">Hills</span> <span class="pre">MULTI</span></code></a> generator</p></li>
+</ul>
+<p>See native build system documentation for allowed toolset names.</p>
+<div class="section" id="visual-studio-toolset-selection">
+<h2>Visual Studio Toolset Selection<a class="headerlink" href="#visual-studio-toolset-selection" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../manual/cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> support toolset specification
+using one of these forms:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">toolset</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolset[,key=value]*</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">key=value[,key=value]*</span></code></p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">toolset</span></code> specifies the toolset name.  The selected toolset name
+is provided in the <span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_TOOLSET"></span><a class="reference internal" href="CMAKE_VS_PLATFORM_TOOLSET.html#variable:CMAKE_VS_PLATFORM_TOOLSET" title="CMAKE_VS_PLATFORM_TOOLSET"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_TOOLSET</span></code></a> variable.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">key=value</span></code> pairs form a comma-separated list of options to
+specify generator-specific details of the toolset selection.
+Supported pairs are:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cuda=&lt;version&gt;|&lt;path&gt;</span></code></dt><dd><p>Specify the CUDA toolkit version to use or the path to a
+standalone CUDA toolkit directory.  Supported by VS 2010
+and above. The version can only be used with the CUDA
+toolkit VS integration globally installed.
+See the <span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_TOOLSET_CUDA"></span><a class="reference internal" href="CMAKE_VS_PLATFORM_TOOLSET_CUDA.html#variable:CMAKE_VS_PLATFORM_TOOLSET_CUDA" title="CMAKE_VS_PLATFORM_TOOLSET_CUDA"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_TOOLSET_CUDA</span></code></a> and
+<span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_TOOLSET_CUDA_CUSTOM_DIR"></span><a class="reference internal" href="CMAKE_VS_PLATFORM_TOOLSET_CUDA_CUSTOM_DIR.html#variable:CMAKE_VS_PLATFORM_TOOLSET_CUDA_CUSTOM_DIR" title="CMAKE_VS_PLATFORM_TOOLSET_CUDA_CUSTOM_DIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_TOOLSET_CUDA_CUSTOM_DIR</span></code></a> variables.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">host=&lt;arch&gt;</span></code></dt><dd><p>Specify the host tools architecture as <code class="docutils literal notranslate"><span class="pre">x64</span></code> or <code class="docutils literal notranslate"><span class="pre">x86</span></code>.
+Supported by VS 2013 and above.
+See the <span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE"></span><a class="reference internal" href="CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE.html#variable:CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE" title="CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE</span></code></a>
+variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">version=&lt;version&gt;</span></code></dt><dd><p>Specify the toolset version to use.  Supported by VS 2017
+and above with the specified toolset installed.
+See the <span class="target" id="index-0-variable:CMAKE_VS_PLATFORM_TOOLSET_VERSION"></span><a class="reference internal" href="CMAKE_VS_PLATFORM_TOOLSET_VERSION.html#variable:CMAKE_VS_PLATFORM_TOOLSET_VERSION" title="CMAKE_VS_PLATFORM_TOOLSET_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_PLATFORM_TOOLSET_VERSION</span></code></a> variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">VCTargetsPath=&lt;path&gt;</span></code></dt><dd><p>Specify an alternative <code class="docutils literal notranslate"><span class="pre">VCTargetsPath</span></code> value for Visual Studio
+project files.  This allows use of VS platform extension configuration
+files (<code class="docutils literal notranslate"><span class="pre">.props</span></code> and <code class="docutils literal notranslate"><span class="pre">.targets</span></code>) that are not installed with VS.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMAKE_GENERATOR_TOOLSET</a><ul>
+<li><a class="reference internal" href="#visual-studio-toolset-selection">Visual Studio Toolset Selection</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_GENERATOR_PLATFORM.html"
+                        title="previous chapter">CMAKE_GENERATOR_PLATFORM</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_IMPORT_LIBRARY_PREFIX.html"
+                        title="next chapter">CMAKE_IMPORT_LIBRARY_PREFIX</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_GENERATOR_TOOLSET.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_IMPORT_LIBRARY_PREFIX.html" title="CMAKE_IMPORT_LIBRARY_PREFIX"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_GENERATOR_PLATFORM.html" title="CMAKE_GENERATOR_PLATFORM"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_GENERATOR_TOOLSET</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

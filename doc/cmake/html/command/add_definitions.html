@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_definitions &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_dependencies" href="add_dependencies.html" />
+    <link rel="prev" title="add_custom_target" href="add_custom_target.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_dependencies.html" title="add_dependencies"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_custom_target.html" title="add_custom_target"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_definitions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-definitions">
+<span id="command:add_definitions"></span><h1>add_definitions<a class="headerlink" href="#add-definitions" title="Permalink to this headline">¶</a></h1>
+<p>Add -D define flags to the compilation of source files.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_definitions(</span><span class="p">-</span><span class="no">DFOO</span><span class="w"> </span><span class="p">-</span><span class="no">DBAR</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Adds definitions to the compiler command line for targets in the current
+directory, whether added before or after this command is invoked, and for
+the ones in sub-directories added after. This command can be used to add any
+flags, but it is intended to add preprocessor definitions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This command has been superseded by alternatives:</p>
+<ul class="simple">
+<li><p>Use <span class="target" id="index-0-command:add_compile_definitions"></span><a class="reference internal" href="add_compile_definitions.html#command:add_compile_definitions" title="add_compile_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_definitions()</span></code></a> to add preprocessor definitions.</p></li>
+<li><p>Use <span class="target" id="index-0-command:include_directories"></span><a class="reference internal" href="include_directories.html#command:include_directories" title="include_directories"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">include_directories()</span></code></a> to add include directories.</p></li>
+<li><p>Use <span class="target" id="index-0-command:add_compile_options"></span><a class="reference internal" href="add_compile_options.html#command:add_compile_options" title="add_compile_options"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_compile_options()</span></code></a> to add other options.</p></li>
+</ul>
+</div>
+<p>Flags beginning in <code class="docutils literal notranslate"><span class="pre">-D</span></code> or <code class="docutils literal notranslate"><span class="pre">/D</span></code> that look like preprocessor definitions are
+automatically added to the <span class="target" id="index-0-prop_dir:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_dir/COMPILE_DEFINITIONS.html#prop_dir:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code></a> directory
+property for the current directory.  Definitions with non-trivial values
+may be left in the set of flags instead of being converted for reasons of
+backwards compatibility.  See documentation of the
+<span class="target" id="index-1-prop_dir:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_dir/COMPILE_DEFINITIONS.html#prop_dir:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">directory</span></code></a>,
+<span class="target" id="index-0-prop_tgt:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">target</span></code></a>,
+<span class="target" id="index-0-prop_sf:COMPILE_DEFINITIONS"></span><a class="reference internal" href="../prop_sf/COMPILE_DEFINITIONS.html#prop_sf:COMPILE_DEFINITIONS" title="COMPILE_DEFINITIONS"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">source</span> <span class="pre">file</span></code></a> <code class="docutils literal notranslate"><span class="pre">COMPILE_DEFINITIONS</span></code>
+properties for details on adding preprocessor definitions to specific
+scopes and configurations.</p>
+<p>See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a> manual for more on defining
+buildsystem properties.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_custom_target.html"
+                        title="previous chapter">add_custom_target</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_dependencies.html"
+                        title="next chapter">add_dependencies</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_definitions.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_dependencies.html" title="add_dependencies"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_custom_target.html" title="add_custom_target"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_definitions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

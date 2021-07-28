@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>load_cache &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="project" href="project.html" />
+    <link rel="prev" title="link_libraries" href="link_libraries.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="project.html" title="project"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="link_libraries.html" title="link_libraries"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">load_cache</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="load-cache">
+<span id="command:load_cache"></span><h1>load_cache<a class="headerlink" href="#load-cache" title="Permalink to this headline">¶</a></h1>
+<p>Load in the values from another project’s CMake cache.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">load_cache(</span><span class="nb">pathToBuildDirectory</span><span class="w"> </span><span class="no">READ_WITH_PREFIX</span><span class="w"> </span><span class="nb">prefix</span><span class="w"> </span><span class="nb">entry1...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Reads the cache and store the requested entries in variables with their
+name prefixed with the given prefix.  This only reads the values, and
+does not create entries in the local project’s cache.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">load_cache(</span><span class="nb">pathToBuildDirectory</span><span class="w"> </span><span class="p">[</span><span class="no">EXCLUDE</span><span class="w"> </span><span class="nb">entry1...</span><span class="p">]</span><span class="w"></span>
+<span class="w">           </span><span class="p">[</span><span class="no">INCLUDE_INTERNALS</span><span class="w"> </span><span class="nb">entry1...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Loads in the values from another cache and store them in the local
+project’s cache as internal entries.  This is useful for a project
+that depends on another project built in a different tree.  <code class="docutils literal notranslate"><span class="pre">EXCLUDE</span></code>
+option can be used to provide a list of entries to be excluded.
+<code class="docutils literal notranslate"><span class="pre">INCLUDE_INTERNALS</span></code> can be used to provide a list of internal entries to
+be included.  Normally, no internal entries are brought in.  Use of
+this form of the command is strongly discouraged, but it is provided
+for backward compatibility.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="link_libraries.html"
+                        title="previous chapter">link_libraries</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="project.html"
+                        title="next chapter">project</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/load_cache.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="project.html" title="project"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="link_libraries.html" title="link_libraries"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">load_cache</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMAKE_STAGING_PREFIX &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS" href="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS.html" />
+    <link rel="prev" title="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY" href="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS.html" title="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY.html" title="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" accesskey="U">cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_STAGING_PREFIX</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-staging-prefix">
+<span id="variable:CMAKE_STAGING_PREFIX"></span><h1>CMAKE_STAGING_PREFIX<a class="headerlink" href="#cmake-staging-prefix" title="Permalink to this headline">¶</a></h1>
+<p>This variable may be set to a path to install to when cross-compiling. This can
+be useful if the path in <span class="target" id="index-0-variable:CMAKE_SYSROOT"></span><a class="reference internal" href="CMAKE_SYSROOT.html#variable:CMAKE_SYSROOT" title="CMAKE_SYSROOT"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_SYSROOT</span></code></a> is read-only, or otherwise
+should remain pristine.</p>
+<p>The <span class="target" id="index-0-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a> location is also used as a search prefix
+by the <code class="docutils literal notranslate"><span class="pre">find_*</span></code> commands. This can be controlled by setting the
+<span class="target" id="index-0-variable:CMAKE_FIND_NO_INSTALL_PREFIX"></span><a class="reference internal" href="CMAKE_FIND_NO_INSTALL_PREFIX.html#variable:CMAKE_FIND_NO_INSTALL_PREFIX" title="CMAKE_FIND_NO_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_FIND_NO_INSTALL_PREFIX</span></code></a> variable.</p>
+<p>If any <code class="docutils literal notranslate"><span class="pre">RPATH</span></code>/<code class="docutils literal notranslate"><span class="pre">RUNPATH</span></code> entries passed to the linker contain the
+<span class="target" id="index-1-variable:CMAKE_STAGING_PREFIX"></span><a class="reference internal" href="#variable:CMAKE_STAGING_PREFIX" title="CMAKE_STAGING_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_STAGING_PREFIX</span></code></a>, the matching path fragments are replaced
+with the <span class="target" id="index-0-variable:CMAKE_INSTALL_PREFIX"></span><a class="reference internal" href="CMAKE_INSTALL_PREFIX.html#variable:CMAKE_INSTALL_PREFIX" title="CMAKE_INSTALL_PREFIX"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code></a>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY.html"
+                        title="previous chapter">CMAKE_SKIP_INSTALL_ALL_DEPENDENCY</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS.html"
+                        title="next chapter">CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/variable/CMAKE_STAGING_PREFIX.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS.html" title="CMAKE_SUBLIME_TEXT_2_ENV_SETTINGS"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY.html" title="CMAKE_SKIP_INSTALL_ALL_DEPENDENCY"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-variables.7.html" >cmake-variables(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMAKE_STAGING_PREFIX</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

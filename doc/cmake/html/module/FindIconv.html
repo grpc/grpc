@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindIconv &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindIcotool" href="FindIcotool.html" />
+    <link rel="prev" title="FindIce" href="FindIce.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindIcotool.html" title="FindIcotool"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindIce.html" title="FindIce"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindIconv</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findiconv">
+<span id="module:FindIconv"></span><h1>FindIconv<a class="headerlink" href="#findiconv" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.11.</span></p>
+</div>
+<p>This module finds the <code class="docutils literal notranslate"><span class="pre">iconv()</span></code> POSIX.1 functions on the system.
+These functions might be provided in the regular C library or externally
+in the form of an additional library.</p>
+<p>The following variables are provided to indicate iconv support:</p>
+<dl class="cmake variable">
+<dt id="variable:Iconv_FOUND">
+<code class="sig-name descname">Iconv_FOUND</code><a class="headerlink" href="#variable:Iconv_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variable indicating if the iconv support was found.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:Iconv_INCLUDE_DIRS">
+<code class="sig-name descname">Iconv_INCLUDE_DIRS</code><a class="headerlink" href="#variable:Iconv_INCLUDE_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directories containing the iconv headers.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:Iconv_LIBRARIES">
+<code class="sig-name descname">Iconv_LIBRARIES</code><a class="headerlink" href="#variable:Iconv_LIBRARIES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The iconv libraries to be linked.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:Iconv_IS_BUILT_IN">
+<code class="sig-name descname">Iconv_IS_BUILT_IN</code><a class="headerlink" href="#variable:Iconv_IS_BUILT_IN" title="Permalink to this definition">¶</a></dt>
+<dd><p>A variable indicating whether iconv support is stemming from the
+C library or not. Even if the C library provides <cite>iconv()</cite>, the presence of
+an external <cite>libiconv</cite> implementation might lead to this being false.</p>
+</dd></dl>
+
+<p>Additionally, the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> target is being provided:</p>
+<dl class="cmake variable">
+<dt id="variable:Iconv::Iconv">
+<code class="sig-name descname">Iconv::Iconv</code><a class="headerlink" href="#variable:Iconv::Iconv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imported target for using iconv.</p>
+</dd></dl>
+
+<p>The following cache variables may also be set:</p>
+<dl class="cmake variable">
+<dt id="variable:Iconv_INCLUDE_DIR">
+<code class="sig-name descname">Iconv_INCLUDE_DIR</code><a class="headerlink" href="#variable:Iconv_INCLUDE_DIR" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directory containing the iconv headers.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:Iconv_LIBRARY">
+<code class="sig-name descname">Iconv_LIBRARY</code><a class="headerlink" href="#variable:Iconv_LIBRARY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The iconv library (if not implicitly given in the C library).</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On POSIX platforms, iconv might be part of the C library and the cache
+variables <code class="docutils literal notranslate"><span class="pre">Iconv_INCLUDE_DIR</span></code> and <code class="docutils literal notranslate"><span class="pre">Iconv_LIBRARY</span></code> might be empty.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindIce.html"
+                        title="previous chapter">FindIce</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindIcotool.html"
+                        title="next chapter">FindIcotool</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindIconv.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindIcotool.html" title="FindIcotool"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindIce.html" title="FindIce"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindIconv</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

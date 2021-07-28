@@ -1,0 +1,68 @@
+/* This source file must have a .cpp extension so that all C++ compilers
+   recognize the extension without flags.  Borland does not know .cxx for
+   example.  */
+#ifndef __cplusplus
+# error "An Objective-C compiler has been selected for Objective-C++."
+#endif
+
+@CMAKE_OBJCXX_COMPILER_ID_CONTENT@
+
+/* Construct the string literal in pieces to prevent the source from
+   getting matched.  Store it in a pointer rather than an array
+   because some compilers will just produce instructions to fill the
+   array rather than assigning a pointer to a static array.  */
+char const* info_compiler = "INFO" ":" "compiler[" COMPILER_ID "]";
+#ifdef SIMULATE_ID
+char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
+#endif
+
+#ifdef __QNXNTO__
+char const* qnxnto = "INFO" ":" "qnxnto[]";
+#endif
+
+@CMAKE_OBJCXX_COMPILER_ID_PLATFORM_CONTENT@
+@CMAKE_OBJCXX_COMPILER_ID_ERROR_FOR_TEST@
+
+#if defined(_MSC_VER) && defined(_MSVC_LANG)
+#define CXX_STD _MSVC_LANG
+#else
+#define CXX_STD __cplusplus
+#endif
+
+const char* info_language_dialect_default = "INFO" ":" "dialect_default["
+#if CXX_STD > 201703L
+  "20"
+#elif CXX_STD >= 201703L
+  "17"
+#elif CXX_STD >= 201402L
+  "14"
+#elif CXX_STD >= 201103L
+  "11"
+#else
+  "98"
+#endif
+"]";
+
+/*--------------------------------------------------------------------------*/
+
+int main(int argc, char* argv[])
+{
+  int require = 0;
+  require += info_compiler[argc];
+  require += info_platform[argc];
+#ifdef COMPILER_VERSION_MAJOR
+  require += info_version[argc];
+#endif
+#ifdef COMPILER_VERSION_INTERNAL
+  require += info_version_internal[argc];
+#endif
+#ifdef SIMULATE_ID
+  require += info_simulate[argc];
+#endif
+#ifdef SIMULATE_VERSION_MAJOR
+  require += info_simulate_version[argc];
+#endif
+  require += info_language_dialect_default[argc];
+  (void)argv;
+  return require;
+}

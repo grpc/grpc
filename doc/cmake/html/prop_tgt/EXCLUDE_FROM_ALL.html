@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EXCLUDE_FROM_ALL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="EXCLUDE_FROM_DEFAULT_BUILD" href="EXCLUDE_FROM_DEFAULT_BUILD.html" />
+    <link rel="prev" title="ENABLE_EXPORTS" href="ENABLE_EXPORTS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="EXCLUDE_FROM_DEFAULT_BUILD.html" title="EXCLUDE_FROM_DEFAULT_BUILD"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ENABLE_EXPORTS.html" title="ENABLE_EXPORTS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">EXCLUDE_FROM_ALL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exclude-from-all">
+<span id="prop_tgt:EXCLUDE_FROM_ALL"></span><h1>EXCLUDE_FROM_ALL<a class="headerlink" href="#exclude-from-all" title="Permalink to this headline">¶</a></h1>
+<p>Set this target property to a true (or false) value to exclude (or include)
+the target from the “all” target of the containing directory and its
+ancestors.  If excluded, running e.g. <code class="docutils literal notranslate"><span class="pre">make</span></code> in the containing directory
+or its ancestors will not build the target by default.</p>
+<p>If this target property is not set then the target will be included in
+the “all” target of the containing directory.  Furthermore, it will be
+included in the “all” target of its ancestor directories unless the
+<span class="target" id="index-0-prop_dir:EXCLUDE_FROM_ALL"></span><a class="reference internal" href="../prop_dir/EXCLUDE_FROM_ALL.html#prop_dir:EXCLUDE_FROM_ALL" title="EXCLUDE_FROM_ALL"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code></a> directory property is set.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code> set to false or not set at all, the target
+will be brought up to date as part of doing a <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> or its
+equivalent for the CMake generator being used.</p>
+<p>If a target has <code class="docutils literal notranslate"><span class="pre">EXCLUDE_FROM_ALL</span></code> set to true, it may still be listed
+in an <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(TARGETS)</span></code></a> command, but the user is responsible for
+ensuring that the target’s build artifacts are not missing or outdated when
+an install is performed.</p>
+<p>This property may use “generator expressions” with the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>. See
+the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a> manual for available expressions.</p>
+<p>Only the “Ninja Multi-Config” generator supports a property value that varies by
+configuration.  For all other generators the value of this property must be the
+same for all configurations.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ENABLE_EXPORTS.html"
+                        title="previous chapter">ENABLE_EXPORTS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXCLUDE_FROM_DEFAULT_BUILD.html"
+                        title="next chapter">EXCLUDE_FROM_DEFAULT_BUILD</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/EXCLUDE_FROM_ALL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="EXCLUDE_FROM_DEFAULT_BUILD.html" title="EXCLUDE_FROM_DEFAULT_BUILD"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ENABLE_EXPORTS.html" title="ENABLE_EXPORTS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">EXCLUDE_FROM_ALL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

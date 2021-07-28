@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Use_wxWindows &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="WriteBasicConfigVersionFile" href="WriteBasicConfigVersionFile.html" />
+    <link rel="prev" title="UsePkgConfig" href="UsePkgConfig.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="WriteBasicConfigVersionFile.html" title="WriteBasicConfigVersionFile"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="UsePkgConfig.html" title="UsePkgConfig"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Use_wxWindows</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="use-wxwindows">
+<span id="module:Use_wxWindows"></span><h1>Use_wxWindows<a class="headerlink" href="#use-wxwindows" title="Permalink to this headline">¶</a></h1>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 2.8.10: </span>Use <code class="docutils literal notranslate"><span class="pre">find_package(wxWidgets)</span></code> and <code class="docutils literal notranslate"><span class="pre">include(${wxWidgets_USE_FILE})</span></code> instead.</p>
+</div>
+<p>This convenience include finds if wxWindows is installed and set the
+appropriate libs, incdirs, flags etc.  author Jan Woetzel &lt;jw -at-
+mip.informatik.uni-kiel.de&gt; (07/2003)</p>
+<p>USAGE:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>just include Use_wxWindows.cmake
+in your projects CMakeLists.txt
+</pre></div>
+</div>
+<p>include( ${CMAKE_MODULE_PATH}/Use_wxWindows.cmake)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>if you are sure you need GL then
+</pre></div>
+</div>
+<p>set(WXWINDOWS_USE_GL 1)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>*before* you include this file.
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="UsePkgConfig.html"
+                        title="previous chapter">UsePkgConfig</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="WriteBasicConfigVersionFile.html"
+                        title="next chapter">WriteBasicConfigVersionFile</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/Use_wxWindows.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="WriteBasicConfigVersionFile.html" title="WriteBasicConfigVersionFile"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="UsePkgConfig.html" title="UsePkgConfig"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Use_wxWindows</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

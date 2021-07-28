@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cmake-commands(7) &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="break" href="../command/break.html" />
+    <link rel="prev" title="cmake-buildsystem(7)" href="cmake-buildsystem.7.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../command/break.html" title="break"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cmake-buildsystem.7.html" title="cmake-buildsystem(7)"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-commands(7)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="manual:cmake-commands(7)"></span><div class="section" id="cmake-commands-7">
+<h1><a class="toc-backref" href="#id2">cmake-commands(7)</a><a class="headerlink" href="#cmake-commands-7" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-commands-7" id="id2">cmake-commands(7)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#scripting-commands" id="id3">Scripting Commands</a></p></li>
+<li><p><a class="reference internal" href="#project-commands" id="id4">Project Commands</a></p></li>
+<li><p><a class="reference internal" href="#ctest-commands" id="id5">CTest Commands</a></p></li>
+<li><p><a class="reference internal" href="#deprecated-commands" id="id6">Deprecated Commands</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="scripting-commands">
+<h2><a class="toc-backref" href="#id3">Scripting Commands</a><a class="headerlink" href="#scripting-commands" title="Permalink to this headline">¶</a></h2>
+<p>These commands are always available.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../command/break.html">break</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/cmake_host_system_information.html">cmake_host_system_information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/cmake_language.html">cmake_language</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/cmake_minimum_required.html">cmake_minimum_required</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/cmake_parse_arguments.html">cmake_parse_arguments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/cmake_policy.html">cmake_policy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/configure_file.html">configure_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/continue.html">continue</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/else.html">else</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/elseif.html">elseif</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/endforeach.html">endforeach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/endfunction.html">endfunction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/endif.html">endif</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/endmacro.html">endmacro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/endwhile.html">endwhile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/execute_process.html">execute_process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/file.html">file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/find_file.html">find_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/find_library.html">find_library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/find_package.html">find_package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/find_path.html">find_path</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/find_program.html">find_program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/foreach.html">foreach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/function.html">function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_cmake_property.html">get_cmake_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_directory_property.html">get_directory_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_filename_component.html">get_filename_component</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_property.html">get_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/if.html">if</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/include.html">include</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/include_guard.html">include_guard</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/list.html">list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/macro.html">macro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/mark_as_advanced.html">mark_as_advanced</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/math.html">math</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/message.html">message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/option.html">option</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/return.html">return</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/separate_arguments.html">separate_arguments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set.html">set</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set_directory_properties.html">set_directory_properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set_property.html">set_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/site_name.html">site_name</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/string.html">string</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/unset.html">unset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/variable_watch.html">variable_watch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/while.html">while</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="project-commands">
+<h2><a class="toc-backref" href="#id4">Project Commands</a><a class="headerlink" href="#project-commands" title="Permalink to this headline">¶</a></h2>
+<p>These commands are available only in CMake projects.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_compile_definitions.html">add_compile_definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_compile_options.html">add_compile_options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_custom_command.html">add_custom_command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_custom_target.html">add_custom_target</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_definitions.html">add_definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_dependencies.html">add_dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_executable.html">add_executable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_library.html">add_library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_link_options.html">add_link_options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_subdirectory.html">add_subdirectory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/add_test.html">add_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/aux_source_directory.html">aux_source_directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/build_command.html">build_command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/create_test_sourcelist.html">create_test_sourcelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/define_property.html">define_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/enable_language.html">enable_language</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/enable_testing.html">enable_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/export.html">export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/fltk_wrap_ui.html">fltk_wrap_ui</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_source_file_property.html">get_source_file_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_target_property.html">get_target_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/get_test_property.html">get_test_property</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/include_directories.html">include_directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/include_external_msproject.html">include_external_msproject</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/include_regular_expression.html">include_regular_expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/install.html">install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/link_directories.html">link_directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/link_libraries.html">link_libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/load_cache.html">load_cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/project.html">project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/remove_definitions.html">remove_definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set_source_files_properties.html">set_source_files_properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set_target_properties.html">set_target_properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/set_tests_properties.html">set_tests_properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/source_group.html">source_group</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_compile_definitions.html">target_compile_definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_compile_features.html">target_compile_features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_compile_options.html">target_compile_options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_include_directories.html">target_include_directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_link_directories.html">target_link_directories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_link_libraries.html">target_link_libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_link_options.html">target_link_options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_precompile_headers.html">target_precompile_headers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/target_sources.html">target_sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/try_compile.html">try_compile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/try_run.html">try_run</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="ctest-commands">
+<span id="id1"></span><h2><a class="toc-backref" href="#id5">CTest Commands</a><a class="headerlink" href="#ctest-commands" title="Permalink to this headline">¶</a></h2>
+<p>These commands are available only in CTest scripts.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_build.html">ctest_build</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_configure.html">ctest_configure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_coverage.html">ctest_coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_empty_binary_directory.html">ctest_empty_binary_directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_memcheck.html">ctest_memcheck</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_read_custom_files.html">ctest_read_custom_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_run_script.html">ctest_run_script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_sleep.html">ctest_sleep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_start.html">ctest_start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_submit.html">ctest_submit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_test.html">ctest_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_update.html">ctest_update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/ctest_upload.html">ctest_upload</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="deprecated-commands">
+<h2><a class="toc-backref" href="#id6">Deprecated Commands</a><a class="headerlink" href="#deprecated-commands" title="Permalink to this headline">¶</a></h2>
+<p>These commands are deprecated and are only made available to maintain
+backward compatibility.  The documentation of each command states the
+CMake version in which it was deprecated.  Do not use these commands
+in new code.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../command/build_name.html">build_name</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/exec_program.html">exec_program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/export_library_dependencies.html">export_library_dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/install_files.html">install_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/install_programs.html">install_programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/install_targets.html">install_targets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/load_command.html">load_command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/make_directory.html">make_directory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/output_required_files.html">output_required_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/qt_wrap_cpp.html">qt_wrap_cpp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/qt_wrap_ui.html">qt_wrap_ui</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/remove.html">remove</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/subdir_depends.html">subdir_depends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/subdirs.html">subdirs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/use_mangled_mesa.html">use_mangled_mesa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/utility_source.html">utility_source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/variable_requires.html">variable_requires</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command/write_file.html">write_file</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cmake-commands(7)</a><ul>
+<li><a class="reference internal" href="#scripting-commands">Scripting Commands</a></li>
+<li><a class="reference internal" href="#project-commands">Project Commands</a></li>
+<li><a class="reference internal" href="#ctest-commands">CTest Commands</a></li>
+<li><a class="reference internal" href="#deprecated-commands">Deprecated Commands</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmake-buildsystem.7.html"
+                        title="previous chapter">cmake-buildsystem(7)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../command/break.html"
+                        title="next chapter">break</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/manual/cmake-commands.7.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../command/break.html" title="break"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cmake-buildsystem.7.html" title="cmake-buildsystem(7)"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+        <li class="nav-item nav-item-this"><a href="">cmake-commands(7)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

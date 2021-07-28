@@ -105,6 +105,8 @@ class FileWatcherCertificateProvider final
   };
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
+ private:
+  bool
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);

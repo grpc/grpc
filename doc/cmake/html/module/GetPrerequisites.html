@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GetPrerequisites &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="GNUInstallDirs" href="GNUInstallDirs.html" />
+    <link rel="prev" title="GenerateExportHeader" href="GenerateExportHeader.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="GNUInstallDirs.html" title="GNUInstallDirs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GenerateExportHeader.html" title="GenerateExportHeader"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GetPrerequisites</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="getprerequisites">
+<span id="module:GetPrerequisites"></span><h1>GetPrerequisites<a class="headerlink" href="#getprerequisites" title="Permalink to this headline">¶</a></h1>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 3.16: </span>Use <span class="target" id="index-0-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(GET_RUNTIME_DEPENDENCIES)</span></code></a> instead.</p>
+</div>
+<p>Functions to analyze and list executable file prerequisites.</p>
+<p>This module provides functions to list the .dll, .dylib or .so files
+that an executable or shared library file depends on.  (Its
+prerequisites.)</p>
+<p>It uses various tools to obtain the list of required shared library
+files:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dumpbin (Windows)
+objdump (MinGW on Windows)
+ldd (Linux/Unix)
+otool (Mac OSX)
+</pre></div>
+</div>
+<p>The following functions are provided by this module:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>get_prerequisites
+list_prerequisites
+list_prerequisites_by_glob
+gp_append_unique
+is_file_executable
+gp_item_default_embedded_path
+  (projects can override with gp_item_default_embedded_path_override)
+gp_resolve_item
+  (projects can override with gp_resolve_item_override)
+gp_resolved_file_type
+  (projects can override with gp_resolved_file_type_override)
+gp_file_type
+</pre></div>
+</div>
+<p>Requires CMake 2.6 or greater because it uses function, break, return
+and PARENT_SCOPE.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GET_PREREQUISITES(&lt;target&gt; &lt;prerequisites_var&gt; &lt;exclude_system&gt; &lt;recurse&gt;
+                  &lt;exepath&gt; &lt;dirs&gt; [&lt;rpaths&gt;])
+</pre></div>
+</div>
+<p>Get the list of shared library files required by &lt;target&gt;.  The list
+in the variable named &lt;prerequisites_var&gt; should be empty on first
+entry to this function.  On exit, &lt;prerequisites_var&gt; will contain the
+list of required shared library files.</p>
+<p>&lt;target&gt; is the full path to an executable file.  &lt;prerequisites_var&gt;
+is the name of a CMake variable to contain the results.
+&lt;exclude_system&gt; must be 0 or 1 indicating whether to include or
+exclude “system” prerequisites.  If &lt;recurse&gt; is set to 1 all
+prerequisites will be found recursively, if set to 0 only direct
+prerequisites are listed.  &lt;exepath&gt; is the path to the top level
+executable used for &#64;executable_path replacement on the Mac.  &lt;dirs&gt; is
+a list of paths where libraries might be found: these paths are
+searched first when a target without any path info is given.  Then
+standard system locations are also searched: PATH, Framework
+locations, /usr/lib…</p>
+<p>The variable GET_PREREQUISITES_VERBOSE can be set to true to enable verbose
+output.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>LIST_PREREQUISITES(&lt;target&gt; [&lt;recurse&gt; [&lt;exclude_system&gt; [&lt;verbose&gt;]]])
+</pre></div>
+</div>
+<p>Print a message listing the prerequisites of &lt;target&gt;.</p>
+<p>&lt;target&gt; is the name of a shared library or executable target or the
+full path to a shared library or executable file.  If &lt;recurse&gt; is set
+to 1 all prerequisites will be found recursively, if set to 0 only
+direct prerequisites are listed.  &lt;exclude_system&gt; must be 0 or 1
+indicating whether to include or exclude “system” prerequisites.  With
+&lt;verbose&gt; set to 0 only the full path names of the prerequisites are
+printed, set to 1 extra informatin will be displayed.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>LIST_PREREQUISITES_BY_GLOB(&lt;glob_arg&gt; &lt;glob_exp&gt;)
+</pre></div>
+</div>
+<p>Print the prerequisites of shared library and executable files
+matching a globbing pattern.  &lt;glob_arg&gt; is GLOB or GLOB_RECURSE and
+&lt;glob_exp&gt; is a globbing expression used with “file(GLOB” or
+“file(GLOB_RECURSE” to retrieve a list of matching files.  If a
+matching file is executable, its prerequisites are listed.</p>
+<p>Any additional (optional) arguments provided are passed along as the
+optional arguments to the list_prerequisites calls.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GP_APPEND_UNIQUE(&lt;list_var&gt; &lt;value&gt;)
+</pre></div>
+</div>
+<p>Append &lt;value&gt; to the list variable &lt;list_var&gt; only if the value is
+not already in the list.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>IS_FILE_EXECUTABLE(&lt;file&gt; &lt;result_var&gt;)
+</pre></div>
+</div>
+<p>Return 1 in &lt;result_var&gt; if &lt;file&gt; is a binary executable, 0
+otherwise.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GP_ITEM_DEFAULT_EMBEDDED_PATH(&lt;item&gt; &lt;default_embedded_path_var&gt;)
+</pre></div>
+</div>
+<p>Return the path that others should refer to the item by when the item
+is embedded inside a bundle.</p>
+<p>Override on a per-project basis by providing a project-specific
+gp_item_default_embedded_path_override function.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GP_RESOLVE_ITEM(&lt;context&gt; &lt;item&gt; &lt;exepath&gt; &lt;dirs&gt; &lt;resolved_item_var&gt;
+                [&lt;rpaths&gt;])
+</pre></div>
+</div>
+<p>Resolve an item into an existing full path file.</p>
+<p>Override on a per-project basis by providing a project-specific
+gp_resolve_item_override function.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GP_RESOLVED_FILE_TYPE(&lt;original_file&gt; &lt;file&gt; &lt;exepath&gt; &lt;dirs&gt; &lt;type_var&gt;
+                      [&lt;rpaths&gt;])
+</pre></div>
+</div>
+<p>Return the type of &lt;file&gt; with respect to &lt;original_file&gt;.  String
+describing type of prerequisite is returned in variable named
+&lt;type_var&gt;.</p>
+<p>Use &lt;exepath&gt; and &lt;dirs&gt; if necessary to resolve non-absolute &lt;file&gt;
+values – but only for non-embedded items.</p>
+<p>Possible types are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>system
+local
+embedded
+other
+</pre></div>
+</div>
+<p>Override on a per-project basis by providing a project-specific
+gp_resolved_file_type_override function.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GP_FILE_TYPE(&lt;original_file&gt; &lt;file&gt; &lt;type_var&gt;)
+</pre></div>
+</div>
+<p>Return the type of &lt;file&gt; with respect to &lt;original_file&gt;.  String
+describing type of prerequisite is returned in variable named
+&lt;type_var&gt;.</p>
+<p>Possible types are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>system
+local
+embedded
+other
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GenerateExportHeader.html"
+                        title="previous chapter">GenerateExportHeader</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GNUInstallDirs.html"
+                        title="next chapter">GNUInstallDirs</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/GetPrerequisites.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="GNUInstallDirs.html" title="GNUInstallDirs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GenerateExportHeader.html" title="GenerateExportHeader"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GetPrerequisites</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindDCMTK &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindDevIL" href="FindDevIL.html" />
+    <link rel="prev" title="FindDart" href="FindDart.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindDevIL.html" title="FindDevIL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindDart.html" title="FindDart"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindDCMTK</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="finddcmtk">
+<span id="module:FindDCMTK"></span><h1>FindDCMTK<a class="headerlink" href="#finddcmtk" title="Permalink to this headline">¶</a></h1>
+<p>Find DICOM ToolKit (DCMTK) libraries and applications</p>
+<p>The module defines the following variables:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>DCMTK_INCLUDE_DIRS  - Directories to include to use DCMTK
+DCMTK_LIBRARIES     - Files to link against to use DCMTK
+DCMTK_FOUND         - If false, don&#39;t try to use DCMTK
+DCMTK_DIR           - (optional) Source directory for DCMTK
+</pre></div>
+</div>
+<div class="section" id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Permalink to this headline">¶</a></h2>
+<p>This module is able to find a version of DCMTK that does or does not export
+a <em>DCMTKConfig.cmake</em> file. It applies a two step process:</p>
+<ul class="simple">
+<li><p>Step 1:  Attempt to find DCMTK version providing a <em>DCMTKConfig.cmake</em> file.</p></li>
+<li><p>Step 2:  If step 1 failed, rely on <em>FindDCMTK.cmake</em> to set <cite>DCMTK_*</cite> variables details below.</p></li>
+</ul>
+<p><a class="reference external" href="http://git.dcmtk.org/web?p=dcmtk.git;a=commit;h=662ae187c493c6b9a73dd5e3875372cebd0c11fe">Recent DCMTK</a>
+provides a <em>DCMTKConfig.cmake</em> <span class="target" id="index-0-manual:cmake-packages(7)"></span><a class="reference internal" href="../manual/cmake-packages.7.html#manual:cmake-packages(7)" title="cmake-packages(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">package</span> <span class="pre">configuration</span> <span class="pre">file</span></code></a>. To exclusively use the package configuration file
+(recommended when possible), pass the <cite>NO_MODULE</cite> option to
+<span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a>. For example, <cite>find_package(DCMTK NO_MODULE)</cite>.
+This requires official DCMTK snapshot <em>3.6.1_20140617</em> or newer.</p>
+<p>Until all clients update to the more recent DCMTK, build systems will need
+to support different versions of DCMTK.</p>
+<p>On any given system, the following combinations of DCMTK versions could be
+considered:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 30%" />
+<col style="width: 32%" />
+<col style="width: 27%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td></td>
+<td><p>SYSTEM DCMTK</p></td>
+<td><p>LOCAL DCMTK</p></td>
+<td><p>Supported ?</p></td>
+</tr>
+<tr class="row-even"><td><p>Case A</p></td>
+<td><p>NA</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>YES</p></td>
+</tr>
+<tr class="row-odd"><td><p>Case B</p></td>
+<td><p>NA</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>YES</p></td>
+</tr>
+<tr class="row-even"><td><p>Case C</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>NA</p></td>
+<td><p>YES</p></td>
+</tr>
+<tr class="row-odd"><td><p>Case D</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>NA</p></td>
+<td><p>YES</p></td>
+</tr>
+<tr class="row-even"><td><p>Case E</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>YES (*)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Case F</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>NO</p></td>
+</tr>
+<tr class="row-even"><td><p>Case G</p></td>
+<td><p>[ ] DCMTKConfig</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>YES</p></td>
+</tr>
+<tr class="row-odd"><td><p>Case H</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>[X] DCMTKConfig</p></td>
+<td><p>YES</p></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><p>(*) See Troubleshooting section.</p>
+</div></blockquote>
+<p>Legend:</p>
+<blockquote>
+<div><p>NA ……………: Means that no System or Local DCMTK is available</p>
+<p>[ ] DCMTKConfig ..: Means that the version of DCMTK does NOT export a DCMTKConfig.cmake file.</p>
+<p>[X] DCMTKConfig ..: Means that the version of DCMTK exports a DCMTKConfig.cmake file.</p>
+</div></blockquote>
+</div>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<p>What to do if my project finds a different version of DCMTK?</p>
+<p>Remove DCMTK entry from the CMake cache per <span class="target" id="index-1-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a>
+documentation.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindDCMTK</a><ul>
+<li><a class="reference internal" href="#compatibility">Compatibility</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindDart.html"
+                        title="previous chapter">FindDart</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindDevIL.html"
+                        title="next chapter">FindDevIL</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindDCMTK.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindDevIL.html" title="FindDevIL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindDart.html" title="FindDart"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindDCMTK</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

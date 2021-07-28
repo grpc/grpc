@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEPLOYMENT_REMOTE_DIRECTORY &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DEPRECATION" href="DEPRECATION.html" />
+    <link rel="prev" title="DEPLOYMENT_ADDITIONAL_FILES" href="DEPLOYMENT_ADDITIONAL_FILES.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="DEPRECATION.html" title="DEPRECATION"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="DEPLOYMENT_ADDITIONAL_FILES.html" title="DEPLOYMENT_ADDITIONAL_FILES"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DEPLOYMENT_REMOTE_DIRECTORY</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="deployment-remote-directory">
+<span id="prop_tgt:DEPLOYMENT_REMOTE_DIRECTORY"></span><h1>DEPLOYMENT_REMOTE_DIRECTORY<a class="headerlink" href="#deployment-remote-directory" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.6.</span></p>
+</div>
+<p>Set the WinCE project <code class="docutils literal notranslate"><span class="pre">RemoteDirectory</span></code> in <code class="docutils literal notranslate"><span class="pre">DeploymentTool</span></code> and
+<code class="docutils literal notranslate"><span class="pre">RemoteExecutable</span></code> in <code class="docutils literal notranslate"><span class="pre">DebuggerTool</span></code> in <code class="docutils literal notranslate"><span class="pre">.vcproj</span></code> files generated
+by the <span class="target" id="index-0-generator:Visual Studio 9 2008"></span><a class="reference internal" href="../generator/Visual%20Studio%209%202008.html#generator:Visual Studio 9 2008" title="Visual Studio 9 2008"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">9</span> <span class="pre">2008</span></code></a> generator.
+This is useful when you want to debug on remote WinCE device.
+For example:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set_property(</span><span class="no">TARGET</span><span class="w"> </span><span class="o">${</span><span class="nt">TARGET</span><span class="o">}</span><span class="w"> </span><span class="no">PROPERTY</span><span class="w"></span>
+<span class="w">  </span><span class="no">DEPLOYMENT_REMOTE_DIRECTORY</span><span class="w"> </span><span class="s">&quot;\\FlashStorage&quot;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>produces:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;DeploymentTool RemoteDirectory=&quot;\FlashStorage&quot; ... /&gt;
+&lt;DebuggerTool RemoteExecutable=&quot;\FlashStorage\target_file&quot; ... /&gt;
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="DEPLOYMENT_ADDITIONAL_FILES.html"
+                        title="previous chapter">DEPLOYMENT_ADDITIONAL_FILES</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="DEPRECATION.html"
+                        title="next chapter">DEPRECATION</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_tgt/DEPLOYMENT_REMOTE_DIRECTORY.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="DEPRECATION.html" title="DEPRECATION"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="DEPLOYMENT_ADDITIONAL_FILES.html" title="DEPLOYMENT_ADDITIONAL_FILES"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DEPLOYMENT_REMOTE_DIRECTORY</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

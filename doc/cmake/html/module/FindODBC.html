@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindODBC &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindOpenACC" href="FindOpenACC.html" />
+    <link rel="prev" title="FindMPI" href="FindMPI.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindOpenACC.html" title="FindOpenACC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindMPI.html" title="FindMPI"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindODBC</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findodbc">
+<span id="module:FindODBC"></span><h1>FindODBC<a class="headerlink" href="#findodbc" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.12.</span></p>
+</div>
+<p>Find an Open Database Connectivity (ODBC) include directory and library.</p>
+<p>On Windows, when building with Visual Studio, this module assumes the ODBC
+library is provided by the available Windows SDK.</p>
+<p>On Unix, this module allows to search for ODBC library provided by
+unixODBC or iODBC implementations of ODBC API.
+This module reads hint about location of the config program:</p>
+<dl class="cmake variable">
+<dt id="variable:ODBC_CONFIG">
+<code class="sig-name descname">ODBC_CONFIG</code><a class="headerlink" href="#variable:ODBC_CONFIG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Location of odbc_config or iodbc-config program</p>
+</dd></dl>
+
+<p>Otherwise, this module tries to find the config program,
+first from unixODBC, then from iODBC.
+If no config program found, this module searches for ODBC header
+and library in list of known locations.</p>
+<div class="section" id="imported-targets">
+<h2>Imported targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a> targets:</p>
+<dl class="cmake variable">
+<dt id="variable:ODBC::ODBC">
+<code class="sig-name descname">ODBC::ODBC</code><a class="headerlink" href="#variable:ODBC::ODBC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imported target for using the ODBC library, if found.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="result-variables">
+<h2>Result variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<dl class="cmake variable">
+<dt id="variable:ODBC_FOUND">
+<code class="sig-name descname">ODBC_FOUND</code><a class="headerlink" href="#variable:ODBC_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to true if ODBC library found, otherwise false or undefined.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:ODBC_INCLUDE_DIRS">
+<code class="sig-name descname">ODBC_INCLUDE_DIRS</code><a class="headerlink" href="#variable:ODBC_INCLUDE_DIRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paths to include directories listed in one variable for use by ODBC client.
+May be empty on Windows, where the include directory corresponding to the
+expected Windows SDK is already available in the compilation environment.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:ODBC_LIBRARIES">
+<code class="sig-name descname">ODBC_LIBRARIES</code><a class="headerlink" href="#variable:ODBC_LIBRARIES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paths to libraries to linked against to use ODBC.
+May just a library name on Windows, where the library directory corresponding
+to the expected Windows SDK is already available in the compilation environment.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt>
+<code class="sig-name descname">ODBC_CONFIG</code></dt>
+<dd><p>Path to unixODBC or iODBC config program, if found or specified.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>For users who wish to edit and control the module behavior, this module
+reads hints about search locations from the following variables:</p>
+<dl class="cmake variable">
+<dt id="variable:ODBC_INCLUDE_DIR">
+<code class="sig-name descname">ODBC_INCLUDE_DIR</code><a class="headerlink" href="#variable:ODBC_INCLUDE_DIR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to ODBC include directory with <code class="docutils literal notranslate"><span class="pre">sql.h</span></code> header.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:ODBC_LIBRARY">
+<code class="sig-name descname">ODBC_LIBRARY</code><a class="headerlink" href="#variable:ODBC_LIBRARY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to ODBC library to be linked.</p>
+</dd></dl>
+
+<p>These variables should not be used directly by project code.</p>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>On Windows, this module does not search for iODBC.
+On Unix, there is no way to prefer unixODBC over iODBC, or vice versa,
+other than providing the config program location using the <code class="docutils literal notranslate"><span class="pre">ODBC_CONFIG</span></code>.
+This module does not allow to search for a specific ODBC driver.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindODBC</a><ul>
+<li><a class="reference internal" href="#imported-targets">Imported targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result variables</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache variables</a></li>
+<li><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindMPI.html"
+                        title="previous chapter">FindMPI</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindOpenACC.html"
+                        title="next chapter">FindOpenACC</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindODBC.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindOpenACC.html" title="FindOpenACC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindMPI.html" title="FindMPI"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindODBC</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

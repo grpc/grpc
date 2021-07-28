@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DISABLED &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ENVIRONMENT" href="ENVIRONMENT.html" />
+    <link rel="prev" title="DEPENDS" href="DEPENDS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ENVIRONMENT.html" title="ENVIRONMENT"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="DEPENDS.html" title="DEPENDS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" accesskey="U">cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DISABLED</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="disabled">
+<span id="prop_test:DISABLED"></span><h1>DISABLED<a class="headerlink" href="#disabled" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.9.</span></p>
+</div>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the test will be skipped and its status will be ‘Not Run’. A
+<code class="docutils literal notranslate"><span class="pre">DISABLED</span></code> test will not be counted in the total number of tests and its
+completion status will be reported to CDash as <code class="docutils literal notranslate"><span class="pre">Disabled</span></code>.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">DISABLED</span></code> test does not participate in test fixture dependency resolution.
+If a <code class="docutils literal notranslate"><span class="pre">DISABLED</span></code> test has fixture requirements defined in its
+<span class="target" id="index-0-prop_test:FIXTURES_REQUIRED"></span><a class="reference internal" href="FIXTURES_REQUIRED.html#prop_test:FIXTURES_REQUIRED" title="FIXTURES_REQUIRED"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">FIXTURES_REQUIRED</span></code></a> property, it will not cause setup or cleanup
+tests for those fixtures to be added to the test set.</p>
+<p>If a test with the <span class="target" id="index-0-prop_test:FIXTURES_SETUP"></span><a class="reference internal" href="FIXTURES_SETUP.html#prop_test:FIXTURES_SETUP" title="FIXTURES_SETUP"><code class="xref cmake cmake-prop_test docutils literal notranslate"><span class="pre">FIXTURES_SETUP</span></code></a> property set is <code class="docutils literal notranslate"><span class="pre">DISABLED</span></code>,
+the fixture behavior will be as though that setup test was passing and any test
+case requiring that fixture will still run.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="DEPENDS.html"
+                        title="previous chapter">DEPENDS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ENVIRONMENT.html"
+                        title="next chapter">ENVIRONMENT</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/prop_test/DISABLED.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ENVIRONMENT.html" title="ENVIRONMENT"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="DEPENDS.html" title="DEPENDS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-properties.7.html" >cmake-properties(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">DISABLED</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

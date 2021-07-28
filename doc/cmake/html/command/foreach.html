@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>foreach &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="function" href="function.html" />
+    <link rel="prev" title="find_program" href="find_program.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="function.html" title="function"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="find_program.html" title="find_program"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">foreach</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="foreach">
+<span id="command:foreach"></span><h1>foreach<a class="headerlink" href="#foreach" title="Permalink to this headline">¶</a></h1>
+<p>Evaluate a group of commands for each value in a list.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foreach(</span><span class="nv">&lt;loop_var&gt;</span><span class="w"> </span><span class="nv">&lt;items&gt;</span><span class="nf">)</span><span class="w"></span>
+<span class="w">  </span><span class="nv">&lt;commands&gt;</span><span class="w"></span>
+<span class="nf">endforeach()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;items&gt;</span></code> is a list of items that are separated by
+semicolon or whitespace.
+All commands between <code class="docutils literal notranslate"><span class="pre">foreach</span></code> and the matching <code class="docutils literal notranslate"><span class="pre">endforeach</span></code> are recorded
+without being invoked.  Once the <code class="docutils literal notranslate"><span class="pre">endforeach</span></code> is evaluated, the recorded
+list of commands is invoked once for each item in <code class="docutils literal notranslate"><span class="pre">&lt;items&gt;</span></code>.
+At the beginning of each iteration the variable <code class="docutils literal notranslate"><span class="pre">loop_var</span></code> will be set
+to the value of the current item.</p>
+<p>The commands <span class="target" id="index-0-command:break"></span><a class="reference internal" href="break.html#command:break" title="break"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">break()</span></code></a> and <span class="target" id="index-0-command:continue"></span><a class="reference internal" href="continue.html#command:continue" title="continue"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">continue()</span></code></a> provide means to
+escape from the normal control flow.</p>
+<p>Per legacy, the <span class="target" id="index-0-command:endforeach"></span><a class="reference internal" href="endforeach.html#command:endforeach" title="endforeach"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">endforeach()</span></code></a> command admits
+an optional <code class="docutils literal notranslate"><span class="pre">&lt;loop_var&gt;</span></code> argument.
+If used, it must be a verbatim
+repeat of the argument of the opening
+<code class="docutils literal notranslate"><span class="pre">foreach</span></code> command.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foreach(</span><span class="nv">&lt;loop_var&gt;</span><span class="w"> </span><span class="no">RANGE</span><span class="w"> </span><span class="nv">&lt;stop&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this variant, <code class="docutils literal notranslate"><span class="pre">foreach</span></code> iterates over the numbers
+0, 1, … up to (and including) the nonnegative integer <code class="docutils literal notranslate"><span class="pre">&lt;stop&gt;</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foreach(</span><span class="nv">&lt;loop_var&gt;</span><span class="w"> </span><span class="no">RANGE</span><span class="w"> </span><span class="nv">&lt;start&gt;</span><span class="w"> </span><span class="nv">&lt;stop&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;step&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this variant, <code class="docutils literal notranslate"><span class="pre">foreach</span></code> iterates over the numbers from
+<code class="docutils literal notranslate"><span class="pre">&lt;start&gt;</span></code> up to at most <code class="docutils literal notranslate"><span class="pre">&lt;stop&gt;</span></code> in steps of <code class="docutils literal notranslate"><span class="pre">&lt;step&gt;</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">&lt;step&gt;</span></code> is not specified, then the step size is 1.
+The three arguments <code class="docutils literal notranslate"><span class="pre">&lt;start&gt;</span></code> <code class="docutils literal notranslate"><span class="pre">&lt;stop&gt;</span></code> <code class="docutils literal notranslate"><span class="pre">&lt;step&gt;</span></code> must
+all be nonnegative integers, and <code class="docutils literal notranslate"><span class="pre">&lt;stop&gt;</span></code> must not be
+smaller than <code class="docutils literal notranslate"><span class="pre">&lt;start&gt;</span></code>; otherwise you enter the danger zone
+of undocumented behavior that may change in future releases.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foreach(</span><span class="nv">&lt;loop_var&gt;</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="p">[</span><span class="no">LISTS</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;lists&gt;</span><span class="p">]]</span><span class="w"> </span><span class="p">[</span><span class="no">ITEMS</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;items&gt;</span><span class="p">]]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this variant, <code class="docutils literal notranslate"><span class="pre">&lt;lists&gt;</span></code> is a whitespace or semicolon
+separated list of list-valued variables. The <code class="docutils literal notranslate"><span class="pre">foreach</span></code>
+command iterates over each item in each given list.
+The <code class="docutils literal notranslate"><span class="pre">&lt;items&gt;</span></code> following the <code class="docutils literal notranslate"><span class="pre">ITEMS</span></code> keyword are processed
+as in the first variant of the <code class="docutils literal notranslate"><span class="pre">foreach</span></code> command.
+The forms <code class="docutils literal notranslate"><span class="pre">LISTS</span> <span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">ITEMS</span> <span class="pre">${A}</span></code> are
+equivalent.</p>
+<p>The following example shows how the <code class="docutils literal notranslate"><span class="pre">LISTS</span></code> option is
+processed:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">set(</span><span class="no">A</span><span class="w"> </span><span class="m">0</span><span class="p">;</span><span class="m">1</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">B</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">C</span><span class="w"> </span><span class="s">&quot;4 5&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">D</span><span class="w"> </span><span class="m">6</span><span class="p">;</span><span class="m">7</span><span class="w"> </span><span class="m">8</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">set(</span><span class="no">E</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">foreach(</span><span class="no">X</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">LISTS</span><span class="w"> </span><span class="no">A</span><span class="w"> </span><span class="no">B</span><span class="w"> </span><span class="no">C</span><span class="w"> </span><span class="no">D</span><span class="w"> </span><span class="no">E</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;X=${X}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endforeach()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>yields</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-- X=0
+-- X=1
+-- X=2
+-- X=3
+-- X=4 5
+-- X=6
+-- X=7
+-- X=8
+</pre></div>
+</div>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">foreach(</span><span class="nv">&lt;loop_var&gt;...</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">ZIP_LISTS</span><span class="w"> </span><span class="nv">&lt;lists&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this variant, <code class="docutils literal notranslate"><span class="pre">&lt;lists&gt;</span></code> is a whitespace or semicolon
+separated list of list-valued variables. The <code class="docutils literal notranslate"><span class="pre">foreach</span></code>
+command iterates over each list simultaneously setting the
+iteration variables as follows:</p>
+<ul class="simple">
+<li><p>if the only <code class="docutils literal notranslate"><span class="pre">loop_var</span></code> given, then it sets a series of
+<code class="docutils literal notranslate"><span class="pre">loop_var_N</span></code> variables to the current item from the
+corresponding list;</p></li>
+<li><p>if multiple variable names passed, their count should match
+the lists variables count;</p></li>
+<li><p>if any of the lists are shorter, the corresponding iteration
+variable is not defined for the current iteration.</p></li>
+</ul>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">English</span><span class="w"> </span><span class="nb">one</span><span class="w"> </span><span class="nb">two</span><span class="w"> </span><span class="nb">three</span><span class="w"> </span><span class="nb">four</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nb">Bahasa</span><span class="w"> </span><span class="nb">satu</span><span class="w"> </span><span class="nb">dua</span><span class="w"> </span><span class="nb">tiga</span><span class="nf">)</span><span class="w"></span>
+
+<span class="nf">foreach(</span><span class="nb">num</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">ZIP_LISTS</span><span class="w"> </span><span class="nb">English</span><span class="w"> </span><span class="nb">Bahasa</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;num_0=${num_0}, num_1=${num_1}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endforeach()</span><span class="w"></span>
+
+<span class="nf">foreach(</span><span class="nb">en</span><span class="w"> </span><span class="nb">ba</span><span class="w"> </span><span class="no">IN</span><span class="w"> </span><span class="no">ZIP_LISTS</span><span class="w"> </span><span class="nb">English</span><span class="w"> </span><span class="nb">Bahasa</span><span class="nf">)</span><span class="w"></span>
+<span class="w">    </span><span class="nf">message(</span><span class="no">STATUS</span><span class="w"> </span><span class="s">&quot;en=${en}, ba=${ba}&quot;</span><span class="nf">)</span><span class="w"></span>
+<span class="nf">endforeach()</span><span class="w"></span>
+</pre></div>
+</div>
+<p>yields</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-- num_0=one, num_1=satu
+-- num_0=two, num_1=dua
+-- num_0=three, num_1=tiga
+-- num_0=four, num_1=
+-- en=one, ba=satu
+-- en=two, ba=dua
+-- en=three, ba=tiga
+-- en=four, ba=
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="find_program.html"
+                        title="previous chapter">find_program</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="function.html"
+                        title="next chapter">function</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/foreach.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="function.html" title="function"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="find_program.html" title="find_program"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">foreach</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

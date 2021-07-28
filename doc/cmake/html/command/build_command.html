@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>build_command &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="create_test_sourcelist" href="create_test_sourcelist.html" />
+    <link rel="prev" title="aux_source_directory" href="aux_source_directory.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="create_test_sourcelist.html" title="create_test_sourcelist"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="aux_source_directory.html" title="aux_source_directory"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">build_command</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="build-command">
+<span id="command:build_command"></span><h1>build_command<a class="headerlink" href="#build-command" title="Permalink to this headline">¶</a></h1>
+<p>Get a command line to build the current project.
+This is mainly intended for internal use by the <span class="target" id="index-0-module:CTest"></span><a class="reference internal" href="../module/CTest.html#module:CTest" title="CTest"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CTest</span></code></a> module.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">build_command(</span><span class="nv">&lt;variable&gt;</span><span class="w"></span>
+<span class="w">              </span><span class="p">[</span><span class="no">CONFIGURATION</span><span class="w"> </span><span class="nv">&lt;config&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">              </span><span class="p">[</span><span class="no">TARGET</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">              </span><span class="p">[</span><span class="no">PROJECT_NAME</span><span class="w"> </span><span class="nv">&lt;projname&gt;</span><span class="p">]</span><span class="w"> </span><span class="c"># legacy, causes warning</span>
+<span class="w">             </span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sets the given <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> to a command-line string of the form:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;cmake&gt; --build . [--config &lt;config&gt;] [--target &lt;target&gt;...] [-- -i]
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;cmake&gt;</span></code> is the location of the <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> command-line
+tool, and <code class="docutils literal notranslate"><span class="pre">&lt;config&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> are the values provided to the
+<code class="docutils literal notranslate"><span class="pre">CONFIGURATION</span></code> and <code class="docutils literal notranslate"><span class="pre">TARGET</span></code> options, if any.  The trailing <code class="docutils literal notranslate"><span class="pre">--</span> <span class="pre">-i</span></code>
+option is added for <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> if policy <span class="target" id="index-0-policy:CMP0061"></span><a class="reference internal" href="../policy/CMP0061.html#policy:CMP0061" title="CMP0061"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0061</span></code></a>
+is not set to <code class="docutils literal notranslate"><span class="pre">NEW</span></code>.</p>
+<p>When invoked, this <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code> command line will launch the
+underlying build system tool.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">build_command(</span><span class="nv">&lt;cachevariable&gt;</span><span class="w"> </span><span class="nv">&lt;makecommand&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This second signature is deprecated, but still available for backwards
+compatibility.  Use the first signature instead.</p>
+<p>It sets the given <code class="docutils literal notranslate"><span class="pre">&lt;cachevariable&gt;</span></code> to a command-line string as
+above but without the <code class="docutils literal notranslate"><span class="pre">--target</span></code> option.
+The <code class="docutils literal notranslate"><span class="pre">&lt;makecommand&gt;</span></code> is ignored but should be the full path to
+devenv, nmake, make or one of the end user build tools
+for legacy invocations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In CMake versions prior to 3.0 this command returned a command
+line that directly invokes the native build tool for the current
+generator.  Their implementation of the <code class="docutils literal notranslate"><span class="pre">PROJECT_NAME</span></code> option
+had no useful effects, so CMake now warns on use of the option.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="aux_source_directory.html"
+                        title="previous chapter">aux_source_directory</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="create_test_sourcelist.html"
+                        title="next chapter">create_test_sourcelist</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/build_command.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="create_test_sourcelist.html" title="create_test_sourcelist"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="aux_source_directory.html" title="aux_source_directory"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">build_command</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

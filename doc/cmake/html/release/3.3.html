@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMake 3.3 Release Notes &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CMake 3.2 Release Notes" href="3.2.html" />
+    <link rel="prev" title="CMake 3.4 Release Notes" href="3.4.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="3.2.html" title="CMake 3.2 Release Notes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="3.4.html" title="CMake 3.4 Release Notes"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">CMake Release Notes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMake 3.3 Release Notes</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmake-3-3-release-notes">
+<h1><a class="toc-backref" href="#id1">CMake 3.3 Release Notes</a><a class="headerlink" href="#cmake-3-3-release-notes" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmake-3-3-release-notes" id="id1">CMake 3.3 Release Notes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#new-features" id="id2">New Features</a></p>
+<ul>
+<li><p><a class="reference internal" href="#generators" id="id3">Generators</a></p></li>
+<li><p><a class="reference internal" href="#commands" id="id4">Commands</a></p></li>
+<li><p><a class="reference internal" href="#variables" id="id5">Variables</a></p></li>
+<li><p><a class="reference internal" href="#properties" id="id6">Properties</a></p></li>
+<li><p><a class="reference internal" href="#modules" id="id7">Modules</a></p></li>
+<li><p><a class="reference internal" href="#generator-expressions" id="id8">Generator Expressions</a></p></li>
+<li><p><a class="reference internal" href="#ctest" id="id9">CTest</a></p></li>
+<li><p><a class="reference internal" href="#cpack" id="id10">CPack</a></p></li>
+<li><p><a class="reference internal" href="#other" id="id11">Other</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#deprecated-and-removed-features" id="id12">Deprecated and Removed Features</a></p></li>
+<li><p><a class="reference internal" href="#other-changes" id="id13">Other Changes</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>Changes made since CMake 3.2 include the following.</p>
+<div class="section" id="new-features">
+<h2><a class="toc-backref" href="#id2">New Features</a><a class="headerlink" href="#new-features" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="generators">
+<h3><a class="toc-backref" href="#id3">Generators</a><a class="headerlink" href="#generators" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> now add <code class="docutils literal notranslate"><span class="pre">.DELETE_ON_ERROR</span></code> to the
+makefiles that contain the actual build rules for files on disk.
+This tells GNU make to remove rule outputs when their recipe
+modifies an output but fails.</p></li>
+<li><p>The <a class="reference internal" href="../manual/cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> learned to support <code class="docutils literal notranslate"><span class="pre">.xaml</span></code>
+source files and automatically associate them with corresponding
+<code class="docutils literal notranslate"><span class="pre">.h</span></code> and <code class="docutils literal notranslate"><span class="pre">.cpp</span></code> sources.</p></li>
+<li><p>A new experimental <span class="target" id="index-0-generator:Green Hills MULTI"></span><a class="reference internal" href="../generator/Green%20Hills%20MULTI.html#generator:Green Hills MULTI" title="Green Hills MULTI"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Green</span> <span class="pre">Hills</span> <span class="pre">MULTI</span></code></a> generator was
+added on Windows.  <a class="reference external" href="http://www.ghs.com/products/MULTI_IDE.html">Green Hills MULTI</a> is an IDE for embedded
+real-time systems.</p></li>
+</ul>
+</div>
+<div class="section" id="commands">
+<h3><a class="toc-backref" href="#id4">Commands</a><a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-command:add_dependencies"></span><a class="reference internal" href="../command/add_dependencies.html#command:add_dependencies" title="add_dependencies"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_dependencies()</span></code></a> command learned to allow dependencies
+to be added to <a class="reference internal" href="../manual/cmake-buildsystem.7.html#interface-libraries"><span class="std std-ref">interface libraries</span></a>.
+Dependencies added to an interface library are followed transitively
+in its place since the target itself does not build.</p></li>
+<li><p>The <span class="target" id="index-0-command:execute_process"></span><a class="reference internal" href="../command/execute_process.html#command:execute_process" title="execute_process"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">execute_process()</span></code></a> command learned to support specifying
+the same file for <code class="docutils literal notranslate"><span class="pre">OUTPUT_FILE</span></code> and <code class="docutils literal notranslate"><span class="pre">ERROR_FILE</span></code>.</p></li>
+<li><p>The <span class="target" id="index-0-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(GLOB)</span></code></a> and <span class="target" id="index-1-command:file"></span><a class="reference internal" href="../command/file.html#command:file" title="file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">file(GLOB_RECURSE)</span></code></a> commands
+learned a new <code class="docutils literal notranslate"><span class="pre">LIST_DIRECTORIES</span> <span class="pre">&lt;bool&gt;</span></code> option to specify whether
+the glob result should include directories.</p></li>
+<li><p>The <span class="target" id="index-0-command:find_library"></span><a class="reference internal" href="../command/find_library.html#command:find_library" title="find_library"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_library()</span></code></a>, <span class="target" id="index-0-command:find_path"></span><a class="reference internal" href="../command/find_path.html#command:find_path" title="find_path"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_path()</span></code></a>, and <span class="target" id="index-0-command:find_file"></span><a class="reference internal" href="../command/find_file.html#command:find_file" title="find_file"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_file()</span></code></a>
+commands now search in installation prefixes derived from the <code class="docutils literal notranslate"><span class="pre">PATH</span></code>
+environment variable.</p></li>
+<li><p>The <span class="target" id="index-0-command:if"></span><a class="reference internal" href="../command/if.html#command:if" title="if"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">if()</span></code></a> command learned a new <code class="docutils literal notranslate"><span class="pre">IN_LIST</span></code> operator that
+evaluates to true if a given element is contained in a named list.</p></li>
+<li><p>The <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(EXPORT)</span></code></a> and <span class="target" id="index-0-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a> commands
+learned to export targets that populate the <span class="target" id="index-0-prop_tgt:INTERFACE_SOURCES"></span><a class="reference internal" href="../prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES" title="INTERFACE_SOURCES"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">INTERFACE_SOURCES</span></code></a>
+target property.</p></li>
+<li><p>The <span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(TARGETS)</span></code></a> command learned to support
+generator expressions in the <code class="docutils literal notranslate"><span class="pre">DESTINATION</span></code> value.</p></li>
+</ul>
+</div>
+<div class="section" id="variables">
+<h3><a class="toc-backref" href="#id5">Variables</a><a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The version of some Fortran compilers is now detected and stored in the
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION"></span><a class="reference internal" href="../variable/CMAKE_LANG_COMPILER_VERSION.html#variable:CMAKE_&lt;LANG&gt;_COMPILER_VERSION" title="CMAKE_&lt;LANG&gt;_COMPILER_VERSION"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_Fortran_COMPILER_VERSION</span></code></a>
+variable.</p></li>
+<li><p>The <a class="reference internal" href="../manual/cmake-generators.7.html#visual-studio-generators"><span class="std std-ref">Visual Studio Generators</span></a> learned a new
+<span class="target" id="index-0-variable:CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD"></span><a class="reference internal" href="../variable/CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD.html#variable:CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD" title="CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD</span></code></a> option
+to put the <code class="docutils literal notranslate"><span class="pre">INSTALL</span></code> target in the default build of a
+solution (<code class="docutils literal notranslate"><span class="pre">.sln</span></code>) file.</p></li>
+</ul>
+</div>
+<div class="section" id="properties">
+<h3><a class="toc-backref" href="#id6">Properties</a><a class="headerlink" href="#properties" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>A <span class="target" id="index-0-prop_tgt:CROSSCOMPILING_EMULATOR"></span><a class="reference internal" href="../prop_tgt/CROSSCOMPILING_EMULATOR.html#prop_tgt:CROSSCOMPILING_EMULATOR" title="CROSSCOMPILING_EMULATOR"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CROSSCOMPILING_EMULATOR</span></code></a> target property and supporting
+<span class="target" id="index-0-variable:CMAKE_CROSSCOMPILING_EMULATOR"></span><a class="reference internal" href="../variable/CMAKE_CROSSCOMPILING_EMULATOR.html#variable:CMAKE_CROSSCOMPILING_EMULATOR" title="CMAKE_CROSSCOMPILING_EMULATOR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CROSSCOMPILING_EMULATOR</span></code></a> variable were introduced
+to allow target platform binaries to run on the host during cross
+compiling.</p></li>
+<li><p>A <span class="target" id="index-0-prop_tgt:&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE"></span><a class="reference internal" href="../prop_tgt/LANG_INCLUDE_WHAT_YOU_USE.html#prop_tgt:&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE" title="&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE</span></code></a> target property and supporting
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE"></span><a class="reference internal" href="../variable/CMAKE_LANG_INCLUDE_WHAT_YOU_USE.html#variable:CMAKE_&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE" title="CMAKE_&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_INCLUDE_WHAT_YOU_USE</span></code></a> variable were introduced
+to tell the <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> and the <span class="target" id="index-0-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator
+to run <code class="docutils literal notranslate"><span class="pre">include-what-you-use</span></code> along with the compiler for <code class="docutils literal notranslate"><span class="pre">C</span></code> and
+<code class="docutils literal notranslate"><span class="pre">CXX</span></code> languages.</p></li>
+<li><p>The <span class="target" id="index-0-prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET"></span><a class="reference internal" href="../prop_tgt/LANG_VISIBILITY_PRESET.html#prop_tgt:&lt;LANG&gt;_VISIBILITY_PRESET" title="&lt;LANG&gt;_VISIBILITY_PRESET"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">&lt;LANG&gt;_VISIBILITY_PRESET</span></code></a> and
+<span class="target" id="index-0-prop_tgt:VISIBILITY_INLINES_HIDDEN"></span><a class="reference internal" href="../prop_tgt/VISIBILITY_INLINES_HIDDEN.html#prop_tgt:VISIBILITY_INLINES_HIDDEN" title="VISIBILITY_INLINES_HIDDEN"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">VISIBILITY_INLINES_HIDDEN</span></code></a> target properties now
+affect compilation in sources of all target types.  See
+policy <span class="target" id="index-0-policy:CMP0063"></span><a class="reference internal" href="../policy/CMP0063.html#policy:CMP0063" title="CMP0063"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0063</span></code></a>.</p></li>
+<li><p>The <span class="target" id="index-0-prop_tgt:XCODE_ATTRIBUTE_&lt;an-attribute&gt;"></span><a class="reference internal" href="../prop_tgt/XCODE_ATTRIBUTE_an-attribute.html#prop_tgt:XCODE_ATTRIBUTE_&lt;an-attribute&gt;" title="XCODE_ATTRIBUTE_&lt;an-attribute&gt;"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCODE_ATTRIBUTE_&lt;an-attribute&gt;</span></code></a> target property learned
+to support generator expressions.</p></li>
+</ul>
+</div>
+<div class="section" id="modules">
+<h3><a class="toc-backref" href="#id7">Modules</a><a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-module:CheckFortranCompilerFlag"></span><a class="reference internal" href="../module/CheckFortranCompilerFlag.html#module:CheckFortranCompilerFlag" title="CheckFortranCompilerFlag"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckFortranCompilerFlag</span></code></a> module was introduced
+to check <code class="docutils literal notranslate"><span class="pre">Fortran</span></code> compiler flags, much like the
+<span class="target" id="index-0-module:CheckCCompilerFlag"></span><a class="reference internal" href="../module/CheckCCompilerFlag.html#module:CheckCCompilerFlag" title="CheckCCompilerFlag"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CheckCCompilerFlag</span></code></a> module already does for <code class="docutils literal notranslate"><span class="pre">C</span></code>.</p></li>
+<li><p>The <span class="target" id="index-0-module:ExternalData"></span><a class="reference internal" href="../module/ExternalData.html#module:ExternalData" title="ExternalData"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">ExternalData</span></code></a> module learned a new
+<span class="target" id="index-0-variable:ExternalData_NO_SYMLINKS"></span><a class="reference internal" href="../module/ExternalData.html#variable:ExternalData_NO_SYMLINKS" title="ExternalData_NO_SYMLINKS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">ExternalData_NO_SYMLINKS</span></code></a> option to disable use of
+symbolic links to populate the real data files and use copies
+instead.</p></li>
+<li><p>The <span class="target" id="index-1-module:ExternalData"></span><a class="reference internal" href="../module/ExternalData.html#module:ExternalData" title="ExternalData"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">ExternalData</span></code></a> module learned a new <code class="docutils literal notranslate"><span class="pre">RECURSE:</span></code>
+option in <code class="docutils literal notranslate"><span class="pre">DATA{}</span></code> references specifying directories.
+This allows an entire directory tree of associated files
+to be matched.</p></li>
+<li><p>The <span class="target" id="index-2-module:ExternalData"></span><a class="reference internal" href="../module/ExternalData.html#module:ExternalData" title="ExternalData"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">ExternalData</span></code></a> module learned a new URL template
+placeholder <code class="docutils literal notranslate"><span class="pre">%(algo:&lt;key&gt;)</span></code> to allow custom mapping from
+algorithm name to URL component through configuration of new
+<span class="target" id="index-0-variable:ExternalData_URL_ALGO_&lt;algo&gt;_&lt;key&gt;"></span><a class="reference internal" href="../module/ExternalData.html#variable:ExternalData_URL_ALGO_&lt;algo&gt;_&lt;key&gt;" title="ExternalData_URL_ALGO_&lt;algo&gt;_&lt;key&gt;"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">ExternalData_URL_ALGO_&lt;algo&gt;_&lt;key&gt;</span></code></a> variables.
+This allows more flexibility in remote URLs.</p></li>
+<li><p>The <span class="target" id="index-0-module:ExternalProject"></span><a class="reference internal" href="../module/ExternalProject.html#module:ExternalProject" title="ExternalProject"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">ExternalProject</span></code></a> module learned to replace tokens
+like <code class="docutils literal notranslate"><span class="pre">&lt;BINARY_DIR&gt;</span></code> in the <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> of each step.</p></li>
+<li><p>The <span class="target" id="index-1-module:ExternalProject"></span><a class="reference internal" href="../module/ExternalProject.html#module:ExternalProject" title="ExternalProject"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">ExternalProject</span></code></a> module APIs learned to support
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a>
+when using <code class="docutils literal notranslate"><span class="pre">LOG_*</span></code> options and in CMake initial cache options.</p></li>
+<li><p>The <span class="target" id="index-0-module:FindBoost"></span><a class="reference internal" href="../module/FindBoost.html#module:FindBoost" title="FindBoost"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindBoost</span></code></a> module now tracks the directories containing
+libraries separately for RELEASE and DEBUG configurations.</p></li>
+<li><p>The <span class="target" id="index-0-module:FindCUDA"></span><a class="reference internal" href="../module/FindCUDA.html#module:FindCUDA" title="FindCUDA"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindCUDA</span></code></a> module now defaults to using the static
+CUDA runtime library if it is available.  A new
+<code class="docutils literal notranslate"><span class="pre">CUDA_USE_STATIC_CUDA_RUNTIME</span></code> option is offered to control
+this behavior.</p></li>
+<li><p>The <span class="target" id="index-0-module:FindMatlab"></span><a class="reference internal" href="../module/FindMatlab.html#module:FindMatlab" title="FindMatlab"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindMatlab</span></code></a> module was completely rewritten.  It learned
+about versions and components and to find Matlab in a more precise and
+multiplatform way.  The module now offers APIs to create mex extensions,
+documentation, and unit tests.</p></li>
+<li><p>The <span class="target" id="index-0-module:FindPackageHandleStandardArgs"></span><a class="reference internal" href="../module/FindPackageHandleStandardArgs.html#module:FindPackageHandleStandardArgs" title="FindPackageHandleStandardArgs"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindPackageHandleStandardArgs</span></code></a> module
+<code class="docutils literal notranslate"><span class="pre">FIND_PACKAGE_HANDLE_STANDARD_ARGS</span></code> function now
+always populates both the <code class="docutils literal notranslate"><span class="pre">&lt;PackageName&gt;_FOUND</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&lt;UPPERCASE_NAME&gt;_FOUND</span></code> variables (the latter
+for backwards compatibility).  The <code class="docutils literal notranslate"><span class="pre">FOUND_VAR</span></code>
+option is now ignored except to enforce its allowed
+values.</p></li>
+<li><p>The <span class="target" id="index-0-module:InstallRequiredSystemLibraries"></span><a class="reference internal" href="../module/InstallRequiredSystemLibraries.html#module:InstallRequiredSystemLibraries" title="InstallRequiredSystemLibraries"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">InstallRequiredSystemLibraries</span></code></a> module learned a new
+<code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT</span></code> option to specify the
+installation component.</p></li>
+</ul>
+</div>
+<div class="section" id="generator-expressions">
+<h3><a class="toc-backref" href="#id8">Generator Expressions</a><a class="headerlink" href="#generator-expressions" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>A new <code class="docutils literal notranslate"><span class="pre">COMPILE_LANGUAGE</span></code> generator expression was introduced to
+allow specification of compile options for target files based on the
+<span class="target" id="index-0-prop_sf:LANGUAGE"></span><a class="reference internal" href="../prop_sf/LANGUAGE.html#prop_sf:LANGUAGE" title="LANGUAGE"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">LANGUAGE</span></code></a> of each source file.  Due to limitations of the
+underlying native build tools, this feature has varying support across
+generators.  See the <span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a> manual
+for details.</p></li>
+</ul>
+</div>
+<div class="section" id="ctest">
+<h3><a class="toc-backref" href="#id9">CTest</a><a class="headerlink" href="#ctest" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-manual:ctest(1)"></span><a class="reference internal" href="../manual/ctest.1.html#manual:ctest(1)" title="ctest(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">ctest(1)</span></code></a> tool learned a new <code class="docutils literal notranslate"><span class="pre">--repeat-until-fail</span> <span class="pre">&lt;n&gt;</span></code>
+option to help find sporadic test failures.</p></li>
+<li><p>The <span class="target" id="index-0-module:CTestCoverageCollectGCOV"></span><a class="reference internal" href="../module/CTestCoverageCollectGCOV.html#module:CTestCoverageCollectGCOV" title="CTestCoverageCollectGCOV"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CTestCoverageCollectGCOV</span></code></a> module learned to support
+the same <code class="docutils literal notranslate"><span class="pre">CTEST_CUSTOM_COVERAGE_EXCLUDE</span></code> option as the
+<span class="target" id="index-0-command:ctest_coverage"></span><a class="reference internal" href="../command/ctest_coverage.html#command:ctest_coverage" title="ctest_coverage"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_coverage()</span></code></a> command.</p></li>
+</ul>
+</div>
+<div class="section" id="cpack">
+<h3><a class="toc-backref" href="#id10">CPack</a><a class="headerlink" href="#cpack" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-cpack_gen:CPack IFW Generator"></span><a class="reference internal" href="../cpack_gen/ifw.html#cpack_gen:CPack IFW Generator" title="CPack IFW Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">IFW</span> <span class="pre">Generator</span></code></a> learned to support
+Qt Framework Installer 2.0 tools.</p></li>
+<li><p>The <span class="target" id="index-0-cpack_gen:CPack DEB Generator"></span><a class="reference internal" href="../cpack_gen/deb.html#cpack_gen:CPack DEB Generator" title="CPack DEB Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">DEB</span> <span class="pre">Generator</span></code></a> learned a new
+<span class="target" id="index-0-variable:CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_SHLIBDEPS"></span><a class="reference internal" href="../cpack_gen/deb.html#variable:CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_SHLIBDEPS" title="CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_SHLIBDEPS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_SHLIBDEPS</span></code></a>
+variable to specify per-component use of <code class="docutils literal notranslate"><span class="pre">dpkg-shlibdeps</span></code>.</p></li>
+<li><p>The <span class="target" id="index-1-cpack_gen:CPack DEB Generator"></span><a class="reference internal" href="../cpack_gen/deb.html#cpack_gen:CPack DEB Generator" title="CPack DEB Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">DEB</span> <span class="pre">Generator</span></code></a> learned a new
+<span class="target" id="index-0-variable:CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_DEPENDS"></span><a class="reference internal" href="../cpack_gen/deb.html#variable:CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_DEPENDS" title="CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_DEPENDS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_DEBIAN_&lt;COMPONENT&gt;_PACKAGE_DEPENDS</span></code></a>
+option to specify per-component dependencies.</p></li>
+<li><p>The <span class="target" id="index-0-cpack_gen:CPack RPM Generator"></span><a class="reference internal" href="../cpack_gen/rpm.html#cpack_gen:CPack RPM Generator" title="CPack RPM Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">RPM</span> <span class="pre">Generator</span></code></a> learned to package symbolic links
+more cleanly and now supports directory symlinks with recent
+<code class="docutils literal notranslate"><span class="pre">rpmbuild</span></code> versions.</p></li>
+<li><p>The <span class="target" id="index-1-cpack_gen:CPack RPM Generator"></span><a class="reference internal" href="../cpack_gen/rpm.html#cpack_gen:CPack RPM Generator" title="CPack RPM Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">RPM</span> <span class="pre">Generator</span></code></a> learned a new
+<span class="target" id="index-0-variable:CPACK_RPM_ADDITIONAL_MAN_DIRS"></span><a class="reference internal" href="../cpack_gen/rpm.html#variable:CPACK_RPM_ADDITIONAL_MAN_DIRS" title="CPACK_RPM_ADDITIONAL_MAN_DIRS"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_ADDITIONAL_MAN_DIRS</span></code></a> variable to specify
+directories containing man pages for the brp-compress RPM macro.</p></li>
+<li><p>The <span class="target" id="index-2-cpack_gen:CPack RPM Generator"></span><a class="reference internal" href="../cpack_gen/rpm.html#cpack_gen:CPack RPM Generator" title="CPack RPM Generator"><code class="xref cmake cmake-cpack_gen docutils literal notranslate"><span class="pre">CPack</span> <span class="pre">RPM</span> <span class="pre">Generator</span></code></a> learned a new
+<span class="target" id="index-0-variable:CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE"></span><a class="reference internal" href="../cpack_gen/rpm.html#variable:CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE" title="CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CPACK_RPM_&lt;component&gt;_PACKAGE_ARCHITECTURE</span></code></a> variable
+to specify a component-specific package architecture.</p></li>
+<li><p>The CPack WIX generator learned the new
+<span class="target" id="index-0-prop_inst:CPACK_START_MENU_SHORTCUTS"></span><a class="reference internal" href="../prop_inst/CPACK_START_MENU_SHORTCUTS.html#prop_inst:CPACK_START_MENU_SHORTCUTS" title="CPACK_START_MENU_SHORTCUTS"><code class="xref cmake cmake-prop_inst docutils literal notranslate"><span class="pre">CPACK_START_MENU_SHORTCUTS</span></code></a>,
+<span class="target" id="index-0-prop_inst:CPACK_DESKTOP_SHORTCUTS"></span><a class="reference internal" href="../prop_inst/CPACK_DESKTOP_SHORTCUTS.html#prop_inst:CPACK_DESKTOP_SHORTCUTS" title="CPACK_DESKTOP_SHORTCUTS"><code class="xref cmake cmake-prop_inst docutils literal notranslate"><span class="pre">CPACK_DESKTOP_SHORTCUTS</span></code></a> and
+<span class="target" id="index-0-prop_inst:CPACK_STARTUP_SHORTCUTS"></span><a class="reference internal" href="../prop_inst/CPACK_STARTUP_SHORTCUTS.html#prop_inst:CPACK_STARTUP_SHORTCUTS" title="CPACK_STARTUP_SHORTCUTS"><code class="xref cmake cmake-prop_inst docutils literal notranslate"><span class="pre">CPACK_STARTUP_SHORTCUTS</span></code></a> installed file properties which can
+be used to install shortcuts in the Start Menu, on the Desktop and
+in the Startup Folder respectively.</p></li>
+</ul>
+</div>
+<div class="section" id="other">
+<h3><a class="toc-backref" href="#id11">Other</a><a class="headerlink" href="#other" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>The <span class="target" id="index-0-manual:cmake-compile-features(7)"></span><a class="reference internal" href="../manual/cmake-compile-features.7.html#manual:cmake-compile-features(7)" title="cmake-compile-features(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">Compile</span> <span class="pre">Features</span></code></a> functionality
+is now aware of features supported by GNU compilers on Windows, versions
+4.4 through 5.0.</p></li>
+<li><p>The <span class="target" id="index-0-manual:cmake(1)"></span><a class="reference internal" href="../manual/cmake.1.html#manual:cmake(1)" title="cmake(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake(1)</span></code></a> <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">tar</span></code> command learned a new
+<code class="docutils literal notranslate"><span class="pre">--format&lt;format&gt;</span></code> option to specify the archive format to
+be written.</p></li>
+<li><p>On OS X, CMake learned to create XCTest bundles to test Frameworks
+and App Bundles within Xcode.  The <span class="target" id="index-0-module:FindXCTest"></span><a class="reference internal" href="../module/FindXCTest.html#module:FindXCTest" title="FindXCTest"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">FindXCTest</span></code></a> module
+provides convenience functions to handle <span class="target" id="index-0-prop_tgt:XCTEST"></span><a class="reference internal" href="../prop_tgt/XCTEST.html#prop_tgt:XCTEST" title="XCTEST"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">XCTEST</span></code></a> bundles.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="deprecated-and-removed-features">
+<h2><a class="toc-backref" href="#id12">Deprecated and Removed Features</a><a class="headerlink" href="#deprecated-and-removed-features" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>On OS X the <span class="target" id="index-0-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a> no longer has the
+<code class="docutils literal notranslate"><span class="pre">Install</span> <span class="pre">For</span> <span class="pre">Command</span> <span class="pre">Line</span> <span class="pre">Use</span></code> menu item.  Instead there
+is a <code class="docutils literal notranslate"><span class="pre">How</span> <span class="pre">to</span> <span class="pre">Install</span> <span class="pre">For</span> <span class="pre">Command</span> <span class="pre">Line</span> <span class="pre">Use</span></code> menu item
+that shows an informational dialog box explaining how to
+make the command line tools available.  For example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/Applications/CMake.app/Contents/bin/cmake-gui --install
+</pre></div>
+</div>
+</li>
+<li><p>The <span class="target" id="index-0-command:ctest_build"></span><a class="reference internal" href="../command/ctest_build.html#command:ctest_build" title="ctest_build"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">ctest_build()</span></code></a> and <span class="target" id="index-0-command:build_command"></span><a class="reference internal" href="../command/build_command.html#command:build_command" title="build_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">build_command()</span></code></a> commands
+no longer tell <code class="docutils literal notranslate"><span class="pre">make</span></code> tools to ignore errors with the <code class="docutils literal notranslate"><span class="pre">-i</span></code> option.
+Previously this was done for <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> but not others.
+See policy <span class="target" id="index-0-policy:CMP0061"></span><a class="reference internal" href="../policy/CMP0061.html#policy:CMP0061" title="CMP0061"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0061</span></code></a>.</p></li>
+<li><p>The <span class="target" id="index-0-generator:Visual Studio 10 2010"></span><a class="reference internal" href="../generator/Visual%20Studio%2010%202010.html#generator:Visual Studio 10 2010" title="Visual Studio 10 2010"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">10</span> <span class="pre">2010</span></code></a> generator no longer checks
+for running VS IDEs with the project open or asks them to reload.
+This was originally done for VS 10 because it had been done for
+VS 7 through 9 to avoid prompting for every project in a solution.
+Since VS &gt;= 10 allow the whole solution to reload at once they
+do not need CMake to help them.</p></li>
+<li><p>The <span class="target" id="index-0-generator:Visual Studio 7"></span><a class="reference internal" href="../generator/Visual%20Studio%207.html#generator:Visual Studio 7" title="Visual Studio 7"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">7</span></code></a> generator (.NET 2002) is now
+deprecated and will be removed in a future version of CMake.</p></li>
+<li><p>The <span class="target" id="index-0-generator:Visual Studio 6"></span><a class="reference internal" href="../generator/Visual%20Studio%206.html#generator:Visual Studio 6" title="Visual Studio 6"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">6</span></code></a> generator is now deprecated
+and will be removed in a future version of CMake.</p></li>
+<li><p>The <span class="target" id="index-0-command:find_package"></span><a class="reference internal" href="../command/find_package.html#command:find_package" title="find_package"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">find_package()</span></code></a> command no longer considers project
+build trees recently configured in a <span class="target" id="index-1-manual:cmake-gui(1)"></span><a class="reference internal" href="../manual/cmake-gui.1.html#manual:cmake-gui(1)" title="cmake-gui(1)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-gui(1)</span></code></a>.
+This was previously done only on Windows and is now never done.
+The <code class="docutils literal notranslate"><span class="pre">NO_CMAKE_BUILDS_PATH</span></code> option is now ignored if given
+and effectively always on.
+Projects may populate the <a class="reference internal" href="../manual/cmake-packages.7.html#user-package-registry"><span class="std std-ref">User Package Registry</span></a> to aid
+users building multiple dependent projects one after another.</p></li>
+<li><p>The <span class="target" id="index-0-command:add_definitions"></span><a class="reference internal" href="../command/add_definitions.html#command:add_definitions" title="add_definitions"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_definitions()</span></code></a> command no longer causes a
+<span class="target" id="index-0-prop_dir:DEFINITIONS"></span><a class="reference internal" href="../prop_dir/DEFINITIONS.html#prop_dir:DEFINITIONS" title="DEFINITIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">DEFINITIONS</span></code></a> directory property to be populated. See policy
+<span class="target" id="index-0-policy:CMP0059"></span><a class="reference internal" href="../policy/CMP0059.html#policy:CMP0059" title="CMP0059"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0059</span></code></a>.</p></li>
+<li><p>With Visual Studio 7, 8, and 9 generators the value of the <code class="docutils literal notranslate"><span class="pre">$(OutDir)</span></code>
+placeholder no longer evaluates to the configuration name.  Projects
+should use <code class="docutils literal notranslate"><span class="pre">$(ConfigurationName)</span></code> for that instead.</p></li>
+<li><p>Using the output of <span class="target" id="index-1-command:export"></span><a class="reference internal" href="../command/export.html#command:export" title="export"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">export()</span></code></a> with the <span class="target" id="index-2-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install(FILES)</span></code></a>
+command is no longer allowed.  See policy <span class="target" id="index-0-policy:CMP0062"></span><a class="reference internal" href="../policy/CMP0062.html#policy:CMP0062" title="CMP0062"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0062</span></code></a> for details.</p></li>
+</ul>
+</div>
+<div class="section" id="other-changes">
+<h2><a class="toc-backref" href="#id13">Other Changes</a><a class="headerlink" href="#other-changes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>The <span class="target" id="index-1-generator:Ninja"></span><a class="reference internal" href="../generator/Ninja.html#generator:Ninja" title="Ninja"><code class="xref cmake cmake-generator docutils literal notranslate"><span class="pre">Ninja</span></code></a> generator now requires that calls to the
+<span class="target" id="index-0-command:add_custom_command"></span><a class="reference internal" href="../command/add_custom_command.html#command:add_custom_command" title="add_custom_command"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_command()</span></code></a> and <span class="target" id="index-0-command:add_custom_target"></span><a class="reference internal" href="../command/add_custom_target.html#command:add_custom_target" title="add_custom_target"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_custom_target()</span></code></a>
+commands use the <code class="docutils literal notranslate"><span class="pre">BYPRODUCTS</span></code> option to explicitly specify any
+files generated by the custom commands that are not listed as
+outputs (perhaps because their timestamps are allowed to be older
+than the inputs).  See policy <span class="target" id="index-0-policy:CMP0058"></span><a class="reference internal" href="../policy/CMP0058.html#policy:CMP0058" title="CMP0058"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0058</span></code></a>.</p></li>
+<li><p>Build-time progress output of <a class="reference internal" href="../manual/cmake-generators.7.html#makefile-generators"><span class="std std-ref">Makefile Generators</span></a> has been improved.
+It no longer mixes progress and build rule messages during parallel builds.
+The link rule messages now have progress and are displayed as bold green
+instead of bold red (since red is often associated with an error message).</p></li>
+<li><p>The <span class="target" id="index-0-variable:CMAKE_CFG_INTDIR"></span><a class="reference internal" href="../variable/CMAKE_CFG_INTDIR.html#variable:CMAKE_CFG_INTDIR" title="CMAKE_CFG_INTDIR"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_CFG_INTDIR</span></code></a> variable value for Visual Studio
+7, 8, and 9 is now <code class="docutils literal notranslate"><span class="pre">$(ConfigurationName)</span></code> instead of <code class="docutils literal notranslate"><span class="pre">$(OutDir)</span></code>.
+This should have no effect on the intended use cases of the variable.</p></li>
+<li><p>Linking to library files by a full path in an implicit linker search
+directory (e.g. <code class="docutils literal notranslate"><span class="pre">/usr/lib/libfoo.a</span></code>) no longer asks the linker to
+search for the library (e.g. <code class="docutils literal notranslate"><span class="pre">-lfoo</span></code>) and now links by full path.
+See policy <span class="target" id="index-0-policy:CMP0060"></span><a class="reference internal" href="../policy/CMP0060.html#policy:CMP0060" title="CMP0060"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0060</span></code></a>.</p></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CMake 3.3 Release Notes</a><ul>
+<li><a class="reference internal" href="#new-features">New Features</a><ul>
+<li><a class="reference internal" href="#generators">Generators</a></li>
+<li><a class="reference internal" href="#commands">Commands</a></li>
+<li><a class="reference internal" href="#variables">Variables</a></li>
+<li><a class="reference internal" href="#properties">Properties</a></li>
+<li><a class="reference internal" href="#modules">Modules</a></li>
+<li><a class="reference internal" href="#generator-expressions">Generator Expressions</a></li>
+<li><a class="reference internal" href="#ctest">CTest</a></li>
+<li><a class="reference internal" href="#cpack">CPack</a></li>
+<li><a class="reference internal" href="#other">Other</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#deprecated-and-removed-features">Deprecated and Removed Features</a></li>
+<li><a class="reference internal" href="#other-changes">Other Changes</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="3.4.html"
+                        title="previous chapter">CMake 3.4 Release Notes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="3.2.html"
+                        title="next chapter">CMake 3.2 Release Notes</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/release/3.3.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="3.2.html" title="CMake 3.2 Release Notes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="3.4.html" title="CMake 3.4 Release Notes"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" >CMake Release Notes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CMake 3.3 Release Notes</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

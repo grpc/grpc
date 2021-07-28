@@ -1,0 +1,398 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>list &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="macro" href="macro.html" />
+    <link rel="prev" title="include_guard" href="include_guard.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="macro.html" title="macro"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="include_guard.html" title="include_guard"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">list</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="list">
+<span id="command:list"></span><h1>list<a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h1>
+<p>List operations.</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<pre class="literal-block"><a class="reference internal" href="#reading">Reading</a>
+  list(<a class="reference internal" href="#length">LENGTH</a> &lt;list&gt; &lt;out-var&gt;)
+  list(<a class="reference internal" href="#get">GET</a> &lt;list&gt; &lt;element index&gt; [&lt;index&gt; ...] &lt;out-var&gt;)
+  list(<a class="reference internal" href="#join">JOIN</a> &lt;list&gt; &lt;glue&gt; &lt;out-var&gt;)
+  list(<a class="reference internal" href="#sublist">SUBLIST</a> &lt;list&gt; &lt;begin&gt; &lt;length&gt; &lt;out-var&gt;)
+
+<a class="reference internal" href="#search">Search</a>
+  list(<a class="reference internal" href="#find">FIND</a> &lt;list&gt; &lt;value&gt; &lt;out-var&gt;)
+
+<a class="reference internal" href="#modification">Modification</a>
+  list(<a class="reference internal" href="#append">APPEND</a> &lt;list&gt; [&lt;element&gt;...])
+  list(<a class="reference internal" href="#filter">FILTER</a> &lt;list&gt; {INCLUDE | EXCLUDE} REGEX &lt;regex&gt;)
+  list(<a class="reference internal" href="#insert">INSERT</a> &lt;list&gt; &lt;index&gt; [&lt;element&gt;...])
+  list(<a class="reference internal" href="#pop-back">POP_BACK</a> &lt;list&gt; [&lt;out-var&gt;...])
+  list(<a class="reference internal" href="#pop-front">POP_FRONT</a> &lt;list&gt; [&lt;out-var&gt;...])
+  list(<a class="reference internal" href="#prepend">PREPEND</a> &lt;list&gt; [&lt;element&gt;...])
+  list(<a class="reference internal" href="#remove-item">REMOVE_ITEM</a> &lt;list&gt; &lt;value&gt;...)
+  list(<a class="reference internal" href="#remove-at">REMOVE_AT</a> &lt;list&gt; &lt;index&gt;...)
+  list(<a class="reference internal" href="#remove-duplicates">REMOVE_DUPLICATES</a> &lt;list&gt;)
+  list(<a class="reference internal" href="#transform">TRANSFORM</a> &lt;list&gt; &lt;ACTION&gt; [...])
+
+<a class="reference internal" href="#ordering">Ordering</a>
+  list(<a class="reference internal" href="#reverse">REVERSE</a> &lt;list&gt;)
+  list(<a class="reference internal" href="#sort">SORT</a> &lt;list&gt; [...])</pre>
+</div>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The list subcommands <code class="docutils literal notranslate"><span class="pre">APPEND</span></code>, <code class="docutils literal notranslate"><span class="pre">INSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">FILTER</span></code>, <code class="docutils literal notranslate"><span class="pre">PREPEND</span></code>,
+<code class="docutils literal notranslate"><span class="pre">POP_BACK</span></code>, <code class="docutils literal notranslate"><span class="pre">POP_FRONT</span></code>, <code class="docutils literal notranslate"><span class="pre">REMOVE_AT</span></code>, <code class="docutils literal notranslate"><span class="pre">REMOVE_ITEM</span></code>,
+<code class="docutils literal notranslate"><span class="pre">REMOVE_DUPLICATES</span></code>, <code class="docutils literal notranslate"><span class="pre">REVERSE</span></code> and <code class="docutils literal notranslate"><span class="pre">SORT</span></code> may create
+new values for the list within the current CMake variable scope.  Similar to
+the <span class="target" id="index-0-command:set"></span><a class="reference internal" href="set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> command, the LIST command creates new variable values in
+the current scope, even if the list itself is actually defined in a parent
+scope.  To propagate the results of these operations upwards, use
+<span class="target" id="index-1-command:set"></span><a class="reference internal" href="set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">PARENT_SCOPE</span></code>, <span class="target" id="index-2-command:set"></span><a class="reference internal" href="set.html#command:set" title="set"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set()</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">CACHE</span> <span class="pre">INTERNAL</span></code>, or some other means of value propagation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A list in cmake is a <code class="docutils literal notranslate"><span class="pre">;</span></code> separated group of strings.  To create a
+list the set command can be used.  For example, <code class="docutils literal notranslate"><span class="pre">set(var</span> <span class="pre">a</span> <span class="pre">b</span> <span class="pre">c</span> <span class="pre">d</span> <span class="pre">e)</span></code>
+creates a list with <code class="docutils literal notranslate"><span class="pre">a;b;c;d;e</span></code>, and <code class="docutils literal notranslate"><span class="pre">set(var</span> <span class="pre">&quot;a</span> <span class="pre">b</span> <span class="pre">c</span> <span class="pre">d</span> <span class="pre">e&quot;)</span></code> creates a
+string or a list with one item in it.   (Note macro arguments are not
+variables, and therefore cannot be used in LIST commands.)</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When specifying index values, if <code class="docutils literal notranslate"><span class="pre">&lt;element</span> <span class="pre">index&gt;</span></code> is 0 or greater, it
+is indexed from the beginning of the list, with 0 representing the
+first list element.  If <code class="docutils literal notranslate"><span class="pre">&lt;element</span> <span class="pre">index&gt;</span></code> is -1 or lesser, it is indexed
+from the end of the list, with -1 representing the last list element.
+Be careful when counting with negative indices: they do not start from
+0.  -0 is equivalent to 0, the first list element.</p>
+</div>
+</div>
+<div class="section" id="reading">
+<h2>Reading<a class="headerlink" href="#reading" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="length"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">LENGTH</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns the list’s length.</p>
+<div class="highlight-cmake notranslate" id="get"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">GET</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;element index&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;element index&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns the list of elements specified by indices from the list.</p>
+<div class="highlight-cmake notranslate" id="join"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">JOIN</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;glue&gt;</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns a string joining all list’s elements using the glue string.
+To join multiple strings, which are not part of a list, use <code class="docutils literal notranslate"><span class="pre">JOIN</span></code> operator
+from <span class="target" id="index-0-command:string"></span><a class="reference internal" href="string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string()</span></code></a> command.</p>
+<div class="highlight-cmake notranslate" id="sublist"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">SUBLIST</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;begin&gt;</span><span class="w"> </span><span class="nv">&lt;length&gt;</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns a sublist of the given list.
+If <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> is 0, an empty list will be returned.
+If <code class="docutils literal notranslate"><span class="pre">&lt;length&gt;</span></code> is -1 or the list is smaller than <code class="docutils literal notranslate"><span class="pre">&lt;begin&gt;+&lt;length&gt;</span></code> then
+the remaining elements of the list starting at <code class="docutils literal notranslate"><span class="pre">&lt;begin&gt;</span></code> will be returned.</p>
+</div>
+<div class="section" id="search">
+<h2>Search<a class="headerlink" href="#search" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="find"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">FIND</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;value&gt;</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Returns the index of the element specified in the list or -1
+if it wasn’t found.</p>
+</div>
+<div class="section" id="modification">
+<h2>Modification<a class="headerlink" href="#modification" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="append"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">APPEND</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;element&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Appends elements to the list.</p>
+<div class="highlight-cmake notranslate" id="filter"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">FILTER</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="no">INCLUDE</span><span class="p">|</span><span class="no">EXCLUDE</span><span class="o">&gt;</span><span class="w"> </span><span class="no">REGEX</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Includes or removes items from the list that match the mode’s pattern.
+In <code class="docutils literal notranslate"><span class="pre">REGEX</span></code> mode, items will be matched against the given regular expression.</p>
+<p>For more information on regular expressions see also the
+<span class="target" id="index-1-command:string"></span><a class="reference internal" href="string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string()</span></code></a> command.</p>
+<div class="highlight-cmake notranslate" id="insert"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">INSERT</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;element_index&gt;</span><span class="w"> </span><span class="nv">&lt;element&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;element&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Inserts elements to the list to the specified location.</p>
+<div class="highlight-cmake notranslate" id="pop-back"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">POP_BACK</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;out-var&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If no variable name is given, removes exactly one element. Otherwise,
+assign the last element’s value to the given variable and removes it,
+up to the last variable name given.</p>
+<div class="highlight-cmake notranslate" id="pop-front"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">POP_FRONT</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;out-var&gt;...</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>If no variable name is given, removes exactly one element. Otherwise,
+assign the first element’s value to the given variable and removes it,
+up to the last variable name given.</p>
+<div class="highlight-cmake notranslate" id="prepend"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">PREPEND</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;element&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Insert elements to the 0th position in the list.</p>
+<div class="highlight-cmake notranslate" id="remove-item"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">REMOVE_ITEM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;value&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;value&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Removes all instances of the given items from the list.</p>
+<div class="highlight-cmake notranslate" id="remove-at"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">REMOVE_AT</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;index&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;index&gt;</span><span class="w"> </span><span class="p">...]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Removes items at given indices from the list.</p>
+<div class="highlight-cmake notranslate" id="remove-duplicates"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">REMOVE_DUPLICATES</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Removes duplicated items in the list. The relative order of items is preserved,
+but if duplicates are encountered, only the first instance is preserved.</p>
+<div class="highlight-cmake notranslate" id="transform"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;ACTION&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;SELECTOR&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                      </span><span class="p">[</span><span class="no">OUTPUT_VARIABLE</span><span class="w"> </span><span class="nv">&lt;output variable&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Transforms the list by applying an action to all or, by specifying a
+<code class="docutils literal notranslate"><span class="pre">&lt;SELECTOR&gt;</span></code>, to the selected elements of the list, storing the result
+in-place or in the specified output variable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">TRANSFORM</span></code> sub-command does not change the number of elements in the
+list. If a <code class="docutils literal notranslate"><span class="pre">&lt;SELECTOR&gt;</span></code> is specified, only some elements will be changed,
+the other ones will remain the same as before the transformation.</p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;ACTION&gt;</span></code> specifies the action to apply to the elements of the list.
+The actions have exactly the same semantics as sub-commands of the
+<span class="target" id="index-2-command:string"></span><a class="reference internal" href="string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string()</span></code></a> command.  <code class="docutils literal notranslate"><span class="pre">&lt;ACTION&gt;</span></code> must be one of the following:</p>
+<p><code class="docutils literal notranslate"><span class="pre">APPEND</span></code>, <code class="docutils literal notranslate"><span class="pre">PREPEND</span></code>: Append, prepend specified value to each element of
+the list.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="no">APPEND</span><span class="p">|</span><span class="no">PREPEND</span><span class="o">&gt;</span><span class="w"> </span><span class="nv">&lt;value&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">TOUPPER</span></code>, <code class="docutils literal notranslate"><span class="pre">TOLOWER</span></code>: Convert each element of the list to upper, lower
+characters.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="no">TOLOWER</span><span class="p">|</span><span class="no">TOUPPER</span><span class="o">&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">STRIP</span></code>: Remove leading and trailing spaces from each element of the
+list.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="no">STRIP</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">GENEX_STRIP</span></code>: Strip any
+<span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expressions</span></code></a> from each
+element of the list.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="no">GENEX_STRIP</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">REPLACE</span></code>: Match the regular expression as many times as possible and
+substitute the replacement expression for the match for each element
+of the list
+(Same semantic as <code class="docutils literal notranslate"><span class="pre">REGEX</span> <span class="pre">REPLACE</span></code> from <span class="target" id="index-3-command:string"></span><a class="reference internal" href="string.html#command:string" title="string"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">string()</span></code></a> command).</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="no">REPLACE</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="w"></span>
+<span class="w">                              </span><span class="nv">&lt;replace_expression&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;SELECTOR&gt;</span></code> determines which elements of the list will be transformed.
+Only one type of selector can be specified at a time.  When given,
+<code class="docutils literal notranslate"><span class="pre">&lt;SELECTOR&gt;</span></code> must be one of the following:</p>
+<p><code class="docutils literal notranslate"><span class="pre">AT</span></code>: Specify a list of indexes.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;ACTION&gt;</span><span class="w"> </span><span class="no">AT</span><span class="w"> </span><span class="nv">&lt;index&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;index&gt;</span><span class="w"> </span><span class="p">...]</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">FOR</span></code>: Specify a range with, optionally, an increment used to iterate over
+the range.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;ACTION&gt;</span><span class="w"> </span><span class="no">FOR</span><span class="w"> </span><span class="nv">&lt;start&gt;</span><span class="w"> </span><span class="nv">&lt;stop&gt;</span><span class="w"> </span><span class="p">[</span><span class="nv">&lt;step&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">REGEX</span></code>: Specify a regular expression. Only elements matching the regular
+expression will be transformed.</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">TRANSFORM</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="nv">&lt;ACTION&gt;</span><span class="w"> </span><span class="no">REGEX</span><span class="w"> </span><span class="nv">&lt;regular_expression&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="ordering">
+<h2>Ordering<a class="headerlink" href="#ordering" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-cmake notranslate" id="reverse"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">REVERSE</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Reverses the contents of the list in-place.</p>
+<div class="highlight-cmake notranslate" id="sort"><div class="highlight"><pre><span></span><span class="nf">list(</span><span class="no">SORT</span><span class="w"> </span><span class="nv">&lt;list&gt;</span><span class="w"> </span><span class="p">[</span><span class="no">COMPARE</span><span class="w"> </span><span class="nv">&lt;compare&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">CASE</span><span class="w"> </span><span class="nv">&lt;case&gt;</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="no">ORDER</span><span class="w"> </span><span class="nv">&lt;order&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sorts the list in-place alphabetically.
+Use the <code class="docutils literal notranslate"><span class="pre">COMPARE</span></code> keyword to select the comparison method for sorting.
+The <code class="docutils literal notranslate"><span class="pre">&lt;compare&gt;</span></code> option should be one of:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">STRING</span></code>: Sorts a list of strings alphabetically.  This is the
+default behavior if the <code class="docutils literal notranslate"><span class="pre">COMPARE</span></code> option is not given.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILE_BASENAME</span></code>: Sorts a list of pathnames of files by their basenames.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NATURAL</span></code>: Sorts a list of strings using natural order
+(see <code class="docutils literal notranslate"><span class="pre">strverscmp(3)</span></code> manual), i.e. such that contiguous digits
+are compared as whole numbers.
+For example: the following list <cite>10.0 1.1 2.1 8.0 2.0 3.1</cite>
+will be sorted as <cite>1.1 2.0 2.1 3.1 8.0 10.0</cite> if the <code class="docutils literal notranslate"><span class="pre">NATURAL</span></code>
+comparison is selected where it will be sorted as
+<cite>1.1 10.0 2.0 2.1 3.1 8.0</cite> with the <code class="docutils literal notranslate"><span class="pre">STRING</span></code> comparison.</p></li>
+</ul>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">CASE</span></code> keyword to select a case sensitive or case insensitive
+sort mode.  The <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;</span></code> option should be one of:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SENSITIVE</span></code>: List items are sorted in a case-sensitive manner.  This is
+the default behavior if the <code class="docutils literal notranslate"><span class="pre">CASE</span></code> option is not given.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INSENSITIVE</span></code>: List items are sorted case insensitively.  The order of
+items which differ only by upper/lowercase is not specified.</p></li>
+</ul>
+<p>To control the sort order, the <code class="docutils literal notranslate"><span class="pre">ORDER</span></code> keyword can be given.
+The <code class="docutils literal notranslate"><span class="pre">&lt;order&gt;</span></code> option should be one of:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ASCENDING</span></code>: Sorts the list in ascending order.  This is the default
+behavior when the <code class="docutils literal notranslate"><span class="pre">ORDER</span></code> option is not given.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DESCENDING</span></code>: Sorts the list in descending order.</p></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">list</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#reading">Reading</a></li>
+<li><a class="reference internal" href="#search">Search</a></li>
+<li><a class="reference internal" href="#modification">Modification</a></li>
+<li><a class="reference internal" href="#ordering">Ordering</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="include_guard.html"
+                        title="previous chapter">include_guard</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="macro.html"
+                        title="next chapter">macro</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/list.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="macro.html" title="macro"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="include_guard.html" title="include_guard"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">list</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

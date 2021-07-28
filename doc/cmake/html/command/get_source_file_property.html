@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>get_source_file_property &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="get_target_property" href="get_target_property.html" />
+    <link rel="prev" title="fltk_wrap_ui" href="fltk_wrap_ui.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="get_target_property.html" title="get_target_property"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fltk_wrap_ui.html" title="fltk_wrap_ui"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_source_file_property</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="get-source-file-property">
+<span id="command:get_source_file_property"></span><h1>get_source_file_property<a class="headerlink" href="#get-source-file-property" title="Permalink to this headline">¶</a></h1>
+<p>Get a property for a source file.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">get_source_file_property(</span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="nv">&lt;file&gt;</span><span class="w"></span>
+<span class="w">                         </span><span class="p">[</span><span class="no">DIRECTORY</span><span class="w"> </span><span class="nv">&lt;dir&gt;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="no">TARGET_DIRECTORY</span><span class="w"> </span><span class="nv">&lt;target&gt;</span><span class="p">]</span><span class="w"></span>
+<span class="w">                         </span><span class="nv">&lt;property&gt;</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Gets a property from a source file.  The value of the property is
+stored in the specified <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code>.  If the source property is not found,
+the behavior depends on whether it has been defined to be an <code class="docutils literal notranslate"><span class="pre">INHERITED</span></code>
+property or not (see <span class="target" id="index-0-command:define_property"></span><a class="reference internal" href="define_property.html#command:define_property" title="define_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">define_property()</span></code></a>).  Non-inherited properties
+will set <code class="docutils literal notranslate"><span class="pre">variable</span></code> to <code class="docutils literal notranslate"><span class="pre">NOTFOUND</span></code>, whereas inherited properties will search
+the relevant parent scope as described for the <span class="target" id="index-1-command:define_property"></span><a class="reference internal" href="define_property.html#command:define_property" title="define_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">define_property()</span></code></a>
+command and if still unable to find the property, <code class="docutils literal notranslate"><span class="pre">variable</span></code> will be set to
+an empty string.</p>
+<p>By default, the source file’s property will be read from the current source
+directory’s scope, but this can be overridden with one of the following
+sub-options:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">DIRECTORY</span> <span class="pre">&lt;dir&gt;</span></code></dt><dd><p>The source file property will be read from the <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code> directory’s
+scope.  CMake must already know about that source directory, either by
+having added it through a call to <span class="target" id="index-0-command:add_subdirectory"></span><a class="reference internal" href="add_subdirectory.html#command:add_subdirectory" title="add_subdirectory"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">add_subdirectory()</span></code></a> or <code class="docutils literal notranslate"><span class="pre">&lt;dir&gt;</span></code>
+being the top level source directory.  Relative paths are treated as
+relative to the current source directory.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TARGET_DIRECTORY</span> <span class="pre">&lt;target&gt;</span></code></dt><dd><p>The source file property will be read from the directory scope in which
+<code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> was created (<code class="docutils literal notranslate"><span class="pre">&lt;target&gt;</span></code> must therefore already exist).</p>
+</dd>
+</dl>
+<p>Use <span class="target" id="index-0-command:set_source_files_properties"></span><a class="reference internal" href="set_source_files_properties.html#command:set_source_files_properties" title="set_source_files_properties"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">set_source_files_properties()</span></code></a> to set property values.  Source
+file properties usually control how the file is built. One property that is
+always there is <span class="target" id="index-0-prop_sf:LOCATION"></span><a class="reference internal" href="../prop_sf/LOCATION.html#prop_sf:LOCATION" title="LOCATION"><code class="xref cmake cmake-prop_sf docutils literal notranslate"><span class="pre">LOCATION</span></code></a>.</p>
+<p>See also the more general <span class="target" id="index-0-command:get_property"></span><a class="reference internal" href="get_property.html#command:get_property" title="get_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_property()</span></code></a> command.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fltk_wrap_ui.html"
+                        title="previous chapter">fltk_wrap_ui</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="get_target_property.html"
+                        title="next chapter">get_target_property</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/get_source_file_property.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="get_target_property.html" title="get_target_property"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fltk_wrap_ui.html" title="fltk_wrap_ui"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">get_source_file_property</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

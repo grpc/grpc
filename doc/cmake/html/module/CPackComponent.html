@@ -1,0 +1,462 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPackComponent &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CPackIFW" href="CPackIFW.html" />
+    <link rel="prev" title="CPack" href="CPack.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CPackIFW.html" title="CPackIFW"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="CPack.html" title="CPack"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPackComponent</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cpackcomponent">
+<span id="module:CPackComponent"></span><h1><a class="toc-backref" href="#id1">CPackComponent</a><a class="headerlink" href="#cpackcomponent" title="Permalink to this headline">¶</a></h1>
+<p>Configure components for binary installers and source packages.</p>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cpackcomponent" id="id1">CPackComponent</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#variables" id="id3">Variables</a></p></li>
+<li><p><a class="reference internal" href="#commands" id="id4">Commands</a></p>
+<ul>
+<li><p><a class="reference internal" href="#add-component" id="id5">Add component</a></p></li>
+<li><p><a class="reference internal" href="#add-component-group" id="id6">Add component group</a></p></li>
+<li><p><a class="reference internal" href="#add-installation-type" id="id7">Add installation type</a></p></li>
+<li><p><a class="reference internal" href="#configure-downloads" id="id8">Configure downloads</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>This module is automatically included by <span class="target" id="index-0-module:CPack"></span><a class="reference internal" href="CPack.html#module:CPack" title="CPack"><code class="xref cmake cmake-module docutils literal notranslate"><span class="pre">CPack</span></code></a>.</p>
+<p>Certain binary installers (especially the graphical installers) generated
+by CPack allow users to select individual application <em>components</em> to install.
+This module allows developers to configure the packaging of such components.</p>
+<p>Contents is assigned to components by the <code class="docutils literal notranslate"><span class="pre">COMPONENT</span></code>
+argument of CMake’s <span class="target" id="index-0-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> command.  Components can be
+annotated with user-friendly names and descriptions, inter-component
+dependencies, etc., and grouped in various ways to customize the
+resulting installer, using the commands described below.</p>
+<p>To specify different groupings for different CPack generators use
+a CPACK_PROJECT_CONFIG_FILE.</p>
+</div>
+<div class="section" id="variables">
+<h2><a class="toc-backref" href="#id3">Variables</a><a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<p>The following variables influence the component-specific packaging:</p>
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENTS_ALL">
+<code class="sig-name descname">CPACK_COMPONENTS_ALL</code><a class="headerlink" href="#variable:CPACK_COMPONENTS_ALL" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of component to install.</p>
+<p>The default value of this variable is computed by CPack and contains all
+components defined by the project.  The user may set it to only include the
+specified components.</p>
+<p>Instead of specifying all the desired components, it is possible to obtain a
+list of all defined components and then remove the unwanted ones from the
+list. The <span class="target" id="index-0-command:get_cmake_property"></span><a class="reference internal" href="../command/get_cmake_property.html#command:get_cmake_property" title="get_cmake_property"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">get_cmake_property()</span></code></a> command can be used to obtain the
+<code class="docutils literal notranslate"><span class="pre">COMPONENTS</span></code> property, then the <span class="target" id="index-0-command:list"></span><a class="reference internal" href="../command/list.html#command:list" title="list"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">list(REMOVE_ITEM)</span></code></a> command can be
+used to remove the unwanted ones. For example, to use all defined components
+except <code class="docutils literal notranslate"><span class="pre">foo</span></code> and <code class="docutils literal notranslate"><span class="pre">bar</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
+list(REMOVE_ITEM CPACK_COMPONENTS_ALL &quot;foo&quot; &quot;bar&quot;)
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_&lt;GENNAME&gt;_COMPONENT_INSTALL">
+<code class="sig-name descname">CPACK_&lt;GENNAME&gt;_COMPONENT_INSTALL</code><a class="headerlink" href="#variable:CPACK_<GENNAME>_COMPONENT_INSTALL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable/Disable component install for CPack generator &lt;GENNAME&gt;.</p>
+<p>Each CPack Generator (RPM, DEB, ARCHIVE, NSIS, DMG, etc…) has a legacy
+default behavior.  e.g.  RPM builds monolithic whereas NSIS builds
+component.  One can change the default behavior by setting this variable to
+0/1 or OFF/ON.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENTS_GROUPING">
+<code class="sig-name descname">CPACK_COMPONENTS_GROUPING</code><a class="headerlink" href="#variable:CPACK_COMPONENTS_GROUPING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify how components are grouped for multi-package component-aware CPack
+generators.</p>
+<p>Some generators like RPM or ARCHIVE (TGZ, ZIP, …) may generate
+several packages files when there are components, depending
+on the value of this variable:</p>
+<ul class="simple">
+<li><p>ONE_PER_GROUP (default): create one package per component group</p></li>
+<li><p>IGNORE : create one package per component (ignore the groups)</p></li>
+<li><p>ALL_COMPONENTS_IN_ONE : create a single package with all requested
+components</p></li>
+</ul>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_DISPLAY_NAME">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_DISPLAY_NAME</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_DISPLAY_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name to be displayed for a component.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_DESCRIPTION</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_DESCRIPTION" title="Permalink to this definition">¶</a></dt>
+<dd><p>The description of a component.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_GROUP">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_GROUP</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_GROUP" title="Permalink to this definition">¶</a></dt>
+<dd><p>The group of a component.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_DEPENDS">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_DEPENDS</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_DEPENDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dependencies (list of components) on which this component depends.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_HIDDEN">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_HIDDEN</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_HIDDEN" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this component is hidden from the user.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_REQUIRED">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_REQUIRED</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_REQUIRED" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this component is required.</p>
+</dd></dl>
+
+<dl class="cmake variable">
+<dt id="variable:CPACK_COMPONENT_&lt;compName&gt;_DISABLED">
+<code class="sig-name descname">CPACK_COMPONENT_&lt;compName&gt;_DISABLED</code><a class="headerlink" href="#variable:CPACK_COMPONENT_<compName>_DISABLED" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this component is not selected to be installed by default.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="commands">
+<h2><a class="toc-backref" href="#id4">Commands</a><a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="add-component">
+<h3><a class="toc-backref" href="#id5">Add component</a><a class="headerlink" href="#add-component" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:cpack_add_component">
+<code class="sig-name descname">cpack_add_component</code><a class="headerlink" href="#command:cpack_add_component" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Describe an installation component.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_add_component(compname
+                    [DISPLAY_NAME name]
+                    [DESCRIPTION description]
+                    [HIDDEN | REQUIRED | DISABLED ]
+                    [GROUP group]
+                    [DEPENDS comp1 comp2 ... ]
+                    [INSTALL_TYPES type1 type2 ... ]
+                    [DOWNLOADED]
+                    [ARCHIVE_FILE filename]
+                    [PLIST filename])
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">compname</span></code> is the name of an installation component, as defined by the
+<code class="docutils literal notranslate"><span class="pre">COMPONENT</span></code> argument of one or more CMake <span class="target" id="index-1-command:install"></span><a class="reference internal" href="../command/install.html#command:install" title="install"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">install()</span></code></a> commands.
+With the <code class="docutils literal notranslate"><span class="pre">cpack_add_component</span></code> command one can set a name, a description,
+and other attributes of an installation component.
+One can also assign a component to a component group.</p>
+<p>DISPLAY_NAME is the displayed name of the component, used in graphical
+installers to display the component name.  This value can be any
+string.</p>
+<p>DESCRIPTION is an extended description of the component, used in
+graphical installers to give the user additional information about the
+component.  Descriptions can span multiple lines using <code class="docutils literal notranslate"><span class="pre">\n</span></code> as the
+line separator.  Typically, these descriptions should be no more than
+a few lines long.</p>
+<p>HIDDEN indicates that this component will be hidden in the graphical
+installer, so that the user cannot directly change whether it is
+installed or not.</p>
+<p>REQUIRED indicates that this component is required, and therefore will
+always be installed.  It will be visible in the graphical installer,
+but it cannot be unselected.  (Typically, required components are
+shown greyed out).</p>
+<p>DISABLED indicates that this component should be disabled (unselected)
+by default.  The user is free to select this component for
+installation, unless it is also HIDDEN.</p>
+<p>DEPENDS lists the components on which this component depends.  If this
+component is selected, then each of the components listed must also be
+selected.  The dependency information is encoded within the installer
+itself, so that users cannot install inconsistent sets of components.</p>
+<p>GROUP names the component group of which this component is a part.  If
+not provided, the component will be a standalone component, not part
+of any component group.  Component groups are described with the
+cpack_add_component_group command, detailed below.</p>
+<p>INSTALL_TYPES lists the installation types of which this component is
+a part.  When one of these installations types is selected, this
+component will automatically be selected.  Installation types are
+described with the cpack_add_install_type command, detailed below.</p>
+<p>DOWNLOADED indicates that this component should be downloaded
+on-the-fly by the installer, rather than packaged in with the
+installer itself.  For more information, see the
+cpack_configure_downloads command.</p>
+<p>ARCHIVE_FILE provides a name for the archive file created by CPack to
+be used for downloaded components.  If not supplied, CPack will create
+a file with some name based on CPACK_PACKAGE_FILE_NAME and the name of
+the component.  See cpack_configure_downloads for more information.</p>
+<p>PLIST gives a filename that is passed to pkgbuild with the
+<code class="docutils literal notranslate"><span class="pre">--component-plist</span></code> argument when using the productbuild generator.</p>
+</div>
+<div class="section" id="add-component-group">
+<h3><a class="toc-backref" href="#id6">Add component group</a><a class="headerlink" href="#add-component-group" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:cpack_add_component_group">
+<code class="sig-name descname">cpack_add_component_group</code><a class="headerlink" href="#command:cpack_add_component_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Describes a group of related CPack installation components.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_add_component_group(groupname
+                         [DISPLAY_NAME name]
+                         [DESCRIPTION description]
+                         [PARENT_GROUP parent]
+                         [EXPANDED]
+                         [BOLD_TITLE])
+</pre></div>
+</div>
+<p>The cpack_add_component_group describes a group of installation
+components, which will be placed together within the listing of
+options.  Typically, component groups allow the user to
+select/deselect all of the components within a single group via a
+single group-level option.  Use component groups to reduce the
+complexity of installers with many options.  groupname is an arbitrary
+name used to identify the group in the GROUP argument of the
+cpack_add_component command, which is used to place a component in a
+group.  The name of the group must not conflict with the name of any
+component.</p>
+<p>DISPLAY_NAME is the displayed name of the component group, used in
+graphical installers to display the component group name.  This value
+can be any string.</p>
+<p>DESCRIPTION is an extended description of the component group, used in
+graphical installers to give the user additional information about the
+components within that group.  Descriptions can span multiple lines
+using <code class="docutils literal notranslate"><span class="pre">\n</span></code> as the line separator.  Typically, these descriptions
+should be no more than a few lines long.</p>
+<p>PARENT_GROUP, if supplied, names the parent group of this group.
+Parent groups are used to establish a hierarchy of groups, providing
+an arbitrary hierarchy of groups.</p>
+<p>EXPANDED indicates that, by default, the group should show up as
+“expanded”, so that the user immediately sees all of the components
+within the group.  Otherwise, the group will initially show up as a
+single entry.</p>
+<p>BOLD_TITLE indicates that the group title should appear in bold, to
+call the user’s attention to the group.</p>
+</div>
+<div class="section" id="add-installation-type">
+<h3><a class="toc-backref" href="#id7">Add installation type</a><a class="headerlink" href="#add-installation-type" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:cpack_add_install_type">
+<code class="sig-name descname">cpack_add_install_type</code><a class="headerlink" href="#command:cpack_add_install_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Add a new installation type containing
+a set of predefined component selections to the graphical installer.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_add_install_type(typename
+                       [DISPLAY_NAME name])
+</pre></div>
+</div>
+<p>The cpack_add_install_type command identifies a set of preselected
+components that represents a common use case for an application.  For
+example, a “Developer” install type might include an application along
+with its header and library files, while an “End user” install type
+might just include the application’s executable.  Each component
+identifies itself with one or more install types via the INSTALL_TYPES
+argument to cpack_add_component.</p>
+<p>DISPLAY_NAME is the displayed name of the install type, which will
+typically show up in a drop-down box within a graphical installer.
+This value can be any string.</p>
+</div>
+<div class="section" id="configure-downloads">
+<h3><a class="toc-backref" href="#id8">Configure downloads</a><a class="headerlink" href="#configure-downloads" title="Permalink to this headline">¶</a></h3>
+<dl class="cmake command">
+<dt id="command:cpack_configure_downloads">
+<code class="sig-name descname">cpack_configure_downloads</code><a class="headerlink" href="#command:cpack_configure_downloads" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Configure CPack to download
+selected components on-the-fly as part of the installation process.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cpack_configure_downloads(site
+                          [UPLOAD_DIRECTORY dirname]
+                          [ALL]
+                          [ADD_REMOVE|NO_ADD_REMOVE])
+</pre></div>
+</div>
+<p>The cpack_configure_downloads command configures installation-time
+downloads of selected components.  For each downloadable component,
+CPack will create an archive containing the contents of that
+component, which should be uploaded to the given site.  When the user
+selects that component for installation, the installer will download
+and extract the component in place.  This feature is useful for
+creating small installers that only download the requested components,
+saving bandwidth.  Additionally, the installers are small enough that
+they will be installed as part of the normal installation process, and
+the “Change” button in Windows Add/Remove Programs control panel will
+allow one to add or remove parts of the application after the original
+installation.  On Windows, the downloaded-components functionality
+requires the ZipDLL plug-in for NSIS, available at:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>http://nsis.sourceforge.net/ZipDLL_plug-in
+</pre></div>
+</div>
+<p>On macOS, installers that download components on-the-fly can only
+be built and installed on system using macOS 10.5 or later.</p>
+<p>The site argument is a URL where the archives for downloadable
+components will reside, e.g.,
+<a class="reference external" href="https://cmake.org/files/2.6.1/installer/">https://cmake.org/files/2.6.1/installer/</a> All of the archives
+produced by CPack should be uploaded to that location.</p>
+<p>UPLOAD_DIRECTORY is the local directory where CPack will create the
+various archives for each of the components.  The contents of this
+directory should be uploaded to a location accessible by the URL given
+in the site argument.  If omitted, CPack will use the directory
+CPackUploads inside the CMake binary directory to store the generated
+archives.</p>
+<p>The ALL flag indicates that all components be downloaded.  Otherwise,
+only those components explicitly marked as DOWNLOADED or that have a
+specified ARCHIVE_FILE will be downloaded.  Additionally, the ALL
+option implies ADD_REMOVE (unless NO_ADD_REMOVE is specified).</p>
+<p>ADD_REMOVE indicates that CPack should install a copy of the installer
+that can be called from Windows’ Add/Remove Programs dialog (via the
+“Modify” button) to change the set of installed components.
+NO_ADD_REMOVE turns off this behavior.  This option is ignored on Mac
+OS X.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CPackComponent</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#variables">Variables</a></li>
+<li><a class="reference internal" href="#commands">Commands</a><ul>
+<li><a class="reference internal" href="#add-component">Add component</a></li>
+<li><a class="reference internal" href="#add-component-group">Add component group</a></li>
+<li><a class="reference internal" href="#add-installation-type">Add installation type</a></li>
+<li><a class="reference internal" href="#configure-downloads">Configure downloads</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="CPack.html"
+                        title="previous chapter">CPack</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CPackIFW.html"
+                        title="next chapter">CPackIFW</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/CPackComponent.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="CPackIFW.html" title="CPackIFW"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="CPack.html" title="CPack"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CPackComponent</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

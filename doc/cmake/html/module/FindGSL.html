@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindGSL &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FindGTest" href="FindGTest.html" />
+    <link rel="prev" title="FindGnuTLS" href="FindGnuTLS.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="FindGTest.html" title="FindGTest"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="FindGnuTLS.html" title="FindGnuTLS"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" accesskey="U">cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGSL</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="findgsl">
+<span id="module:FindGSL"></span><h1>FindGSL<a class="headerlink" href="#findgsl" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.2.</span></p>
+</div>
+<p>Find the native GNU Scientific Library (GSL) includes and libraries.</p>
+<p>The GNU Scientific Library (GSL) is a numerical library for C and C++
+programmers. It is free software under the GNU General Public
+License.</p>
+<div class="section" id="imported-targets">
+<h2>Imported Targets<a class="headerlink" href="#imported-targets" title="Permalink to this headline">¶</a></h2>
+<p>If GSL is found, this module defines the following <span class="target" id="index-0-prop_tgt:IMPORTED"></span><a class="reference internal" href="../prop_tgt/IMPORTED.html#prop_tgt:IMPORTED" title="IMPORTED"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">IMPORTED</span></code></a>
+targets:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GSL::gsl      - The main GSL library.
+GSL::gslcblas - The CBLAS support library used by GSL.
+</pre></div>
+</div>
+</div>
+<div class="section" id="result-variables">
+<h2>Result Variables<a class="headerlink" href="#result-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module will set the following variables in your project:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GSL_FOUND          - True if GSL found on the local system
+GSL_INCLUDE_DIRS   - Location of GSL header files.
+GSL_LIBRARIES      - The GSL libraries.
+GSL_VERSION        - The version of the discovered GSL install.
+</pre></div>
+</div>
+</div>
+<div class="section" id="hints">
+<h2>Hints<a class="headerlink" href="#hints" title="Permalink to this headline">¶</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">GSL_ROOT_DIR</span></code> to a directory that contains a GSL installation.</p>
+<p>This script expects to find libraries at <code class="docutils literal notranslate"><span class="pre">$GSL_ROOT_DIR/lib</span></code> and the GSL
+headers at <code class="docutils literal notranslate"><span class="pre">$GSL_ROOT_DIR/include/gsl</span></code>.  The library directory may
+optionally provide Release and Debug folders. If available, the libraries
+named <code class="docutils literal notranslate"><span class="pre">gsld</span></code>, <code class="docutils literal notranslate"><span class="pre">gslblasd</span></code> or <code class="docutils literal notranslate"><span class="pre">cblasd</span></code> are recognized as debug libraries.
+For Unix-like systems, this script will use <code class="docutils literal notranslate"><span class="pre">$GSL_ROOT_DIR/bin/gsl-config</span></code>
+(if found) to aid in the discovery of GSL.</p>
+</div>
+<div class="section" id="cache-variables">
+<h2>Cache Variables<a class="headerlink" href="#cache-variables" title="Permalink to this headline">¶</a></h2>
+<p>This module may set the following variables depending on platform and type
+of GSL installation discovered.  These variables may optionally be set to
+help this module find the correct files:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>GSL_CBLAS_LIBRARY       - Location of the GSL CBLAS library.
+GSL_CBLAS_LIBRARY_DEBUG - Location of the debug GSL CBLAS library (if any).
+GSL_CONFIG_EXECUTABLE   - Location of the ``gsl-config`` script (if any).
+GSL_LIBRARY             - Location of the GSL library.
+GSL_LIBRARY_DEBUG       - Location of the debug GSL library (if any).
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FindGSL</a><ul>
+<li><a class="reference internal" href="#imported-targets">Imported Targets</a></li>
+<li><a class="reference internal" href="#result-variables">Result Variables</a></li>
+<li><a class="reference internal" href="#hints">Hints</a></li>
+<li><a class="reference internal" href="#cache-variables">Cache Variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="FindGnuTLS.html"
+                        title="previous chapter">FindGnuTLS</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="FindGTest.html"
+                        title="next chapter">FindGTest</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/module/FindGSL.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="FindGTest.html" title="FindGTest"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="FindGnuTLS.html" title="FindGnuTLS"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-modules.7.html" >cmake-modules(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FindGSL</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>math &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="message" href="message.html" />
+    <link rel="prev" title="mark_as_advanced" href="mark_as_advanced.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="message.html" title="message"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mark_as_advanced.html" title="mark_as_advanced"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">math</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="math">
+<span id="command:math"></span><h1>math<a class="headerlink" href="#math" title="Permalink to this headline">¶</a></h1>
+<p>Evaluate a mathematical expression.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">math(</span><span class="no">EXPR</span><span class="w"> </span><span class="nv">&lt;variable&gt;</span><span class="w"> </span><span class="s">&quot;&lt;expression&gt;&quot;</span><span class="w"> </span><span class="p">[</span><span class="no">OUTPUT_FORMAT</span><span class="w"> </span><span class="nv">&lt;format&gt;</span><span class="p">]</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Evaluates a mathematical <code class="docutils literal notranslate"><span class="pre">&lt;expression&gt;</span></code> and sets <code class="docutils literal notranslate"><span class="pre">&lt;variable&gt;</span></code> to the
+resulting value.  The result of the expression must be representable as a
+64-bit signed integer.</p>
+<p>The mathematical expression must be given as a string (i.e. enclosed in
+double quotation marks). An example is <code class="docutils literal notranslate"><span class="pre">&quot;5</span> <span class="pre">*</span> <span class="pre">(10</span> <span class="pre">+</span> <span class="pre">13)&quot;</span></code>.
+Supported operators are <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">/</span></code>, <code class="docutils literal notranslate"><span class="pre">%</span></code>, <code class="docutils literal notranslate"><span class="pre">|</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">^</span></code>, <code class="docutils literal notranslate"><span class="pre">~</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span></code>, and <code class="docutils literal notranslate"><span class="pre">(...)</span></code>; they have the same meaning
+as in C code.</p>
+<p>Hexadecimal numbers are recognized when prefixed with <code class="docutils literal notranslate"><span class="pre">0x</span></code>, as in C code.</p>
+<p>The result is formatted according to the option <code class="docutils literal notranslate"><span class="pre">OUTPUT_FORMAT</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code> is one of</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">HEXADECIMAL</span></code></dt><dd><p>Hexadecimal notation as in C code, i. e. starting with “0x”.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DECIMAL</span></code></dt><dd><p>Decimal notation. Which is also used if no <code class="docutils literal notranslate"><span class="pre">OUTPUT_FORMAT</span></code> option
+is specified.</p>
+</dd>
+</dl>
+<p>For example</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">math(</span><span class="no">EXPR</span><span class="w"> </span><span class="nb">value</span><span class="w"> </span><span class="s">&quot;100 * 0xA&quot;</span><span class="w"> </span><span class="no">OUTPUT_FORMAT</span><span class="w"> </span><span class="no">DECIMAL</span><span class="nf">)</span><span class="w">      </span><span class="c"># value is set to &quot;1000&quot;</span>
+<span class="nf">math(</span><span class="no">EXPR</span><span class="w"> </span><span class="nb">value</span><span class="w"> </span><span class="s">&quot;100 * 0xA&quot;</span><span class="w"> </span><span class="no">OUTPUT_FORMAT</span><span class="w"> </span><span class="no">HEXADECIMAL</span><span class="nf">)</span><span class="w">  </span><span class="c"># value is set to &quot;0x3e8&quot;</span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mark_as_advanced.html"
+                        title="previous chapter">mark_as_advanced</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="message.html"
+                        title="next chapter">message</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/math.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="message.html" title="message"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mark_as_advanced.html" title="mark_as_advanced"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">math</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

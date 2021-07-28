@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>add_link_options &mdash; CMake 3.19.6 Documentation</title>
+
+    <link rel="stylesheet" href="../_static/cmake.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/cmake-favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="add_subdirectory" href="add_subdirectory.html" />
+    <link rel="prev" title="add_library" href="add_library.html" />
+  
+ 
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add_subdirectory.html" title="add_subdirectory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add_library.html" title="add_library"
+             accesskey="P">previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" accesskey="U">cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_link_options</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="add-link-options">
+<span id="command:add_link_options"></span><h1>add_link_options<a class="headerlink" href="#add-link-options" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 3.13.</span></p>
+</div>
+<p>Add options to the link step for executable, shared library or module
+library targets in the current directory and below that are added after
+this command is invoked.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nf">add_link_options(</span><span class="nv">&lt;option&gt;</span><span class="w"> </span><span class="p">...</span><span class="nf">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This command can be used to add any link options, but alternative commands
+exist to add libraries (<span class="target" id="index-0-command:target_link_libraries"></span><a class="reference internal" href="target_link_libraries.html#command:target_link_libraries" title="target_link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">target_link_libraries()</span></code></a> or
+<span class="target" id="index-0-command:link_libraries"></span><a class="reference internal" href="link_libraries.html#command:link_libraries" title="link_libraries"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">link_libraries()</span></code></a>).  See documentation of the
+<span class="target" id="index-0-prop_dir:LINK_OPTIONS"></span><a class="reference internal" href="../prop_dir/LINK_OPTIONS.html#prop_dir:LINK_OPTIONS" title="LINK_OPTIONS"><code class="xref cmake cmake-prop_dir docutils literal notranslate"><span class="pre">directory</span></code></a> and
+<span class="target" id="index-0-prop_tgt:LINK_OPTIONS"></span><a class="reference internal" href="../prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS" title="LINK_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">target</span></code></a> <code class="docutils literal notranslate"><span class="pre">LINK_OPTIONS</span></code> properties.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This command cannot be used to add options for static library targets,
+since they do not use a linker.  To add archiver or MSVC librarian flags,
+see the <span class="target" id="index-0-prop_tgt:STATIC_LIBRARY_OPTIONS"></span><a class="reference internal" href="../prop_tgt/STATIC_LIBRARY_OPTIONS.html#prop_tgt:STATIC_LIBRARY_OPTIONS" title="STATIC_LIBRARY_OPTIONS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">STATIC_LIBRARY_OPTIONS</span></code></a> target property.</p>
+</div>
+<p>Arguments to <code class="docutils literal notranslate"><span class="pre">add_link_options</span></code> may use “generator expressions” with
+the syntax <code class="docutils literal notranslate"><span class="pre">$&lt;...&gt;</span></code>.  See the <span class="target" id="index-0-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-generator-expressions(7)</span></code></a>
+manual for available expressions.  See the <span class="target" id="index-0-manual:cmake-buildsystem(7)"></span><a class="reference internal" href="../manual/cmake-buildsystem.7.html#manual:cmake-buildsystem(7)" title="cmake-buildsystem(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">cmake-buildsystem(7)</span></code></a>
+manual for more on defining buildsystem properties.</p>
+<p>When a device link step is involved, which is controlled by
+<span class="target" id="index-0-prop_tgt:CUDA_SEPARABLE_COMPILATION"></span><a class="reference internal" href="../prop_tgt/CUDA_SEPARABLE_COMPILATION.html#prop_tgt:CUDA_SEPARABLE_COMPILATION" title="CUDA_SEPARABLE_COMPILATION"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_SEPARABLE_COMPILATION</span></code></a> and
+<span class="target" id="index-0-prop_tgt:CUDA_RESOLVE_DEVICE_SYMBOLS"></span><a class="reference internal" href="../prop_tgt/CUDA_RESOLVE_DEVICE_SYMBOLS.html#prop_tgt:CUDA_RESOLVE_DEVICE_SYMBOLS" title="CUDA_RESOLVE_DEVICE_SYMBOLS"><code class="xref cmake cmake-prop_tgt docutils literal notranslate"><span class="pre">CUDA_RESOLVE_DEVICE_SYMBOLS</span></code></a> properties and policy <span class="target" id="index-0-policy:CMP0105"></span><a class="reference internal" href="../policy/CMP0105.html#policy:CMP0105" title="CMP0105"><code class="xref cmake cmake-policy docutils literal notranslate"><span class="pre">CMP0105</span></code></a>,
+the raw options will be delivered to the host and device link steps (wrapped in
+<code class="docutils literal notranslate"><span class="pre">-Xcompiler</span></code> or equivalent for device link). Options wrapped with
+<code class="docutils literal notranslate"><span class="pre">$&lt;DEVICE_LINK:...&gt;</span></code>
+<span class="target" id="index-1-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expression</span></code></a> will be used
+only for the device link step. Options wrapped with <code class="docutils literal notranslate"><span class="pre">$&lt;HOST_LINK:...&gt;</span></code>
+<span class="target" id="index-2-manual:cmake-generator-expressions(7)"></span><a class="reference internal" href="../manual/cmake-generator-expressions.7.html#manual:cmake-generator-expressions(7)" title="cmake-generator-expressions(7)"><code class="xref cmake cmake-manual docutils literal notranslate"><span class="pre">generator</span> <span class="pre">expression</span></code></a> will be used
+only for the host link step.</p>
+<p>The final set of compile or link options used for a target is constructed by
+accumulating options from the current target and the usage requirements of
+its dependencies.  The set of options is de-duplicated to avoid repetition.
+While beneficial for individual options, the de-duplication step can break
+up option groups.  For example, <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">-D</span> <span class="pre">B</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">B</span></code>.  One may
+specify a group of options using shell-like quoting along with a <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code>
+prefix.  The <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code> prefix is dropped, and the rest of the option string
+is parsed using the <span class="target" id="index-0-command:separate_arguments"></span><a class="reference internal" href="separate_arguments.html#command:separate_arguments" title="separate_arguments"><code class="xref cmake cmake-command docutils literal notranslate"><span class="pre">separate_arguments()</span></code></a> <code class="docutils literal notranslate"><span class="pre">UNIX_COMMAND</span></code> mode.
+For example, <code class="docutils literal notranslate"><span class="pre">&quot;SHELL:-D</span> <span class="pre">A&quot;</span> <span class="pre">&quot;SHELL:-D</span> <span class="pre">B&quot;</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">A</span> <span class="pre">-D</span> <span class="pre">B</span></code>.</p>
+<p>To pass options to the linker tool, each compiler driver has its own syntax.
+The <code class="docutils literal notranslate"><span class="pre">LINKER:</span></code> prefix and <code class="docutils literal notranslate"><span class="pre">,</span></code> separator can be used to specify, in a portable
+way, options to pass to the linker tool. <code class="docutils literal notranslate"><span class="pre">LINKER:</span></code> is replaced by the
+appropriate driver option and <code class="docutils literal notranslate"><span class="pre">,</span></code> by the appropriate driver separator.
+The driver prefix and driver separator are given by the values of the
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG"></span><a class="reference internal" href="../variable/CMAKE_LANG_LINKER_WRAPPER_FLAG.html#variable:CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG" title="CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG</span></code></a> and
+<span class="target" id="index-0-variable:CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG_SEP"></span><a class="reference internal" href="../variable/CMAKE_LANG_LINKER_WRAPPER_FLAG_SEP.html#variable:CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG_SEP" title="CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG_SEP"><code class="xref cmake cmake-variable docutils literal notranslate"><span class="pre">CMAKE_&lt;LANG&gt;_LINKER_WRAPPER_FLAG_SEP</span></code></a> variables.</p>
+<p>For example, <code class="docutils literal notranslate"><span class="pre">&quot;LINKER:-z,defs&quot;</span></code> becomes <code class="docutils literal notranslate"><span class="pre">-Xlinker</span> <span class="pre">-z</span> <span class="pre">-Xlinker</span> <span class="pre">defs</span></code> for
+<code class="docutils literal notranslate"><span class="pre">Clang</span></code> and <code class="docutils literal notranslate"><span class="pre">-Wl,-z,defs</span></code> for <code class="docutils literal notranslate"><span class="pre">GNU</span> <span class="pre">GCC</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">LINKER:</span></code> prefix can be specified as part of a <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code> prefix
+expression.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">LINKER:</span></code> prefix supports, as an alternative syntax, specification of
+arguments using the <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code> prefix and space as separator. The previous
+example then becomes <code class="docutils literal notranslate"><span class="pre">&quot;LINKER:SHELL:-z</span> <span class="pre">defs&quot;</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Specifying the <code class="docutils literal notranslate"><span class="pre">SHELL:</span></code> prefix anywhere other than at the beginning of the
+<code class="docutils literal notranslate"><span class="pre">LINKER:</span></code> prefix is not supported.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add_library.html"
+                        title="previous chapter">add_library</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add_subdirectory.html"
+                        title="next chapter">add_subdirectory</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/command/add_link_options.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add_subdirectory.html" title="add_subdirectory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add_library.html" title="add_library"
+             >previous</a> |</li>
+  <li>
+    <img src="../_static/cmake-logo-16.png" alt=""
+         style="vertical-align: middle; margin-top: -2px" />
+  </li>
+  <li>
+    <a href="https://cmake.org/">CMake</a> &#187;
+  </li>
+  <li>
+    <a href="../index.html">3.19.6 Documentation</a> &#187;
+  </li>
+
+          <li class="nav-item nav-item-1"><a href="../manual/cmake-commands.7.html" >cmake-commands(7)</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">add_link_options</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2000-2020 Kitware, Inc. and Contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

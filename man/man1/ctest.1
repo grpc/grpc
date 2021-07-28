@@ -1,0 +1,2111 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "CTEST" "1" "Feb 24, 2021" "3.19.6" "CMake"
+.SH NAME
+ctest \- CTest Command-Line Reference
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SS Contents
+.INDENT 0.0
+.IP \(bu 2
+\fI\%ctest(1)\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%Synopsis\fP
+.IP \(bu 2
+\fI\%Description\fP
+.IP \(bu 2
+\fI\%Options\fP
+.IP \(bu 2
+\fI\%Label and Subproject Summary\fP
+.IP \(bu 2
+\fI\%Build and Test Mode\fP
+.IP \(bu 2
+\fI\%Dashboard Client\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%Dashboard Client Steps\fP
+.IP \(bu 2
+\fI\%Dashboard Client Modes\fP
+.IP \(bu 2
+\fI\%Dashboard Client via CTest Command\-Line\fP
+.IP \(bu 2
+\fI\%Dashboard Client via CTest Script\fP
+.UNINDENT
+.IP \(bu 2
+\fI\%Dashboard Client Configuration\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%CTest Start Step\fP
+.IP \(bu 2
+\fI\%CTest Update Step\fP
+.IP \(bu 2
+\fI\%CTest Configure Step\fP
+.IP \(bu 2
+\fI\%CTest Build Step\fP
+.IP \(bu 2
+\fI\%CTest Test Step\fP
+.IP \(bu 2
+\fI\%CTest Coverage Step\fP
+.IP \(bu 2
+\fI\%CTest MemCheck Step\fP
+.IP \(bu 2
+\fI\%CTest Submit Step\fP
+.UNINDENT
+.IP \(bu 2
+\fI\%Show as JSON Object Model\fP
+.IP \(bu 2
+\fI\%Resource Allocation\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%Resource Specification File\fP
+.IP \(bu 2
+\fI\%RESOURCE_GROUPS Property\fP
+.IP \(bu 2
+\fI\%Environment Variables\fP
+.UNINDENT
+.IP \(bu 2
+\fI\%See Also\fP
+.UNINDENT
+.UNINDENT
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ctest [<options>]
+ctest \-\-build\-and\-test <path\-to\-source> <path\-to\-build>
+      \-\-build\-generator <generator> [<options>...]
+      [\-\-build\-options <opts>...] [\-\-test\-command <command> [<args>...]]
+ctest {\-D <dashboard> | \-M <model> \-T <action> | \-S <script> | \-SP <script>}
+      [\-\- <dashboard\-options>...]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+The \fBctest\fP executable is the CMake test driver program.
+CMake\-generated build trees created for projects that use the
+\fBenable_testing()\fP and \fBadd_test()\fP commands have testing support.
+This program will run the tests and report results.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-C <cfg>, \-\-build\-config <cfg>\fP
+Choose configuration to test.
+.sp
+Some CMake\-generated build trees can have multiple build
+configurations in the same tree.  This option can be used to specify
+which one should be tested.  Example configurations are \fBDebug\fP and
+\fBRelease\fP\&.
+.TP
+.B \fB\-\-progress\fP
+Enable short progress output from tests.
+.sp
+When the output of \fBctest\fP is being sent directly to a terminal, the
+progress through the set of tests is reported by updating the same line
+rather than printing start and end messages for each test on new lines.
+This can significantly reduce the verbosity of the test output.
+Test completion messages are still output on their own line for failed
+tests and the final test summary will also still be logged.
+.sp
+This option can also be enabled by setting the environment variable
+\fBCTEST_PROGRESS_OUTPUT\fP\&.
+.TP
+.B \fB\-V,\-\-verbose\fP
+Enable verbose output from tests.
+.sp
+Test output is normally suppressed and only summary information is
+displayed.  This option will show all test output.
+.TP
+.B \fB\-VV,\-\-extra\-verbose\fP
+Enable more verbose output from tests.
+.sp
+Test output is normally suppressed and only summary information is
+displayed.  This option will show even more test output.
+.TP
+.B \fB\-\-debug\fP
+Displaying more verbose internals of CTest.
+.sp
+This feature will result in a large number of output that is mostly
+useful for debugging dashboard problems.
+.TP
+.B \fB\-\-output\-on\-failure\fP
+Output anything outputted by the test program if the test should fail.
+This option can also be enabled by setting the
+\fBCTEST_OUTPUT_ON_FAILURE\fP environment variable
+.TP
+.B \fB\-\-stop\-on\-failure\fP
+Stop running the tests when the first failure happens.
+.TP
+.B \fB\-F\fP
+Enable failover.
+.sp
+This option allows CTest to resume a test set execution that was
+previously interrupted.  If no interruption occurred, the \fB\-F\fP option
+will have no effect.
+.TP
+.B \fB\-j <jobs>, \-\-parallel <jobs>\fP
+Run the tests in parallel using the given number of jobs.
+.sp
+This option tells CTest to run the tests in parallel using given
+number of jobs. This option can also be set by setting the
+\fBCTEST_PARALLEL_LEVEL\fP environment variable.
+.sp
+This option can be used with the \fBPROCESSORS\fP test property.
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.TP
+.B \fB\-\-resource\-spec\-file <file>\fP
+Run CTest with \fI\%resource allocation\fP enabled,
+using the
+\fI\%resource specification file\fP
+specified in \fB<file>\fP\&.
+.sp
+When \fBctest\fP is run as a \fI\%Dashboard Client\fP this sets the
+\fBResourceSpecFile\fP option of the \fI\%CTest Test Step\fP\&.
+.TP
+.B \fB\-\-test\-load <level>\fP
+While running tests in parallel (e.g. with \fB\-j\fP), try not to start
+tests when they may cause the CPU load to pass above a given threshold.
+.sp
+When \fBctest\fP is run as a \fI\%Dashboard Client\fP this sets the
+\fBTestLoad\fP option of the \fI\%CTest Test Step\fP\&.
+.TP
+.B \fB\-Q,\-\-quiet\fP
+Make CTest quiet.
+.sp
+This option will suppress all the output.  The output log file will
+still be generated if the \fB\-\-output\-log\fP is specified.  Options such
+as \fB\-\-verbose\fP, \fB\-\-extra\-verbose\fP, and \fB\-\-debug\fP are ignored
+if \fB\-\-quiet\fP is specified.
+.TP
+.B \fB\-O <file>, \-\-output\-log <file>\fP
+Output to log file.
+.sp
+This option tells CTest to write all its output to a \fB<file>\fP log file.
+.TP
+.B \fB\-N,\-\-show\-only[=<format>]\fP
+Disable actual execution of tests.
+.sp
+This option tells CTest to list the tests that would be run but not
+actually run them.  Useful in conjunction with the \fB\-R\fP and \fB\-E\fP
+options.
+.sp
+\fB<format>\fP can be one of the following values.
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B \fBhuman\fP
+Human\-friendly output.  This is not guaranteed to be stable.
+This is the default.
+.TP
+.B \fBjson\-v1\fP
+Dump the test information in JSON format.
+See \fI\%Show as JSON Object Model\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.TP
+.B \fB\-L <regex>, \-\-label\-regex <regex>\fP
+Run tests with labels matching regular expression.
+.sp
+This option tells CTest to run only the tests whose labels match the
+given regular expression.
+.TP
+.B \fB\-R <regex>, \-\-tests\-regex <regex>\fP
+Run tests matching regular expression.
+.sp
+This option tells CTest to run only the tests whose names match the
+given regular expression.
+.TP
+.B \fB\-E <regex>, \-\-exclude\-regex <regex>\fP
+Exclude tests matching regular expression.
+.sp
+This option tells CTest to NOT run the tests whose names match the
+given regular expression.
+.TP
+.B \fB\-LE <regex>, \-\-label\-exclude <regex>\fP
+Exclude tests with labels matching regular expression.
+.sp
+This option tells CTest to NOT run the tests whose labels match the
+given regular expression.
+.TP
+.B \fB\-FA <regex>, \-\-fixture\-exclude\-any <regex>\fP
+Exclude fixtures matching \fB<regex>\fP from automatically adding any tests to
+the test set.
+.sp
+If a test in the set of tests to be executed requires a particular fixture,
+that fixture’s setup and cleanup tests would normally be added to the test set
+automatically. This option prevents adding setup or cleanup tests for fixtures
+matching the \fB<regex>\fP\&. Note that all other fixture behavior is retained,
+including test dependencies and skipping tests that have fixture setup tests
+that fail.
+.TP
+.B \fB\-FS <regex>, \-\-fixture\-exclude\-setup <regex>\fP
+Same as \fB\-FA\fP except only matching setup tests are excluded.
+.TP
+.B \fB\-FC <regex>, \-\-fixture\-exclude\-cleanup <regex>\fP
+Same as \fB\-FA\fP except only matching cleanup tests are excluded.
+.TP
+.B \fB\-D <dashboard>, \-\-dashboard <dashboard>\fP
+Execute dashboard test.
+.sp
+This option tells CTest to act as a CDash client and perform a
+dashboard test.  All tests are \fB<Mode><Test>\fP, where \fB<Mode>\fP can be
+\fBExperimental\fP, \fBNightly\fP, and \fBContinuous\fP, and \fB<Test>\fP can be
+\fBStart\fP, \fBUpdate\fP, \fBConfigure\fP, \fBBuild\fP, \fBTest\fP,
+\fBCoverage\fP, and \fBSubmit\fP\&.
+.sp
+See \fI\%Dashboard Client\fP\&.
+.TP
+.B \fB\-D <var>:<type>=<value>\fP
+Define a variable for script mode.
+.sp
+Pass in variable values on the command line.  Use in conjunction
+with \fB\-S\fP to pass variable values to a dashboard script.  Parsing \fB\-D\fP
+arguments as variable values is only attempted if the value
+following \fB\-D\fP does not match any of the known dashboard types.
+.TP
+.B \fB\-M <model>, \-\-test\-model <model>\fP
+Sets the model for a dashboard.
+.sp
+This option tells CTest to act as a CDash client where the \fB<model>\fP
+can be \fBExperimental\fP, \fBNightly\fP, and \fBContinuous\fP\&.
+Combining \fB\-M\fP and \fB\-T\fP is similar to \fB\-D\fP\&.
+.sp
+See \fI\%Dashboard Client\fP\&.
+.TP
+.B \fB\-T <action>, \-\-test\-action <action>\fP
+Sets the dashboard action to perform.
+.sp
+This option tells CTest to act as a CDash client and perform some
+action such as \fBstart\fP, \fBbuild\fP, \fBtest\fP etc. See
+\fI\%Dashboard Client Steps\fP for the full list of actions.
+Combining \fB\-M\fP and \fB\-T\fP is similar to \fB\-D\fP\&.
+.sp
+See \fI\%Dashboard Client\fP\&.
+.TP
+.B \fB\-S <script>, \-\-script <script>\fP
+Execute a dashboard for a configuration.
+.sp
+This option tells CTest to load in a configuration script which sets
+a number of parameters such as the binary and source directories.
+Then CTest will do what is required to create and run a dashboard.
+This option basically sets up a dashboard and then runs \fBctest \-D\fP
+with the appropriate options.
+.sp
+See \fI\%Dashboard Client\fP\&.
+.TP
+.B \fB\-SP <script>, \-\-script\-new\-process <script>\fP
+Execute a dashboard for a configuration.
+.sp
+This option does the same operations as \fB\-S\fP but it will do them in a
+separate process.  This is primarily useful in cases where the
+script may modify the environment and you do not want the modified
+environment to impact other \fB\-S\fP scripts.
+.sp
+See \fI\%Dashboard Client\fP\&.
+.TP
+.B \fB\-I [Start,End,Stride,test#,test#|Test file], \-\-tests\-information\fP
+Run a specific number of tests by number.
+.sp
+This option causes CTest to run tests starting at number \fBStart\fP,
+ending at number \fBEnd\fP, and incrementing by \fBStride\fP\&.  Any additional
+numbers after \fBStride\fP are considered individual test numbers.  \fBStart\fP,
+\fBEnd\fP, or \fBStride\fP can be empty.  Optionally a file can be given that
+contains the same syntax as the command line.
+.TP
+.B \fB\-U, \-\-union\fP
+Take the Union of \fB\-I\fP and \fB\-R\fP\&.
+.sp
+When both \fB\-R\fP and \fB\-I\fP are specified by default the intersection of
+tests are run.  By specifying \fB\-U\fP the union of tests is run instead.
+.TP
+.B \fB\-\-rerun\-failed\fP
+Run only the tests that failed previously.
+.sp
+This option tells CTest to perform only the tests that failed during
+its previous run.  When this option is specified, CTest ignores all
+other options intended to modify the list of tests to run (\fB\-L\fP, \fB\-R\fP,
+\fB\-E\fP, \fB\-LE\fP, \fB\-I\fP, etc).  In the event that CTest runs and no tests
+fail, subsequent calls to CTest with the \fB\-\-rerun\-failed\fP option will run
+the set of tests that most recently failed (if any).
+.TP
+.B \fB\-\-repeat <mode>:<n>\fP
+Run tests repeatedly based on the given \fB<mode>\fP up to \fB<n>\fP times.
+The modes are:
+.INDENT 7.0
+.TP
+.B \fBuntil\-fail\fP
+Require each test to run \fB<n>\fP times without failing in order to pass.
+This is useful in finding sporadic failures in test cases.
+.TP
+.B \fBuntil\-pass\fP
+Allow each test to run up to \fB<n>\fP times in order to pass.
+Repeats tests if they fail for any reason.
+This is useful in tolerating sporadic failures in test cases.
+.TP
+.B \fBafter\-timeout\fP
+Allow each test to run up to \fB<n>\fP times in order to pass.
+Repeats tests only if they timeout.
+This is useful in tolerating sporadic timeouts in test cases
+on busy machines.
+.UNINDENT
+.TP
+.B \fB\-\-repeat\-until\-fail <n>\fP
+Equivalent to \fB\-\-repeat until\-fail:<n>\fP\&.
+.TP
+.B \fB\-\-max\-width <width>\fP
+Set the max width for a test name to output.
+.sp
+Set the maximum width for each test name to show in the output.
+This allows the user to widen the output to avoid clipping the test
+name which can be very annoying.
+.TP
+.B \fB\-\-interactive\-debug\-mode [0|1]\fP
+Set the interactive mode to \fB0\fP or \fB1\fP\&.
+.sp
+This option causes CTest to run tests in either an interactive mode
+or a non\-interactive mode.  On Windows this means that in
+non\-interactive mode, all system debug pop up windows are blocked.
+In dashboard mode (\fBExperimental\fP, \fBNightly\fP, \fBContinuous\fP), the default
+is non\-interactive.  When just running tests not for a dashboard the
+default is to allow popups and interactive debugging.
+.TP
+.B \fB\-\-no\-label\-summary\fP
+Disable timing summary information for labels.
+.sp
+This option tells CTest not to print summary information for each
+label associated with the tests run.  If there are no labels on the
+tests, nothing extra is printed.
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.TP
+.B \fB\-\-no\-subproject\-summary\fP
+Disable timing summary information for subprojects.
+.sp
+This option tells CTest not to print summary information for each
+subproject associated with the tests run.  If there are no subprojects on the
+tests, nothing extra is printed.
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.UNINDENT
+.sp
+\fB\-\-build\-and\-test\fP
+See \fI\%Build and Test Mode\fP\&.
+.INDENT 0.0
+.TP
+.B \fB\-\-test\-output\-size\-passed <size>\fP
+Limit the output for passed tests to \fB<size>\fP bytes.
+.TP
+.B \fB\-\-test\-output\-size\-failed <size>\fP
+Limit the output for failed tests to \fB<size>\fP bytes.
+.TP
+.B \fB\-\-overwrite\fP
+Overwrite CTest configuration option.
+.sp
+By default CTest uses configuration options from configuration file.
+This option will overwrite the configuration option.
+.TP
+.B \fB\-\-force\-new\-ctest\-process\fP
+Run child CTest instances as new processes.
+.sp
+By default CTest will run child CTest instances within the same
+process.  If this behavior is not desired, this argument will
+enforce new processes for child CTest processes.
+.TP
+.B \fB\-\-schedule\-random\fP
+Use a random order for scheduling tests.
+.sp
+This option will run the tests in a random order.  It is commonly
+used to detect implicit dependencies in a test suite.
+.TP
+.B \fB\-\-submit\-index\fP
+Legacy option for old Dart2 dashboard server feature.
+Do not use.
+.TP
+.B \fB\-\-timeout <seconds>\fP
+Set the default test timeout.
+.sp
+This option effectively sets a timeout on all tests that do not
+already have a timeout set on them via the \fBTIMEOUT\fP
+property.
+.TP
+.B \fB\-\-stop\-time <time>\fP
+Set a time at which all tests should stop running.
+.sp
+Set a real time of day at which all tests should timeout.  Example:
+\fB7:00:00 \-0400\fP\&.  Any time format understood by the curl date parser
+is accepted.  Local time is assumed if no timezone is specified.
+.TP
+.B \fB\-\-print\-labels\fP
+Print all available test labels.
+.sp
+This option will not run any tests, it will simply print the list of
+all labels associated with the test set.
+.TP
+.B \fB\-\-no\-tests=<[error|ignore]>\fP
+Regard no tests found either as error or ignore it.
+.sp
+If no tests were found, the default behavior of CTest is to always log an
+error message but to return an error code in script mode only.  This option
+unifies the behavior of CTest by either returning an error code if no tests
+were found or by ignoring it.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fB\-\-help,\-help,\-usage,\-h,\-H,/?\fP
+Print usage information and exit.
+.sp
+Usage describes the basic command line interface and its options.
+.TP
+.B \fB\-\-version,\-version,/V [<f>]\fP
+Show program name/version banner and exit.
+.sp
+If a file is specified, the version is written into it.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-full [<f>]\fP
+Print all help manuals and exit.
+.sp
+All manuals are printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual <man> [<f>]\fP
+Print one help manual and exit.
+.sp
+The specified manual is printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-manual\-list [<f>]\fP
+List help manuals available and exit.
+.sp
+The list contains all manuals for which help may be obtained by
+using the \fB\-\-help\-manual\fP option followed by a manual name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command <cmd> [<f>]\fP
+Print help for one command and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual entry for \fB<cmd>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-command\-list [<f>]\fP
+List commands with help available and exit.
+.sp
+The list contains all commands for which help may be obtained by
+using the \fB\-\-help\-command\fP option followed by a command name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-commands [<f>]\fP
+Print cmake\-commands manual and exit.
+.sp
+The \fBcmake\-commands(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module <mod> [<f>]\fP
+Print help for one module and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual entry for \fB<mod>\fP is printed
+in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-module\-list [<f>]\fP
+List modules with help available and exit.
+.sp
+The list contains all modules for which help may be obtained by
+using the \fB\-\-help\-module\fP option followed by a module name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-modules [<f>]\fP
+Print cmake\-modules manual and exit.
+.sp
+The \fBcmake\-modules(7)\fP manual is printed in a human\-readable
+text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy <cmp> [<f>]\fP
+Print help for one policy and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual entry for \fB<cmp>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policy\-list [<f>]\fP
+List policies with help available and exit.
+.sp
+The list contains all policies for which help may be obtained by
+using the \fB\-\-help\-policy\fP option followed by a policy name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-policies [<f>]\fP
+Print cmake\-policies manual and exit.
+.sp
+The \fBcmake\-policies(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property <prop> [<f>]\fP
+Print help for one property and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual entries for \fB<prop>\fP are
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-property\-list [<f>]\fP
+List properties with help available and exit.
+.sp
+The list contains all properties for which help may be obtained by
+using the \fB\-\-help\-property\fP option followed by a property name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-properties [<f>]\fP
+Print cmake\-properties manual and exit.
+.sp
+The \fBcmake\-properties(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable <var> [<f>]\fP
+Print help for one variable and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual entry for \fB<var>\fP is
+printed in a human\-readable text format.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variable\-list [<f>]\fP
+List variables with help available and exit.
+.sp
+The list contains all variables for which help may be obtained by
+using the \fB\-\-help\-variable\fP option followed by a variable name.
+The help is printed to a named <f>ile if given.
+.TP
+.B \fB\-\-help\-variables [<f>]\fP
+Print cmake\-variables manual and exit.
+.sp
+The \fBcmake\-variables(7)\fP manual is printed in a
+human\-readable text format.
+The help is printed to a named <f>ile if given.
+.UNINDENT
+.SH LABEL AND SUBPROJECT SUMMARY
+.sp
+CTest prints timing summary information for each \fBLABEL\fP and subproject
+associated with the tests run. The label time summary will not include labels
+that are mapped to subprojects.
+.sp
+When the \fBPROCESSORS\fP test property is set, CTest will display a
+weighted test timing result in label and subproject summaries. The time is
+reported with \fIsec*proc\fP instead of just \fIsec\fP\&.
+.sp
+The weighted time summary reported for each label or subproject \fBj\fP
+is computed as:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Weighted Time Summary for Label/Subproject j =
+    sum(raw_test_time[j,i] * num_processors[j,i], i=1...num_tests[j])
+
+for labels/subprojects j=1...total
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+where:
+.INDENT 0.0
+.IP \(bu 2
+\fBraw_test_time[j,i]\fP: Wall\-clock time for the \fBi\fP test
+for the \fBj\fP label or subproject
+.IP \(bu 2
+\fBnum_processors[j,i]\fP: Value of the CTest \fBPROCESSORS\fP property
+for the \fBi\fP test for the \fBj\fP label or subproject
+.IP \(bu 2
+\fBnum_tests[j]\fP: Number of tests associated with the \fBj\fP label or subproject
+.IP \(bu 2
+\fBtotal\fP: Total number of labels or subprojects that have at least one test run
+.UNINDENT
+.sp
+Therefore, the weighted time summary for each label or subproject represents
+the amount of time that CTest gave to run the tests for each label or
+subproject and gives a good representation of the total expense of the tests
+for each label or subproject when compared to other labels or subprojects.
+.sp
+For example, if \fBSubprojectA\fP showed \fB100 sec*proc\fP and \fBSubprojectB\fP showed
+\fB10 sec*proc\fP, then CTest allocated approximately 10 times the CPU/core time
+to run the tests for \fBSubprojectA\fP than for \fBSubprojectB\fP (e.g. so if effort
+is going to be expended to reduce the cost of the test suite for the whole
+project, then reducing the cost of the test suite for \fBSubprojectA\fP would
+likely have a larger impact than effort to reduce the cost of the test suite
+for \fBSubprojectB\fP).
+.SH BUILD AND TEST MODE
+.sp
+CTest provides a command\-line signature to configure (i.e. run cmake on),
+build, and/or execute a test:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ctest \-\-build\-and\-test <path\-to\-source> <path\-to\-build>
+      \-\-build\-generator <generator>
+      [<options>...]
+      [\-\-build\-options <opts>...]
+      [\-\-test\-command <command> [<args>...]]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The configure and test steps are optional. The arguments to this command line
+are the source and binary directories.  The \fB\-\-build\-generator\fP option \fImust\fP
+be provided to use \fB\-\-build\-and\-test\fP\&.  If \fB\-\-test\-command\fP is specified
+then that will be run after the build is complete.  Other options that affect
+this mode include:
+.INDENT 0.0
+.TP
+.B \fB\-\-build\-target\fP
+Specify a specific target to build.
+.sp
+If left out the \fBall\fP target is built.
+.TP
+.B \fB\-\-build\-nocmake\fP
+Run the build without running cmake first.
+.sp
+Skip the cmake step.
+.TP
+.B \fB\-\-build\-run\-dir\fP
+Specify directory to run programs from.
+.sp
+Directory where programs will be after it has been compiled.
+.TP
+.B \fB\-\-build\-two\-config\fP
+Run CMake twice.
+.TP
+.B \fB\-\-build\-exe\-dir\fP
+Specify the directory for the executable.
+.TP
+.B \fB\-\-build\-generator\fP
+Specify the generator to use. See the \fBcmake\-generators(7)\fP manual.
+.TP
+.B \fB\-\-build\-generator\-platform\fP
+Specify the generator\-specific platform.
+.TP
+.B \fB\-\-build\-generator\-toolset\fP
+Specify the generator\-specific toolset.
+.TP
+.B \fB\-\-build\-project\fP
+Specify the name of the project to build.
+.TP
+.B \fB\-\-build\-makeprogram\fP
+Specify the explicit make program to be used by CMake when configuring and
+building the project. Only applicable for Make and Ninja based generators.
+.TP
+.B \fB\-\-build\-noclean\fP
+Skip the make clean step.
+.TP
+.B \fB\-\-build\-config\-sample\fP
+A sample executable to use to determine the configuration that
+should be used.  e.g.  \fBDebug\fP, \fBRelease\fP etc.
+.TP
+.B \fB\-\-build\-options\fP
+Additional options for configuring the build (i.e. for CMake, not for
+the build tool).  Note that if this is specified, the \fB\-\-build\-options\fP
+keyword and its arguments must be the last option given on the command
+line, with the possible exception of \fB\-\-test\-command\fP\&.
+.TP
+.B \fB\-\-test\-command\fP
+The command to run as the test step with the \fB\-\-build\-and\-test\fP option.
+All arguments following this keyword will be assumed to be part of the
+test command line, so it must be the last option given.
+.TP
+.B \fB\-\-test\-timeout\fP
+The time limit in seconds
+.UNINDENT
+.SH DASHBOARD CLIENT
+.sp
+CTest can operate as a client for the \fI\%CDash\fP software quality dashboard
+application.  As a dashboard client, CTest performs a sequence of steps
+to configure, build, and test software, and then submits the results to
+a \fI\%CDash\fP server. The command\-line signature used to submit to \fI\%CDash\fP is:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ctest (\-D <dashboard> | \-M <model> \-T <action> | \-S <script> | \-SP <script>)
+      [\-\- <dashboard\-options>...]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Options for Dashboard Client include:
+.INDENT 0.0
+.TP
+.B \fB\-\-group <group>\fP
+Specify what group you’d like to submit results to
+.sp
+Submit dashboard to specified group instead of default one.  By
+default, the dashboard is submitted to Nightly, Experimental, or
+Continuous group, but by specifying this option, the group can be
+arbitrary.
+.sp
+This replaces the deprecated option \fB\-\-track\fP\&.
+Despite the name change its behavior is unchanged.
+.TP
+.B \fB\-A <file>, \-\-add\-notes <file>\fP
+Add a notes file with submission.
+.sp
+This option tells CTest to include a notes file when submitting
+dashboard.
+.TP
+.B \fB\-\-tomorrow\-tag\fP
+\fBNightly\fP or \fBExperimental\fP starts with next day tag.
+.sp
+This is useful if the build will not finish in one day.
+.TP
+.B \fB\-\-extra\-submit <file>[;<file>]\fP
+Submit extra files to the dashboard.
+.sp
+This option will submit extra files to the dashboard.
+.TP
+.B \fB\-\-http1.0\fP
+Submit using \fIHTTP 1.0\fP\&.
+.sp
+This option will force CTest to use \fIHTTP 1.0\fP to submit files to the
+dashboard, instead of \fIHTTP 1.1\fP\&.
+.TP
+.B \fB\-\-no\-compress\-output\fP
+Do not compress test output when submitting.
+.sp
+This flag will turn off automatic compression of test output.  Use
+this to maintain compatibility with an older version of CDash which
+doesn’t support compressed test output.
+.UNINDENT
+.SS Dashboard Client Steps
+.sp
+CTest defines an ordered list of testing steps of which some or all may
+be run as a dashboard client:
+.INDENT 0.0
+.TP
+.B \fBStart\fP
+Start a new dashboard submission to be composed of results recorded
+by the following steps.
+See the \fI\%CTest Start Step\fP section below.
+.TP
+.B \fBUpdate\fP
+Update the source tree from its version control repository.
+Record the old and new versions and the list of updated source files.
+See the \fI\%CTest Update Step\fP section below.
+.TP
+.B \fBConfigure\fP
+Configure the software by running a command in the build tree.
+Record the configuration output log.
+See the \fI\%CTest Configure Step\fP section below.
+.TP
+.B \fBBuild\fP
+Build the software by running a command in the build tree.
+Record the build output log and detect warnings and errors.
+See the \fI\%CTest Build Step\fP section below.
+.TP
+.B \fBTest\fP
+Test the software by loading a \fBCTestTestfile.cmake\fP
+from the build tree and executing the defined tests.
+Record the output and result of each test.
+See the \fI\%CTest Test Step\fP section below.
+.TP
+.B \fBCoverage\fP
+Compute coverage of the source code by running a coverage
+analysis tool and recording its output.
+See the \fI\%CTest Coverage Step\fP section below.
+.TP
+.B \fBMemCheck\fP
+Run the software test suite through a memory check tool.
+Record the test output, results, and issues reported by the tool.
+See the \fI\%CTest MemCheck Step\fP section below.
+.TP
+.B \fBSubmit\fP
+Submit results recorded from other testing steps to the
+software quality dashboard server.
+See the \fI\%CTest Submit Step\fP section below.
+.UNINDENT
+.SS Dashboard Client Modes
+.sp
+CTest defines three modes of operation as a dashboard client:
+.INDENT 0.0
+.TP
+.B \fBNightly\fP
+This mode is intended to be invoked once per day, typically at night.
+It enables the \fBStart\fP, \fBUpdate\fP, \fBConfigure\fP, \fBBuild\fP, \fBTest\fP,
+\fBCoverage\fP, and \fBSubmit\fP steps by default.  Selected steps run even
+if the \fBUpdate\fP step reports no changes to the source tree.
+.TP
+.B \fBContinuous\fP
+This mode is intended to be invoked repeatedly throughout the day.
+It enables the \fBStart\fP, \fBUpdate\fP, \fBConfigure\fP, \fBBuild\fP, \fBTest\fP,
+\fBCoverage\fP, and \fBSubmit\fP steps by default, but exits after the
+\fBUpdate\fP step if it reports no changes to the source tree.
+.TP
+.B \fBExperimental\fP
+This mode is intended to be invoked by a developer to test local changes.
+It enables the \fBStart\fP, \fBConfigure\fP, \fBBuild\fP, \fBTest\fP, \fBCoverage\fP,
+and \fBSubmit\fP steps by default.
+.UNINDENT
+.SS Dashboard Client via CTest Command\-Line
+.sp
+CTest can perform testing on an already\-generated build tree.
+Run the \fBctest\fP command with the current working directory set
+to the build tree and use one of these signatures:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ctest \-D <mode>[<step>]
+ctest \-M <mode> [ \-T <step> ]...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The \fB<mode>\fP must be one of the above \fI\%Dashboard Client Modes\fP,
+and each \fB<step>\fP must be one of the above \fI\%Dashboard Client Steps\fP\&.
+.sp
+CTest reads the \fI\%Dashboard Client Configuration\fP settings from
+a file in the build tree called either \fBCTestConfiguration.ini\fP
+or \fBDartConfiguration.tcl\fP (the names are historical).  The format
+of the file is:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# Lines starting in \(aq#\(aq are comments.
+# Other non\-blank lines are key\-value pairs.
+<setting>: <value>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+where \fB<setting>\fP is the setting name and \fB<value>\fP is the
+setting value.
+.sp
+In build trees generated by CMake, this configuration file is
+generated by the \fBCTest\fP module if included by the project.
+The module uses variables to obtain a value for each setting
+as documented with the settings below.
+.SS Dashboard Client via CTest Script
+.sp
+CTest can perform testing driven by a \fBcmake\-language(7)\fP
+script that creates and maintains the source and build tree as
+well as performing the testing steps.  Run the \fBctest\fP command
+with the current working directory set outside of any build tree
+and use one of these signatures:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ctest \-S <script>
+ctest \-SP <script>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The \fB<script>\fP file must call CTest Commands commands
+to run testing steps explicitly as documented below.  The commands
+obtain \fI\%Dashboard Client Configuration\fP settings from their
+arguments or from variables set in the script.
+.SH DASHBOARD CLIENT CONFIGURATION
+.sp
+The \fI\%Dashboard Client Steps\fP may be configured by named
+settings as documented in the following sections.
+.SS CTest Start Step
+.sp
+Start a new dashboard submission to be composed of results recorded
+by the following steps.
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_start()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+The command first runs the command\-line specified by the
+\fBCTEST_CHECKOUT_COMMAND\fP variable, if set, to initialize the source
+directory.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBBuildDirectory\fP
+The full path to the project build tree.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_BINARY_DIRECTORY\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBPROJECT_BINARY_DIR\fP
+.UNINDENT
+.TP
+.B \fBSourceDirectory\fP
+The full path to the project source tree.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SOURCE_DIRECTORY\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBPROJECT_SOURCE_DIR\fP
+.UNINDENT
+.UNINDENT
+.SS CTest Update Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_update()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings to specify the version control tool include:
+.INDENT 0.0
+.TP
+.B \fBBZRCommand\fP
+\fBbzr\fP command\-line tool to use if source tree is managed by Bazaar.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_BZR_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: none
+.UNINDENT
+.TP
+.B \fBBZRUpdateOptions\fP
+Command\-line options to the \fBBZRCommand\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_BZR_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: none
+.UNINDENT
+.TP
+.B \fBCVSCommand\fP
+\fBcvs\fP command\-line tool to use if source tree is managed by CVS.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_CVS_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCVSCOMMAND\fP
+.UNINDENT
+.TP
+.B \fBCVSUpdateOptions\fP
+Command\-line options to the \fBCVSCommand\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_CVS_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCVS_UPDATE_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBGITCommand\fP
+\fBgit\fP command\-line tool to use if source tree is managed by Git.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_GIT_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBGITCOMMAND\fP
+.UNINDENT
+.sp
+The source tree is updated by \fBgit fetch\fP followed by
+\fBgit reset \-\-hard\fP to the \fBFETCH_HEAD\fP\&.  The result is the same
+as \fBgit pull\fP except that any local modifications are overwritten.
+Use \fBGITUpdateCustom\fP to specify a different approach.
+.TP
+.B \fBGITInitSubmodules\fP
+If set, CTest will update the repository’s submodules before updating.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_GIT_INIT_SUBMODULES\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_GIT_INIT_SUBMODULES\fP
+.UNINDENT
+.TP
+.B \fBGITUpdateCustom\fP
+Specify a custom command line (as a semicolon\-separated list) to run
+in the source tree (Git work tree) to update it instead of running
+the \fBGITCommand\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_GIT_UPDATE_CUSTOM\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_GIT_UPDATE_CUSTOM\fP
+.UNINDENT
+.TP
+.B \fBGITUpdateOptions\fP
+Command\-line options to the \fBGITCommand\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_GIT_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBGIT_UPDATE_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBHGCommand\fP
+\fBhg\fP command\-line tool to use if source tree is managed by Mercurial.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_HG_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: none
+.UNINDENT
+.TP
+.B \fBHGUpdateOptions\fP
+Command\-line options to the \fBHGCommand\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_HG_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: none
+.UNINDENT
+.TP
+.B \fBP4Client\fP
+Value of the \fB\-c\fP option to the \fBP4Command\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_P4_CLIENT\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_P4_CLIENT\fP
+.UNINDENT
+.TP
+.B \fBP4Command\fP
+\fBp4\fP command\-line tool to use if source tree is managed by Perforce.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_P4_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBP4COMMAND\fP
+.UNINDENT
+.TP
+.B \fBP4Options\fP
+Command\-line options to the \fBP4Command\fP for all invocations.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_P4_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_P4_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBP4UpdateCustom\fP
+Specify a custom command line (as a semicolon\-separated list) to run
+in the source tree (Perforce tree) to update it instead of running
+the \fBP4Command\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_P4_UPDATE_CUSTOM\fP
+.UNINDENT
+.TP
+.B \fBP4UpdateOptions\fP
+Command\-line options to the \fBP4Command\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_P4_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_P4_UPDATE_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBSVNCommand\fP
+\fBsvn\fP command\-line tool to use if source tree is managed by Subversion.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SVN_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBSVNCOMMAND\fP
+.UNINDENT
+.TP
+.B \fBSVNOptions\fP
+Command\-line options to the \fBSVNCommand\fP for all invocations.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SVN_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_SVN_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBSVNUpdateOptions\fP
+Command\-line options to the \fBSVNCommand\fP when updating the source.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SVN_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBSVN_UPDATE_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBUpdateCommand\fP
+Specify the version\-control command\-line tool to use without
+detecting the VCS that manages the source tree.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_UPDATE_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fB<VCS>COMMAND\fP
+when \fBUPDATE_TYPE\fP is \fB<vcs>\fP, else \fBUPDATE_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBUpdateOptions\fP
+Command\-line options to the \fBUpdateCommand\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_UPDATE_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fB<VCS>_UPDATE_OPTIONS\fP
+when \fBUPDATE_TYPE\fP is \fB<vcs>\fP, else \fBUPDATE_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBUpdateType\fP
+Specify the version\-control system that manages the source
+tree if it cannot be detected automatically.
+The value may be \fBbzr\fP, \fBcvs\fP, \fBgit\fP, \fBhg\fP,
+\fBp4\fP, or \fBsvn\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none, detected from source tree
+.IP \(bu 2
+\fBCTest\fP module variable: \fBUPDATE_TYPE\fP if set,
+else \fBCTEST_UPDATE_TYPE\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fBUpdateVersionOnly\fP
+Specify that you want the version control update command to only
+discover the current version that is checked out, and not to update
+to a different version.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_UPDATE_VERSION_ONLY\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fBUpdateVersionOverride\fP
+Specify the current version of your source tree.
+.sp
+When this variable is set to a non\-empty string, CTest will report the value
+you specified rather than using the update command to discover the current
+version that is checked out. Use of this variable supersedes
+\fBUpdateVersionOnly\fP\&. Like \fBUpdateVersionOnly\fP, using this variable tells
+CTest not to update the source tree to a different version.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_UPDATE_VERSION_OVERRIDE\fP
+.UNINDENT
+.UNINDENT
+.sp
+Additional configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBNightlyStartTime\fP
+In the \fBNightly\fP dashboard mode, specify the “nightly start time”.
+With centralized version control systems (\fBcvs\fP and \fBsvn\fP),
+the \fBUpdate\fP step checks out the version of the software as of
+this time so that multiple clients choose a common version to test.
+This is not well\-defined in distributed version\-control systems so
+the setting is ignored.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_NIGHTLY_START_TIME\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBNIGHTLY_START_TIME\fP if set,
+else \fBCTEST_NIGHTLY_START_TIME\fP
+.UNINDENT
+.UNINDENT
+.SS CTest Configure Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_configure()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBConfigureCommand\fP
+Command\-line to launch the software configuration process.
+It will be executed in the location specified by the
+\fBBuildDirectory\fP setting.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_CONFIGURE_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCMAKE_COMMAND\fP
+followed by \fBPROJECT_SOURCE_DIR\fP
+.UNINDENT
+.TP
+.B \fBLabelsForSubprojects\fP
+Specify a semicolon\-separated list of labels that will be treated as
+subprojects. This mapping will be passed on to CDash when configure, test or
+build results are submitted.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.UNINDENT
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.UNINDENT
+.SS CTest Build Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_build()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBDefaultCTestConfigurationType\fP
+When the build system to be launched allows build\-time selection
+of the configuration (e.g. \fBDebug\fP, \fBRelease\fP), this specifies
+the default configuration to be built when no \fB\-C\fP option is
+given to the \fBctest\fP command.  The value will be substituted into
+the value of \fBMakeCommand\fP to replace the literal string
+\fB${CTEST_CONFIGURATION_TYPE}\fP if it appears.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_CONFIGURATION_TYPE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDEFAULT_CTEST_CONFIGURATION_TYPE\fP,
+initialized by the \fBCMAKE_CONFIG_TYPE\fP environment variable
+.UNINDENT
+.TP
+.B \fBLabelsForSubprojects\fP
+Specify a semicolon\-separated list of labels that will be treated as
+subprojects. This mapping will be passed on to CDash when configure, test or
+build results are submitted.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.UNINDENT
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.TP
+.B \fBMakeCommand\fP
+Command\-line to launch the software build process.
+It will be executed in the location specified by the
+\fBBuildDirectory\fP setting.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_BUILD_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMAKECOMMAND\fP,
+initialized by the \fBbuild_command()\fP command
+.UNINDENT
+.TP
+.B \fBUseLaunchers\fP
+For build trees generated by CMake using one of the
+Makefile Generators or the \fBNinja\fP
+generator, specify whether the
+\fBCTEST_USE_LAUNCHERS\fP feature is enabled by the
+\fBCTestUseLaunchers\fP module (also included by the
+\fBCTest\fP module).  When enabled, the generated build
+system wraps each invocation of the compiler, linker, or
+custom command line with a “launcher” that communicates
+with CTest via environment variables and files to report
+granular build warning and error information.  Otherwise,
+CTest must “scrape” the build output log for diagnostics.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_USE_LAUNCHERS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_USE_LAUNCHERS\fP
+.UNINDENT
+.UNINDENT
+.SS CTest Test Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_test()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBResourceSpecFile\fP
+Specify a
+\fI\%resource specification file\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_RESOURCE_SPEC_FILE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_RESOURCE_SPEC_FILE\fP
+.UNINDENT
+.sp
+See \fI\%Resource Allocation\fP for more information.
+.TP
+.B \fBLabelsForSubprojects\fP
+Specify a semicolon\-separated list of labels that will be treated as
+subprojects. This mapping will be passed on to CDash when configure, test or
+build results are submitted.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_LABELS_FOR_SUBPROJECTS\fP
+.UNINDENT
+.sp
+See \fI\%Label and Subproject Summary\fP\&.
+.TP
+.B \fBTestLoad\fP
+While running tests in parallel (e.g. with \fB\-j\fP), try not to start
+tests when they may cause the CPU load to pass above a given threshold.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_TEST_LOAD\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_TEST_LOAD\fP
+.UNINDENT
+.TP
+.B \fBTimeOut\fP
+The default timeout for each test if not specified by the
+\fBTIMEOUT\fP test property.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_TEST_TIMEOUT\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDART_TESTING_TIMEOUT\fP
+.UNINDENT
+.UNINDENT
+.SS CTest Coverage Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_coverage()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBCoverageCommand\fP
+Command\-line tool to perform software coverage analysis.
+It will be executed in the location specified by the
+\fBBuildDirectory\fP setting.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_COVERAGE_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCOVERAGE_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBCoverageExtraFlags\fP
+Specify command\-line options to the \fBCoverageCommand\fP tool.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_COVERAGE_EXTRA_FLAGS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCOVERAGE_EXTRA_FLAGS\fP
+.UNINDENT
+.sp
+These options are the first arguments passed to \fBCoverageCommand\fP\&.
+.UNINDENT
+.SS CTest MemCheck Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_memcheck()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBMemoryCheckCommand\fP
+Command\-line tool to perform dynamic analysis.  Test command lines
+will be launched through this tool.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_MEMORYCHECK_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMEMORYCHECK_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBMemoryCheckCommandOptions\fP
+Specify command\-line options to the \fBMemoryCheckCommand\fP tool.
+They will be placed prior to the test command line.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_MEMORYCHECK_COMMAND_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMEMORYCHECK_COMMAND_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBMemoryCheckType\fP
+Specify the type of memory checking to perform.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_MEMORYCHECK_TYPE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMEMORYCHECK_TYPE\fP
+.UNINDENT
+.TP
+.B \fBMemoryCheckSanitizerOptions\fP
+Specify options to sanitizers when running with a sanitize\-enabled build.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_MEMORYCHECK_SANITIZER_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMEMORYCHECK_SANITIZER_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBMemoryCheckSuppressionFile\fP
+Specify a file containing suppression rules for the
+\fBMemoryCheckCommand\fP tool.  It will be passed with options
+appropriate to the tool.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_MEMORYCHECK_SUPPRESSIONS_FILE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBMEMORYCHECK_SUPPRESSIONS_FILE\fP
+.UNINDENT
+.UNINDENT
+.sp
+Additional configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBBoundsCheckerCommand\fP
+Specify a \fBMemoryCheckCommand\fP that is known to be command\-line
+compatible with Bounds Checker.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: none
+.UNINDENT
+.TP
+.B \fBPurifyCommand\fP
+Specify a \fBMemoryCheckCommand\fP that is known to be command\-line
+compatible with Purify.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBPURIFYCOMMAND\fP
+.UNINDENT
+.TP
+.B \fBValgrindCommand\fP
+Specify a \fBMemoryCheckCommand\fP that is known to be command\-line
+compatible with Valgrind.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBVALGRIND_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBValgrindCommandOptions\fP
+Specify command\-line options to the \fBValgrindCommand\fP tool.
+They will be placed prior to the test command line.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBVALGRIND_COMMAND_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBDrMemoryCommand\fP
+Specify a \fBMemoryCheckCommand\fP that is known to be a command\-line
+compatible with DrMemory.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDRMEMORY_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBDrMemoryCommandOptions\fP
+Specify command\-line options to the \fBDrMemoryCommand\fP tool.
+They will be placed prior to the test command line.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDRMEMORY_COMMAND_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBCudaSanitizerCommand\fP
+Specify a \fBMemoryCheckCommand\fP that is known to be a command\-line
+compatible with cuda\-memcheck or compute\-sanitizer.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCUDA_SANITIZER_COMMAND\fP
+.UNINDENT
+.TP
+.B \fBCudaSanitizerCommandOptions\fP
+Specify command\-line options to the \fBCudaSanitizerCommand\fP tool.
+They will be placed prior to the test command line.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCUDA_SANITIZER_COMMAND_OPTIONS\fP
+.UNINDENT
+.UNINDENT
+.SS CTest Submit Step
+.sp
+In a \fI\%CTest Script\fP, the \fBctest_submit()\fP command runs this step.
+Arguments to the command may specify some of the step settings.
+.sp
+Configuration settings include:
+.INDENT 0.0
+.TP
+.B \fBBuildName\fP
+Describe the dashboard client platform with a short string.
+(Operating system, compiler, etc.)
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_BUILD_NAME\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBBUILDNAME\fP
+.UNINDENT
+.TP
+.B \fBCDashVersion\fP
+Legacy option.  Not used.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none, detected from server
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_CDASH_VERSION\fP
+.UNINDENT
+.TP
+.B \fBCTestSubmitRetryCount\fP
+Specify a number of attempts to retry submission on network failure.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none,
+use the \fBctest_submit()\fP \fBRETRY_COUNT\fP option.
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_SUBMIT_RETRY_COUNT\fP
+.UNINDENT
+.TP
+.B \fBCTestSubmitRetryDelay\fP
+Specify a delay before retrying submission on network failure.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: none,
+use the \fBctest_submit()\fP \fBRETRY_DELAY\fP option.
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_SUBMIT_RETRY_DELAY\fP
+.UNINDENT
+.TP
+.B \fBCurlOptions\fP
+Specify a semicolon\-separated list of options to control the
+Curl library that CTest uses internally to connect to the
+server.  Possible options are \fBCURLOPT_SSL_VERIFYPEER_OFF\fP
+and \fBCURLOPT_SSL_VERIFYHOST_OFF\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_CURL_OPTIONS\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_CURL_OPTIONS\fP
+.UNINDENT
+.TP
+.B \fBDropLocation\fP
+Legacy option.  When \fBSubmitURL\fP is not set, it is constructed from
+\fBDropMethod\fP, \fBDropSiteUser\fP, \fBDropSitePassword\fP, \fBDropSite\fP, and
+\fBDropLocation\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_LOCATION\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDROP_LOCATION\fP if set,
+else \fBCTEST_DROP_LOCATION\fP
+.UNINDENT
+.TP
+.B \fBDropMethod\fP
+Legacy option.  When \fBSubmitURL\fP is not set, it is constructed from
+\fBDropMethod\fP, \fBDropSiteUser\fP, \fBDropSitePassword\fP, \fBDropSite\fP, and
+\fBDropLocation\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_METHOD\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDROP_METHOD\fP if set,
+else \fBCTEST_DROP_METHOD\fP
+.UNINDENT
+.TP
+.B \fBDropSite\fP
+Legacy option.  When \fBSubmitURL\fP is not set, it is constructed from
+\fBDropMethod\fP, \fBDropSiteUser\fP, \fBDropSitePassword\fP, \fBDropSite\fP, and
+\fBDropLocation\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_SITE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDROP_SITE\fP if set,
+else \fBCTEST_DROP_SITE\fP
+.UNINDENT
+.TP
+.B \fBDropSitePassword\fP
+Legacy option.  When \fBSubmitURL\fP is not set, it is constructed from
+\fBDropMethod\fP, \fBDropSiteUser\fP, \fBDropSitePassword\fP, \fBDropSite\fP, and
+\fBDropLocation\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_SITE_PASSWORD\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDROP_SITE_PASSWORD\fP if set,
+else \fBCTEST_DROP_SITE_PASWORD\fP
+.UNINDENT
+.TP
+.B \fBDropSiteUser\fP
+Legacy option.  When \fBSubmitURL\fP is not set, it is constructed from
+\fBDropMethod\fP, \fBDropSiteUser\fP, \fBDropSitePassword\fP, \fBDropSite\fP, and
+\fBDropLocation\fP\&.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_SITE_USER\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBDROP_SITE_USER\fP if set,
+else \fBCTEST_DROP_SITE_USER\fP
+.UNINDENT
+.TP
+.B \fBIsCDash\fP
+Legacy option.  Not used.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_DROP_SITE_CDASH\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBCTEST_DROP_SITE_CDASH\fP
+.UNINDENT
+.TP
+.B \fBScpCommand\fP
+Legacy option.  Not used.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SCP_COMMAND\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBSCPCOMMAND\fP
+.UNINDENT
+.TP
+.B \fBSite\fP
+Describe the dashboard client host site with a short string.
+(Hostname, domain, etc.)
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SITE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBSITE\fP,
+initialized by the \fBsite_name()\fP command
+.UNINDENT
+.TP
+.B \fBSubmitURL\fP
+The \fBhttp\fP or \fBhttps\fP URL of the dashboard server to send the submission
+to.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_SUBMIT_URL\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBSUBMIT_URL\fP if set,
+else \fBCTEST_SUBMIT_URL\fP
+.UNINDENT
+.TP
+.B \fBTriggerSite\fP
+Legacy option.  Not used.
+.INDENT 7.0
+.IP \(bu 2
+\fI\%CTest Script\fP variable: \fBCTEST_TRIGGER_SITE\fP
+.IP \(bu 2
+\fBCTest\fP module variable: \fBTRIGGER_SITE\fP if set,
+else \fBCTEST_TRIGGER_SITE\fP
+.UNINDENT
+.UNINDENT
+.SH SHOW AS JSON OBJECT MODEL
+.sp
+When the \fB\-\-show\-only=json\-v1\fP command line option is given, the test
+information is output in JSON format.  Version 1.0 of the JSON object
+model is defined as follows:
+.INDENT 0.0
+.TP
+.B \fBkind\fP
+The string “ctestInfo”.
+.TP
+.B \fBversion\fP
+A JSON object specifying the version components.  Its members are
+.INDENT 7.0
+.TP
+.B \fBmajor\fP
+A non\-negative integer specifying the major version component.
+.TP
+.B \fBminor\fP
+A non\-negative integer specifying the minor version component.
+.UNINDENT
+.TP
+.B \fBbacktraceGraph\fP
+JSON object representing backtrace information with the
+following members:
+.INDENT 7.0
+.TP
+.B \fBcommands\fP
+List of command names.
+.TP
+.B \fBfiles\fP
+List of file names.
+.TP
+.B \fBnodes\fP
+List of node JSON objects with members:
+.INDENT 7.0
+.TP
+.B \fBcommand\fP
+Index into the \fBcommands\fP member of the \fBbacktraceGraph\fP\&.
+.TP
+.B \fBfile\fP
+Index into the \fBfiles\fP member of the \fBbacktraceGraph\fP\&.
+.TP
+.B \fBline\fP
+Line number in the file where the backtrace was added.
+.TP
+.B \fBparent\fP
+Index into the \fBnodes\fP member of the \fBbacktraceGraph\fP
+representing the parent in the graph.
+.UNINDENT
+.UNINDENT
+.TP
+.B \fBtests\fP
+A JSON array listing information about each test.  Each entry
+is a JSON object with members:
+.INDENT 7.0
+.TP
+.B \fBname\fP
+Test name.
+.TP
+.B \fBconfig\fP
+Configuration that the test can run on.
+Empty string means any config.
+.TP
+.B \fBcommand\fP
+List where the first element is the test command and the
+remaining elements are the command arguments.
+.TP
+.B \fBbacktrace\fP
+Index into the \fBnodes\fP member of the \fBbacktraceGraph\fP\&.
+.TP
+.B \fBproperties\fP
+Test properties.
+Can contain keys for each of the supported test properties.
+.UNINDENT
+.UNINDENT
+.SH RESOURCE ALLOCATION
+.sp
+CTest provides a mechanism for tests to specify the resources that they need
+in a fine\-grained way, and for users to specify the resources available on
+the running machine. This allows CTest to internally keep track of which
+resources are in use and which are free, scheduling tests in a way that
+prevents them from trying to claim resources that are not available.
+.sp
+When the resource allocation feature is used, CTest will not oversubscribe
+resources. For example, if a resource has 8 slots, CTest will not run tests
+that collectively use more than 8 slots at a time. This has the effect of
+limiting how many tests can run at any given time, even if a high \fB\-j\fP
+argument is used, if those tests all use some slots from the same resource.
+In addition, it means that a single test that uses more of a resource than is
+available on a machine will not run at all (and will be reported as
+\fBNot Run\fP).
+.sp
+A common use case for this feature is for tests that require the use of a GPU.
+Multiple tests can simultaneously allocate memory from a GPU, but if too many
+tests try to do this at once, some of them will fail to allocate, resulting in
+a failed test, even though the test would have succeeded if it had the memory
+it needed. By using the resource allocation feature, each test can specify how
+much memory it requires from a GPU, allowing CTest to schedule tests in a way
+that running several of these tests at once does not exhaust the GPU’s memory
+pool.
+.sp
+Please note that CTest has no concept of what a GPU is or how much memory it
+has, nor does it have any way of communicating with a GPU to retrieve this
+information or perform any memory management. CTest simply keeps track of a
+list of abstract resource types, each of which has a certain number of slots
+available for tests to use. Each test specifies the number of slots that it
+requires from a certain resource, and CTest then schedules them in a way that
+prevents the total number of slots in use from exceeding the listed capacity.
+When a test is executed, and slots from a resource are allocated to that test,
+tests may assume that they have exclusive use of those slots for the duration
+of the test’s process.
+.sp
+The CTest resource allocation feature consists of two inputs:
+.INDENT 0.0
+.IP \(bu 2
+The \fI\%resource specification file\fP,
+described below, which describes the resources available on the system.
+.IP \(bu 2
+The \fBRESOURCE_GROUPS\fP property of tests, which describes the
+resources required by the test.
+.UNINDENT
+.sp
+When CTest runs a test, the resources allocated to that test are passed in the
+form of a set of
+\fI\%environment variables\fP as
+described below. Using this information to decide which resource to connect to
+is left to the test writer.
+.sp
+The \fBRESOURCE_GROUPS\fP property tells CTest what resources a test expects
+to use grouped in a way meaningful to the test.  The test itself must read
+the \fI\%environment variables\fP to
+determine which resources have been allocated to each group.  For example,
+each group may correspond to a process the test will spawn when executed.
+.sp
+Note that even if a test specifies a \fBRESOURCE_GROUPS\fP property, it is still
+possible for that to test to run without any resource allocation (and without
+the corresponding
+\fI\%environment variables\fP)
+if the user does not pass a resource specification file. Passing this file,
+either through the \fB\-\-resource\-spec\-file\fP command\-line argument or the
+\fBRESOURCE_SPEC_FILE\fP argument to \fBctest_test()\fP, is what activates the
+resource allocation feature. Tests should check the
+\fBCTEST_RESOURCE_GROUP_COUNT\fP environment variable to find out whether or not
+resource allocation is activated. This variable will always (and only) be
+defined if resource allocation is activated. If resource allocation is not
+activated, then the \fBCTEST_RESOURCE_GROUP_COUNT\fP variable will not exist,
+even if it exists for the parent \fBctest\fP process. If a test absolutely must
+have resource allocation, then it can return a failing exit code or use the
+\fBSKIP_RETURN_CODE\fP or \fBSKIP_REGULAR_EXPRESSION\fP
+properties to indicate a skipped test.
+.SS Resource Specification File
+.sp
+The resource specification file is a JSON file which is passed to CTest, either
+on the \fI\%ctest(1)\fP command line as \fB\-\-resource\-spec\-file\fP, or as the
+\fBRESOURCE_SPEC_FILE\fP argument of \fBctest_test()\fP\&. If a dashboard script
+is used and \fBRESOURCE_SPEC_FILE\fP is not specified, the value of
+\fBCTEST_RESOURCE_SPEC_FILE\fP in the dashboard script is used instead.
+If \fB\-\-resource\-spec\-file\fP, \fBRESOURCE_SPEC_FILE\fP, and
+\fBCTEST_RESOURCE_SPEC_FILE\fP in the dashboard script are not specified,
+the value of \fBCTEST_RESOURCE_SPEC_FILE\fP in the CMake build is used
+instead. If none of these are specified, no resource spec file is used.
+.sp
+The resource specification file must be a JSON object. All examples in this
+document assume the following resource specification file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+  "version": {
+    "major": 1,
+    "minor": 0
+  },
+  "local": [
+    {
+      "gpus": [
+        {
+          "id": "0",
+          "slots": 2
+        },
+        {
+          "id": "1",
+          "slots": 4
+        },
+        {
+          "id": "2",
+          "slots": 2
+        },
+        {
+          "id": "3"
+        }
+      ],
+      "crypto_chips": [
+        {
+          "id": "card0",
+          "slots": 4
+        }
+      ]
+    }
+  ]
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The members are:
+.INDENT 0.0
+.TP
+.B \fBversion\fP
+An object containing a \fBmajor\fP integer field and a \fBminor\fP integer field.
+Currently, the only supported version is major \fB1\fP, minor \fB0\fP\&. Any other
+value is an error.
+.TP
+.B \fBlocal\fP
+A JSON array of resource sets present on the system.  Currently, this array
+is restricted to being of size 1.
+.sp
+Each array element is a JSON object with members whose names are equal to the
+desired resource types, such as \fBgpus\fP\&. These names must start with a
+lowercase letter or an underscore, and subsequent characters can be a
+lowercase letter, a digit, or an underscore. Uppercase letters are not
+allowed, because certain platforms have case\-insensitive environment
+variables. See the \fI\%Environment Variables\fP section below for
+more information. It is recommended that the resource type name be the plural
+of a noun, such as \fBgpus\fP or \fBcrypto_chips\fP (and not \fBgpu\fP or
+\fBcrypto_chip\fP\&.)
+.sp
+Please note that the names \fBgpus\fP and \fBcrypto_chips\fP are just examples,
+and CTest does not interpret them in any way. You are free to make up any
+resource type you want to meet your own requirements.
+.sp
+The value for each resource type is a JSON array consisting of JSON objects,
+each of which describe a specific instance of the specified resource. These
+objects have the following members:
+.INDENT 7.0
+.TP
+.B \fBid\fP
+A string consisting of an identifier for the resource. Each character in
+the identifier can be a lowercase letter, a digit, or an underscore.
+Uppercase letters are not allowed.
+.sp
+Identifiers must be unique within a resource type. However, they do not
+have to be unique across resource types. For example, it is valid to have a
+\fBgpus\fP resource named \fB0\fP and a \fBcrypto_chips\fP resource named \fB0\fP,
+but not two \fBgpus\fP resources both named \fB0\fP\&.
+.sp
+Please note that the IDs \fB0\fP, \fB1\fP, \fB2\fP, \fB3\fP, and \fBcard0\fP are just
+examples, and CTest does not interpret them in any way. You are free to
+make up any IDs you want to meet your own requirements.
+.TP
+.B \fBslots\fP
+An optional unsigned number specifying the number of slots available on the
+resource. For example, this could be megabytes of RAM on a GPU, or
+cryptography units available on a cryptography chip. If \fBslots\fP is not
+specified, a default value of \fB1\fP is assumed.
+.UNINDENT
+.UNINDENT
+.sp
+In the example file above, there are four GPUs with ID’s 0 through 3. GPU 0 has
+2 slots, GPU 1 has 4, GPU 2 has 2, and GPU 3 has a default of 1 slot. There is
+also one cryptography chip with 4 slots.
+.SS \fBRESOURCE_GROUPS\fP Property
+.sp
+See \fBRESOURCE_GROUPS\fP for a description of this property.
+.SS Environment Variables
+.sp
+Once CTest has decided which resources to allocate to a test, it passes this
+information to the test executable as a series of environment variables. For
+each example below, we will assume that the test in question has a
+\fBRESOURCE_GROUPS\fP property of
+\fB2,gpus:2;gpus:4,gpus:1,crypto_chips:2\fP\&.
+.sp
+The following variables are passed to the test process:
+.INDENT 0.0
+.TP
+.B CTEST_RESOURCE_GROUP_COUNT
+The total number of groups specified by the \fBRESOURCE_GROUPS\fP
+property. For example:
+.INDENT 7.0
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_COUNT=3\fP
+.UNINDENT
+.sp
+This variable will only be defined if \fI\%ctest(1)\fP has been given a
+\fB\-\-resource\-spec\-file\fP, or if \fBctest_test()\fP has been given a
+\fBRESOURCE_SPEC_FILE\fP\&. If no resource specification file has been given,
+this variable will not be defined.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B CTEST_RESOURCE_GROUP_<num>
+The list of resource types allocated to each group, with each item
+separated by a comma. \fB<num>\fP is a number from zero to
+\fBCTEST_RESOURCE_GROUP_COUNT\fP minus one. \fBCTEST_RESOURCE_GROUP_<num>\fP
+is defined for each \fB<num>\fP in this range. For example:
+.INDENT 7.0
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_0=gpus\fP
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_1=gpus\fP
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_2=crypto_chips,gpus\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B CTEST_RESOURCE_GROUP_<num>_<resource\-type>
+The list of resource IDs and number of slots from each ID allocated to each
+group for a given resource type. This variable consists of a series of
+pairs, each pair separated by a semicolon, and with the two items in the pair
+separated by a comma. The first item in each pair is \fBid:\fP followed by the
+ID of a resource of type \fB<resource\-type>\fP, and the second item is
+\fBslots:\fP followed by the number of slots from that resource allocated to
+the given group. For example:
+.INDENT 7.0
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_0_GPUS=id:0,slots:2\fP
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_1_GPUS=id:2,slots:2\fP
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_2_GPUS=id:1,slots:4;id:3,slots:1\fP
+.IP \(bu 2
+\fBCTEST_RESOURCE_GROUP_2_CRYPTO_CHIPS=id:card0,slots:2\fP
+.UNINDENT
+.sp
+In this example, group 0 gets 2 slots from GPU \fB0\fP, group 1 gets 2 slots
+from GPU \fB2\fP, and group 2 gets 4 slots from GPU \fB1\fP, 1 slot from GPU
+\fB3\fP, and 2 slots from cryptography chip \fBcard0\fP\&.
+.sp
+\fB<num>\fP is a number from zero to \fBCTEST_RESOURCE_GROUP_COUNT\fP minus one.
+\fB<resource\-type>\fP is the name of a resource type, converted to uppercase.
+\fBCTEST_RESOURCE_GROUP_<num>_<resource\-type>\fP is defined for the product
+of each \fB<num>\fP in the range listed above and each resource type listed in
+\fBCTEST_RESOURCE_GROUP_<num>\fP\&.
+.sp
+Because some platforms have case\-insensitive names for environment variables,
+the names of resource types may not clash in a case\-insensitive environment.
+Because of this, for the sake of simplicity, all resource types must be
+listed in all lowercase in the
+\fI\%resource specification file\fP and
+in the \fBRESOURCE_GROUPS\fP property, and they are converted to all
+uppercase in the \fBCTEST_RESOURCE_GROUP_<num>_<resource\-type>\fP environment
+variable.
+.UNINDENT
+.SH SEE ALSO
+.sp
+The following resources are available to get help using CMake:
+.INDENT 0.0
+.TP
+.B Home Page
+\fI\%https://cmake.org\fP
+.sp
+The primary starting point for learning about CMake.
+.TP
+.B Online Documentation and Community Resources
+\fI\%https://cmake.org/documentation\fP
+.sp
+Links to available documentation and community resources may be
+found on this web page.
+.TP
+.B Discourse Forum
+\fI\%https://discourse.cmake.org\fP
+.sp
+The Discourse Forum hosts discussion and questions about CMake.
+.UNINDENT
+.SH COPYRIGHT
+2000-2020 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.
