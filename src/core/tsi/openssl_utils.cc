@@ -14,11 +14,9 @@
 // limitations under the License.
 //
 
-#include <absl/strings/string_view.h>
 #include "openssl/bio.h"
 #include "openssl/evp.h"
 #include "openssl/pem.h"
-#include "openssl/x509.h"
 
 #include "src/core/tsi/openssl_utils.h"
 

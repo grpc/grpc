@@ -21,6 +21,8 @@
 #include "openssl/evp.h"
 #include "openssl/x509.h"
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 // A class for managing OpenSSL |EVP_PKEY| structures.
