@@ -242,7 +242,6 @@ python_dependencies:
   - ares
   - boringssl
   - re2
-  - s2a_core
   - z
 ruby_gem:
   deps:
