@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_TSI_OPENSSL_UTILS_H
 #define GRPC_CORE_TSI_OPENSSL_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "openssl/bio.h"
 #include "openssl/evp.h"
 #include "openssl/x509.h"
