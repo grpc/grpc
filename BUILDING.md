@@ -83,6 +83,18 @@ to clone the gRPC repository at the [latest stable release tag](https://github.c
 > git submodule update --init
 ```
 
+## Google protobuf remote change - gRPC 1.39.0 and older
+
+Google changed the remote of the protobuf repository during the gRPC 1.39.0 release cycle - this broke the 
+submodule links in the gRPC repository. If using a gRPC release tag of 1.39.0 or older, use the following 
+command to correct this prior to running `git submodule update --init`:
+
+```sh
+ $ git submodule set-url third_party/protobuf https://github.com/protocolbuffers/protobuf.git
+```
+
+This command is the same for both Unix and Windows.
+
 NOTE: The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building
 with something else than `bazel` (e.g. `cmake`).
 
