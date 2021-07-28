@@ -1358,7 +1358,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   call_attempt_->calld_->MaybeClearPendingBatch(pending);
   // Add callback to closures.
   closures->Add(recv_initial_metadata_ready, error,
-                "recv_trailing_metadata_ready for pending batch");
+                "recv_initial_metadata_ready for pending batch");
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
@@ -1561,7 +1561,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   auto* calld = call_attempt_->calld_;
   // Find pending batch.
   PendingBatch* pending = calld->PendingBatchFind(
-      "invoking recv_trailing_metadata for",
+      "invoking recv_trailing_metadata_ready for",
       [](grpc_transport_stream_op_batch* batch) {
         return batch->recv_trailing_metadata &&
                batch->payload->recv_trailing_metadata
