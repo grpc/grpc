@@ -21,6 +21,9 @@ from typing import Iterable, Optional, Tuple
 import grpc
 
 import framework.rpc
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
+from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
@@ -107,3 +110,31 @@ class XdsUpdateClientConfigureServiceClient(framework.rpc.grpc.GrpcClientHelper
                                       req=request,
                                       deadline_sec=timeout_sec,
                                       log_level=logging.INFO)
+
+class XdsUpdateHealthServiceClient(framework.rpc.grpc.GrpcClientHelper):
+    stub: test_pb2_grpc.XdsUpdateHealthServiceStub
+
+    def __init__(self, channel: grpc.Channel):
+        super().__init__(channel, test_pb2_grpc.XdsUpdateHealthServiceStub)
+
+    def set_serving(self):
+        self.call_unary_with_deadline(rpc='SetServing',
+                                      req=empty_pb2.Empty(),
+                                      log_level=logging.INFO)
+
+    def set_not_serving(self):
+        self.call_unary_with_deadline(rpc='SetNotServing',
+                                      req=empty_pb2.Empty(),
+                                      log_level=logging.INFO)
+
+
+class HealthClient(framework.rpc.grpc.GrpcClientHelper):
+    stub: health_pb2_grpc.HealthStub
+
+    def __init__(self, channel: grpc.Channel):
+        super().__init__(channel, health_pb2_grpc.HealthStub)
+
+    def check_health(self):
+        return self.call_unary_with_deadline(rpc='Check',
+                                             req=health_pb2.HealthCheckRequest(),
+                                             log_level=logging.INFO)
