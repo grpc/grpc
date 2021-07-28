@@ -57,6 +57,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
+    grpc_resource_user_ref(allocator->resource_user);
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, mock_endpoint, false, allocator->resource_user);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);

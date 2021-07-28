@@ -77,6 +77,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
           slice_allocator_factory, "mock_endpoint");
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, allocator);
+  grpc_resource_user_ref(allocator->resource_user);
   grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true,
                                                    allocator->resource_user);
   std::vector<grpc_chttp2_stream*> s;
@@ -137,6 +138,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
           slice_allocator_factory, "mock_endpoint");
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, allocator);
+  grpc_resource_user_ref(allocator->resource_user);
   grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true,
                                                    allocator->resource_user);
   std::vector<grpc_chttp2_stream*> s;
