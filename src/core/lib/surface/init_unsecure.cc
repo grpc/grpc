@@ -26,6 +26,8 @@ void grpc_security_pre_init(void) {}
 
 void grpc_register_security_filters(void) {}
 
+void grpc_security_cleanup(void) {}
+
 void grpc_security_init(void) {
   gpr_log(GPR_DEBUG,
           "Using insecure gRPC build. Security handshakers will not be invoked "

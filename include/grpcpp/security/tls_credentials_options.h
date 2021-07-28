@@ -146,6 +146,39 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
+/// Configuration for Tls key logging.
+struct TlsKeyLoggerConfig {
+  // The full path at which the TLS keys would be exported.
+  std::string tls_key_log_file_path;
+
+  // The format in which the TLS keys would be exported at this path.
+  grpc_tls_key_log_format tls_key_log_format;
+
+  // Future extensions can include filters such as IP addresses etc.
+
+  // Constructor
+  explicit TlsKeyLoggerConfig()
+      : tls_key_log_file_path(""), tls_key_log_format(TLS_KEY_LOG_FORMAT_NSS){};
+
+  // Copy ctor
+  TlsKeyLoggerConfig(const TlsKeyLoggerConfig& copy) {
+    tls_key_log_file_path = copy.tls_key_log_file_path;
+    tls_key_log_format = copy.tls_key_log_format;
+  };
+
+  // Sets the tls key log file path.
+  void set_tls_key_log_file_path(std::string key_log_file_path) {
+    tls_key_log_file_path = std::move(key_log_file_path);
+  }
+
+  // Sets the tls key logging format. Currently only NSS format is supported.
+  void set_tls_key_log_format(grpc_tls_key_log_format tls_key_log_format) {
+    tls_key_log_format = tls_key_log_format;
+  }
+};
+
+typedef struct TlsKeyLoggerConfig TlsKeyLoggerConfig;
+
 // Base class of configurable options specified by users to configure their
 // certain security features supported in TLS. It is used for experimental
 // purposes for now and it is subject to change.
@@ -187,6 +220,12 @@ class TlsCredentialsOptions {
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
+  // Sets the Tls key logging configuration. If not set, tls key logging is
+  // disabled.
+  //
+  // @param tls_keylog_config Tls key logging config of the type
+  // gprc::experimental::TlsKeyLoggerConfig
+  void set_tls_key_log_config(TlsKeyLoggerConfig tls_key_log_config);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

@@ -74,7 +74,8 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
     RefCountedPtr<grpc_tls_credentials_options> options,
     RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache) {
+    tsi_ssl_session_cache* ssl_session_cache,
+    RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger) {
   if (channel_creds == nullptr) {
     gpr_log(GPR_ERROR,
             "channel_creds is nullptr in "
@@ -96,7 +97,7 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
   return MakeRefCounted<TlsChannelSecurityConnector>(
       std::move(channel_creds), std::move(options),
       std::move(request_metadata_creds), target_name, overridden_target_name,
-      ssl_session_cache);
+      ssl_session_cache, std::move(tls_key_logger));
 }
 
 TlsChannelSecurityConnector::TlsChannelSecurityConnector(
@@ -104,14 +105,16 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
     RefCountedPtr<grpc_tls_credentials_options> options,
     RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache)
+    tsi_ssl_session_cache* ssl_session_cache,
+    RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger)
     : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                       std::move(channel_creds),
                                       std::move(request_metadata_creds)),
       options_(std::move(options)),
       overridden_target_name_(
           overridden_target_name == nullptr ? "" : overridden_target_name),
-      ssl_session_cache_(ssl_session_cache) {
+      ssl_session_cache_(ssl_session_cache),
+      tls_key_logger_(std::move(tls_key_logger)) {
   if (ssl_session_cache_ != nullptr) {
     tsi_ssl_session_cache_ref(ssl_session_cache_);
   }
@@ -397,6 +400,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
+      reinterpret_cast<tsi_tls_key_logger*>(tls_key_logger_.get()),
       &client_handshaker_factory_);
   /* Free memory. */
   if (pem_key_cert_pair != nullptr) {
@@ -486,7 +490,8 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
 RefCountedPtr<grpc_server_security_connector>
 TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
     RefCountedPtr<grpc_server_credentials> server_creds,
-    RefCountedPtr<grpc_tls_credentials_options> options) {
+    RefCountedPtr<grpc_tls_credentials_options> options,
+    RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger) {
   if (server_creds == nullptr) {
     gpr_log(GPR_ERROR,
             "server_creds is nullptr in "
@@ -499,16 +504,18 @@ TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
             "TlsServerSecurityConnectorCreate()");
     return nullptr;
   }
-  return MakeRefCounted<TlsServerSecurityConnector>(std::move(server_creds),
-                                                    std::move(options));
+  return MakeRefCounted<TlsServerSecurityConnector>(
+      std::move(server_creds), std::move(options), std::move(tls_key_logger));
 }
 
 TlsServerSecurityConnector::TlsServerSecurityConnector(
     RefCountedPtr<grpc_server_credentials> server_creds,
-    RefCountedPtr<grpc_tls_credentials_options> options)
+    RefCountedPtr<grpc_tls_credentials_options> options,
+    RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger)
     : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                      std::move(server_creds)),
-      options_(std::move(options)) {
+      options_(std::move(options)),
+      tls_key_logger_(std::move(tls_key_logger)) {
   // Create a watcher.
   auto watcher_ptr = absl::make_unique<TlsServerCertificateWatcher>(this);
   certificate_watcher_ = watcher_ptr.get();
@@ -646,6 +653,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
+      reinterpret_cast<tsi_tls_key_logger*>(tls_key_logger_.get()),
       &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,

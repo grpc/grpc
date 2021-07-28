@@ -125,6 +125,9 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
+  const tsi::tsi_tls_key_logger_config& tls_key_logger_config() {
+    return tls_key_logger_config_;
+  }
 
   // Setters for member fields.
   void set_cert_request_type(
@@ -173,6 +176,15 @@ struct grpc_tls_credentials_options
   void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
   }
+  // Sets the tls key logging path and format. TLS/SSL keys for each session
+  // will be logged at the path in the format specified. Currently it enables
+  // decryption using tools like wireshark.
+  void set_tls_key_logger_config(std::string tls_key_log_file_path,
+                                 grpc_tls_key_log_format key_logging_format) {
+    tls_key_logger_config_.tls_key_log_file_path =
+        std::move(tls_key_log_file_path);
+    tls_key_logger_config_.key_logging_format = key_logging_format;
+  }
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
@@ -188,6 +200,7 @@ struct grpc_tls_credentials_options
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
+  tsi::tsi_tls_key_logger_config tls_key_logger_config_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

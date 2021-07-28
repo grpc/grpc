@@ -74,6 +74,19 @@ void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache);
 /* Decrement reference counter of \a cache.  */
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
 
+/* --- tsi_ssl_key_logger object ---
+
+   Experimental SSL Key logging functionality to enable decryption of
+   packet captures.  */
+
+typedef struct tsi_tls_key_logger tsi_tls_key_logger;
+
+/* Initialize a registry to hold created Tls Key loggers */
+void tsi_tls_key_logger_registry_init();
+
+/* Destroy the Tls key logger registry and Unref all allocated Key loggers. */
+void tsi_tls_key_logger_registry_destroy();
+
 /* --- tsi_ssl_client_handshaker_factory object ---
 
    This object creates a client tsi_handshaker objects implemented in terms of
@@ -148,6 +161,8 @@ struct tsi_ssl_client_handshaker_options {
   size_t num_alpn_protocols;
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
+  /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
+  tsi_tls_key_logger* key_logger;
 
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
@@ -164,6 +179,7 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
+        key_logger(nullptr),
         skip_server_certificate_verification(false),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
@@ -285,6 +301,8 @@ struct tsi_ssl_server_handshaker_options {
   /* The min and max TLS versions that will be negotiated by the handshaker. */
   tsi_tls_version min_tls_version;
   tsi_tls_version max_tls_version;
+  /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
+  tsi_tls_key_logger* key_logger;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -297,7 +315,8 @@ struct tsi_ssl_server_handshaker_options {
         session_ticket_key(nullptr),
         session_ticket_key_size(0),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
-        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
+        max_tls_version(tsi_tls_version::TSI_TLS1_3),
+        key_logger(nullptr) {}
 };
 
 /* Creates a server handshaker factory.

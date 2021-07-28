@@ -185,6 +185,7 @@ void grpc_shutdown_internal_locked(void) {
     grpc_tracer_shutdown();
     grpc_mdctx_global_shutdown();
     grpc_core::HandshakerRegistry::Shutdown();
+    grpc_security_cleanup();
     grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();

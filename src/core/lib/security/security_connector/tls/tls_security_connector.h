@@ -41,14 +41,16 @@ class TlsChannelSecurityConnector final
       RefCountedPtr<grpc_tls_credentials_options> options,
       RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
-      tsi_ssl_session_cache* ssl_session_cache);
+      tsi_ssl_session_cache* ssl_session_cache,
+      RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger);
 
   TlsChannelSecurityConnector(
       RefCountedPtr<grpc_channel_credentials> channel_creds,
       RefCountedPtr<grpc_tls_credentials_options> options,
       RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
-      tsi_ssl_session_cache* ssl_session_cache);
+      tsi_ssl_session_cache* ssl_session_cache,
+      RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger);
 
   ~TlsChannelSecurityConnector() override;
 
@@ -144,6 +146,7 @@ class TlsChannelSecurityConnector final
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
+  RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger_;
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
@@ -156,11 +159,13 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   static RefCountedPtr<grpc_server_security_connector>
   CreateTlsServerSecurityConnector(
       RefCountedPtr<grpc_server_credentials> server_creds,
-      RefCountedPtr<grpc_tls_credentials_options> options);
+      RefCountedPtr<grpc_tls_credentials_options> options,
+      RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger);
 
   TlsServerSecurityConnector(
       RefCountedPtr<grpc_server_credentials> server_creds,
-      RefCountedPtr<grpc_tls_credentials_options> options);
+      RefCountedPtr<grpc_tls_credentials_options> options,
+      RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger);
   ~TlsServerSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
@@ -229,6 +234,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger_;
 };
 
 // ---- Functions below are exposed for testing only -----------------------

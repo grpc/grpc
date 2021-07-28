@@ -55,6 +55,24 @@ bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
   return true;
 }
 
+/// Checks whether TLS key logging is enabled.
+bool TlsKeyLoggingEnabled(grpc_tls_credentials_options* options) {
+  if (options == nullptr) {
+    gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
+    return false;
+  }
+
+  if (options->tls_key_logger_config().tls_key_log_file_path.empty()) {
+    return false;
+  }
+
+  // Tls key logging is assumed to be enabled if the specified log file is
+  // non-empty.
+  gpr_log(GPR_INFO, "Enabling TLS Keylogging with keys stored at: %s",
+          options->tls_key_logger_config().tls_key_log_file_path.c_str());
+  return true;
+}
+
 }  // namespace
 
 TlsCredentials::TlsCredentials(
@@ -83,10 +101,17 @@ TlsCredentials::create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
+
+  grpc_core::RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger(nullptr);
+  if (TlsKeyLoggingEnabled(options_.get())) {
+    tls_key_logger = tsi::TlsKeyLoggerRegistry::CreateTlsKeyLoggerContainer(
+        options_->tls_key_logger_config());
+  }
+
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), options_, std::move(call_creds), target_name,
-          overridden_target_name, ssl_session_cache);
+          overridden_target_name, ssl_session_cache, tls_key_logger);
   if (sc == nullptr) {
     return nullptr;
   }
@@ -108,8 +133,14 @@ TlsServerCredentials::~TlsServerCredentials() {}
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector(
     const grpc_channel_args* /* args */) {
+  grpc_core::RefCountedPtr<tsi::TlsKeyLoggerContainer> tls_key_logger(nullptr);
+  if (TlsKeyLoggingEnabled(options_.get())) {
+    tls_key_logger = tsi::TlsKeyLoggerRegistry::CreateTlsKeyLoggerContainer(
+        options_->tls_key_logger_config());
+  }
+
   return grpc_core::TlsServerSecurityConnector::
-      CreateTlsServerSecurityConnector(this->Ref(), options_);
+      CreateTlsServerSecurityConnector(this->Ref(), options_, tls_key_logger);
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

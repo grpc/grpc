@@ -78,4 +78,9 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }
+void grpc_security_init() {
+  grpc_core::SecurityRegisterHandshakerFactories();
+  tsi_tls_key_logger_registry_init();
+}
+
+void grpc_security_cleanup(void) { tsi_tls_key_logger_registry_destroy(); }
