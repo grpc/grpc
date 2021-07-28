@@ -635,10 +635,10 @@ class HPackParser::String {
 
   String(const String&) = delete;
   String& operator=(const String&) = delete;
-  String(String&& other) : value_(std::move(other.value_)) {
+  String(String&& other) noexcept : value_(std::move(other.value_)) {
     other.value_ = absl::Span<const uint8_t>();
   }
-  String& operator=(String&& other) {
+  String& operator=(String&& other) noexcept {
     value_ = std::move(other.value_);
     other.value_ = absl::Span<const uint8_t>();
     return *this;
