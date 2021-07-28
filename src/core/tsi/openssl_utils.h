@@ -19,11 +19,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "openssl/bio.h"
-#include "openssl/evp.h"
-#include "openssl/x509.h"
-
 #include "absl/strings/string_view.h"
+
+#include <openssl/evp.h>
+#include <openssl/x509.h>
 
 namespace grpc_core {
 
@@ -45,7 +44,7 @@ class OpenSslPKey {
 // A class for managing OpenSSL |X509| structures.
 class OpenSslX509 {
  public:
-  explicit OpenSslX509(absl::string_view cert);
+  explicit OpenSslX509(absl::string_view cert_chain);
 
   explicit OpenSslX509(X509* x509) { x_509_ = x509; }
 
