@@ -41,29 +41,14 @@ constexpr uint32_t
 constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTagsLen;
 
-namespace {
-
-void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  if (b->idx.named.grpc_server_stats_bin != nullptr) {
-    ServerStatsDeserialize(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
-            GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md))),
-        GRPC_SLICE_LENGTH(GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md)),
-        elapsed_time);
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_server_stats_bin);
-  }
-}
-
-}  // namespace
-
 grpc_error_handle CensusClientCallData::Init(
     grpc_call_element* /* elem */, const grpc_call_element_args* args) {
-  tracer_ = args->arena->New<OpenCensusCallTracer>(args);
-  grpc_call_context_set(
-      grpc_call_from_top_element(grpc_call_stack_element(args->call_stack, 0)),
-      GRPC_CONTEXT_CALL_TRACER, tracer_, [](void* tracer) {
-        (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
-      });
+  auto tracer = args->arena->New<OpenCensusCallTracer>(args);
+  GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
+  args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
+  args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
+    (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
+  };
   return GRPC_ERROR_NONE;
 }
 
@@ -109,8 +94,24 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
     const grpc_core::ByteStream& /* recv_message */) {
-  recv_message_count_++;
+  ++recv_message_count_;
 }
+
+namespace {
+
+void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
+  if (b->idx.named.grpc_server_stats_bin != nullptr) {
+    ServerStatsDeserialize(
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
+            GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md))),
+        GRPC_SLICE_LENGTH(GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md)),
+        elapsed_time);
+    grpc_metadata_batch_remove(b, b->idx.named.grpc_server_stats_bin);
+  }
+}
+
+}  // namespace
+
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,

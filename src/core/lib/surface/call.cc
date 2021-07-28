@@ -151,6 +151,11 @@ struct grpc_call {
   }
 
   ~grpc_call() {
+    for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+      if (context[i].destroy) {
+        context[i].destroy(context[i].value);
+      }
+    }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
   }
 
@@ -532,11 +537,6 @@ static void release_call(void* call, grpc_error_handle /*error*/) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
   grpc_core::Arena* arena = c->arena;
-  for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-    if (c->context[i].destroy) {
-      c->context[i].destroy(c->context[i].value);
-    }
-  }
   c->~grpc_call();
   grpc_channel_update_call_size_estimate(channel, arena->Destroy());
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");

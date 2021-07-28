@@ -37,8 +37,9 @@ class CensusClientCallData : public CallData {
   grpc_error_handle Init(grpc_call_element* /* elem */,
                          const grpc_call_element_args* args) override;
 
- private:
-  OpenCensusCallTracer* tracer_;
+  void Destroy(grpc_call_element* /* elem */,
+               const grpc_call_final_info* /* final_info */,
+               grpc_closure* /* then_call_closure */) override {}
 };
 
 }  // namespace grpc
