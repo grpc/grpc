@@ -129,14 +129,13 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
       {{RpcClientSentBytesPerRpc(), static_cast<double>(request_size)},
        {RpcClientReceivedBytesPerRpc(), static_cast<double>(response_size)},
        {RpcClientServerLatency(),
-        ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))},
-       {RpcClientSentMessagesPerRpc(), sent_message_count_},
-       {RpcClientReceivedMessagesPerRpc(), recv_message_count_}},
+        ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))}},
       tags);
-  if (!status.ok()) {
-    context_.Span().SetStatus(opencensus::trace::StatusCode(status.raw_code()),
-                              final_status);
-  }
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
+    grpc_error_handle /* cancel_error */) {
+  status_code_ = absl::StatusCode::kCancelled;
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
@@ -146,8 +145,15 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
   tags.emplace_back(ClientStatusTagKey(), StatusCodeToString(status_code_));
-  ::opencensus::stats::Record({{RpcClientRoundtripLatency(), latency_ms}},
-                              tags);
+  ::opencensus::stats::Record(
+      {{RpcClientRoundtripLatency(), latency_ms},
+       {RpcClientSentMessagesPerRpc(), sent_message_count_},
+       {RpcClientReceivedMessagesPerRpc(), recv_message_count_}},
+      tags);
+  if (status_code_ != absl::StatusCode::kOk) {
+    context_.Span().SetStatus(opencensus::trace::StatusCode(status_code_),
+                              StatusCodeToString(status_code_));
+  }
   context_.EndSpan();
   grpc_core::MutexLock lock(&parent_->mu_);
   if (--parent_->num_active_rpcs_ == 0) {
@@ -170,8 +176,7 @@ OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
       qualified_method_(absl::StrCat("Sent.", method_)),
       context_(reinterpret_cast<CensusContext*>(
           args->context[GRPC_CONTEXT_TRACING].value)),
-      arena_(args->arena),
-      time_at_last_attempt_end_(absl::Now()) {}
+      arena_(args->arena) {}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
@@ -195,14 +200,14 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
+      if (num_active_rpcs_ == 0) {
+        retry_delay_ += absl::Now() - time_at_last_attempt_end_;
+      }
     }
     if (is_transparent_retry) {
       ++transparent_retries_;
     } else {
       ++retries_;
-    }
-    if (num_active_rpcs_ == 0) {
-      retry_delay_ += absl::Now() - time_at_last_attempt_end_;
     }
     ++num_active_rpcs_;
   }

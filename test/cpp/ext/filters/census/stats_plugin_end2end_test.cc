@@ -444,13 +444,11 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
         client_transparent_retries_cumulative_view.GetData().int_data(),
         ::testing::UnorderedElementsAre(::testing::Pair(
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
-    // There is some delay between the start of the overall call and the start
-    // of the first attempt. Expect the bound to be 100ms.
-    EXPECT_THAT(client_retry_delay_per_call_view.GetData().distribution_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(client_method_name_),
-                    ::testing::AllOf(::testing::Property(
-                        &Distribution::mean, ::testing::Le(100))))));
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(&Distribution::mean, ::testing::Eq(0)))));
   }
 }
 
@@ -514,10 +512,10 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
     EXPECT_THAT(client_retry_delay_per_call_view.GetData().distribution_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
                     ::testing::ElementsAre(client_method_name_),
-                    ::testing::AllOf(::testing::Property(
+                    ::testing::Property(
                         &Distribution::mean,
                         ::testing::AllOf(
-                            /* ::testing::Ge(50), */ ::testing::Le(300)))))));
+                            /* ::testing::Ge(50), */ ::testing::Le(300))))));
   }
 }
 
