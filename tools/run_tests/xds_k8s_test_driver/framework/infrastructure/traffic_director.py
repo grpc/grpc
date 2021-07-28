@@ -435,12 +435,12 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
 
         # Managed resources
-        self.grpc_route: Optional[_NetworkSecurityV1Alpha1.GrpcRoute] = None
-        self.router: Optional[_NetworkSecurityV1Alpha1.Router] = None
+        self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
+        self.router: Optional[_NetworkServicesV1Alpha1.Router] = None
 
     def create_router(self) -> GcpResource:
         name = self.make_resource_name(self.ROUTER_NAME)
-        logger.debug("Creating Router %s", name)
+        logger.info("Creating Router %s", name)
         body = {
             "type": "PROXYLESS_GRPC",
             "routes": [self.grpc_route.url],
@@ -465,8 +465,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
         body = {
-            "hostnames":
-                host,
+            "hostnames": host,
             "rules": [{
                 "action": {
                     "destination": {
@@ -476,7 +475,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
             }],
         }
         name = self.make_resource_name(self.GRPC_ROUTE_NAME)
-        logger.debug("Creating GrpcRoute %s", name)
+        logger.info("Creating GrpcRoute %s", name)
         resource = self.netsvc.create_grpc_route(name, body)
         self.grpc_route = self.netsvc.get_grpc_route(name)
         logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
@@ -484,7 +483,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     def create_grpc_route_with_content(self, body: Any) -> GcpResource:
         name = self.make_resource_name(self.GRPC_ROUTE_NAME)
-        logger.debug("Creating GrpcRoute %s", name)
+        logger.info("Creating GrpcRoute %s", name)
         resource = self.netsvc.create_grpc_route(name, body)
         self.grpc_route = self.netsvc.get_grpc_route(name)
         logger.debug("Loaded GrpcRoute: %s", self.grpc_route)

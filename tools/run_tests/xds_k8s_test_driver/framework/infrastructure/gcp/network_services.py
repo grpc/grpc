@@ -26,131 +26,131 @@ logger = logging.getLogger(__name__)
 _ComputeV1 = gcp.compute.ComputeV1
 GcpResource = _ComputeV1.GcpResource
 
+@dataclasses.dataclass(frozen=True)
+class Router:
+
+    name: str
+    url: str
+    type: str
+    network: Optional[str]
+    routes: Optional[List[str]]
+
+    @classmethod
+    def from_dict(cls, name: str, d: dict) -> 'Router':
+        return cls(
+            name=name,
+            url=d["name"],
+            type=d["type"],
+            network=d.get("network"),
+            routes=list(d["routes"]) if "routes" in d else None,
+        )
+
+@dataclasses.dataclass(frozen=True)
+class GrpcRoute:
+
+    @dataclasses.dataclass(frozen=True)
+    class MethodMatch:
+        type: Optional[str]
+        grpc_service: Optional[str]
+        grpc_method: Optional[str]
+        case_sensitive: Optional[bool]
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'MethodMatch':
+            return cls(
+                type=d.get("type"),
+                grpc_service=d.get("grpcService"),
+                grpc_method=d.get("grpcMethod"),
+                case_sensitive=d.get("caseSensitive"),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class HeaderMatch:
+        type: Optional[str]
+        key: str
+        value: str
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'HeaderMatch':
+            return cls(
+                type=d.get("type"),
+                key=d["key"],
+                value=d["value"],
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteMatch:
+        method: Optional['MethodMatch']
+        headers: Tuple['HeaderMatch']
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'RouteMatch':
+            return cls(
+                method=MethodMatch.from_dict(
+                    d["method"]) if "method" in d else None,
+                headers=tuple(
+                    HeaderMatch.from_dict(h)
+                    for h in d["headers"]) if "headers" in d else (),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class Destination:
+        service_name: str
+        weight: Optional[int]
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'Destination':
+            return cls(
+                service_name=d["serviceName"],
+                weight=d.get("weight"),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteAction:
+        destination: Optional['Destination']
+        drop: Optional[int]
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'RouteAction':
+            return cls(
+                destination=Destination.from_dict(
+                    d["destination"]) if "destination" in d else None,
+                drop=d.get("drop"),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteRule:
+        match: Optional['RouteMatch']
+        action: 'RouteAction'
+
+        @classmethod
+        def from_dict(cls, d: dict) -> 'RouteRule':
+            return cls(
+                match=RouteMatch.from_dict(
+                    d["match"]) if "match" in d else "",
+                action=RouteAction.from_dict(
+                    d["action"]),
+            )
+
+    name: str
+    url: str
+    hostnames: Tuple[str]
+    rules: Tuple['RouteRule']
+
+    @classmethod
+    def from_dict(cls, name: str, d: dict) -> 'RouteRule':
+        return cls(
+            name=name,
+            url=d["name"],
+            hostnames=tuple(d["hostnames"]),
+            rules=tuple(d["rules"]),
+        )
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
     GRPC_ROUTES = 'grpcRoutes'
     ROUTERS = 'routers'
 
-    @dataclasses.dataclass(frozen=True)
-    class Router:
-
-        name: str
-        url: str
-        type: str
-        network: Optional[str]
-        routes: Optional[List[str]]
-
-        @staticmethod
-        def from_dict(name: str, d: dict) -> 'Router':
-            return NetworkServicesV1Alpha1.Router(
-                name=name,
-                url=d["name"],
-                type=d["type"],
-                network=d.get("network"),
-                routes=list(d["routes"]) if "routes" in d else None,
-            )
-
-    @dataclasses.dataclass(frozen=True)
-    class GrpcRoute:
-
-        @dataclasses.dataclass(frozen=True)
-        class MethodMatch:
-            type: Optional[str]
-            grpc_service: Optional[str]
-            grpc_method: Optional[str]
-            case_sensitive: Optional[bool]
-
-            @staticmethod
-            def from_dict(d: dict) -> 'MethodMatch':
-                return MethodMatch(
-                    type=d.get("type"),
-                    grpc_service=d.get("grpcService"),
-                    grpc_method=d.get("grpcMethod"),
-                    case_sensitive=d.get("caseSensitive"),
-                )
-
-        @dataclasses.dataclass(frozen=True)
-        class HeaderMatch:
-            type: Optional[str]
-            key: str
-            value: str
-
-            @staticmethod
-            def from_dict(d: dict) -> 'HeaderMatch':
-                return NetworkServicesV1Alpha1.HeaderMatch(
-                    type=d.get("type"),
-                    key=d["key"],
-                    value=d["value"],
-                )
-
-        @dataclasses.dataclass(frozen=True)
-        class RouteMatch:
-            method: Optional['MethodMatch']
-            headers: Tuple['HeaderMatch']
-
-            @staticmethod
-            def from_dict(d: dict) -> 'RouteMatch':
-                return RouteMatch(
-                    method=NetworkServicesV1Alpha1.MethodMatch.from_dict(
-                        d["method"]) if "method" in d else None,
-                    headers=tuple(
-                        NetworkServicesV1Alpha1.HeaderMatch.from_dict(h)
-                        for h in d["headers"]) if "headers" in d else (),
-                )
-
-        @dataclasses.dataclass(frozen=True)
-        class Destination:
-            service_name: str
-            weight: Optional[int]
-
-            @staticmethod
-            def from_dict(d: dict) -> 'Destination':
-                return NetworkServicesV1Alpha1.Destination(
-                    service_name=d["serviceName"],
-                    weight=d.get("weight"),
-                )
-
-        @dataclasses.dataclass(frozen=True)
-        class RouteAction:
-            destination: Optional['Destination']
-            drop: Optional[int]
-
-            @staticmethod
-            def from_dict(d: dict) -> 'RouteAction':
-                return NetworkServicesV1Alpha1.RouteAction(
-                    destination=NetworkServicesV1Alpha1.Destination.from_dict(
-                        d["destination"]) if "destination" in d else None,
-                    drop=d.get("drop"),
-                )
-
-        @dataclasses.dataclass(frozen=True)
-        class RouteRule:
-            match: Optional['RouteMatch']
-            action: 'RouteAction'
-
-            @staticmethod
-            def from_dict(d: dict) -> 'RouteRule':
-                return NetworkServicesV1Alpha1.RouteRule(
-                    match=NetworkServicesV1Alpha1.RouteMatch.from_dict(
-                        d["match"]) if "match" in d else "",
-                    action=NetworkServicesV1Alpha1.RouteAction.from_dict(
-                        d["action"]),
-                )
-
-        name: str
-        url: str
-        hostnames: Tuple[str]
-        rules: Tuple['RouteRule']
-
-        @staticmethod
-        def from_dict(name: str, d: dict) -> 'RouteRule':
-            return NetworkServicesV1Alpha1.GrpcRoute(
-                name=name,
-                url=d["name"],
-                hostnames=tuple(d["hostnames"]),
-                rules=tuple(d["rules"]),
-            )
 
     @dataclasses.dataclass(frozen=True)
     class EndpointConfigSelector:
@@ -227,7 +227,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         result = self._get_resource(collection=self._api_locations.routers(),
                                     full_name=self.resource_full_name(
                                         name, self.ROUTERS))
-        return self.Router.from_dict(name, result)
+        return Router.from_dict(name, result)
 
     def delete_router(self, name: str) -> None:
         return self._delete_resource(collection=self._api_locations.routers(),
@@ -243,7 +243,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         result = self._get_resource(collection=self._api_locations.grpcRoutes(),
                                     full_name=self.resource_full_name(
                                         name, self.GRPC_ROUTES))
-        return self.GrpcRoute.from_dict(name, result)
+        return GrpcRoute.from_dict(name, result)
 
     def delete_grpc_route(self, name: str) -> None:
         return self._delete_resource(
