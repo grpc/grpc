@@ -35,9 +35,9 @@ grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user = nullptr,
-                                  size_t preallocated_bytes = 0,
-                                  grpc_error_handle* error = nullptr);
+                                  grpc_resource_user* resource_user,
+                                  size_t preallocated_bytes,
+                                  grpc_error_handle* error);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */

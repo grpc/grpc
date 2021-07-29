@@ -97,8 +97,9 @@ class EndpointPairFixture {
           grpc_create_chttp2_transport(&c_args, endpoints.client, true,
                                        grpc_resource_user_create_unlimited());
       GPR_ASSERT(transport);
-      grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_channel* channel =
+          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                              transport, nullptr, 0, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
