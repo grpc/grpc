@@ -646,10 +646,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
       server, args, args_modifier,
       grpc_resource_quota_from_channel_args(args, true));
   grpc_resource_quota_ref_internal(listener->resource_quota_);
-  grpc_error_handle error =
-      grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_, args,
-                             grpc_slice_allocator_factory_create(listener->resource_quota_),
-                             &listener->tcp_server_);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &listener->tcp_server_shutdown_complete_, args,
+      grpc_slice_allocator_factory_create(listener->resource_quota_),
+      &listener->tcp_server_);
   if (error != GRPC_ERROR_NONE) {
     delete listener;
     return error;
@@ -665,7 +665,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
 Chttp2ServerListener::Chttp2ServerListener(
     Server* server, grpc_channel_args* args,
     Chttp2ServerArgsModifier args_modifier, grpc_resource_quota* rq)
-    : server_(server), args_modifier_(args_modifier), args_(args), resource_quota_(rq) {
+    : server_(server),
+      args_modifier_(args_modifier),
+      args_(args),
+      resource_quota_(rq) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }
@@ -762,7 +765,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
   }
   grpc_resource_user* channel_resource_user = grpc_resource_user_create(
-      self->resource_quota_, absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
+      self->resource_quota_,
+      absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
   auto connection = MakeOrphanable<ActiveConnection>(
       accepting_pollset, acceptor, args, channel_resource_user);
   // Hold a ref to connection to allow starting handshake outside the

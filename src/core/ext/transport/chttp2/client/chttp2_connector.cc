@@ -72,7 +72,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     if (resource_quota_ != nullptr) {
       grpc_resource_quota_unref_internal(resource_quota_);
     }
-    resource_quota_ = grpc_resource_quota_from_channel_args(args.channel_args, true);
+    resource_quota_ =
+        grpc_resource_quota_from_channel_args(args.channel_args, true);
   }
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
@@ -181,8 +182,9 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->transport = grpc_create_chttp2_transport(
           args->args, args->endpoint, true,
           grpc_resource_user_create(
-              self->resource_quota_, absl::StrCat(grpc_endpoint_get_peer(args->endpoint),
-                                      ":connector_transport")));
+              self->resource_quota_,
+              absl::StrCat(grpc_endpoint_get_peer(args->endpoint),
+                           ":connector_transport")));
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
