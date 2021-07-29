@@ -70,7 +70,7 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
       grpc_fd_create(sv[0], final_name.c_str(), false), args,
       "socketpair-client",
       grpc_slice_allocator_create(resource_quota, "client_endpoint"));
-  grpc_resource_quota_unref(resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
   return p;
 }
 
