@@ -33,7 +33,7 @@ namespace grpc_core {
 class HPackParser {
  public:
   // What kind of stream boundary is provided by this frame?
-  enum class Boundary :uint8_t{
+  enum class Boundary : uint8_t {
     // More continuations are expected
     None,
     // This marks the end of headers, so data frames should follow
@@ -42,7 +42,7 @@ class HPackParser {
     EndOfStream
   };
   // What kind of priority is represented in the next frame
-  enum class Priority:uint8_t {
+  enum class Priority : uint8_t {
     // No priority field
     None,
     // Yes there's a priority field

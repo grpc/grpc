@@ -459,7 +459,8 @@ class HPackParser::Input {
         const uint8_t* end)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
-        end_(end),frontier_(begin) {}
+        end_(end),
+        frontier_(begin) {}
 
   // If input is backed by a slice, retrieve its refcount. If not, return
   // nullptr.
@@ -570,9 +571,7 @@ class HPackParser::Input {
   }
 
   // Check if we saw an EOF.. must be verified before looking at TakeError
-  bool eof_error() const {
-    return eof_error_;
-  }
+  bool eof_error() const { return eof_error_; }
 
   // Extract the parse error, leaving the current error as NONE.
   grpc_error_handle TakeError() {
@@ -613,14 +612,10 @@ class HPackParser::Input {
   }
 
   // Update the frontier - signifies we've successfully parsed another element
-  void UpdateFrontier() {
-    frontier_ = begin_;
-  }
+  void UpdateFrontier() { frontier_ = begin_; }
 
   // Get the frontier - for buffering should we fail due to eof
-  const uint8_t* frontier() const {
-    return frontier_;
-  }
+  const uint8_t* frontier() const { return frontier_; }
 
  private:
   // Helper to set the error to out of range for ParseVarint
@@ -941,8 +936,12 @@ class HPackParser::String {
 // Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, HPackParser::Sink* sink, grpc_chttp2_hptbl* table, uint8_t* dynamic_table_updates_allowed)
-      : input_(input), sink_(sink), table_(table), dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
+  Parser(Input* input, HPackParser::Sink* sink, grpc_chttp2_hptbl* table,
+         uint8_t* dynamic_table_updates_allowed)
+      : input_(input),
+        sink_(sink),
+        table_(table),
+        dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
 
   // Skip any priority bits, or return false on failure
   bool SkipPriority() {
@@ -1271,10 +1270,14 @@ void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
 grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
-    buffer.insert(buffer.end(), GRPC_SLICE_START_PTR(slice), GRPC_SLICE_END_PTR(slice));
-    return ParseInput(Input(nullptr, buffer.data(), buffer.data() + buffer.size()), is_last);
+    buffer.insert(buffer.end(), GRPC_SLICE_START_PTR(slice),
+                  GRPC_SLICE_END_PTR(slice));
+    return ParseInput(
+        Input(nullptr, buffer.data(), buffer.data() + buffer.size()), is_last);
   }
-  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_END_PTR(slice)), is_last);
+  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
+                          GRPC_SLICE_END_PTR(slice)),
+                    is_last);
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
@@ -1283,7 +1286,8 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
   }
   if (input.eof_error()) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Incomplete header at the end of a header/continuation sequence");
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Incomplete header at the end of a header/continuation sequence");
     }
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
     return GRPC_ERROR_NONE;
@@ -1293,16 +1297,19 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
 
 bool HPackParser::ParseInputInner(Input* input) {
   switch (priority_) {
-  case Priority::None: break;
-  case Priority::Included: {
-    if (input->remaining() < 5) return input->UnexpectedEOF(false);
-    input->Advance(5);
-    input->UpdateFrontier();
-    priority_ = Priority::None;
-  }
+    case Priority::None:
+      break;
+    case Priority::Included: {
+      if (input->remaining() < 5) return input->UnexpectedEOF(false);
+      input->Advance(5);
+      input->UpdateFrontier();
+      priority_ = Priority::None;
+    }
   }
   while (!input->end_of_stream()) {
-    if (GPR_UNLIKELY(!Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_).Parse())) {
+    if (GPR_UNLIKELY(
+            !Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_)
+                 .Parse())) {
       return false;
     }
     input->UpdateFrontier();
