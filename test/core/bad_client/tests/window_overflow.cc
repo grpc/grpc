@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
   }
   grpc_bad_client_arg bca[2];
   bca[0] = connection_preface_arg;
-  bca[1] = {__LINE__, rst_stream_client_validator, nullptr, g_buffer, g_count};
+  bca[1] = {rst_stream_client_validator, nullptr, g_buffer, g_count};
   grpc_run_bad_client_test(verifier, bca, 2, GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
   grpc_shutdown();

@@ -1353,34 +1353,40 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
-  /* need to check for null stream: this can occur if we receive an invalid
-      stream id on a header */
-  if (s != nullptr) {
-    if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many trailer frames");
-    }
-    /* Process stream compression md element if it exists */
-    if (s->header_frames_received == 0) { /* Only acts on initial metadata */
-      parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
-    }
-    s->published_metadata[s->header_frames_received] =
-        GRPC_METADATA_PUBLISHED_FROM_WIRE;
-    maybe_complete_funcs[s->header_frames_received](t, s);
-    s->header_frames_received++;
-    if (parser->is_eof()) {
-      if (t->is_client && !s->write_closed) {
-        /* server eof ==> complete closure; we may need to forcefully close
-            the stream. Wait until the combiner lock is ready to be released
-            however -- it might be that we receive a RST_STREAM following this
-            and can avoid the extra write */
-        GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-        t->combiner->FinallyRun(
-            GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
-            GRPC_ERROR_NONE);
+  if (is_last) {
+    /* need to check for null stream: this can occur if we receive an invalid
+       stream id on a header */
+    if (s != nullptr) {
+      if (parser->is_boundary()) {
+        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Too many trailer frames");
+        }
+        /* Process stream compression md element if it exists */
+        if (s->header_frames_received ==
+            0) { /* Only acts on initial metadata */
+          parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
+        }
+        s->published_metadata[s->header_frames_received] =
+            GRPC_METADATA_PUBLISHED_FROM_WIRE;
+        maybe_complete_funcs[s->header_frames_received](t, s);
+        s->header_frames_received++;
       }
-      grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+      if (parser->is_eof()) {
+        if (t->is_client && !s->write_closed) {
+          /* server eof ==> complete closure; we may need to forcefully close
+             the stream. Wait until the combiner lock is ready to be released
+             however -- it might be that we receive a RST_STREAM following this
+             and can avoid the extra write */
+          GRPC_CHTTP2_STREAM_REF(s, "final_rst");
+          t->combiner->FinallyRun(
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
+              GRPC_ERROR_NONE);
+        }
+        grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+      }
     }
+    parser->FinishFrame();
   }
-  parser->FinishFrame();
   return GRPC_ERROR_NONE;
 }

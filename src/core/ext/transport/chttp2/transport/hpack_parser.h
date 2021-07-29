@@ -64,7 +64,7 @@ class HPackParser {
   void BeginFrame(Sink sink, Boundary boundary, Priority priority);
   // Change the header sink mid parse
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
-  // Parse all queued data, with last_slice concatenated at the end
+  // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
