@@ -121,7 +121,6 @@ config("grpc_config") {
         "src/core/ext/upb-generated/google/rpc/status.upb.h",
         "src/core/lib/gpr/alloc.cc",
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/atm.cc",
         "src/core/lib/gpr/cpu_iphone.cc",
         "src/core/lib/gpr/cpu_linux.cc",
