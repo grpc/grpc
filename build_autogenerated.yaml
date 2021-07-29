@@ -85,15 +85,18 @@ libs:
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   - test/core/end2end/tests/retry_lb_drop.cc
+  - test/core/end2end/tests/retry_lb_fail.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
@@ -198,15 +201,18 @@ libs:
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   - test/core/end2end/tests/retry_lb_drop.cc
+  - test/core/end2end/tests/retry_lb_fail.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
@@ -295,7 +301,6 @@ libs:
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
@@ -487,6 +492,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -699,6 +705,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -1014,6 +1021,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1249,7 +1257,6 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1698,6 +1705,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -1726,6 +1734,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -1958,6 +1967,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2010,7 +2020,6 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -4383,6 +4392,26 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_smoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/binder/binder_smoke_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bitset_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/bitset.h
+  src:
+  - test/core/gprpp/bitset_test.cc
+  deps: []
+  uses_polling: false
 - name: bm_alarm
   build: test
   language: c++
@@ -6488,6 +6517,19 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+  uses_polling: false
+- name: table_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/table.h
+  src:
+  - test/core/gprpp/table_test.cc
+  deps:
+  - absl/types:optional
+  - absl/utility:utility
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true

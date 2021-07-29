@@ -428,12 +428,6 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
-  // Without this line, ExecCtx::Get()->Now() will return a cached timestamp. If
-  // there are thousands of RPCs happen on one thread, we might observe ms-level
-  // error in Now(). This could mean the construction of RPC object is
-  // microseconds earlier than the filter execution. But we still haven't found
-  // the root cause. Read more: https://github.com/grpc/grpc/pull/25738.
-  ExecCtx::Get()->InvalidateNow();
   grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);

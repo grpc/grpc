@@ -286,3 +286,14 @@ class KubernetesBaseRunner:
             name, service_port)
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
+
+    @classmethod
+    def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,
+                             name: str) -> str:
+        """A helper to make consistent test app kubernetes namespace name
+        for given resource prefix and suffix."""
+        parts = [resource_prefix, name]
+        # Avoid trailing dash when the suffix is empty.
+        if resource_suffix:
+            parts.append(resource_suffix)
+        return '-'.join(parts)

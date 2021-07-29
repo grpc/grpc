@@ -37,18 +37,8 @@ class SliceBuffer {
 
 class SliceAllocator {
  public:
-  // gRPC-internal constructor
-  explicit SliceAllocator(grpc_resource_user* user);
-  // Not copyable
-  SliceAllocator(SliceAllocator& other) = delete;
-  SliceAllocator& operator=(const SliceAllocator& other) = delete;
-  // Moveable
-  SliceAllocator(SliceAllocator&& other) noexcept;
-  SliceAllocator& operator=(SliceAllocator&& other) noexcept;
-  ~SliceAllocator();
-
-  using AllocateCallback =
-      std::function<void(absl::Status, SliceBuffer* buffer)>;
+  using AllocateCallback = std::function<void(absl::Status)>;
+  virtual ~SliceAllocator() = default;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
   /// slices. Ownership of the \a SliceBuffer is not transferred.
   ///
@@ -57,32 +47,17 @@ class SliceAllocator {
   /// interrupted to attempt to reclaim memory from participating gRPC
   /// internals. When there is sufficient memory available, slice allocation
   /// proceeds as normal.
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
-                        SliceAllocator::AllocateCallback cb);
-
- private:
-  grpc_resource_user* resource_user_;
+  virtual absl::Status Allocate(size_t size, SliceBuffer* dest,
+                                SliceAllocator::AllocateCallback cb) = 0;
 };
 
 class SliceAllocatorFactory {
  public:
-  // gRPC-internal constructor
-  explicit SliceAllocatorFactory(grpc_resource_quota* quota);
-  // Not copyable
-  SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
-  SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
-  // Moveable
-  SliceAllocatorFactory(SliceAllocatorFactory&& other) noexcept;
-  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) noexcept;
-  ~SliceAllocatorFactory();
-
+  virtual ~SliceAllocatorFactory() = default;
   /// On Endpoint creation, call \a CreateSliceAllocator with the name of the
-  /// endpoint peer (a URI string, most likely). Note: \a peer_name must outlive
-  /// the Endpoint.
-  SliceAllocator CreateSliceAllocator(absl::string_view peer_name);
-
- private:
-  grpc_resource_quota* resource_quota_;
+  /// endpoint peer (a URI string, most likely).
+  virtual std::unique_ptr<SliceAllocator> CreateSliceAllocator(
+      absl::string_view peer_name) = 0;
 };
 
 }  // namespace experimental

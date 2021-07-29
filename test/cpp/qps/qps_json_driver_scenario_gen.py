@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gen_build_yaml as gen
 import json
+
+import gen_build_yaml as gen
 
 COPYRIGHT = """
 # Copyright 2021 The gRPC Authors

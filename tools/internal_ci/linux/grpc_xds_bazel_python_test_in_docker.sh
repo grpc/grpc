@@ -64,6 +64,7 @@ bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 # because not all interop clients in all languages support these new tests.
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
+    --halt_after_fail \
     --test_case="all,circuit_breaking,timeout,fault_injection" \
     --project_id=grpc-testing \
     --project_num=830293263384 \

@@ -19,10 +19,11 @@ import argparse
 import json
 import multiprocessing
 import os
-import qps_scenarios
 import shutil
 import subprocess
 import sys
+
+import qps_scenarios
 import tabulate
 
 sys.path.append(

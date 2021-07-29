@@ -33,6 +33,9 @@ namespace grpc {
 ::opencensus::stats::MeasureDouble RpcClientRoundtripLatency();
 ::opencensus::stats::MeasureDouble RpcClientServerLatency();
 ::opencensus::stats::MeasureInt64 RpcClientCompletedRpcs();
+::opencensus::stats::MeasureInt64 RpcClientRetriesPerCall();
+::opencensus::stats::MeasureInt64 RpcClientTransparentRetriesPerCall();
+::opencensus::stats::MeasureDouble RpcClientRetryDelayPerCall();
 
 ::opencensus::stats::MeasureInt64 RpcServerSentMessagesPerRpc();
 ::opencensus::stats::MeasureDouble RpcServerSentBytesPerRpc();

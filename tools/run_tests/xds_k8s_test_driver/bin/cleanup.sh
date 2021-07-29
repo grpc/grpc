@@ -32,7 +32,7 @@ ENVIRONMENT:
 EXAMPLES:
 $0
 $0 --secure
-XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --namespace=override-namespace
+XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --resource_suffix=override-suffix
 EOF
   exit 1
 }

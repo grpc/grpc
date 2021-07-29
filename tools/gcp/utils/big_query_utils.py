@@ -18,10 +18,10 @@ from __future__ import print_function
 import argparse
 import json
 import uuid
-import httplib2
 
 from apiclient import discovery
 from apiclient.errors import HttpError
+import httplib2
 from oauth2client.client import GoogleCredentials
 
 # 30 days in milliseconds
