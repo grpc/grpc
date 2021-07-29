@@ -872,7 +872,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                            // - If you're developing the server, consider using response streaming,
                            // or let clients filter
                            //   responses by setting a google.protobuf.FieldMask in the request:
-                           //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
+                           //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
                            XCTAssertEqualObjects(
                                error.localizedDescription,
                                @"Received message larger than max (4194305 vs. 4194304)");

@@ -412,7 +412,7 @@ class TrafficDirectorManager:
     def delete_target_http_proxy(self, force=False):
         if force:
             name = self.make_resource_name(self.TARGET_PROXY_NAME)
-        elif self.target_proxy:
+        elif self.target_proxy and self.target_proxy_is_http:
             name = self.target_proxy.name
         else:
             return
