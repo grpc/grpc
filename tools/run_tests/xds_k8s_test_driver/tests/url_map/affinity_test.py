@@ -166,13 +166,13 @@ class TestHeaderBasedAffinityMultipleHeaders(
             test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
             2,
         )
-        emptyCallPeer = list(rpc_distribution.raw['rpcsByMethod']['EmptyCall']
-                             ['rpcsByPeer'].keys())[0]
+        empty_call_peer = list(rpc_distribution.raw['rpcsByMethod']['EmptyCall']
+                               ['rpcsByPeer'].keys())[0]
         # Send RPCs with a different metadata value, try different values to
         # verify that the client will pick a different backend.
         #
         # EmptyCalls will be sent with the same metadata as before, and
-        # UnaryCalls will be sent with headers from [a..z]. We check the
+        # UnaryCalls will be sent with headers from ["0".."29"]. We check the
         # endpoint picked for UnaryCall, and stop as soon as one different from
         # the EmptyCall peer is picked.
         #
@@ -180,25 +180,25 @@ class TestHeaderBasedAffinityMultipleHeaders(
         # same backend used by EmptyCall. But there will be over a thousand
         # nodes on the ring (default min size is 1024), and the probability of
         # picking the same backend should be fairly small.
-        differentPeerPicked = False
-        for i in range(ord('a'), ord('z') + 1):
+        different_peer_picked = False
+        for i in range(30):
             new_metadata = (
                 (RpcTypeEmptyCall, _TEST_METADATA_KEY,
                  _TEST_METADATA_VALUE_EMPTY),
-                (RpcTypeUnaryCall, _TEST_METADATA_KEY, chr(i)),
+                (RpcTypeUnaryCall, _TEST_METADATA_KEY, str(i)),
             )
             rpc_distribution = self.configure_and_send(
                 test_client,
                 rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
                 metadata=new_metadata,
                 num_rpcs=_NUM_RPCS)
-            unaryCallPeer = list(rpc_distribution.raw['rpcsByMethod']
-                                 ['UnaryCall']['rpcsByPeer'].keys())[0]
-            if unaryCallPeer != emptyCallPeer:
-                differentPeerPicked = True
+            unary_call_peer = list(rpc_distribution.raw['rpcsByMethod']
+                                   ['UnaryCall']['rpcsByPeer'].keys())[0]
+            if unary_call_peer != empty_call_peer:
+                different_peer_picked = True
                 break
         self.assertTrue(
-            differentPeerPicked,
+            different_peer_picked,
             "the same endpoint was picked for all the headers, expect a different endpoint to be picked"
         )
         self.assertLen(
