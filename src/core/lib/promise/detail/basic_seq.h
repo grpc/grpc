@@ -75,19 +75,6 @@ struct SeqState {
   // No destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
   ~SeqState() = delete;
-  // Helper to get a specific state index.
-  // Calls the prior state, unless it's this state, in which case it returns
-  // that.
-  template <int J>
-  struct Get {
-    static SeqState<Traits, J, Fs...>* f(SeqState* p) {
-      return PriorState::template Get<J>::f(&p->prior);
-    }
-  };
-  template <>
-  struct Get<I> {
-    static SeqState* f(SeqState* p) { return p; }
-  };
   // Evaluate the current promise, next promise factory types for this state.
   // The current promise is the next promise from the prior state.
   // The next factory callable is from the callables passed in:
@@ -127,15 +114,6 @@ struct SeqState<Traits, 0, Fs...> {
   // No destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
   ~SeqState() = delete;
-  // Accessor for states by index... we return this state for element 0, and
-  // leave this undefined for other states. If you see this being undefined,
-  // probably at the top of the recursion a bad index is being passed in.
-  template <int I>
-  struct Get;
-  template <>
-  struct Get<0> {
-    static SeqState* f(SeqState* p) { return p; }
-  };
   // Evaluate the current promise, next promise factory types for this state.
   // Our callable is the first element of Fs, wrapped in PromiseLike to handle
   // some common edge cases. The next factory is the second element.
@@ -146,6 +124,28 @@ struct SeqState<Traits, 0, Fs...> {
   GPR_NO_UNIQUE_ADDRESS typename Types::Promise current_promise;
   GPR_NO_UNIQUE_ADDRESS typename Types::Next next_factory;
 };
+
+// Helper to get a specific state index.
+// Calls the prior state, unless it's this state, in which case it returns
+// that.
+template <char I, template <typename> class Traits, char J, typename... Fs>
+struct GetSeqStateInner {
+  static SeqState<Traits, I, Fs...>* f(SeqState<Traits, J, Fs...>* p) {
+    return GetSeqStateInner<I, Traits, J - 1, Fs...>::f(&p->prior);
+  }
+};
+
+template <char I, template <typename> class Traits, typename... Fs>
+struct GetSeqStateInner<I, Traits, I, Fs...> {
+  static SeqState<Traits, I, Fs...>* f(SeqState<Traits, I, Fs...>* p) {
+    return p;
+  }
+};
+
+template <char I, template <typename> class Traits, char J, typename... Fs>
+SeqState<Traits, I, Fs...>* GetSeqState(SeqState<Traits, J, Fs...>* p) {
+  return GetSeqStateInner<I, Traits, J, Fs...>::f(p);
+}
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
 auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
@@ -207,14 +207,13 @@ class BasicSeq {
   struct Get {
     // Get a state by index.
     static SeqState<Traits, I, Fs...>* state(BasicSeq* s) {
-      return PenultimateState::template Get<I>::f(&s->penultimate_state_);
+      return GetSeqState<I>(&s->penultimate_state_);
     }
 
     // Get the next state's promise.
     static typename SeqState<Traits, I + 1, Fs...>::Types::Promise*
     next_promise(BasicSeq* s) {
-      return &PenultimateState::template Get<I + 1>::f(&s->penultimate_state_)
-                  ->current_promise;
+      return &GetSeqState<I + 1>(&s->penultimate_state_)->current_promise;
     }
   };
   // Specialization for the penultimate state since otherwise we hit overflow
@@ -304,8 +303,7 @@ class BasicSeq {
   struct DestructCurrentPromiseAndSubsequentFactories {
     BasicSeq* s;
     void operator()() {
-      Destruct(&PenultimateState::template Get<I>::f(&s->penultimate_state_)
-                    ->current_promise);
+      Destruct(&GetSeqState<I>(&s->penultimate_state_)->current_promise);
       DestructSubsequentFactories<I>::Run(s);
     }
   };
@@ -315,8 +313,7 @@ class BasicSeq {
   template <char I>
   struct DestructSubsequentFactories {
     static void Run(BasicSeq* s) {
-      Destruct(&PenultimateState::template Get<I>::f(&s->penultimate_state_)
-                    ->next_factory);
+      Destruct(&GetSeqState<I>(&s->penultimate_state_)->next_factory);
       DestructSubsequentFactories<I + 1>::Run(s);
     }
   };

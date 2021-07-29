@@ -70,9 +70,7 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
   // Move: assume that the Fuse is still in the promise state (since it's not
   // legal to move after the first poll!)
   Joint(Joint&& j) noexcept
-      : NextJoint(
-            std::forward<NextJoint>(j)),
-        fused(std::move(j.fused.f)) {}
+      : NextJoint(std::forward<NextJoint>(j)), fused(std::move(j.fused.f)) {}
   // Destruct: check bits to see if we're in promise or result state, and call
   // the appropriate destructor. Recursively, call up through the join.
   void DestructAll(const Bits& bits) {
