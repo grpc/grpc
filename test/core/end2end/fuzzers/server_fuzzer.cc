@@ -40,26 +40,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
-    grpc_slice_allocator_factory* slice_allocator_factory =
-        grpc_slice_allocator_factory_create(
-            grpc_resource_quota_create("context_list_test"));
-    grpc_slice_allocator* allocator =
-        grpc_slice_allocator_factory_create_slice_allocator(
-            slice_allocator_factory, "mock_endpoint");
-    grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, allocator);
+    grpc_resource_quota* rq = grpc_resource_quota_create("context_list_test");
+    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+        discard_write, grpc_slice_allocator_create(rq, "mock_endpoint"));
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
-
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    grpc_resource_user_ref(allocator->resource_user);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        nullptr, mock_endpoint, false, allocator->resource_user);
+        nullptr, mock_endpoint, false,
+        grpc_resource_user_create(rq, "mock_transport"));
+    grpc_resource_quota_unref(rq);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -100,7 +95,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting

@@ -274,7 +274,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg,
                              grpc_tcp_create(fdobj, sp->server->channel_args,
                                              addr_str.c_str(), allocator),
-                             allocator, read_notifier_pollset, acceptor);
+                             read_notifier_pollset, acceptor);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -622,7 +622,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     s_->on_accept_cb(
         s_->on_accept_cb_arg,
         grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(), allocator),
-        allocator, read_notifier_pollset, acceptor);
+        read_notifier_pollset, acceptor);
   }
 
  private:

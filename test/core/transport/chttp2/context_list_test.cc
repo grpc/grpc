@@ -69,17 +69,13 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_slice_allocator_factory* slice_allocator_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("context_list_test"));
-  grpc_slice_allocator* allocator =
-      grpc_slice_allocator_factory_create_slice_allocator(
-          slice_allocator_factory, "mock_endpoint");
-  grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, allocator);
-  grpc_resource_user_ref(allocator->resource_user);
-  grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true,
-                                                   allocator->resource_user);
+  grpc_resource_quota* rq = grpc_resource_quota_create("context_list_test");
+  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+      discard_write, grpc_slice_allocator_create(rq, "mock_endpoint"));
+  grpc_transport* t = grpc_create_chttp2_transport(
+      nullptr, mock_endpoint, true,
+      grpc_resource_user_create(rq, "mock_transport"));
+  grpc_resource_quota_unref(rq);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -104,7 +100,6 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     exec_ctx.Flush();
     gpr_free(s[i]);
   }
-  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   grpc_transport_destroy(t);
   exec_ctx.Flush();
 }
@@ -130,17 +125,13 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_slice_allocator_factory* slice_allocator_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("context_list_test"));
-  grpc_slice_allocator* allocator =
-      grpc_slice_allocator_factory_create_slice_allocator(
-          slice_allocator_factory, "mock_endpoint");
-  grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, allocator);
-  grpc_resource_user_ref(allocator->resource_user);
-  grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true,
-                                                   allocator->resource_user);
+  grpc_resource_quota* rq = grpc_resource_quota_create("context_list_test");
+  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+      discard_write, grpc_slice_allocator_create(rq, "mock_endpoint"));
+  grpc_transport* t = grpc_create_chttp2_transport(
+      nullptr, mock_endpoint, true,
+      grpc_resource_user_create(rq, "mock_transport"));
+  grpc_resource_quota_unref(rq);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -164,7 +155,6 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     exec_ctx.Flush();
     gpr_free(s[i]);
   }
-  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   grpc_transport_destroy(t);
   exec_ctx.Flush();
 }

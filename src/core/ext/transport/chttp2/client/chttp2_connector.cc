@@ -41,11 +41,14 @@
 
 namespace grpc_core {
 
-Chttp2Connector::Chttp2Connector() {
+Chttp2Connector::Chttp2Connector() : rq_(nullptr) {
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
 Chttp2Connector::~Chttp2Connector() {
+  if (rq_ != nullptr) {
+    grpc_resource_quota_unref(rq_);
+  }
   if (endpoint_ != nullptr) {
     grpc_endpoint_destroy(endpoint_);
   }
@@ -66,9 +69,11 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     connecting_ = true;
     GPR_ASSERT(endpoint_ == nullptr);
     ep = &endpoint_;
+    if (rq_ != nullptr) {
+      grpc_resource_quota_unref(rq_);
+    }
+    rq_ = grpc_resource_quota_from_channel_args(args.channel_args, true);
   }
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_from_channel_args(args.channel_args, true);
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
@@ -79,9 +84,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   grpc_tcp_client_connect(
       &connected_, ep,
       grpc_slice_allocator_create(
-          resource_quota, grpc_sockaddr_to_string(&addr, false).c_str()),
+          rq_, grpc_sockaddr_to_string(&addr, false).c_str()),
       args.interested_parties, args.channel_args, &addr, args.deadline);
-  grpc_resource_quota_unref_internal(resource_quota);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -174,15 +178,11 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      grpc_resource_quota* resource_quota =
-          grpc_resource_quota_from_channel_args(args->args, true);
-      grpc_resource_user* ru = grpc_resource_user_create(
-          resource_quota, absl::StrCat("Chttp2Connector:",
-                                       grpc_endpoint_get_peer(args->endpoint))
-                              .c_str());
-      self->result_->transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, true, ru);
-      grpc_resource_quota_unref_internal(resource_quota);
+      self->result_->transport = grpc_create_chttp2_transport(
+          args->args, args->endpoint, true,
+          grpc_resource_user_create(
+              self->rq_, absl::StrCat(grpc_endpoint_get_peer(args->endpoint),
+                                      ":connector_transport")));
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;

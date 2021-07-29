@@ -62,10 +62,10 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (done) {
     grpc_channel_args_destroy(ac->channel_args);
     gpr_mu_destroy(&ac->mu);
+    if (ac->slice_allocator != nullptr) {
+      grpc_slice_allocator_destroy(ac->slice_allocator);
+    }
     delete ac;
-  }
-  if (ac->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(ac->slice_allocator);
   }
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }

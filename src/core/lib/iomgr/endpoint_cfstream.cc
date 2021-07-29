@@ -262,7 +262,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref_internal(slices);
   EP_REF(ep_impl, "read");
-  if (grpc_resource_user_alloc_slices(
+  if (grpc_slice_allocator_allocate(
           ep_impl->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
           ep_impl->read_slices, CFStreamReadAllocationDone, ep_impl)) {
     ep_impl->stream_sync->NotifyOnRead(&ep_impl->read_action);

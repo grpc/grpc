@@ -873,7 +873,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
-    if (GPR_UNLIKELY(!grpc_resource_user_alloc_slices(
+    if (GPR_UNLIKELY(!grpc_slice_allocator_allocate(
             tcp->slice_allocator, target_read_size, 1, tcp->incoming_buffer,
             tcp_read_allocation_done, tcp))) {
       // Wait for allocation.

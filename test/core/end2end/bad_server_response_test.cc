@@ -148,7 +148,6 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_slice_allocator* /*slice_allocator*/,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);

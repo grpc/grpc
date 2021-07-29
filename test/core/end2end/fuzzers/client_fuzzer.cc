@@ -45,20 +45,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
 
-    grpc_slice_allocator_factory* slice_allocator_factory =
-        grpc_slice_allocator_factory_create(
-            grpc_resource_quota_create("context_list_test"));
-    grpc_slice_allocator* allocator =
-        grpc_slice_allocator_factory_create_slice_allocator(
-            slice_allocator_factory, "mock_endpoint");
-    grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, allocator);
+    grpc_resource_quota* rq = grpc_resource_quota_create("context_list_test");
+    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+        discard_write, grpc_slice_allocator_create(rq, "mock_endpoint"));
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_resource_user_ref(allocator->resource_user);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        nullptr, mock_endpoint, true, allocator->resource_user);
+        nullptr, mock_endpoint, true,
+        grpc_resource_user_create(rq, "mock_transport"));
+    grpc_resource_quota_unref(rq);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
-
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
@@ -155,7 +150,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&trailing_metadata_recv);
     grpc_slice_unref(details);
     grpc_channel_destroy(channel);
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
     if (response_payload_recv != nullptr) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }

@@ -227,8 +227,7 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
   acceptor->external_connection = false;
-  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, allocator, nullptr,
-                           acceptor);
+  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, nullptr, acceptor);
 }
 
 static void custom_accept_callback(grpc_custom_socket* socket,

@@ -50,7 +50,6 @@ typedef struct grpc_tcp_server_acceptor {
    Takes ownership of acceptor.
    Does NOT take ownership of slice_allocator. */
 typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
-                                   grpc_slice_allocator* slice_allocator,
                                    grpc_pollset* accepting_pollset,
                                    grpc_tcp_server_acceptor* acceptor);
 namespace grpc_core {

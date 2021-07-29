@@ -33,6 +33,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -743,18 +744,10 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args, bool create) {
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        if (channel_args->args[i].type == GRPC_ARG_POINTER) {
-          return grpc_resource_quota_ref_internal(
-              static_cast<grpc_resource_quota*>(
-                  channel_args->args[i].value.pointer.p));
-        } else {
-          gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
-        }
-      }
-    }
+  auto rq = grpc_channel_args_find_pointer<grpc_resource_quota>(
+      channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  if (rq != nullptr) {
+    return grpc_resource_quota_ref_internal(rq);
   }
   return create ? grpc_resource_quota_create(nullptr) : nullptr;
 }
@@ -780,7 +773,7 @@ const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void) {
  */
 
 grpc_resource_user* grpc_resource_user_create(
-    grpc_resource_quota* resource_quota, const char* name) {
+    grpc_resource_quota* resource_quota, absl::string_view name) {
   grpc_resource_user* resource_user = new grpc_resource_user;
   resource_user->resource_quota =
       grpc_resource_quota_ref_internal(resource_quota);
@@ -811,7 +804,7 @@ grpc_resource_user* grpc_resource_user_create(
     resource_user->links[i].next = resource_user->links[i].prev = nullptr;
   }
   if (name != nullptr) {
-    resource_user->name = name;
+    resource_user->name = std::string(name);
   } else {
     resource_user->name = absl::StrCat(
         "anonymous_resource_user_", reinterpret_cast<intptr_t>(resource_user));
@@ -1005,7 +998,7 @@ void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
 }
 
 grpc_slice_allocator* grpc_slice_allocator_create(
-    grpc_resource_quota* resource_quota, const char* name) {
+    grpc_resource_quota* resource_quota, absl::string_view name) {
   grpc_slice_allocator* slice_allocator = new grpc_slice_allocator;
   slice_allocator->resource_user =
       grpc_resource_user_create(resource_quota, name);
@@ -1019,10 +1012,10 @@ void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
   delete slice_allocator;
 }
 
-bool grpc_resource_user_alloc_slices(grpc_slice_allocator* slice_allocator,
-                                     size_t length, size_t count,
-                                     grpc_slice_buffer* dest,
-                                     grpc_iomgr_cb_func cb, void* p) {
+bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
+                                   size_t length, size_t count,
+                                   grpc_slice_buffer* dest,
+                                   grpc_iomgr_cb_func cb, void* p) {
   if (GPR_UNLIKELY(
           gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown))) {
     grpc_core::ExecCtx::Run(
@@ -1050,7 +1043,8 @@ grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
 }
 
 grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
-    grpc_slice_allocator_factory* slice_allocator_factory, const char* name) {
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    absl::string_view name) {
   return grpc_slice_allocator_create(slice_allocator_factory->resource_quota,
                                      name);
 }

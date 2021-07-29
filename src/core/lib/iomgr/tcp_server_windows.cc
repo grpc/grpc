@@ -381,8 +381,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
     acceptor->external_connection = false;
-    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, allocator, NULL,
-                             acceptor);
+    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
