@@ -31,6 +31,10 @@ _GRPC_PROTO_SRC_FMT = "{}.grpc.pb.cc"
 _GRPC_PROTO_MOCK_HEADER_FMT = "{}_mock.grpc.pb.h"
 _PROTO_HEADER_FMT = "{}.pb.h"
 _PROTO_SRC_FMT = "{}.pb.cc"
+_VIRTUAL_IMPORTS = "_virtual_imports"
+
+def _rewrite_virtual_import(path):
+    return path.replace(_VIRTUAL_IMPORTS, "_virtual_includes")
 
 def _strip_package_from_path(label_package, file):
     prefix_len = 0
@@ -62,10 +66,6 @@ def generate_cc_impl(ctx):
         for f in src[ProtoInfo].transitive_imports.to_list()
     ]
     outs = []
-    proto_root = get_proto_root(
-        ctx.label.workspace_root,
-    )
-
     label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
     if ctx.executable.plugin:
         outs += [
@@ -105,8 +105,10 @@ def generate_cc_impl(ctx):
             )
             for proto in protos
         ]
-    out_files = [ctx.actions.declare_file(out) for out in outs]
-    dir_out = str(ctx.genfiles_dir.path + proto_root)
+    out_files = [ctx.actions.declare_file(_rewrite_virtual_import(out)) for out in outs]
+    proto_root = str(ctx.genfiles_dir.path + get_proto_root(ctx.label.workspace_root))
+    input_is_virtual = (ctx.attr.srcs[0][ProtoInfo].proto_source_root.find(_VIRTUAL_IMPORTS) >= 0)
+    dir_out = _rewrite_virtual_import(ctx.attr.srcs[0][ProtoInfo].proto_source_root) if input_is_virtual else proto_root
 
     arguments = []
     if ctx.executable.plugin:
@@ -128,9 +130,12 @@ def generate_cc_impl(ctx):
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
-    arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
-    arguments += [_get_srcs_file_path(proto) for proto in protos]
-
+    arguments += ["--proto_path=" + proto_root]
+    arguments += [
+        _join_directories([proto_root,  _get_srcs_file_path(proto)]) if input_is_virtual
+        else _get_srcs_file_path(proto)
+        for proto in protos
+    ]
     # create a list of well known proto files if the argument is non-None
     well_known_proto_files = []
     if ctx.attr.well_known_protos:
