@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include <openssl/ssl.h>
@@ -40,7 +40,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   if (IsKeyCertPairsListValid(pem_key_cert_pairs).ok()) {
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
-    pem_key_cert_pairs_ = {};
+    gpr_log(GPR_ERROR, "Invalid key-cert pair list passed at constructor.");
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
@@ -378,7 +378,7 @@ DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     : StaticDataCertificateProvider(std::move(root_certificate),
                                     std::move(pem_key_cert_pairs)) {}
 
-absl::Status DataWatcherCertificateProvider::SetsRootCertificate(
+absl::Status DataWatcherCertificateProvider::SetRootCertificate(
     const std::string& root_certificate) {
   grpc_core::MutexLock lock(&mu_);
   if (root_certificate_ == root_certificate) {
@@ -408,8 +408,9 @@ absl::Status DataWatcherCertificateProvider::SetsRootCertificate(
   return absl::OkStatus();
 }
 
-absl::Status DataWatcherCertificateProvider::SetsKeyCertificatePairs(
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
+absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
+    const PemKeyCertPairList& pem_key_cert_pairs) {
+  grpc_core::MutexLock lock(&mu_);
   if (pem_key_cert_pairs == pem_key_cert_pairs_) {
     return absl::InvalidArgumentError(
         "The Key-Cert pair list has not changed.");
@@ -429,8 +430,7 @@ absl::Status DataWatcherCertificateProvider::SetsKeyCertificatePairs(
     GRPC_ERROR_UNREF(identity_cert_error);
     return status;
   }
-  grpc_core::MutexLock lock(&mu_);
-  pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+  pem_key_cert_pairs_ = pem_key_cert_pairs;
   ExecCtx exec_ctx;
   grpc_error_handle identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unable to get latest identity certificates.");
@@ -562,25 +562,25 @@ grpc_tls_status grpc_set_credentials_status_create(
   return grpc_tls_status{status_code, strdup(error_message.c_str())};
 }
 
-grpc_tls_status grpc_set_data_watcher_root_certificate(
+grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate) {
   GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status =
-      data_watcher->SetsRootCertificate(ConvertToCoreObject(root_certificate));
+      data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
   return grpc_set_credentials_status_create(
       static_cast<grpc_status_code>(status.code()),
       std::string(status.message()));
 }
 
-grpc_tls_status grpc_set_data_watcher_key_certificate_pairs(
+grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
-  absl::Status status = data_watcher->SetsKeyCertificatePairs(
+  absl::Status status = data_watcher->SetKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
   return grpc_set_credentials_status_create(
       static_cast<grpc_status_code>(status.code()),

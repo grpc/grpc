@@ -19,7 +19,6 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "absl/container/inlined_vector.h"
-#include "tls_credentials_options_util.h"
 
 namespace grpc {
 namespace experimental {
@@ -61,12 +60,14 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 }
 
 grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
-    const char* root_certificate) {
+    const string& root_certificate) {
   grpc_core::MutexLock lock(&mu_);
   grpc_tls_status status =
-      grpc_set_data_watcher_root_certificate(c_provider_, root_certificate);
+      gprc_tls_certificate_provider_data_watcher_set_root_cert(
+          c_provider_, root_certificate.c_str());
   return grpc::Status(static_cast<grpc::StatusCode>(status.status),
-                           status.error_message);;
+                      status.error_details);
+  ;
 }
 
 grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
@@ -78,9 +79,10 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   }
   grpc_core::MutexLock lock(&mu_);
   grpc_tls_status status =
-      grpc_set_data_watcher_key_certificate_pairs(c_provider_, pairs_core);
+      gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(c_provider_,
+                                                                    pairs_core);
   return grpc::Status(static_cast<grpc::StatusCode>(status.status),
-                           status.error_message);
+                      status.error_details);
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(

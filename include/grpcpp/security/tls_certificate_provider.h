@@ -80,7 +80,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 };
 
 // A basic CertificateProviderInterface implementation that will load and
-// refresh the credential data from static string from memory.
+// refresh the credential data from memory.
 class DataWatcherCertificateProvider : public CertificateProviderInterface {
  public:
   DataWatcherCertificateProvider(
@@ -98,7 +98,7 @@ class DataWatcherCertificateProvider : public CertificateProviderInterface {
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  grpc::Status SetRootCertificate(const char* root_certificate);
+  grpc::Status SetRootCertificate(const string& root_certificate);
 
   grpc::Status SetKeyCertificatePairs(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);

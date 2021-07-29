@@ -767,10 +767,10 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
  */
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
-/* A struct that stores the status of a credentials setter in a provider. */
+/* Status generated while performing TLS handshakes. */
 typedef struct grpc_tls_status {
   grpc_status_code status;
-  const char* error_message;
+  const char* error_details;
 } grpc_tls_status;
 
 /**
@@ -865,11 +865,13 @@ GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
 /* Sets |root_certificate| to the grpc_tls_certificate_provider. */
-GRPCAPI grpc_tls_status grpc_set_data_watcher_root_certificate(
+GRPCAPI grpc_tls_status
+gprc_tls_certificate_provider_data_watcher_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate);
 
 /* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider. */
-GRPCAPI grpc_tls_status grpc_set_data_watcher_key_certificate_pairs(
+GRPCAPI grpc_tls_status
+gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
 

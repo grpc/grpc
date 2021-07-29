@@ -17,10 +17,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
+#include <grpc/support/port_platform.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/status.h>
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -141,12 +140,12 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       std::string root_certificate,
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
-  // Reloads the root_certificate and updates the distributor.
-  absl::Status SetsRootCertificate(const std::string& root_certificate);
+  // Sets the root_certificate and updates the distributor.
+  absl::Status SetRootCertificate(const std::string& root_certificate);
 
-  // Reloads the key-cert pair list and updates the distributor.
-  absl::Status SetsKeyCertificatePairs(
-      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+  // Sets the key-cert pair list and updates the distributor.
+  absl::Status SetKeyCertificatePairs(
+      const PemKeyCertPairList& pem_key_cert_pairs);
 };
 
 //  Checks if the private key matches the certificate's public key.
