@@ -267,14 +267,13 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
     acceptor->external_connection = false;
-    grpc_slice_allocator* allocator =
-        grpc_slice_allocator_factory_create_slice_allocator(
-            sp->server->slice_allocator_factory,
-            absl::StrCat("tcp_server_posix:", addr_str).c_str());
-    sp->server->on_accept_cb(sp->server->on_accept_cb_arg,
-                             grpc_tcp_create(fdobj, sp->server->channel_args,
-                                             addr_str.c_str(), allocator),
-                             read_notifier_pollset, acceptor);
+    sp->server->on_accept_cb(
+        sp->server->on_accept_cb_arg,
+        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str(),
+                        grpc_slice_allocator_factory_create_slice_allocator(
+                            sp->server->slice_allocator_factory,
+                            absl::StrCat("tcp_server_posix:", addr_str))),
+        read_notifier_pollset, acceptor);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -616,12 +615,11 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
-    grpc_slice_allocator* allocator =
-        grpc_slice_allocator_factory_create_slice_allocator(
-            s_->slice_allocator_factory, addr_str.c_str());
     s_->on_accept_cb(
         s_->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(), allocator),
+        grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(),
+                        grpc_slice_allocator_factory_create_slice_allocator(
+                            s_->slice_allocator_factory, addr_str)),
         read_notifier_pollset, acceptor);
   }
 

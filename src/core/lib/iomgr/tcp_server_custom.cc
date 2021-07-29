@@ -219,10 +219,11 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
             peer_name_string.c_str());
   }
-  grpc_slice_allocator* allocator =
+  ep = custom_tcp_endpoint_create(
+      socket,
       grpc_slice_allocator_factory_create_slice_allocator(
-          sp->server->slice_allocator_factory, peer_name_string.c_str());
-  ep = custom_tcp_endpoint_create(socket, allocator, peer_name_string.c_str());
+          sp->server->slice_allocator_factory, peer_name_string),
+      peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;

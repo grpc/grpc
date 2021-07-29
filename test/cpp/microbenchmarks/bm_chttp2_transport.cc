@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -129,14 +130,8 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    grpc_slice_allocator_factory* slice_allocator_factory =
-        grpc_slice_allocator_factory_create(
-            grpc_resource_quota_create("bm_chttp2_transport"));
-    t_ = grpc_create_chttp2_transport(
-        &c_args, ep_, client,
-        grpc_resource_user_create(slice_allocator_factory->resource_quota,
-                                  "phony_transport"));
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
+                                      grpc_resource_user_create_unlimited());
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
