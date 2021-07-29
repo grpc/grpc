@@ -151,6 +151,7 @@ struct grpc_call {
   }
 
   ~grpc_call() {
+    GPR_ASSERT(gpr_atm_acq_load(&received_final_op_atm) == 1);
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
   }
 
