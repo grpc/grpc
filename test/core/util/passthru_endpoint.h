@@ -31,11 +31,9 @@ typedef struct {
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
-// Note: Ownership of \a slice_allocator_factory is not transferred
-void grpc_passthru_endpoint_create(
-    grpc_endpoint** client, grpc_endpoint** server,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_passthru_endpoint_stats* stats);
+void grpc_passthru_endpoint_create(grpc_endpoint** client,
+                                   grpc_endpoint** server,
+                                   grpc_passthru_endpoint_stats* stats);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 

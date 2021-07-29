@@ -123,10 +123,7 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   int message_size = state.range(0);
   int max_ping_pongs = state.range(1);
   CallbackStreamingTestService service;
-  grpc_slice_allocator_factory* alloc_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("bm_callback_bidi_streaming"));
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, alloc_factory));
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
   std::unique_ptr<EchoTestService::Stub> stub_(
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;

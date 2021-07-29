@@ -128,12 +128,7 @@ static void test_init() {
   g_ctx.client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* Create endpoints */
-  grpc_slice_allocator_factory* slice_allocator_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("fd_conservation_posix_test"));
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr,
-                                         slice_allocator_factory);
-  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   /* Create client, server and setup transport over endpoint pair */
   init_server();
   init_client();

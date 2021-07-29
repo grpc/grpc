@@ -28,8 +28,7 @@ struct grpc_endpoint_pair {
   grpc_endpoint* server;
 };
 // Note: does not take ownership of the \a slice_allocator_factory.
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char* name, grpc_channel_args* args,
-    grpc_slice_allocator_factory* slice_allocator_factory);
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

@@ -40,6 +40,7 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -59,9 +60,7 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
 
 class EndpointPairFixture {
  public:
-  // takes ownership of the slice_allocator_factory
-  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
-                      grpc_slice_allocator_factory* slice_allocator_factory) {
+  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
@@ -76,9 +75,7 @@ class EndpointPairFixture {
           server_->c_server()->core_server->channel_args();
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
-          grpc_resource_user_create(slice_allocator_factory->resource_quota,
-                                    "server_transport"));
-
+          grpc_resource_user_create_unlimited());
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
@@ -96,10 +93,9 @@ class EndpointPairFixture {
       ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_transport* transport = grpc_create_chttp2_transport(
-          &c_args, endpoints.client, true,
-          grpc_resource_user_create(slice_allocator_factory->resource_quota,
-                                    "client_transport"));
+      grpc_transport* transport =
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true,
+                                       grpc_resource_user_create_unlimited());
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
@@ -110,7 +106,6 @@ class EndpointPairFixture {
           std::vector<std::unique_ptr<
               experimental::ClientInterceptorFactoryInterface>>());
     }
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory);
   }
 
   virtual ~EndpointPairFixture() {
@@ -133,12 +128,8 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats,
-                  grpc_slice_allocator_factory* slice_allocator_factory)
-      : EndpointPairFixture(service,
-                            MakeEndpoints(stats, slice_allocator_factory),
-                            slice_allocator_factory),
-        stats_(stats) {}
+  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
+      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
   ~InProcessCHTTP2() override {
     if (stats_ != nullptr) {
@@ -151,12 +142,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
  private:
   grpc_passthru_endpoint_stats* stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(
-      grpc_passthru_endpoint_stats* stats,
-      grpc_slice_allocator_factory* slice_allocator_factory) {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, slice_allocator_factory,
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     return p;
   }
 };
@@ -165,12 +153,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  grpc_slice_allocator_factory* slice_allocator_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("unary_ping_pong"));
   std::unique_ptr<InProcessCHTTP2> fixture(
-      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create(),
-                          slice_allocator_factory));
+      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

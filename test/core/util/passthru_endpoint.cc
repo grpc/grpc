@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/util/resource_user_util.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -195,10 +196,9 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->slice_allocator = slice_allocator;
 }
 
-void grpc_passthru_endpoint_create(
-    grpc_endpoint** client, grpc_endpoint** server,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_passthru_endpoint_stats* stats) {
+void grpc_passthru_endpoint_create(grpc_endpoint** client,
+                                   grpc_endpoint** server,
+                                   grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
@@ -209,14 +209,8 @@ void grpc_passthru_endpoint_create(
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  half_init(&m->client, m,
-            grpc_slice_allocator_factory_create_slice_allocator(
-                slice_allocator_factory, "client"),
-            "client");
-  half_init(&m->server, m,
-            grpc_slice_allocator_factory_create_slice_allocator(
-                slice_allocator_factory, "server"),
-            "server");
+  half_init(&m->client, m, grpc_slice_allocator_create_unlimited(), "client");
+  half_init(&m->server, m, grpc_slice_allocator_create_unlimited(), "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

@@ -65,10 +65,7 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   int request_msgs_size = state.range(0);
   int response_msgs_size = state.range(1);
   CallbackStreamingTestService service;
-  grpc_slice_allocator_factory* alloc_factory =
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_create("bm_callback_unary_pingpong"));
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, alloc_factory));
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
   std::unique_ptr<EchoTestService::Stub> stub_(
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;
