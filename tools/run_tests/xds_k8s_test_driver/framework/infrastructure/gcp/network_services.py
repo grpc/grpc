@@ -37,7 +37,7 @@ class Router:
     routes: Optional[List[str]]
 
     @classmethod
-    def from_dict(cls, name: str, d: Dict[str, Any]) -> 'Router':
+    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Router':
         return cls(
             name=name,
             url=d["name"],
@@ -59,7 +59,7 @@ class GrpcRoute:
         case_sensitive: Optional[bool]
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'MethodMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'MethodMatch':
             return cls(
                 type=d.get("type"),
                 grpc_service=d.get("grpcService"),
@@ -75,7 +75,7 @@ class GrpcRoute:
         value: str
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'HeaderMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'HeaderMatch':
             return cls(
                 type=d.get("type"),
                 key=d["key"],
@@ -89,12 +89,12 @@ class GrpcRoute:
         headers: Tuple['HeaderMatch']
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'RouteMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'RouteMatch':
             return cls(
-                method=MethodMatch.from_dict(
+                method=MethodMatch.from_response(
                     d["method"]) if "method" in d else None,
                 headers=tuple(
-                    HeaderMatch.from_dict(h)
+                    HeaderMatch.from_response(h)
                     for h in d["headers"]) if "headers" in d else (),
             )
 
@@ -105,7 +105,7 @@ class GrpcRoute:
         weight: Optional[int]
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'Destination':
+        def from_response(cls, d: Dict[str, Any]) -> 'Destination':
             return cls(
                 service_name=d["serviceName"],
                 weight=d.get("weight"),
@@ -118,9 +118,9 @@ class GrpcRoute:
         drop: Optional[int]
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'RouteAction':
+        def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
             return cls(
-                destination=Destination.from_dict(
+                destination=Destination.from_response(
                     d["destination"]) if "destination" in d else None,
                 drop=d.get("drop"),
             )
@@ -132,11 +132,11 @@ class GrpcRoute:
         action: 'RouteAction'
 
         @classmethod
-        def from_dict(cls, d: Dict[str, Any]) -> 'RouteRule':
+        def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
             return cls(
-                match=RouteMatch.from_dict(
+                match=RouteMatch.from_response(
                     d["match"]) if "match" in d else "",
-                action=RouteAction.from_dict(
+                action=RouteAction.from_response(
                     d["action"]),
             )
 
@@ -146,7 +146,7 @@ class GrpcRoute:
     rules: Tuple['RouteRule']
 
     @classmethod
-    def from_dict(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
+    def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
         return cls(
             name=name,
             url=d["name"],
@@ -236,7 +236,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         result = self._get_resource(collection=self._api_locations.routers(),
                                     full_name=self.resource_full_name(
                                         name, self.ROUTERS))
-        return Router.from_dict(name, result)
+        return Router.from_response(name, result)
 
     def delete_router(self, name: str) -> bool:
         return self._delete_resource(collection=self._api_locations.routers(),
@@ -252,7 +252,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         result = self._get_resource(collection=self._api_locations.grpcRoutes(),
                                     full_name=self.resource_full_name(
                                         name, self.GRPC_ROUTES))
-        return GrpcRoute.from_dict(name, result)
+        return GrpcRoute.from_response(name, result)
 
     def delete_grpc_route(self, name: str) -> bool:
         return self._delete_resource(
