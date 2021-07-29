@@ -134,8 +134,9 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle /* cancel_error */) {
+    grpc_error_handle cancel_error) {
   status_code_ = absl::StatusCode::kCancelled;
+  GRPC_ERROR_UNREF(cancel_error);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
