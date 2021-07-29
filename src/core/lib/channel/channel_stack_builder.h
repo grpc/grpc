@@ -54,23 +54,6 @@ void grpc_channel_stack_builder_set_transport(
 grpc_transport* grpc_channel_stack_builder_get_transport(
     grpc_channel_stack_builder* builder);
 
-/// Attach \a resource_user to the builder (does not take ownership)
-void grpc_channel_stack_builder_set_resource_user(
-    grpc_channel_stack_builder* builder, grpc_resource_user* resource_user);
-
-/// Fetch attached resource user
-grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
-    grpc_channel_stack_builder* builder);
-
-/// Define how many bytes the \a resource_user was already allocated for the
-/// channel. This needs to be deallocated on channel destruction.
-void grpc_channel_stack_builder_set_preallocated_bytes(
-    grpc_channel_stack_builder* builder, size_t preallocated_bytes);
-
-/// Fetch preallocated bytes for the \a resource_user
-size_t grpc_channel_stack_builder_get_preallocated_bytes(
-    grpc_channel_stack_builder* builder);
-
 /// Set channel arguments: copies args
 void grpc_channel_stack_builder_set_channel_arguments(
     grpc_channel_stack_builder* builder, const grpc_channel_args* args);
