@@ -91,7 +91,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(102));
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -113,7 +113,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(103));
+  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

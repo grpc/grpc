@@ -320,8 +320,9 @@ grpc_error_handle skip_header(grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
-static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t) {
-  if ((t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0) {
+static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t,
+                                                 bool is_eoh) {
+  if (is_eoh) {
     if (t->header_eof) {
       return HPackParser::Boundary::EndOfStream;
     } else {
@@ -334,9 +335,10 @@ static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t) {
 
 static grpc_error_handle init_header_skip_frame_parser(
     grpc_chttp2_transport* t, HPackParser::Priority priority_type) {
+  bool is_eoh = t->expect_continuation_stream_id != 0;
   t->parser = grpc_chttp2_header_parser_parse;
   t->parser_data = &t->hpack_parser;
-  t->hpack_parser.BeginFrame(skip_header, hpack_boundary_type(t),
+  t->hpack_parser.BeginFrame(skip_header, hpack_boundary_type(t, is_eoh),
                              priority_type);
   return GRPC_ERROR_NONE;
 }
@@ -693,8 +695,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       gpr_log(GPR_ERROR, "too many header frames received");
       return init_header_skip_frame_parser(t, priority_type);
   }
-  t->hpack_parser.BeginFrame(std::move(on_header), hpack_boundary_type(t),
-                             priority_type);
+  t->hpack_parser.BeginFrame(std::move(on_header),
+                             hpack_boundary_type(t, is_eoh), priority_type);
   return GRPC_ERROR_NONE;
 }
 
