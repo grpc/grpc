@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_ADAPTOR_H
-#define GRPC_CORE_LIB_PROMISE_ADAPTOR_H
+#ifndef GRPC_CORE_LIB_GPRPP_CAPTURE_H
+#define GRPC_CORE_LIB_GPRPP_CAPTURE_H
+
+#include <grpc/impl/codegen/port_platform.h>
+#include <utility>
+#include "absl/utility/utility.h"
 
 namespace grpc_core {
 
@@ -51,4 +55,4 @@ detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_ADAPTOR_H
+#endif  // GRPC_CORE_LIB_GPRPP_CAPTURE_H

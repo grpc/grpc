@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_WAITSET_H
-#define GRPC_CORE_LIB_PROMISE_WAITSET_H
+#ifndef GRPC_CORE_LIB_PROMISE_WAIT_SET_H
+#define GRPC_CORE_LIB_PROMISE_WAIT_SET_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -69,4 +69,4 @@ class WaitSet final {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_WAIT_SET_H

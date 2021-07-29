@@ -144,7 +144,7 @@ class Activity : private Wakeable {
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  protected:
-  inline virtual ~Activity() {
+  inline ~Activity() override {
     if (handle_) {
       DropHandle();
     }

@@ -45,4 +45,4 @@ class IntraActivityWaiter {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
