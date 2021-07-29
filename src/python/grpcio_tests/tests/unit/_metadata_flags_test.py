@@ -13,20 +13,20 @@
 # limitations under the License.
 """Tests metadata flags feature by testing wait-for-ready semantics"""
 
-import time
-import weakref
-import unittest
-import threading
 import logging
 import socket
-from six.moves import queue
+import threading
+import time
+import unittest
+import weakref
 
 import grpc
+from six.moves import queue
 
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
 import tests.unit.framework.common
 from tests.unit.framework.common import get_socket
+from tests.unit.framework.common import test_constants
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'

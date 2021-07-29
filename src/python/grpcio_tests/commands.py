@@ -248,9 +248,9 @@ class TestGevent(setuptools.Command):
         from gevent import monkey
         monkey.patch_all()
 
-        import tests
-
         import grpc.experimental.gevent
+
+        import tests
         grpc.experimental.gevent.init_gevent()
 
         import gevent
@@ -308,6 +308,7 @@ class RunInterop(test.test):
         # edit the Python system path.
         if self.use_asyncio:
             import asyncio
+
             from tests_aio.interop import server
             sys.argv[1:] = self.args.split()
             asyncio.get_event_loop().run_until_complete(server.serve())

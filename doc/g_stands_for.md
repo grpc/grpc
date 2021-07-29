@@ -40,3 +40,4 @@
 - 1.38 'g' stands for ['guadalupe_river_park_conservancy'](https://github.com/grpc/grpc/tree/v1.38.x)
 - 1.39 'g' stands for ['goofy'](https://github.com/grpc/grpc/tree/v1.39.x)
 - 1.40 'g' stands for ['guileless'](https://github.com/grpc/grpc/tree/master)
+- 1.41 'g' stands for goat

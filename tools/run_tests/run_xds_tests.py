@@ -16,8 +16,6 @@
 
 import argparse
 import datetime
-import googleapiclient.discovery
-import grpc
 import json
 import logging
 import os
@@ -30,12 +28,13 @@ import tempfile
 import time
 import uuid
 
-from oauth2client.client import GoogleCredentials
 from google.protobuf import json_format
+import googleapiclient.discovery
+import grpc
+from oauth2client.client import GoogleCredentials
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-
 from src.proto.grpc.health.v1 import health_pb2
 from src.proto.grpc.health.v1 import health_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
@@ -45,12 +44,13 @@ from src.proto.grpc.testing import test_pb2_grpc
 # Envoy protos provided by PyPI package xds-protos
 # Needs to import the generated Python file to load descriptors
 try:
-    from envoy.service.status.v3 import csds_pb2
-    from envoy.service.status.v3 import csds_pb2_grpc
-    from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
     from envoy.extensions.filters.common.fault.v3 import fault_pb2
     from envoy.extensions.filters.http.fault.v3 import fault_pb2
     from envoy.extensions.filters.http.router.v3 import router_pb2
+    from envoy.extensions.filters.network.http_connection_manager.v3 import \
+        http_connection_manager_pb2
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
 except ImportError:
     # These protos are required by CSDS test. We should not fail the entire
     # script for one test case.
@@ -3102,6 +3102,8 @@ else:
     if not args.only_stable_gcp_apis:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
+test_results = {}
+failed_tests = []
 try:
     gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
@@ -3220,8 +3222,6 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
-        test_results = {}
-        failed_tests = []
         for test_case in args.test_case:
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info('skipping test %s due to missing v3 support',

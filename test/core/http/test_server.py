@@ -15,10 +15,11 @@
 """Server for httpcli_test"""
 
 import argparse
-import BaseHTTPServer
 import os
 import ssl
 import sys
+
+import BaseHTTPServer
 
 _PEM = os.path.abspath(
     os.path.join(os.path.dirname(sys.argv[0]), '../../..',

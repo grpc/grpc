@@ -14,16 +14,17 @@
 """Tests behavior around the Core channel arguments."""
 
 import asyncio
+import errno
 import logging
 import platform
 import random
-import errno
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework import common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
