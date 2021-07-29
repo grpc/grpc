@@ -975,9 +975,17 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
         ++num_callbacks;
       }
     }
-    // If we're already committed and these send ops aren't cached, just send
-    // the batch as-is.
-    if (calld_->retry_committed_ && !pending->send_ops_cached) {
+    // If we're already committed and the following conditions are met,
+    // just send the batch down as-is:
+    // - The batch contains no cached send ops.  (If it does, we need
+    //   the logic below to use the cached payloads.)
+    // - The batch does not contain recv_trailing_metadata when we have
+    //   already started an internal recv_trailing_metadata batch.  (If
+    //   we've already started an internal recv_trailing_metadata batch,
+    //   then we need the logic below to send all ops in the batch
+    //   *except* the recv_trailing_metadata op.)
+    if (calld_->retry_committed_ && !pending->send_ops_cached &&
+        (!batch->recv_trailing_metadata || !started_recv_trailing_metadata_)) {
       AddClosureForBatch(
           batch,
           "start non-replayable pending batch on call attempt after commit",
