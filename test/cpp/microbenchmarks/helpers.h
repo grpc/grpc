@@ -34,13 +34,10 @@ class LibraryInitializer {
   LibraryInitializer();
   ~LibraryInitializer();
 
-  grpc_resource_quota* rq() { return resource_quota_; }
-
   static LibraryInitializer& get();
 
  private:
   grpc::internal::GrpcLibrary init_lib_;
-  grpc_resource_quota* resource_quota_;
 };
 
 #ifdef GPR_LOW_LEVEL_COUNTERS

@@ -40,9 +40,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
-    grpc_resource_quota* rq = grpc_resource_quota_create("context_list_test");
+    grpc_resource_quota* resource_quota =
+        grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
-        discard_write, grpc_slice_allocator_create(rq, "mock_endpoint"));
+        discard_write,
+        grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
     grpc_server* server = grpc_server_create(nullptr, nullptr);
@@ -53,8 +55,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_start(server);
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, mock_endpoint, false,
-        grpc_resource_user_create(rq, "mock_transport"));
-    grpc_resource_quota_unref(rq);
+        grpc_resource_user_create(resource_quota, "mock_transport"));
+    grpc_resource_quota_unref(resource_quota);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
