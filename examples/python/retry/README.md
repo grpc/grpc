@@ -29,20 +29,20 @@ The client RPC will succeed, even with server injecting multiple errors. Here is
 $ python3 flaky_server.py
 INFO:root:Starting flaky server on [::]:50051
 INFO:root:Injecting error to RPC from ipv6:[::1]:54471
-INFO:root:Successful responding to RPC from ipv6:[::1]:54473
+INFO:root:Successfully responding to RPC from ipv6:[::1]:54473
 INFO:root:Injecting error to RPC from ipv6:[::1]:54491
 INFO:root:Injecting error to RPC from ipv6:[::1]:54581
 INFO:root:Injecting error to RPC from ipv6:[::1]:54581
 INFO:root:Injecting error to RPC from ipv6:[::1]:54581
 INFO:root:Injecting error to RPC from ipv6:[::1]:54581
-INFO:root:Successful responding to RPC from ipv6:[::1]:54581
+INFO:root:Successfully responding to RPC from ipv6:[::1]:54581
 INFO:root:Injecting error to RPC from ipv6:[::1]:55474
 INFO:root:Injecting error to RPC from ipv6:[::1]:55474
 INFO:root:Injecting error to RPC from ipv6:[::1]:55474
 INFO:root:Injecting error to RPC from ipv6:[::1]:55474
-INFO:root:Successful responding to RPC from ipv6:[::1]:55474
+INFO:root:Successfully responding to RPC from ipv6:[::1]:55474
 INFO:root:Injecting error to RPC from ipv6:[::1]:55533
 INFO:root:Injecting error to RPC from ipv6:[::1]:55533
 INFO:root:Injecting error to RPC from ipv6:[::1]:55533
-INFO:root:Successful responding to RPC from ipv6:[::1]:55533
+INFO:root:Successfully responding to RPC from ipv6:[::1]:55533
 ```
