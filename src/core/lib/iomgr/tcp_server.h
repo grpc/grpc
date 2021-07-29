@@ -47,8 +47,7 @@ typedef struct grpc_tcp_server_acceptor {
 } grpc_tcp_server_acceptor;
 
 /* Called for newly connected TCP connections.
-   Takes ownership of acceptor.
-   Does NOT take ownership of slice_allocator. */
+   Takes ownership of acceptor. */
 typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
                                    grpc_pollset* accepting_pollset,
                                    grpc_tcp_server_acceptor* acceptor);

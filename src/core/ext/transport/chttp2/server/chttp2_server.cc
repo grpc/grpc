@@ -388,14 +388,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
-  bool free_resource_quota = false;
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
       std::string error_str = grpc_error_std_string(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
-      free_resource_quota = true;
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -477,7 +475,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         }
       } else {
         cleanup_connection = true;
-        free_resource_quota = true;
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -489,7 +486,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   }
   gpr_free(self->acceptor_);
   OrphanablePtr<ActiveConnection> connection;
-  if (free_resource_quota && self->channel_resource_user_ != nullptr) {
+  if (self->channel_resource_user_ != nullptr) {
     grpc_resource_user_free(self->channel_resource_user_,
                             GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
   }

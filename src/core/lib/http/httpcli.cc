@@ -48,7 +48,7 @@ struct internal_request {
   grpc_resolved_addresses* addresses;
   size_t next_address;
   grpc_endpoint* ep;
-  grpc_resource_quota* rq;
+  grpc_resource_quota* resource_quota;
   char* host;
   char* ssl_host_override;
   grpc_millis deadline;
@@ -106,7 +106,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->incoming);
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_unref_internal(req->rq);
+  grpc_resource_quota_unref_internal(req->resource_quota);
   gpr_free(req);
 }
 
@@ -210,7 +210,8 @@ static void next_address(internal_request* req, grpc_error_handle error) {
                     grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(
       &req->connected, &req->ep,
-      grpc_slice_allocator_create(req->rq, grpc_sockaddr_to_uri(addr).c_str()),
+      grpc_slice_allocator_create(req->resource_quota,
+                                  grpc_sockaddr_to_uri(addr).c_str()),
       req->context->pollset_set, nullptr, addr, req->deadline);
 }
 
@@ -244,7 +245,7 @@ static void internal_request_begin(grpc_httpcli_context* context,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->rq = resource_quota;
+  req->resource_quota = resource_quota;
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);

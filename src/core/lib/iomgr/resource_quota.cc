@@ -277,6 +277,7 @@ static bool rq_reclaim_from_per_user_free_pool(
     grpc_resource_quota* resource_quota);
 static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive);
 
+// TODO(hork): rename all rq variables to resource_quota
 static void rq_step(void* rq, grpc_error_handle /*error*/) {
   grpc_resource_quota* resource_quota = static_cast<grpc_resource_quota*>(rq);
   resource_quota->step_scheduled = false;
@@ -485,6 +486,7 @@ static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
  * the combiner
  */
 
+// TODO(hork): rename all ru variables to resource_user
 static void ru_allocate(void* ru, grpc_error_handle /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   if (rulist_empty(resource_user->resource_quota,
@@ -744,7 +746,7 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args, bool create) {
-  auto rq = grpc_channel_args_find_pointer<grpc_resource_quota>(
+  auto* rq = grpc_channel_args_find_pointer<grpc_resource_quota>(
       channel_args, GRPC_ARG_RESOURCE_QUOTA);
   if (rq != nullptr) {
     return grpc_resource_quota_ref_internal(rq);

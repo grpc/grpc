@@ -606,7 +606,7 @@ grpc_error_handle Server::SetupTransport(
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =
       grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                          resource_user, &error, preallocated_bytes);
+                          resource_user, preallocated_bytes, &error);
   if (channel == nullptr) {
     return error;
   }

@@ -332,7 +332,6 @@ static void on_accept(void* arg, grpc_error_handle error) {
   transfered_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                        &transfered_bytes, FALSE, &flags);
-  grpc_slice_allocator* allocator = nullptr;
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
@@ -361,11 +360,11 @@ static void on_accept(void* arg, grpc_error_handle error) {
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
-      allocator = grpc_slice_allocator_factory_create_slice_allocator(
-          sp->server->slice_allocator_factory, peer_name_string.c_str());
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->channel_args, peer_name_string.c_str(),
-                           allocator);
+      ep = grpc_tcp_create(
+          grpc_winsocket_create(sock, fd_name.c_str()),
+          sp->server->channel_args, peer_name_string.c_str(),
+          grpc_slice_allocator_factory_create_slice_allocator(
+              sp->server->slice_allocator_factory, peer_name_string.c_str()));
     } else {
       closesocket(sock);
     }
