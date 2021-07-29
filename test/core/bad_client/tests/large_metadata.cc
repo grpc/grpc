@@ -38,7 +38,7 @@
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST         \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                  \
   "\x00"                                                  \
-  "\x1aM\x01\x05\x00\x00\x00\x01"                         \
+  "5{\x01\x05\x00\x00\x00\x01"                            \
   "\x10\x05:path\x08/foo/bar"                             \
   "\x10\x07:scheme\x04http"                               \
   "\x10\x07:method\x04POST"                               \

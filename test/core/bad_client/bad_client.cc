@@ -96,11 +96,11 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     hex = gpr_dump(arg->client_payload, arg->client_payload_length,
                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
     /* Add a debug log */
-    gpr_log(GPR_INFO, "TEST[line=%d]: %s", arg->source_line, hex);
+    gpr_log(GPR_INFO, "TEST: %s", hex);
     gpr_free(hex);
   } else {
-    gpr_log(GPR_INFO, "TEST[line=%d]: (%" PRIdPTR " byte long string)",
-            arg->source_line, arg->client_payload_length);
+    gpr_log(GPR_INFO, "TEST: (%" PRIdPTR " byte long string)",
+            arg->client_payload_length);
   }
 
   grpc_slice slice = grpc_slice_from_copied_buffer(arg->client_payload,
@@ -272,7 +272,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
 grpc_bad_client_arg connection_preface_arg = {
-    -1, client_connection_preface_validator, nullptr,
+    client_connection_preface_validator, nullptr,
     CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
 bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
