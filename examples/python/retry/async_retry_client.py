@@ -14,8 +14,8 @@
 """The Python AsyncIO implementation of the gRPC client-side retry example."""
 
 import asyncio
-import logging
 import json
+import logging
 
 import grpc
 

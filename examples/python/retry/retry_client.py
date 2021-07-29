@@ -13,8 +13,8 @@
 # limitations under the License.
 """The Python implementation of the gRPC client-side retry example."""
 
-import logging
 import json
+import logging
 
 import grpc
 

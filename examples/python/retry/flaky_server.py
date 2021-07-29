@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
 """A flaky backend for the gRPC Python retry example."""
 
 import asyncio
+import collections
 import logging
 import random
-import collections
 
 import grpc
 
