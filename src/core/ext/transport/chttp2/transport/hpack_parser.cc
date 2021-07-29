@@ -53,20 +53,6 @@ namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
 
-/* How parsing works:
-
-   The parser object keeps track of a function pointer which represents the
-   current parse state.
-
-   Each time new bytes are presented, we call into the current state, which
-   recursively parses until all bytes in the given chunk are exhausted.
-
-   The parse state that terminates then saves its function pointer to be the
-   current state so that it can resume when more bytes are available.
-
-   It's expected that most optimizing compilers will turn this code into
-   a set of indirect jumps, and so not waste stack space. */
-
 /* state table for huffman decoding: given a state, gives an index/16 into
    next_sub_tbl. Taking that index and adding the value of the nibble being
    considered returns the next state.
@@ -475,13 +461,21 @@ class HPackParser::Input {
         begin_(begin),
         end_(end) {}
 
+  // If input is backed by a slice, retrieve its refcount. If not, return
+  // nullptr.
   grpc_slice_refcount* slice_refcount() { return current_slice_refcount_; }
 
+  // Have we reached the end of input?
   bool end_of_stream() const { return begin_ == end_; }
+  // How many bytes until end of input
   size_t remaining() const { return end_ - begin_; }
+  // Current position, as a pointer
   const uint8_t* cur_ptr() const { return begin_; }
+  // Move read position forward by n, unchecked
   void Advance(size_t n) { begin_ += n; }
 
+  // Retrieve the current character, or nullopt if end of stream
+  // Do not advance
   absl::optional<uint8_t> peek() const {
     if (end_of_stream()) {
       return {};
@@ -489,6 +483,8 @@ class HPackParser::Input {
     return *begin_;
   }
 
+  // Retrieve and advance past the current character, or return nullopt if end
+  // of stream
   absl::optional<uint8_t> Next() {
     if (end_of_stream()) {
       return UnexpectedEOF(absl::optional<uint8_t>());
@@ -496,6 +492,8 @@ class HPackParser::Input {
     return *begin_++;
   }
 
+  // Helper to parse a varint delta on top of value, return nullopt on failure
+  // (setting error)
   absl::optional<uint32_t> ParseVarint(uint32_t value) {
     // TODO(ctiller): break out a variant of this when we know there are at
     // least 5 bytes in input_
@@ -522,6 +520,8 @@ class HPackParser::Input {
     cur = Next();
     if (!cur) return {};
     uint32_t c = (*cur) & 0x7f;
+    // We might overflow here, so we need to be a little careful about the
+    // addition
     if (c > 0xf) return ParseVarintOutOfRange(value, *cur);
     const uint32_t add = c << 28;
     if (add > 0xffffffffu - value) {
@@ -530,26 +530,36 @@ class HPackParser::Input {
     value += add;
     if ((*cur & 0x80) == 0) return value;
 
+    // Spec weirdness: we can add an infinite stream of 0x80 at the end of a
+    // varint and still end up with a correctly encoded varint.
     do {
       cur = Next();
       if (!cur.has_value()) return {};
     } while (*cur == 0x80);
 
+    // BUT... the last byte needs to be 0x00 or we'll overflow dramatically!
     if (*cur == 0) return value;
     return ParseVarintOutOfRange(value, *cur);
   }
 
+  // Prefix for a string
   struct StringPrefix {
+    // Number of bytes in input for string
     uint32_t length;
+    // Is it huffman compressed
     bool huff;
   };
 
+  // Parse a string prefix
   absl::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
     if (!cur.has_value()) return UnexpectedEOF(absl::optional<StringPrefix>());
+    // Huffman if the top bit is 1
     const bool huff = (*cur & 0x80) != 0;
+    // String length
     uint32_t strlen = (*cur & 0x7f);
     if (strlen == 0x7f) {
+      // all ones ==> varint string length
       auto v = ParseVarint(0x7f);
       if (!v.has_value()) return {};
       strlen = *v;
@@ -557,12 +567,15 @@ class HPackParser::Input {
     return StringPrefix{strlen, huff};
   }
 
+  // Extract the parse error, leaving the current error as NONE.
   grpc_error_handle TakeError() {
     grpc_error_handle out = error_;
     error_ = GRPC_ERROR_NONE;
     return out;
   }
 
+  // Set the current error - allows the rest of the code not to need to pass
+  // around StatusOr<> which would be prohibitive here.
   GPR_ATTRIBUTE_NOINLINE void SetError(grpc_error_handle error) {
     if (error_ != GRPC_ERROR_NONE) {
       GRPC_ERROR_UNREF(error);
@@ -572,6 +585,8 @@ class HPackParser::Input {
     begin_ = end_;
   }
 
+  // If no error is set, set it to the value produced by error_factory.
+  // Return return_value unchanged.
   template <typename F, typename T>
   GPR_ATTRIBUTE_NOINLINE T MaybeSetErrorAndReturn(F error_factory,
                                                   T return_value) {
@@ -581,6 +596,8 @@ class HPackParser::Input {
     return return_value;
   }
 
+  // Set the error to an unexpected eof, and return result (code golfed as this
+  // is a common case)
   template <typename T>
   T UnexpectedEOF(T result) {
     return MaybeSetErrorAndReturn(
@@ -592,6 +609,7 @@ class HPackParser::Input {
   }
 
  private:
+  // Helper to set the error to out of range for ParseVarint
   absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
@@ -606,28 +624,40 @@ class HPackParser::Input {
         absl::optional<uint32_t>());
   }
 
+  // Refcount if we are backed by a slice
   grpc_slice_refcount* current_slice_refcount_;
+  // Current input point
   const uint8_t* begin_;
+  // End of stream point
   const uint8_t* const end_;
+  // Current error
   grpc_error_handle error_ = GRPC_ERROR_NONE;
 };
 
+// Helper to parse a string and turn it into a slice with appropriate memory
+// management characteristics
 class HPackParser::String {
  public:
+  // Helper to specify a string should be internalized
   struct Intern {};
+  // Helper to specify a string should be externalized
   struct Extern {};
 
  private:
+  // Forward declare take functions... we'll need them in the public interface
   UnmanagedMemorySlice Take(Extern);
   ManagedMemorySlice Take(Intern);
 
  public:
+  // If a String is a Slice then unref
   ~String() {
     if (auto* p = absl::get_if<grpc_slice>(&value_)) {
       grpc_slice_unref_internal(*p);
     }
   }
 
+  // Take the value and leave this empty
+  // Use Intern/Extern to choose memory management
   template <typename T>
   auto Take() -> decltype(this->Take(T())) {
     return Take(T());
@@ -644,57 +674,68 @@ class HPackParser::String {
     return *this;
   }
 
+  // Parse a non-binary string
   static absl::optional<String> Parse(Input* input) {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
     if (pfx->huff) {
+      // Huffman coded
       std::vector<uint8_t> output;
-      auto v = ParseHuff(input, pfx->length, [&output](uint8_t c) {
-        output.push_back(c);
-        return true;
-      });
+      auto v = ParseHuff(input, pfx->length,
+                         [&output](uint8_t c) { output.push_back(c); });
       if (!v) return {};
       return String(std::move(output));
     }
     return ParseUncompressed(input, pfx->length);
   }
 
+  // Parse a binary string
   static absl::optional<String> ParseBinary(Input* input) {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
     if (!pfx->huff) {
       if (pfx->length > 0 && input->peek() == 0) {
         // 'true-binary'
-        input->Next();
+        input->Advance(1);
         return ParseUncompressed(input, pfx->length - 1);
       }
+      // Base64 encoded... pull out the string, then unbase64 it
       auto base64 = ParseUncompressed(input, pfx->length);
       if (!base64.has_value()) return {};
       return Unbase64(input, std::move(*base64));
     } else {
+      // Huffman encoded...
       std::vector<uint8_t> decompressed;
+      // State here says either we don't know if it's base64 or binary, or we do
+      // and what is it.
       enum class State { kUnsure, kBinary, kBase64 };
       State state = State::kUnsure;
       auto decompressed_ok =
           ParseHuff(input, pfx->length, [&state, &decompressed](uint8_t c) {
             if (state == State::kUnsure) {
+              // First byte... if it's zero it's binary
               if (c == 0) {
+                // Save the type, and skip the zero
                 state = State::kBinary;
-                return true;
+                return;
               } else {
+                // Flag base64, store this value
                 state = State::kBase64;
               }
             }
+            // Non-first byte, or base64 first byte
             decompressed.push_back(c);
-            return true;
           });
       if (!decompressed_ok) return {};
       switch (state) {
         case State::kUnsure:
+          // No bytes, empty span
           return String(absl::Span<const uint8_t>());
         case State::kBinary:
+          // Binary, we're done
           return String(std::move(decompressed));
         case State::kBase64:
+          // Base64 - unpack it
           return Unbase64(input, String(std::move(decompressed)));
       }
       GPR_UNREACHABLE_CODE(abort(););
@@ -708,6 +749,7 @@ class HPackParser::String {
   String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
       : value_(MakeSlice(r, begin, end)) {}
 
+  // Given a refcount and a byte range, make a slice
   static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
                               const uint8_t* end) {
     grpc_slice out;
@@ -718,37 +760,45 @@ class HPackParser::String {
     return out;
   }
 
+  // Parse some huffman encoded bytes, using output(uint8_t b) to emit each
+  // decoded byte.
   template <typename Out>
   static bool ParseHuff(Input* input, uint32_t length, Out output) {
     GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
     int16_t state = 0;
+    // Parse one half byte... we leverage some lookup tables to keep the logic
+    // here really simple.
     auto nibble = [&output, &state](uint8_t nibble) {
       int16_t emit = emit_sub_tbl[16 * emit_tbl[state] + nibble];
       int16_t next = next_sub_tbl[16 * next_tbl[state] + nibble];
       if (emit != -1) {
         if (emit >= 0 && emit < 256) {
-          if (!output(static_cast<uint8_t>(emit))) return false;
+          output(static_cast<uint8_t>(emit));
         } else {
           assert(emit == 256);
         }
       }
       state = next;
-      return true;
     };
+    // If there's insufficient bytes remaining, return now.
     if (input->remaining() < length) {
       return input->UnexpectedEOF(false);
     }
+    // Grab the byte range, and iterate through it.
     const uint8_t* p = input->cur_ptr();
     input->Advance(length);
     for (uint32_t i = 0; i < length; i++) {
-      if (!nibble(p[i] >> 4) || !nibble(p[i] & 0xf)) return false;
+      nibble(p[i] >> 4);
+      nibble(p[i] & 0xf);
     }
     return true;
   }
 
+  // Parse some uncompressed string bytes.
   static absl::optional<String> ParseUncompressed(Input* input,
                                                   uint32_t length) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
+    // Check there's enough bytes
     if (input->remaining() < length) {
       return input->UnexpectedEOF(absl::optional<String>());
     }
@@ -762,6 +812,8 @@ class HPackParser::String {
     }
   }
 
+  // Turn base64 encoded bytes into not base64 encoded bytes.
+  // Only takes input to set an error on failure.
   static absl::optional<String> Unbase64(Input* input, String s) {
     auto v = Match(
         s.value_,
@@ -786,11 +838,13 @@ class HPackParser::String {
     return String(std::move(*v));
   }
 
+  // Main loop for Unbase64
   static absl::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t* cur,
                                                            const uint8_t* end) {
     std::vector<uint8_t> out;
     out.reserve(3 * (end - cur) / 4 + 3);
 
+    // Decode 4 bytes at a time while we can
     while (end - cur >= 4) {
       uint32_t bits = kBase64InverseTable.table[*cur];
       if (bits > 63) return {};
@@ -816,6 +870,7 @@ class HPackParser::String {
                              static_cast<uint8_t>(buffer >> 8),
                              static_cast<uint8_t>(buffer)});
     }
+    // Deal with the last 0, 1, 2, or 3 bytes.
     switch (end - cur) {
       case 0:
         return out;
@@ -871,14 +926,16 @@ class HPackParser::Parser {
   Parser(Input input, HPackParser::Sink* sink, grpc_chttp2_hptbl* table)
       : input_(input), sink_(sink), table_(table) {}
 
+  // Skip any priority bits, or return false on failure
   bool SkipPriority() {
-    for (int i = 0; i < 5; i++) {
-      if (!input_.Next().has_value()) return false;
-    }
+    if (input_.remaining() < 5) return input_.UnexpectedEOF(false);
+    input_.Advance(5);
     return true;
   }
 
+  // Parse the body of the headers
   bool ParseBody() {
+    // While there's input, parse one header element
     while (!input_.end_of_stream()) {
       if (!ParseElem()) {
         return false;
@@ -887,6 +944,7 @@ class HPackParser::Parser {
     return true;
   }
 
+  // Fetch the error that occurred, resetting it to NONE.
   grpc_error_handle TakeError() { return input_.TakeError(); }
 
  private:
@@ -908,17 +966,23 @@ class HPackParser::Parser {
     gpr_free(v);
   }
 
+  // During FinishHeader, how should the header be treated in the hpack table
   enum class TableAction {
+    // Add to the table
     kAddToTable,
+    // Do not add to the table
     kOmitFromTable,
   };
 
   template <TableAction action>
   bool FinishHeader(grpc_mdelem md) {
+    // Allow higher code to just pass in failures ... simplifies things a bit.
     if (GRPC_MDISNULL(md)) return false;
+    // Log if desired
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
       LogHeader(md);
     }
+    // Add to the hpack table if needed
     if (action == TableAction::kAddToTable) {
       GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
                            GRPC_MDELEM_STORAGE_INTERNED ||
@@ -929,6 +993,7 @@ class HPackParser::Parser {
         return false;
       };
     }
+    // Pass up to the transport
     grpc_error_handle err = (*sink_)(md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_.SetError(err);
@@ -1038,6 +1103,7 @@ class HPackParser::Parser {
     GPR_UNREACHABLE_CODE(abort());
   }
 
+  // Parse a string encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseLiteralKey() {
     auto key = String::Parse(&input_);
@@ -1051,6 +1117,7 @@ class HPackParser::Parser {
     return grpc_mdelem_from_slices(key_slice, value->Take<TakeValueType>());
   }
 
+  // Parse an index encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseIdxKey(uint32_t index) {
     auto elem = grpc_chttp2_hptbl_lookup(table_, index);
@@ -1066,6 +1133,7 @@ class HPackParser::Parser {
         value->Take<TakeValueType>());
   }
 
+  // Parse a varint index encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseVarIdxKey(uint32_t offset) {
     auto index = input_.ParseVarint(offset);
@@ -1073,6 +1141,7 @@ class HPackParser::Parser {
     return ParseIdxKey<TakeValueType>(*index);
   }
 
+  // Parse a string, figuring out if it's binary or not by the key name.
   template <typename SliceType>
   absl::optional<String> ParseValueString(const SliceType& key) {
     if (grpc_is_refcounted_slice_binary_header(key)) {
@@ -1082,7 +1151,7 @@ class HPackParser::Parser {
     }
   }
 
-  /* emit an indexed field */
+  // Emit an indexed field
   bool FinishIndexed(absl::optional<uint32_t> index) {
     dynamic_table_updates_allowed_ = 0;
     if (!index.has_value()) return false;
@@ -1094,7 +1163,7 @@ class HPackParser::Parser {
     return FinishHeader<TableAction::kOmitFromTable>(md);
   }
 
-  /* finish parsing a max table size change */
+  // finish parsing a max table size change
   bool FinishMaxTableSize(absl::optional<uint32_t> size) {
     if (!size.has_value()) return false;
     if (dynamic_table_updates_allowed_ == 0) {
@@ -1118,6 +1187,8 @@ class HPackParser::Parser {
     return true;
   }
 
+  // Set an invalid hpack index error if no error has been set. Returns result
+  // unmodified.
   template <typename R>
   R InvalidHPackIndexError(uint32_t index, R result) {
     return input_.MaybeSetErrorAndReturn(

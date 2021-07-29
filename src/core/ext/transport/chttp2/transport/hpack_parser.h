@@ -58,10 +58,25 @@ class ParseBuffer {
   std::vector<uint8_t> queued_;
 };
 
+// Top level interface for parsing a sequence of header, continuation frames.
 class HPackParser {
  public:
-  enum class Boundary { None, EndOfHeaders, EndOfStream };
-  enum class Priority { None, Included };
+  // What kind of stream boundary is provided by this frame?
+  enum class Boundary {
+    // More continuations are expected
+    None,
+    // This marks the end of headers, so data frames should follow
+    EndOfHeaders,
+    // This marks the end of headers *and* the end of the stream
+    EndOfStream
+  };
+  // What kind of priority is represented in the next frame
+  enum class Priority {
+    // No priority field
+    None,
+    // Yes there's a priority field
+    Included
+  };
 
   // User specified structure called for each received header.
   using Sink = std::function<grpc_error_handle(grpc_mdelem)>;
@@ -69,30 +84,47 @@ class HPackParser {
   HPackParser();
   ~HPackParser();
 
+  // Non-copyable/movable
   HPackParser(const HPackParser&) = delete;
   HPackParser& operator=(const HPackParser&) = delete;
 
+  // Begin parsing a new frame
+  // Sink receives each parsed header,
   void BeginFrame(Sink sink, Boundary boundary, Priority priority);
+  // Change the header sink mid parse
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
+  // Enqueue some data to parse later on
   void QueueBufferToParse(const grpc_slice& slice);
+  // Parse all queued data, with last_slice concatenated at the end
   grpc_error_handle Parse(const grpc_slice& last_slice);
+  // Reset state ready for the next BeginFrame
   void FinishFrame();
 
+  // Retrieve the associated hpack table (for tests, debugging)
   grpc_chttp2_hptbl* hpack_table() { return &table_; }
+  // Is the current frame a boundary of some sort
   bool is_boundary() const { return boundary_ != Boundary::None; }
+  // Is the current frame the end of a stream
   bool is_eof() const { return boundary_ == Boundary::EndOfStream; }
 
  private:
+  // Helper classes: see implementation
   class Parser;
   class Input;
   class String;
 
-  grpc_error_handle ParseOneSlice(const grpc_slice& slice);
-
+  // Callback per header received
   Sink sink_;
 
+  // Buffer incoming bytes
   ParseBuffer buffer_;
+  // Buffer kind of boundary
+  // TODO(ctiller): see if we can move this argument to Parse, and avoid
+  // buffering.
   Boundary boundary_;
+  // Buffer priority
+  // TODO(ctiller): see if we can move this argument to Parse, and avoid
+  // buffering.
   Priority priority_;
 
   // hpack table
