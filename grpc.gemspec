@@ -768,7 +768,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/sockaddr.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
   s.files += %w( src/core/lib/gpr/alloc.h )
-  s.files += %w( src/core/lib/gpr/arena.h )
   s.files += %w( src/core/lib/gpr/atm.cc )
   s.files += %w( src/core/lib/gpr/cpu_iphone.cc )
   s.files += %w( src/core/lib/gpr/cpu_linux.cc )

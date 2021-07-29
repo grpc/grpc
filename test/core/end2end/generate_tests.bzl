@@ -292,6 +292,7 @@ END2END_TESTS = {
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
     "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
     "retry_non_retriable_status": _test_options(needs_client_channel = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,

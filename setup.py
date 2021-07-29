@@ -15,11 +15,12 @@
 
 # setuptools need to be imported before distutils. Otherwise it might lead to
 # undesirable behaviors or errors.
-import setuptools
+import setuptools  # isort:skip
 
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
+
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
 
@@ -28,20 +29,18 @@ from distutils import extension as _extension
 from distutils import util
 import os
 import os.path
-import pkg_resources
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
-from setuptools.command import egg_info
-
-import subprocess
-from subprocess import PIPE
-
 import _metadata
+import pkg_resources
+from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
@@ -86,8 +85,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
-import commands
 import grpc_core_dependencies
+
+import commands
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()

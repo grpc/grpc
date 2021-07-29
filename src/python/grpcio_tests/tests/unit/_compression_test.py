@@ -13,21 +13,20 @@
 # limitations under the License.
 """Tests server and client side compression."""
 
-import unittest
-
-import contextlib
 from concurrent import futures
+import contextlib
 import functools
 import itertools
 import logging
 import os
+import unittest
 
 import grpc
 from grpc import _grpcio_metadata
 
+from tests.unit import _tcp_proxy
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
-from tests.unit import _tcp_proxy
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'

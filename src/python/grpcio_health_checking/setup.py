@@ -67,6 +67,7 @@ INSTALL_REQUIRES = (
 
 try:
     import health_commands as _health_commands
+
     # we are in the build environment, otherwise the above import fails
     SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
         version=grpc_version.VERSION),)

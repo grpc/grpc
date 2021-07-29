@@ -18,8 +18,8 @@ import argparse
 import os
 import os.path
 import re
-import sys
 import subprocess
+import sys
 
 
 def build_valid_guard(fpath):
