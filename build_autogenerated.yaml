@@ -6907,6 +6907,7 @@ targets:
   - absl/functional:bind_front
   - absl/types:optional
   - absl/types:variant
+  - absl/utility:utility
   uses_polling: false
 - name: promise_test
   gtest: true

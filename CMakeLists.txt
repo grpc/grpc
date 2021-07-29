@@ -13666,6 +13666,7 @@ target_link_libraries(promise_factory_test
   absl::bind_front
   absl::optional
   absl::variant
+  absl::utility
 )
 
 
