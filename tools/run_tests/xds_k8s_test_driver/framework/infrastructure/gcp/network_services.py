@@ -14,7 +14,7 @@
 
 import dataclasses
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from google.rpc import code_pb2
 import tenacity
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 _ComputeV1 = gcp.compute.ComputeV1
 GcpResource = _ComputeV1.GcpResource
 
+
 @dataclasses.dataclass(frozen=True)
 class Router:
 
@@ -36,7 +37,7 @@ class Router:
     routes: Optional[List[str]]
 
     @classmethod
-    def from_dict(cls, name: str, d: dict) -> 'Router':
+    def from_dict(cls, name: str, d: Dict[str, Any]) -> 'Router':
         return cls(
             name=name,
             url=d["name"],
@@ -45,8 +46,10 @@ class Router:
             routes=list(d["routes"]) if "routes" in d else None,
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class GrpcRoute:
+
 
     @dataclasses.dataclass(frozen=True)
     class MethodMatch:
@@ -56,13 +59,14 @@ class GrpcRoute:
         case_sensitive: Optional[bool]
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'MethodMatch':
+        def from_dict(cls, d: Dict[str, Any]) -> 'MethodMatch':
             return cls(
                 type=d.get("type"),
                 grpc_service=d.get("grpcService"),
                 grpc_method=d.get("grpcMethod"),
                 case_sensitive=d.get("caseSensitive"),
             )
+
 
     @dataclasses.dataclass(frozen=True)
     class HeaderMatch:
@@ -71,12 +75,13 @@ class GrpcRoute:
         value: str
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'HeaderMatch':
+        def from_dict(cls, d: Dict[str, Any]) -> 'HeaderMatch':
             return cls(
                 type=d.get("type"),
                 key=d["key"],
                 value=d["value"],
             )
+
 
     @dataclasses.dataclass(frozen=True)
     class RouteMatch:
@@ -84,7 +89,7 @@ class GrpcRoute:
         headers: Tuple['HeaderMatch']
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'RouteMatch':
+        def from_dict(cls, d: Dict[str, Any]) -> 'RouteMatch':
             return cls(
                 method=MethodMatch.from_dict(
                     d["method"]) if "method" in d else None,
@@ -93,17 +98,19 @@ class GrpcRoute:
                     for h in d["headers"]) if "headers" in d else (),
             )
 
+
     @dataclasses.dataclass(frozen=True)
     class Destination:
         service_name: str
         weight: Optional[int]
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'Destination':
+        def from_dict(cls, d: Dict[str, Any]) -> 'Destination':
             return cls(
                 service_name=d["serviceName"],
                 weight=d.get("weight"),
             )
+
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
@@ -111,12 +118,13 @@ class GrpcRoute:
         drop: Optional[int]
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'RouteAction':
+        def from_dict(cls, d: Dict[str, Any]) -> 'RouteAction':
             return cls(
                 destination=Destination.from_dict(
                     d["destination"]) if "destination" in d else None,
                 drop=d.get("drop"),
             )
+
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
@@ -124,7 +132,7 @@ class GrpcRoute:
         action: 'RouteAction'
 
         @classmethod
-        def from_dict(cls, d: dict) -> 'RouteRule':
+        def from_dict(cls, d: Dict[str, Any]) -> 'RouteRule':
             return cls(
                 match=RouteMatch.from_dict(
                     d["match"]) if "match" in d else "",
@@ -138,13 +146,14 @@ class GrpcRoute:
     rules: Tuple['RouteRule']
 
     @classmethod
-    def from_dict(cls, name: str, d: dict) -> 'RouteRule':
+    def from_dict(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
         return cls(
             name=name,
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
         )
+
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
@@ -229,7 +238,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
                                         name, self.ROUTERS))
         return Router.from_dict(name, result)
 
-    def delete_router(self, name: str) -> None:
+    def delete_router(self, name: str) -> bool:
         return self._delete_resource(collection=self._api_locations.routers(),
                                      full_name=self.resource_full_name(
                                          name, self.ROUTERS))
@@ -245,7 +254,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
                                         name, self.GRPC_ROUTES))
         return GrpcRoute.from_dict(name, result)
 
-    def delete_grpc_route(self, name: str) -> None:
+    def delete_grpc_route(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.grpcRoutes(),
             full_name=self.resource_full_name(name, self.GRPC_ROUTES))
