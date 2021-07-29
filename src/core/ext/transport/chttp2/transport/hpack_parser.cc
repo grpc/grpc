@@ -459,7 +459,7 @@ class HPackParser::Input {
         const uint8_t* end)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
-        end_(end) {}
+        end_(end),frontier_(begin) {}
 
   // If input is backed by a slice, retrieve its refcount. If not, return
   // nullptr.
@@ -471,6 +471,8 @@ class HPackParser::Input {
   size_t remaining() const { return end_ - begin_; }
   // Current position, as a pointer
   const uint8_t* cur_ptr() const { return begin_; }
+  // End position, as a pointer
+  const uint8_t* end_ptr() const { return end_; }
   // Move read position forward by n, unchecked
   void Advance(size_t n) { begin_ += n; }
 
@@ -553,7 +555,7 @@ class HPackParser::Input {
   // Parse a string prefix
   absl::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
-    if (!cur.has_value()) return UnexpectedEOF(absl::optional<StringPrefix>());
+    if (!cur.has_value()) return {};
     // Huffman if the top bit is 1
     const bool huff = (*cur & 0x80) != 0;
     // String length
@@ -610,6 +612,16 @@ class HPackParser::Input {
     return return_value;
   }
 
+  // Update the frontier - signifies we've successfully parsed another element
+  void UpdateFrontier() {
+    frontier_ = begin_;
+  }
+
+  // Get the frontier - for buffering should we fail due to eof
+  const uint8_t* frontier() const {
+    return frontier_;
+  }
+
  private:
   // Helper to set the error to out of range for ParseVarint
   absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
@@ -631,7 +643,9 @@ class HPackParser::Input {
   // Current input point
   const uint8_t* begin_;
   // End of stream point
-  const uint8_t* end_;
+  const uint8_t* const end_;
+  // Frontier denotes the first byte past successfully processed input
+  const uint8_t* frontier_;
   // Current error
   grpc_error_handle error_ = GRPC_ERROR_NONE;
   // If the error was EOF, we flag it here..
@@ -1271,7 +1285,7 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Incomplete header at the end of a header/continuation sequence");
     }
-    unparsed_bytes_ = std::vector<uint8_t>(input.cur_ptr(), input.cur_ptr() + input.remaining());
+    unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
     return GRPC_ERROR_NONE;
   }
   return input.TakeError();
@@ -1283,15 +1297,15 @@ bool HPackParser::ParseInputInner(Input* input) {
   case Priority::Included: {
     if (input->remaining() < 5) return input->UnexpectedEOF(false);
     input->Advance(5);
+    input->UpdateFrontier();
     priority_ = Priority::None;
   }
   }
   while (!input->end_of_stream()) {
-    Input cloned_input = *input;
-    if (GPR_UNLIKELY(!Parser(&cloned_input, &sink_, &table_, &dynamic_table_updates_allowed_).Parse())) {
+    if (GPR_UNLIKELY(!Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_).Parse())) {
       return false;
     }
-    *input = cloned_input;
+    input->UpdateFrontier();
   }
   return true;
 }

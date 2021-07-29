@@ -65,7 +65,7 @@ static void test_vector(grpc_core::HPackParser* parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(parser->Parse(slices[i]) == GRPC_ERROR_NONE);
+    GPR_ASSERT(parser->Parse(slices[i], i == nslices-1) == GRPC_ERROR_NONE);
   }
 
   for (i = 0; i < nslices; i++) {
