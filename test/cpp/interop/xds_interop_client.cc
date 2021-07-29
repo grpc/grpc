@@ -471,7 +471,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server),
                                 absl::GetFlag(FLAGS_secure_mode)
                                     ? grpc::experimental::XdsCredentials(
-                                        grpc::InsecureChannelCredentials())
+                                          grpc::InsecureChannelCredentials())
                                     : grpc::InsecureChannelCredentials(),
                                 channel_args),
       stats_watchers);
