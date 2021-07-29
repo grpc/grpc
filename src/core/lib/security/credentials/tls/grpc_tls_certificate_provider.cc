@@ -204,19 +204,13 @@ void FileWatcherCertificateProvider::ForceUpdate() {
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      absl::StatusOr<bool> perform_reload;
-      for (int i = 0; i < pem_key_cert_pairs->size(); ++i) {
-        perform_reload = PrivateKeyAndCertificateMatch(
-          pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        if (!(perform_reload.ok() && *perform_reload)) {
-          gpr_log(GPR_ERROR,
-                  "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %d",
-                  perform_reload.status().message());
-          break;
-        }
-      }
-      if (perform_reload.value()){
+      absl::Status matched_or = IsKeyCertPairsListValid(*pem_key_cert_pairs);
+      if (matched_or.ok()){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      }else{
+        gpr_log(GPR_ERROR,
+              "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %d",
+              matched_or.message());
       }
     } else {
       pem_key_cert_pairs_ = {};
@@ -425,6 +419,21 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   EVP_PKEY_free(public_evp_pkey);
   return result;
 }
+
+absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
+  for (size_t i = 0; i < pair_list.size(); ++i) {
+    absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
+        pair_list[i].private_key(), pair_list[i].cert_chain());
+    if (!matched_or.ok()) {
+      return matched_or.status();
+    }
+    if (!*matched_or) {
+      return absl::InvalidArgumentError("Invalid Key-Cert pair list.");
+    }
+  }
+  return absl::OkStatus();
+}
+
 
 }  // namespace grpc_core
 

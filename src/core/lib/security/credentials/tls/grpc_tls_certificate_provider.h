@@ -105,8 +105,6 @@ class FileWatcherCertificateProvider final
   };
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
- private:
-  bool
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
@@ -141,6 +139,11 @@ class FileWatcherCertificateProvider final
 //  whether the key/cert pair matches.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
+
+//  Checks if the private key and leaf cert for all pairs in the list match.
+//  Returns an OK status if so or if the list is empty and an error status
+//  otherwise.
+absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 
