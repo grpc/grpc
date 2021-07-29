@@ -45,13 +45,13 @@ class HPackParser {
 
   void BeginFrame(Sink sink, Boundary boundary, Priority priority);
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
-  void QueueBufferToParse(const grpc_slice& slice);
-  grpc_error_handle Parse(const grpc_slice& last_slice);
+  grpc_error_handle Parse(const grpc_slice& slice);
   void FinishFrame();
 
   grpc_chttp2_hptbl* hpack_table() { return &table_; }
   bool is_boundary() const { return boundary_ != Boundary::None; }
   bool is_eof() const { return boundary_ == Boundary::EndOfStream; }
+  bool is_in_begin_state() const { return state_ == &HPackParser::parse_begin; }
 
  private:
   enum class BinaryState {
@@ -175,12 +175,8 @@ class HPackParser {
   grpc_error_handle AppendHuffBytes(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle AppendStrBytes(const uint8_t* cur, const uint8_t* end);
 
-  grpc_error_handle ParseOneSlice(const grpc_slice& slice);
-
   Sink sink_;
   grpc_error_handle last_error_;
-
-  absl::InlinedVector<grpc_slice, 2> queued_slices_;
 
   // current parse state - or a function that implements it
   State state_;
