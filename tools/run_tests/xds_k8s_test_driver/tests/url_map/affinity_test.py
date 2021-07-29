@@ -107,7 +107,6 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
         rpc_distribution = self.configure_and_send(
             test_client,
             rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
-            # metadata=_TEST_METADATA,
             num_rpcs=_NUM_RPCS)
         self.assertEqual(3, rpc_distribution.num_peers)
         self.assertLen(
