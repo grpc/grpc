@@ -41,6 +41,7 @@ struct grpc_channel_stack_builder {
   grpc_channel_args* args;
   grpc_transport* transport;
   grpc_resource_user* resource_user;
+  size_t preallocated_bytes;
   char* target;
   const char* name;
 };
@@ -183,6 +184,17 @@ void grpc_channel_stack_builder_set_resource_user(
 grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
     grpc_channel_stack_builder* builder) {
   return builder->resource_user;
+}
+
+void grpc_channel_stack_builder_set_preallocated_bytes(
+    grpc_channel_stack_builder* builder, size_t preallocated_bytes) {
+  GPR_ASSERT(builder->preallocated_bytes == 0);
+  builder->preallocated_bytes = preallocated_bytes;
+}
+
+size_t grpc_channel_stack_builder_get_preallocated_bytes(
+    grpc_channel_stack_builder* builder) {
+  return builder->preallocated_bytes;
 }
 
 bool grpc_channel_stack_builder_append_filter(

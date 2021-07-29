@@ -36,7 +36,8 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user = nullptr,
-                                  grpc_error_handle* error = nullptr);
+                                  grpc_error_handle* error = nullptr,
+                                  size_t preallocated_bytes = 0);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
@@ -109,6 +110,7 @@ struct grpc_channel {
 
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
+  size_t preallocated_bytes;
 
   // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
   //              expand the members of the CallRegistrationTable directly into

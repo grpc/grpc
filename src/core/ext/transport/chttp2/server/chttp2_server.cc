@@ -414,10 +414,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         grpc_resource_user_ref(self->resource_user_);
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, self->resource_user_);
+        grpc_resource_user_ref(self->resource_user_);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
-                grpc_chttp2_transport_get_socket_node(transport), nullptr);
+                grpc_chttp2_transport_get_socket_node(transport),
+                self->resource_user_, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
         if (channel_init_err == GRPC_ERROR_NONE) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
@@ -447,7 +449,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
             // Remove the connection from the connections_ map since OnClose()
             // will not be invoked when a config fetcher is set.
             cleanup_connection = true;
-            free_resource_quota = true;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
@@ -466,7 +467,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_slice_buffer_destroy_internal(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
-          free_resource_quota = true;
           grpc_channel_args_destroy(args->args);
         }
       } else {

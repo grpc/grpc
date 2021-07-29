@@ -64,6 +64,8 @@ grpc_channel* grpc_channel_create_with_builder(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_resource_user* resource_user =
       grpc_channel_stack_builder_get_resource_user(builder);
+  size_t preallocated_bytes =
+      grpc_channel_stack_builder_get_preallocated_bytes(builder);
   grpc_channel* channel;
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
@@ -84,10 +86,17 @@ grpc_channel* grpc_channel_create_with_builder(
     }
     gpr_free(target);
     grpc_channel_args_destroy(args);
+    if (resource_user != nullptr) {
+      if (preallocated_bytes > 0) {
+        grpc_resource_user_free(resource_user, preallocated_bytes);
+      }
+      grpc_resource_user_unref(resource_user);
+    }
     return nullptr;
   }
   channel->target = target;
   channel->resource_user = resource_user;
+  channel->preallocated_bytes = preallocated_bytes;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   channel->registration_table.Init();
 
@@ -225,7 +234,8 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user,
-                                  grpc_error_handle* error) {
+                                  grpc_error_handle* error,
+                                  size_t preallocated_bytes) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -243,8 +253,6 @@ grpc_channel* grpc_channel_create(const char* target,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
-  // DO NOT SUBMIT
-  resource_user = nullptr;
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
@@ -262,10 +270,14 @@ grpc_channel* grpc_channel_create(const char* target,
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
   grpc_channel_stack_builder_set_resource_user(builder, resource_user);
+  grpc_channel_stack_builder_set_preallocated_bytes(builder,
+                                                    preallocated_bytes);
   if (!grpc_channel_init_create_stack(builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
-      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+      if (preallocated_bytes > 0) {
+        grpc_resource_user_free(resource_user, preallocated_bytes);
+      }
       grpc_resource_user_unref(resource_user);
     }
     grpc_shutdown();  // Since we won't call destroy_channel().
@@ -511,8 +523,10 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   channel->registration_table.Destroy();
   if (channel->resource_user != nullptr) {
-    grpc_resource_user_free(channel->resource_user,
-                            GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+    if (channel->preallocated_bytes > 0) {
+      grpc_resource_user_free(channel->resource_user,
+                              channel->preallocated_bytes);
+    }
     grpc_resource_user_unref(channel->resource_user);
   }
   gpr_free(channel->target);

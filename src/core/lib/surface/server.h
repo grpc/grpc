@@ -130,7 +130,8 @@ class Server : public InternallyRefCounted<Server> {
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,
       const RefCountedPtr<channelz::SocketNode>& socket_node,
-      grpc_resource_user* resource_user = nullptr);
+      grpc_resource_user* resource_user = nullptr,
+      size_t preallocated_bytes = 0);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
