@@ -73,7 +73,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, grpc_channel_args* args,
                        Chttp2ServerArgsModifier args_modifier,
-                       grpc_resource_quota* rq);
+                       grpc_resource_quota* resource_quota);
   ~Chttp2ServerListener() override;
 
   void Start(Server* server,
@@ -664,11 +664,11 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
 
 Chttp2ServerListener::Chttp2ServerListener(
     Server* server, grpc_channel_args* args,
-    Chttp2ServerArgsModifier args_modifier, grpc_resource_quota* rq)
+    Chttp2ServerArgsModifier args_modifier, grpc_resource_quota* resource_quota)
     : server_(server),
       args_modifier_(args_modifier),
       args_(args),
-      resource_quota_(rq) {
+      resource_quota_(resource_quota) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }
