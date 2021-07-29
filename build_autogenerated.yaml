@@ -8053,18 +8053,6 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: tls_certificate_verifier_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/cpp/util/tls_test_utils.h
-  src:
-  - test/cpp/security/tls_certificate_verifier_test.cc
-  - test/cpp/util/tls_test_utils.cc
-  deps:
-  - grpc++
-  - grpc_test_util
 - name: tls_security_connector_test
   gtest: true
   build: test
