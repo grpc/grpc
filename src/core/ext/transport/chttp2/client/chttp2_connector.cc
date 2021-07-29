@@ -47,7 +47,7 @@ Chttp2Connector::Chttp2Connector() : rq_(nullptr) {
 
 Chttp2Connector::~Chttp2Connector() {
   if (rq_ != nullptr) {
-    grpc_resource_quota_unref(rq_);
+    grpc_resource_quota_unref_internal(rq_);
   }
   if (endpoint_ != nullptr) {
     grpc_endpoint_destroy(endpoint_);
@@ -70,7 +70,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     GPR_ASSERT(endpoint_ == nullptr);
     ep = &endpoint_;
     if (rq_ != nullptr) {
-      grpc_resource_quota_unref(rq_);
+      grpc_resource_quota_unref_internal(rq_);
     }
     rq_ = grpc_resource_quota_from_channel_args(args.channel_args, true);
   }

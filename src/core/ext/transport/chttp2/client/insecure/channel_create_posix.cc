@@ -57,7 +57,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_transport* transport = grpc_create_chttp2_transport(
       final_args, client, true,
       grpc_resource_user_create(rq, "fd-client:transport"));
-  grpc_resource_quota_unref(rq);
+  grpc_resource_quota_unref_internal(rq);
   GPR_ASSERT(transport);
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =

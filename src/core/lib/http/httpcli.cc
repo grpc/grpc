@@ -106,7 +106,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->incoming);
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_unref(req->rq);
+  grpc_resource_quota_unref_internal(req->rq);
   gpr_free(req);
 }
 
@@ -269,7 +269,7 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    grpc_resource_quota_unref(resource_quota);
+    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =
@@ -288,7 +288,7 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
-    grpc_resource_quota_unref(resource_quota);
+    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =

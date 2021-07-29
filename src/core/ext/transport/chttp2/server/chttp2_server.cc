@@ -600,7 +600,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     listener = new Chttp2ServerListener(
         server, args, args_modifier,
         grpc_resource_quota_from_channel_args(args, true));
-    grpc_resource_quota_ref(listener->rq_);
+    grpc_resource_quota_ref_internal(listener->rq_);
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_, args,
         grpc_slice_allocator_factory_create(listener->rq_),
@@ -648,7 +648,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   Chttp2ServerListener* listener = new Chttp2ServerListener(
       server, args, args_modifier,
       grpc_resource_quota_from_channel_args(args, true));
-  grpc_resource_quota_ref(listener->rq_);
+  grpc_resource_quota_ref_internal(listener->rq_);
   grpc_error_handle error =
       grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_, args,
                              grpc_slice_allocator_factory_create(listener->rq_),
@@ -681,7 +681,7 @@ Chttp2ServerListener::~Chttp2ServerListener() {
     ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
     ExecCtx::Get()->Flush();
   }
-  grpc_resource_quota_unref(rq_);
+  grpc_resource_quota_unref_internal(rq_);
   grpc_channel_args_destroy(args_);
 }
 

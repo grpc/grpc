@@ -55,7 +55,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_error_handle error = core_server->SetupTransport(
       transport, nullptr, server_args, nullptr,
       grpc_resource_user_create(rq, absl::StrCat(name, ":channel")));
-  grpc_resource_quota_unref(rq);
+  grpc_resource_quota_unref_internal(rq);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
