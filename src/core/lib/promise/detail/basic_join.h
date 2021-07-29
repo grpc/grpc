@@ -48,10 +48,14 @@ union Fused {
 
 // A join gets composed of joints... these are just wrappers around a Fused for
 // their data, with some machinery as methods to get the system working.
-template <typename Traits, size_t I, typename... Fs>
-struct Joint : public Joint<Traits, I + 1, Fs...> {
+template <typename Traits, size_t kRemaining, typename... Fs>
+struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
+  // The index into Fs for this Joint
+  static constexpr size_t kIdx = sizeof...(Fs) - kRemaining;
+  // The next join (the one we derive from)
+  using NextJoint = Joint<Traits, kRemaining - 1, Fs...>;
   // From Fs, extract the functor for this joint.
-  using F = typename std::tuple_element<I, std::tuple<Fs...>>::type;
+  using F = typename std::tuple_element<kIdx, std::tuple<Fs...>>::type;
   // Generate the Fused type for this functor.
   using Fsd = Fused<Traits, F>;
   GPR_NO_UNIQUE_ADDRESS Fsd fused;
@@ -59,31 +63,31 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   using Bits = BitSet<sizeof...(Fs)>;
   // Initialize from a tuple of pointers to Fs
   explicit Joint(std::tuple<Fs*...> fs)
-      : Joint<Traits, I + 1, Fs...>(fs), fused(std::move(*std::get<I>(fs))) {}
+      : NextJoint(fs), fused(std::move(*std::get<kIdx>(fs))) {}
   // Copy: assume that the Fuse is still in the promise state (since it's not
   // legal to copy after the first poll!)
-  Joint(const Joint& j) : Joint<Traits, I + 1, Fs...>(j), fused(j.fused.f) {}
+  Joint(const Joint& j) : NextJoint(j), fused(j.fused.f) {}
   // Move: assume that the Fuse is still in the promise state (since it's not
   // legal to move after the first poll!)
   Joint(Joint&& j) noexcept
-      : Joint<Traits, I + 1, Fs...>(
-            std::forward<Joint<Traits, I + 1, Fs...>>(j)),
+      : NextJoint(
+            std::forward<NextJoint>(j)),
         fused(std::move(j.fused.f)) {}
   // Destruct: check bits to see if we're in promise or result state, and call
   // the appropriate destructor. Recursively, call up through the join.
   void DestructAll(const Bits& bits) {
-    if (!bits.is_set(I)) {
+    if (!bits.is_set(kIdx)) {
       Destruct(&fused.f);
     } else {
       Destruct(&fused.result);
     }
-    Joint<Traits, I + 1, Fs...>::DestructAll(bits);
+    NextJoint::DestructAll(bits);
   }
   // Poll all joints up, and then call finally.
   template <typename F>
   auto Run(Bits* bits, F finally) -> decltype(finally()) {
     // If we're still in the promise state...
-    if (!bits->is_set(I)) {
+    if (!bits->is_set(kIdx)) {
       // Poll the promise
       auto r = fused.f();
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
@@ -94,22 +98,22 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
         // Here is where TryJoin can escape out.
         return Traits::OnResult(
             std::move(*p), [this, bits, &finally](typename Fsd::Result result) {
-              bits->set(I);
+              bits->set(kIdx);
               Destruct(&fused.f);
               Construct(&fused.result, std::move(result));
-              return Joint<Traits, I + 1, Fs...>::Run(bits, std::move(finally));
+              return NextJoint::Run(bits, std::move(finally));
             });
       }
     }
     // That joint is still pending... we'll still poll the result of the joints.
-    return Joint<Traits, I + 1, Fs...>::Run(bits, std::move(finally));
+    return NextJoint::Run(bits, std::move(finally));
   }
 };
 
 // Terminating joint... for each of the recursions, do the thing we're supposed
 // to do at the end.
 template <typename Traits, typename... Fs>
-struct Joint<Traits, sizeof...(Fs), Fs...> {
+struct Joint<Traits, 0, Fs...> {
   explicit Joint(std::tuple<Fs*...>) {}
   Joint(const Joint&) {}
   Joint(Joint&&) noexcept {}
@@ -132,13 +136,13 @@ class BasicJoin {
   // The actual joints, wrapped in an anonymous union to give us control of
   // construction/destruction.
   union {
-    GPR_NO_UNIQUE_ADDRESS Joint<Traits, 0, Fs...> joints_;
+    GPR_NO_UNIQUE_ADDRESS Joint<Traits, sizeof...(Fs), Fs...> joints_;
   };
 
   // Access joint index I
   template <size_t I>
-  Joint<Traits, I, Fs...>* GetJoint() {
-    return static_cast<Joint<Traits, I, Fs...>*>(&joints_);
+  Joint<Traits, sizeof...(Fs) - I, Fs...>* GetJoint() {
+    return static_cast<Joint<Traits, sizeof...(Fs) - I, Fs...>*>(&joints_);
   }
 
   // The tuple of results of all our promises
