@@ -469,11 +469,11 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   TestClient client(
       grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server),
-                          absl::GetFlag(FLAGS_secure_mode)
-                              ? grpc::experimental::XdsCredentials(
-                                    grpc::InsecureChannelCredentials())
-                              : grpc::InsecureChannelCredentials(),
-                          channel_args),
+                                absl::GetFlag(FLAGS_secure_mode)
+                                    ? grpc::experimental::XdsCredentials(
+                                        grpc::InsecureChannelCredentials())
+                                    : grpc::InsecureChannelCredentials(),
+                                channel_args),
       stats_watchers);
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
