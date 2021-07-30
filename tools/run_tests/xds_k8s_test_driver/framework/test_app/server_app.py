@@ -36,6 +36,7 @@ _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _XdsUpdateHealthServiceClient = grpc_testing.XdsUpdateHealthServiceClient
 _HealthClient = grpc_testing.HealthClient
 
+
 class XdsTestServer(framework.rpc.grpc.GrpcApp):
     """
     Represents RPC services implemented in Server component of the xDS test app.
@@ -70,14 +71,13 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
     @property
     @functools.lru_cache(None)
     def update_health_service_client(self) -> _XdsUpdateHealthServiceClient:
-        return _XdsUpdateHealthServiceClient(self._make_channel(
-            self.maintenance_port))
+        return _XdsUpdateHealthServiceClient(
+            self._make_channel(self.maintenance_port))
 
     @property
     @functools.lru_cache(None)
     def health_client(self) -> _HealthClient:
-        return _HealthClient(self._make_channel(
-            self.maintenance_port))
+        return _HealthClient(self._make_channel(self.maintenance_port))
 
     def set_serving(self):
         logger.info('Setting health status to serving')

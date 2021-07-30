@@ -203,7 +203,11 @@ class TrafficDirectorManager:
         self.compute.delete_backend_service(name)
         self.backend_service = None
 
-    def backend_service_add_neg_backends(self, name, zones, max_rate_per_endpoint: Optional[int] = None):
+    def backend_service_add_neg_backends(self,
+                                         name,
+                                         zones,
+                                         max_rate_per_endpoint: Optional[
+                                             int] = None):
         logger.info('Waiting for Network Endpoint Groups to load endpoints.')
         for zone in zones:
             backend = self.compute.wait_for_network_endpoint_group(name, zone)
@@ -221,11 +225,13 @@ class TrafficDirectorManager:
             self.backends.remove(backend)
         self.backend_service_patch_backends()
 
-    def backend_service_patch_backends(self, max_rate_per_endpoint: Optional[int] = None):
+    def backend_service_patch_backends(
+            self, max_rate_per_endpoint: Optional[int] = None):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.backend_service.name, self.backends)
         self.compute.backend_service_patch_backends(self.backend_service,
-                                                  self.backends, max_rate_per_endpoint)
+                                                    self.backends,
+                                                    max_rate_per_endpoint)
 
     def backend_service_remove_all_backends(self):
         logging.info('Removing backends from Backend Service %s',
@@ -340,8 +346,8 @@ class TrafficDirectorManager:
     def affinity_backend_service_patch_backends(self):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.affinity_backend_service.name, self.affinity_backends)
-        self.compute.backend_service_patch_backends(self.affinity_backend_service,
-                                                  self.affinity_backends)
+        self.compute.backend_service_patch_backends(
+            self.affinity_backend_service, self.affinity_backends)
 
     def affinity_backend_service_remove_all_backends(self):
         logging.info('Removing backends from Backend Service %s',
@@ -367,19 +373,19 @@ class TrafficDirectorManager:
         if dst_host_rule_match_backend_service is None:
             dst_host_rule_match_backend_service = dst_default_backend_service
         return {
-                'name':
-                    name,
-                'defaultService':
-                    dst_default_backend_service.url,
-                'hostRules': [{
-                    'hosts': src_hosts,
-                    'pathMatcher': matcher_name,
-                }],
-                'pathMatchers': [{
-                    'name': matcher_name,
-                    'defaultService': dst_host_rule_match_backend_service.url,
-                }],
-            }
+            'name':
+                name,
+            'defaultService':
+                dst_default_backend_service.url,
+            'hostRules': [{
+                'hosts': src_hosts,
+                'pathMatcher': matcher_name,
+            }],
+            'pathMatchers': [{
+                'name': matcher_name,
+                'defaultService': dst_host_rule_match_backend_service.url,
+            }],
+        }
 
     def create_url_map(
         self,
@@ -391,23 +397,23 @@ class TrafficDirectorManager:
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
         logger.info('Creating URL map "%s": %s -> %s', name, src_address,
                     self.backend_service.name)
-        resource = self.compute.create_url_map_with_content(self._generate_url_map_body(name, matcher_name,
-                                                                                        [src_address],
-                                                                                        self.backend_service))
+        resource = self.compute.create_url_map_with_content(
+            self._generate_url_map_body(name, matcher_name, [src_address],
+                                        self.backend_service))
         self.url_map = resource
         return resource
 
-    def patch_url_map(self, src_host: str, src_port: int, backend_service: GcpResource):
+    def patch_url_map(self, src_host: str, src_port: int,
+                      backend_service: GcpResource):
         src_address = f'{src_host}:{src_port}'
         name = self.make_resource_name(self.URL_MAP_NAME)
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
         logger.info('Patching URL map "%s": %s -> %s', name, src_address,
                     backend_service.name)
-        self.compute.patch_url_map(self.url_map,
-                                   self._generate_url_map_body(name,
-                                                              matcher_name,
-                                                              [src_address],
-                                                              backend_service))
+        self.compute.patch_url_map(
+            self.url_map,
+            self._generate_url_map_body(name, matcher_name, [src_address],
+                                        backend_service))
 
     def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
         logger.info('Creating URL map: %s', url_map_body)

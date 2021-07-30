@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from absl import flags
 from absl.testing import absltest
-from typing import List
-
-from typing import List
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
@@ -33,6 +30,7 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 
 class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
     def setUp(self):
         super().setUp()
         self.alternate_server_runner = server_app.KubernetesServerRunner(
@@ -51,7 +49,8 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def tearDown(self):
         if hasattr(self, 'alternate_server_runner'):
-            self.alternate_server_runner.cleanup(force=self.force_cleanup, force_namespace=self.force_cleanup)
+            self.alternate_server_runner.cleanup(
+                force=self.force_cleanup, force_namespace=self.force_cleanup)
         super().tearDown()
 
     def test_remove_neg(self) -> None:
@@ -62,8 +61,7 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('02_create_url_map'):
-            self.td.create_url_map(self.server_xds_host,
-                                   self.server_xds_port)
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest('03_create_target_proxy'):
             self.td.create_target_proxy()
@@ -76,12 +74,11 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 _XdsTestServer] = self.startTestServers()
             self.same_zone_test_servers: List[
                 _XdsTestServer] = self.startTestServers(
-                server_runner=self.alternate_server_runner)
+                    server_runner=self.alternate_server_runner)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
-            self.setupServerBackends(
-                server_runner=self.alternate_server_runner)
+            self.setupServerBackends(server_runner=self.alternate_server_runner)
 
         with self.subTest('07_start_test_client'):
             self.test_client: _XdsTestClient = self.startTestClient(
@@ -94,8 +91,9 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertSuccessfulRpcs(self.test_client)
 
         with self.subTest('10_remove_neg'):
-            self.assertRpcsEventuallyGoToGivenServers(self.test_client,
-                                                      self.default_test_servers + self.same_zone_test_servers)
+            self.assertRpcsEventuallyGoToGivenServers(
+                self.test_client,
+                self.default_test_servers + self.same_zone_test_servers)
             self.removeServerBackends(
                 server_runner=self.alternate_server_runner)
             self.assertRpcsEventuallyGoToGivenServers(self.test_client,

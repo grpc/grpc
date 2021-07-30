@@ -62,6 +62,7 @@ _timedelta = datetime.timedelta
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
+
 class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     _resource_suffix_randomize: bool = True
     client_namespace: str
@@ -204,7 +205,11 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                                self.server_xds_port,
                                health_check_port=self.server_maintenance_port)
 
-    def setupServerBackends(self, *, wait_for_healthy_status=True, server_runner=None, max_rate_per_endpoint: Optional[int] = None):
+    def setupServerBackends(self,
+                            *,
+                            wait_for_healthy_status=True,
+                            server_runner=None,
+                            max_rate_per_endpoint: Optional[int] = None):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
@@ -212,7 +217,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             server_runner.service_name, self.server_port)
 
         # Add backends to the Backend Service
-        self.td.backend_service_add_neg_backends(neg_name, neg_zones, max_rate_per_endpoint=max_rate_per_endpoint)
+        self.td.backend_service_add_neg_backends(
+            neg_name, neg_zones, max_rate_per_endpoint=max_rate_per_endpoint)
         if wait_for_healthy_status:
             self.td.wait_for_backends_healthy_status()
 
@@ -238,21 +244,24 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
     def assertRpcsEventuallyGoToGivenServers(self,
-        test_client: XdsTestClient,
-        servers: List[XdsTestServer],
-        num_rpcs: int = 100):
-        retryer = retryers.constant_retryer(wait_fixed=datetime.timedelta(
-            seconds=1),
+                                             test_client: XdsTestClient,
+                                             servers: List[XdsTestServer],
+                                             num_rpcs: int = 100):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=1),
             timeout=datetime.timedelta(seconds=_TD_CONFIG_MAX_WAIT_SEC),
-                                            log_level=logging.INFO)
+            log_level=logging.INFO)
         try:
-            retryer(self._assertRpcsEventuallyGoToGivenServers, test_client, servers, num_rpcs)
+            retryer(self._assertRpcsEventuallyGoToGivenServers, test_client,
+                    servers, num_rpcs)
         except retryers.RetryError:
-            logger.exception('Rpcs did not go to expected servers before timeout %s', _TD_CONFIG_MAX_WAIT_SEC)
+            logger.exception(
+                'Rpcs did not go to expected servers before timeout %s',
+                _TD_CONFIG_MAX_WAIT_SEC)
 
     def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
-        servers: List[XdsTestServer],
-        num_rpcs: int):
+                                              servers: List[XdsTestServer],
+                                              num_rpcs: int):
         server_names = [server.pod_name for server in servers]
         logger.info(f'Verifying RPCs go to {server_names}')
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
@@ -296,7 +305,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
 
     @staticmethod
     def getClientRpcStats(test_client: XdsTestClient,
-                 num_rpcs: int) -> LoadBalancerStatsResponse:
+                          num_rpcs: int) -> LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
@@ -360,7 +369,10 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
-    def startTestServers(self, replica_count=1, server_runner=None, **kwargs) -> List[XdsTestServer]:
+    def startTestServers(self,
+                         replica_count=1,
+                         server_runner=None,
+                         **kwargs) -> List[XdsTestServer]:
         if server_runner is None:
             server_runner = self.server_runner
         test_servers = server_runner.run(
@@ -369,7 +381,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             maintenance_port=self.server_maintenance_port,
             **kwargs)
         for test_server in test_servers:
-            test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
+            test_server.set_xds_address(self.server_xds_host,
+                                        self.server_xds_port)
         return test_servers
 
     def startTestClient(self, test_server: XdsTestServer,

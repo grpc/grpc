@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from absl import flags
 from absl.testing import absltest
-from typing import List
-
-from typing import List
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
@@ -44,8 +41,7 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('02_create_url_map'):
-            self.td.create_url_map(self.server_xds_host,
-                                   self.server_xds_port)
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest('03_create_target_proxy'):
             self.td.create_target_proxy()
@@ -54,8 +50,7 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self.test_servers: List[
-                _XdsTestServer] = self.startTestServers(
+            self.test_servers: List[_XdsTestServer] = self.startTestServers(
                 replica_count=REPLICA_COUNT)
 
         with self.subTest('06_add_server_backends_to_backend_services'):

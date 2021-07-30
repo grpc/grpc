@@ -142,7 +142,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              body=body,
                              **kwargs)
 
-    def backend_service_patch_backends(self, backend_service, backends, max_rate_per_endpoint: Optional[int] = None):
+    def backend_service_patch_backends(
+            self,
+            backend_service,
+            backends,
+            max_rate_per_endpoint: Optional[int] = None):
         if max_rate_per_endpoint is None:
             max_rate_per_endpoint = 5
         backend_list = [{

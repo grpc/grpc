@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from typing import List
 
 from absl import flags
 from absl.testing import absltest
-
-from typing import List
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
@@ -52,7 +51,8 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def tearDown(self):
         if hasattr(self, 'secondary_server_runner'):
-            self.secondary_server_runner.cleanup(force=self.force_cleanup, force_namespace=self.force_cleanup)
+            self.secondary_server_runner.cleanup(
+                force=self.force_cleanup, force_namespace=self.force_cleanup)
         super().tearDown()
 
     def test_failover(self) -> None:
@@ -63,8 +63,7 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('02_create_url_map'):
-            self.td.create_url_map(self.server_xds_host,
-                                   self.server_xds_port)
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest('03_create_target_proxy'):
             self.td.create_target_proxy()
@@ -75,14 +74,15 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('05_start_test_servers'):
             self.default_test_servers: List[
                 _XdsTestServer] = self.startTestServers(
-                replica_count=self.REPLICA_COUNT)
+                    replica_count=self.REPLICA_COUNT)
 
             self.alternate_test_servers: List[
                 _XdsTestServer] = self.startTestServers(
-                server_runner=self.secondary_server_runner)
+                    server_runner=self.secondary_server_runner)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
-            self.setupServerBackends(max_rate_per_endpoint=self.MAX_RATE_PER_ENDPOINT)
+            self.setupServerBackends(
+                max_rate_per_endpoint=self.MAX_RATE_PER_ENDPOINT)
             self.setupServerBackends(
                 server_runner=self.secondary_server_runner,
                 max_rate_per_endpoint=self.MAX_RATE_PER_ENDPOINT)
@@ -99,30 +99,29 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                                                       self.default_test_servers)
 
         with self.subTest(
-            '10_secondary_locality_receives_no_requests_on_partial_primary_failure'):
+                '10_secondary_locality_receives_no_requests_on_partial_primary_failure'
+        ):
             self.default_test_servers[0].set_not_serving()
-            self.assertRpcsEventuallyGoToGivenServers(self.test_client,
-                                                      self.default_test_servers[
-                                                      1:])
+            self.assertRpcsEventuallyGoToGivenServers(
+                self.test_client, self.default_test_servers[1:])
 
         with self.subTest('11_gentle_failover'):
             self.default_test_servers[1].set_not_serving()
-            self.assertRpcsEventuallyGoToGivenServers(self.test_client,
-                                                      self.default_test_servers[
-                                                      2:] + self.alternate_test_servers)
+            self.assertRpcsEventuallyGoToGivenServers(
+                self.test_client,
+                self.default_test_servers[2:] + self.alternate_test_servers)
 
         with self.subTest(
-            '12_secondary_locality_receives_requests_on_primary_failure'):
+                '12_secondary_locality_receives_requests_on_primary_failure'):
             self.default_test_servers[2].set_not_serving()
-            self.assertRpcsEventuallyGoToGivenServers(self.test_client,
-                                                      self.alternate_test_servers)
+            self.assertRpcsEventuallyGoToGivenServers(
+                self.test_client, self.alternate_test_servers)
 
         with self.subTest('13_traffic_resumes_to_healthy_backends'):
             for i in range(self.REPLICA_COUNT):
                 self.default_test_servers[i].set_serving()
             self.assertRpcsEventuallyGoToGivenServers(self.test_client,
                                                       self.default_test_servers)
-
 
 
 if __name__ == '__main__':
