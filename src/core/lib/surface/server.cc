@@ -809,10 +809,11 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);
-    WaitUntil(&starting_cv_, &mu_global_,
-              [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
-                return !starting_;
-              });
+    WaitUntil(&starting_cv_, &mu_global_, [this]() {
+      // Convince the compiler that the lock is held.
+      []() ABSL_ASSERT_EXCLUSIVE_LOCK(mu_global_) {}();
+      return !starting_;
+    });
     // Stay locked, and gather up some stuff to do.
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     if (shutdown_published_) {
