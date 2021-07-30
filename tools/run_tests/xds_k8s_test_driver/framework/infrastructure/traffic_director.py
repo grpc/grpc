@@ -532,7 +532,8 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
         body = {
-            "hostnames": host,
+            "hostnames":
+                host,
             "rules": [{
                 "action": {
                     "destination": {

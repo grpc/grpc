@@ -50,7 +50,6 @@ class Router:
 @dataclasses.dataclass(frozen=True)
 class GrpcRoute:
 
-
     @dataclasses.dataclass(frozen=True)
     class MethodMatch:
         type: Optional[str]
@@ -67,7 +66,6 @@ class GrpcRoute:
                 case_sensitive=d.get("caseSensitive"),
             )
 
-
     @dataclasses.dataclass(frozen=True)
     class HeaderMatch:
         type: Optional[str]
@@ -82,7 +80,6 @@ class GrpcRoute:
                 value=d["value"],
             )
 
-
     @dataclasses.dataclass(frozen=True)
     class RouteMatch:
         method: Optional['MethodMatch']
@@ -91,13 +88,12 @@ class GrpcRoute:
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteMatch':
             return cls(
-                method=MethodMatch.from_response(
-                    d["method"]) if "method" in d else None,
+                method=MethodMatch.from_response(d["method"])
+                if "method" in d else None,
                 headers=tuple(
-                    HeaderMatch.from_response(h)
-                    for h in d["headers"]) if "headers" in d else (),
+                    HeaderMatch.from_response(h) for h in d["headers"])
+                if "headers" in d else (),
             )
-
 
     @dataclasses.dataclass(frozen=True)
     class Destination:
@@ -111,7 +107,6 @@ class GrpcRoute:
                 weight=d.get("weight"),
             )
 
-
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
         destination: Optional['Destination']
@@ -120,11 +115,10 @@ class GrpcRoute:
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
             return cls(
-                destination=Destination.from_response(
-                    d["destination"]) if "destination" in d else None,
+                destination=Destination.from_response(d["destination"])
+                if "destination" in d else None,
                 drop=d.get("drop"),
             )
-
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
@@ -134,10 +128,9 @@ class GrpcRoute:
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
             return cls(
-                match=RouteMatch.from_response(
-                    d["match"]) if "match" in d else "",
-                action=RouteAction.from_response(
-                    d["action"]),
+                match=RouteMatch.from_response(d["match"])
+                if "match" in d else "",
+                action=RouteAction.from_response(d["action"]),
             )
 
     name: str
@@ -159,7 +152,6 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
     GRPC_ROUTES = 'grpcRoutes'
     ROUTERS = 'routers'
-
 
     @dataclasses.dataclass(frozen=True)
     class EndpointConfigSelector:
