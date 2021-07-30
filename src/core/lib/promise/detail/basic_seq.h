@@ -18,6 +18,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"
@@ -143,7 +144,7 @@ struct GetSeqStateInner<I, Traits, I, Fs...> {
 };
 
 template <char I, template <typename> class Traits, char J, typename... Fs>
-SeqState<Traits, I, Fs...>* GetSeqState(SeqState<Traits, J, Fs...>* p) {
+absl::enable_if_t<I<=J, SeqState<Traits, I, Fs...>*> GetSeqState(SeqState<Traits, J, Fs...>* p) {
   return GetSeqStateInner<I, Traits, J, Fs...>::f(p);
 }
 
@@ -202,31 +203,28 @@ class BasicSeq {
   using FinalPromiseResult = typename FinalPromise::Result;
   using Result = typename Traits<FinalPromiseResult>::WrappedType;
 
-  // Accessor for various pieces, by index.
+  // Get a state by index.
   template <char I>
-  struct Get {
-    // Get a state by index.
-    static SeqState<Traits, I, Fs...>* state(BasicSeq* s) {
-      return GetSeqState<I>(&s->penultimate_state_);
-    }
+      absl::enable_if_t < I<N - 2, SeqState<Traits, I, Fs...>*> state() {
+    return GetSeqState<I>(&penultimate_state_);
+  }
 
-    // Get the next state's promise.
-    static typename SeqState<Traits, I + 1, Fs...>::Types::Promise*
-    next_promise(BasicSeq* s) {
-      return &GetSeqState<I + 1>(&s->penultimate_state_)->current_promise;
-    }
-  };
-  // Specialization for the penultimate state since otherwise we hit overflow
-  // errors getting the next_promise.
-  template <>
-  struct Get<N - 2> {
-    static PenultimateState* state(BasicSeq* s) {
-      return &s->penultimate_state_;
-    }
-    static FinalPromise* next_promise(BasicSeq* s) {
-      return &s->final_promise_;
-    }
-  };
+  template <char I>
+  absl::enable_if_t<I == N - 2, PenultimateState*> state() {
+    return &penultimate_state_;
+  }
+
+  // Get the next state's promise.
+  template <char I>
+    auto next_promise() -> absl::enable_if_t <
+      I!=N - 2, decltype(&GetSeqState<I + 1>(&penultimate_state_)->current_promise)> {
+    return &GetSeqState<I + 1>(&penultimate_state_)->current_promise;
+  }
+
+  template <char I>
+  absl::enable_if_t<I == N - 2, FinalPromise*> next_promise() {
+    return &final_promise_;
+  }
 
   // Callable to advance the state to the next one after I given the result from
   // state I.
@@ -235,7 +233,7 @@ class BasicSeq {
     BasicSeq* s;
     template <typename T>
     Poll<Result> operator()(T&& value) {
-      auto* prior = Get<I>::state(s);
+      auto* prior = s->state<I>();
       using StateType = absl::remove_reference_t<decltype(*prior)>;
       // Destroy the promise that just completed.
       Destruct(&prior->current_promise);
@@ -248,23 +246,21 @@ class BasicSeq {
       Destruct(&prior->next_factory);
       // Constructing the promise for the new state will use the memory
       // previously occupied by the promise & next factory of the old state.
-      Construct(Get<I>::next_promise(s), std::move(n));
+      Construct(s->next_promise<I>(), std::move(n));
       // Store the state counter.
       s->state_ = I + 1;
       // Recursively poll the new current state.
-      return RunState<I + 1>{s}();
+      return s->RunState<I + 1>();
     }
   };
 
   // Poll the current state, advance it if necessary.
   template <char I>
-  struct RunState {
-    BasicSeq* s;
-    Poll<Result> operator()() {
+  absl::enable_if_t<I != N-1, Poll<Result>> RunState() {
       // Get a pointer to the state object.
-      auto* state = Get<I>::state(s);
+      auto* s = state<I>();
       // Poll the current promise in this state.
-      auto r = state->current_promise();
+      auto r = s->current_promise();
       // If we are still pending, say so by returning.
       if (absl::holds_alternative<Pending>(r)) {
         return Pending();
@@ -274,19 +270,16 @@ class BasicSeq {
       // Or it may be by calling the callable we hand down - RunNext - which
       // will advance the state and call the next promise.
       return Traits<typename absl::remove_reference_t<decltype(
-          *state)>::Types::PromiseResult>::
+          *s)>::Types::PromiseResult>::
           template CheckResultAndRunNext<Result>(
-              std::move(absl::get<kPollReadyIdx>(std::move(r))), RunNext<I>{s});
+              std::move(absl::get<kPollReadyIdx>(std::move(r))), RunNext<I>{this});
     }
-  };
 
   // Specialization of RunState to run the final state.
-  template <>
-  struct RunState<N - 1> {
-    BasicSeq* s;
-    Poll<Result> operator()() {
+  template <char I>
+  absl::enable_if_t<I == N-1, Poll<Result>> RunState() {
       // Poll the final promise.
-      auto r = s->final_promise_();
+      auto r = final_promise_();
       // If we are still pending, say so by returning.
       if (absl::holds_alternative<Pending>(r)) {
         return Pending();
@@ -294,7 +287,6 @@ class BasicSeq {
       // We are complete, return the (wrapped) result.
       return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
     }
-  };
 
   // For state numbered I, destruct the current promise and the next promise
   // factory, and recursively destruct the next promise factories for future
@@ -324,7 +316,6 @@ class BasicSeq {
     static void Run(BasicSeq*) {}
   };
 
-  // Specialization for the final state - there are no subsequent factories.
   template <>
   struct DestructCurrentPromiseAndSubsequentFactories<N - 1> {
     BasicSeq* s;
@@ -339,7 +330,7 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return Switch<Poll<Result>>(state_, RunState<I>{this}...);
+    return Switch<Poll<Result>>(state_, [this]{ return RunState<I>(); }...);
   }
 
   // Run the appropriate destructors for a given state.
