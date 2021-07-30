@@ -51,12 +51,10 @@ class FailPolicy : public LoadBalancingPolicy {
   const char* name() const override { return kFailPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
-    grpc_error_handle error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB pick failed"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED);
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                          grpc_error_to_absl_status(error),
-                                          absl::make_unique<FailPicker>(error));
+    absl::Status status = absl::AbortedError("LB pick failed");
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<FailPicker>(status));
   }
 
   void ResetBackoffLocked() override {}
@@ -65,19 +63,15 @@ class FailPolicy : public LoadBalancingPolicy {
  private:
   class FailPicker : public SubchannelPicker {
    public:
-    explicit FailPicker(grpc_error_handle error) : error_(error) {}
-    ~FailPicker() override { GRPC_ERROR_UNREF(error_); }
+    explicit FailPicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      PickResult result;
       g_num_lb_picks.FetchAdd(1);
-      result.type = PickResult::PICK_FAILED;
-      result.error = GRPC_ERROR_REF(error_);
-      return result;
+      return PickResult::Fail(status_);
     }
 
    private:
-    grpc_error_handle error_;
+    absl::Status status_;
   };
 };
 
