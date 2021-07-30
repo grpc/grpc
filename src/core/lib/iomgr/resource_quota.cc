@@ -1037,7 +1037,7 @@ size_t grpc_slice_allocator_adjust_allocation_length(
   // Reduce allocation size proportional to the pressure > 80% usage.
   size_t target =
       requested_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
-  // Length will be some multiple of 8 bytes, rounded up
+  // Target will be some multiple of 8 bytes, rounded up
   target = ((static_cast<size_t> GPR_CLAMP(target, slice_allocator->min_length,
                                            slice_allocator->max_length)) +
             255) &

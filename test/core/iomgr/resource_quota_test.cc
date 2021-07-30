@@ -21,6 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -739,6 +740,91 @@ static void test_one_slice_through_slice_allocator_factory(void) {
   }
 }
 
+static void test_slice_allocator_pressure_adjusted_allocation() {
+  gpr_log(GPR_INFO, "** test_slice_allocator_pressure_adjusted_allocation **");
+  // Quota large enough to avoid the 1/16 maximum allocation limit.
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(
+      "test_one_slice_through_slice_allocator_factory");
+  grpc_resource_quota_resize(resource_quota, 32 * 1024);
+  grpc_resource_user* black_hole_resource_user =
+      grpc_resource_user_create(resource_quota, "black hole");
+  {
+    // Consume ~95% of the quota
+    grpc_core::ExecCtx exec_ctx;
+    grpc_resource_user_safe_alloc(black_hole_resource_user, 31 * 1024);
+  }
+  GPR_ASSERT(grpc_resource_quota_get_memory_pressure(resource_quota) > 0.95);
+  grpc_slice_buffer buffer;
+  grpc_slice_buffer_init(&buffer);
+  grpc_slice_allocator* constrained_allocator =
+      grpc_slice_allocator_create(resource_quota, "constrained user");
+  {
+    // Attempt to get 512 bytes
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        constrained_allocator, 2 * 1024, 1,
+        grpc_slice_allocator_intent::kReadBuffer, &buffer,
+        [](void*, grpc_error_handle) {}, nullptr));
+  }
+  grpc_slice slice = grpc_slice_buffer_take_first(&buffer);
+  GPR_ASSERT(grpc_refcounted_slice_length(slice) < 2 * 1024);
+  GPR_ASSERT(grpc_refcounted_slice_length(slice) >= 256);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_unref(slice);
+    grpc_resource_user_free(black_hole_resource_user, 31 * 1024);
+    grpc_resource_user_unref(black_hole_resource_user);
+    grpc_slice_allocator_destroy(constrained_allocator);
+    grpc_resource_quota_unref(resource_quota);
+    grpc_slice_buffer_destroy_internal(&buffer);
+  }
+}
+
+static void test_slice_allocator_capped_allocation() {
+  gpr_log(GPR_INFO, "** test_slice_allocator_pressure_adjusted_allocation **");
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(
+      "test_one_slice_through_slice_allocator_factory");
+  grpc_resource_quota_resize(resource_quota, 32 * 1024);
+  grpc_arg to_add[2];
+  grpc_channel_args* ch_args;
+  to_add[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE), 1024);
+  to_add[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE), 2048);
+  ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
+  grpc_slice_allocator* slice_allocator =
+      grpc_slice_allocator_create(resource_quota, "capped user", ch_args);
+  grpc_slice_buffer buffer;
+  grpc_slice_buffer_init(&buffer);
+  {
+    // Attempt to get more than the maximum
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        slice_allocator, 4 * 1024, 1, grpc_slice_allocator_intent::kReadBuffer,
+        &buffer, [](void*, grpc_error_handle) {}, nullptr));
+  }
+  grpc_slice max_slice = grpc_slice_buffer_take_first(&buffer);
+  GPR_ASSERT(grpc_refcounted_slice_length(max_slice) == 2048);
+  {
+    // Attempt to get less than the minimum
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        slice_allocator, 512, 1, grpc_slice_allocator_intent::kReadBuffer,
+        &buffer, [](void*, grpc_error_handle) {}, nullptr));
+  }
+  grpc_slice min_slice = grpc_slice_buffer_take_first(&buffer);
+  GPR_ASSERT(grpc_refcounted_slice_length(min_slice) == 1024);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_unref(max_slice);
+    grpc_slice_unref(min_slice);
+    grpc_slice_allocator_destroy(slice_allocator);
+    grpc_resource_quota_unref(resource_quota);
+    grpc_slice_buffer_destroy_internal(&buffer);
+    grpc_channel_args_destroy(ch_args);
+  }
+}
+
 static void test_one_slice_deleted_late(void) {
   gpr_log(GPR_INFO, "** test_one_slice_deleted_late **");
   grpc_resource_quota* q =
@@ -875,8 +961,8 @@ static void test_thread_maxquota_change() {
   grpc_resource_quota_set_max_threads(rq, 150);
   GPR_ASSERT(grpc_resource_user_allocate_threads(ru2, 20));  // ru2=70, ru1=50
 
-  // Decrease maxquota (Note: Quota already given to ru1 and ru2 is unaffected)
-  // Max threads = 10;
+  // Decrease maxquota (Note: Quota already given to ru1 and ru2 is
+  // unaffected) Max threads = 10;
   grpc_resource_quota_set_max_threads(rq, 10);
 
   // New requests will fail until quota is available
@@ -927,6 +1013,8 @@ int main(int argc, char** argv) {
   test_resize_to_zero();
   test_negative_rq_free_pool();
   test_one_slice_through_slice_allocator_factory();
+  test_slice_allocator_pressure_adjusted_allocation();
+  test_slice_allocator_capped_allocation();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv);
 
