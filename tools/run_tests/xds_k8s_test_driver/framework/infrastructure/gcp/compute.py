@@ -112,18 +112,25 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             self,
             name: str,
             health_check: GcpResource,
+            affinity_header: str = None,
             protocol: Optional[BackendServiceProtocol] = None) -> GcpResource:
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
-        return self._insert_resource(
-            self.api.backendServices(),
-            {
-                'name': name,
-                'loadBalancingScheme':
-                    'INTERNAL_SELF_MANAGED',  # Traffic Director
-                'healthChecks': [health_check.url],
-                'protocol': protocol.name,
-            })
+        body = {
+            'name': name,
+            'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',  # Traffic Director
+            'healthChecks': [health_check.url],
+            'protocol': protocol.name,
+        }
+        # If affinity header is specified, config the backend service to support
+        # affinity, and set affinity header to the one given.
+        if affinity_header:
+            body['sessionAffinity'] = 'HEADER_FIELD'
+            body['localityLbPolicy'] = 'RING_HASH'
+            body['consistentHash'] = {
+                'httpHeaderName': affinity_header,
+            }
+        return self._insert_resource(self.api.backendServices(), body)
 
     def get_backend_service_traffic_director(self, name: str) -> GcpResource:
         return self._get_resource(self.api.backendServices(),

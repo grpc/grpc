@@ -276,7 +276,6 @@ class ClientChannel {
   // Fields set at construction and never modified.
   //
   const bool deadline_checking_enabled_;
-  const bool enable_retries_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
@@ -372,29 +371,25 @@ class ClientChannel {
 // ClientChannel::LoadBalancedCall
 //
 
-// TODO(roth): Consider whether this actually needs to be RefCounted<>.
-// Ideally, it should be single-owner, or at least InternallyRefCounted<>.
+// This object is ref-counted, but it cannot inherit from RefCounted<>,
+// because it is allocated on the arena and can't free its memory when
+// its refcount goes to zero.  So instead, it manually implements the
+// same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
 class ClientChannel::LoadBalancedCall
     : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
-  // If it is null, then the caller is responsible for calling
-  // set_on_call_destruction_complete() before the LoadBalancedCall is
-  // destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
-
-  // Callers must call this before unreffing if they did not set the
-  // closure via the ctor.
-  void set_on_call_destruction_complete(
-      grpc_closure* on_call_destruction_complete) {
-    on_call_destruction_complete_ = on_call_destruction_complete;
-  }
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -408,6 +403,10 @@ class ClientChannel::LoadBalancedCall
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
   void AsyncPickDone(grpc_error_handle error);
+
+  RefCountedPtr<SubchannelCall> subchannel_call() const {
+    return subchannel_call_;
+  }
 
  private:
   class LbQueuedCallCanceller;

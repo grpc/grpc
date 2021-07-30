@@ -16,8 +16,6 @@
 
 import argparse
 import datetime
-import googleapiclient.discovery
-import grpc
 import json
 import logging
 import os
@@ -30,12 +28,13 @@ import tempfile
 import time
 import uuid
 
-from oauth2client.client import GoogleCredentials
 from google.protobuf import json_format
+import googleapiclient.discovery
+import grpc
+from oauth2client.client import GoogleCredentials
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-
 from src.proto.grpc.health.v1 import health_pb2
 from src.proto.grpc.health.v1 import health_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
@@ -45,12 +44,13 @@ from src.proto.grpc.testing import test_pb2_grpc
 # Envoy protos provided by PyPI package xds-protos
 # Needs to import the generated Python file to load descriptors
 try:
-    from envoy.service.status.v3 import csds_pb2
-    from envoy.service.status.v3 import csds_pb2_grpc
-    from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
     from envoy.extensions.filters.common.fault.v3 import fault_pb2
     from envoy.extensions.filters.http.fault.v3 import fault_pb2
     from envoy.extensions.filters.http.router.v3 import router_pb2
+    from envoy.extensions.filters.network.http_connection_manager.v3 import \
+        http_connection_manager_pb2
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
 except ImportError:
     # These protos are required by CSDS test. We should not fail the entire
     # script for one test case.

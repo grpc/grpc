@@ -31,6 +31,18 @@ import "google/protobuf/wrappers.proto";
 // * Routing :ref:`architecture overview <arch_overview_http_routing>`
 // * HTTP :ref:`router filter <config_http_filters_router>`
 
+message RetryPolicy {
+  string retry_on = 1;
+  google.protobuf.UInt32Value num_retries = 2;
+
+  message RetryBackOff {
+    google.protobuf.Duration base_interval = 1;
+    google.protobuf.Duration max_interval = 2;
+  }
+
+  RetryBackOff retry_back_off = 8;
+}
+
 // The top level element in the routing configuration is a virtual host. Each virtual host has
 // a logical name as well as a set of domains that get routed to it based on the incoming request's
 // host header. This allows a single listener to service multiple top level domain path trees. Once
@@ -72,6 +84,8 @@ message VirtualHost {
   // specific; see the :ref:`HTTP filter documentation <config_http_filters>`
   // for if and how it is utilized.
   map<string, google.protobuf.Any> typed_per_filter_config = 15;
+
+  RetryPolicy retry_policy = 16;
 }
 
 // A route is both a specification of how to match a request as well as an indication of what to do
@@ -317,6 +331,8 @@ message RouteAction {
   }
 
   repeated HashPolicy hash_policy = 15;
+
+  RetryPolicy retry_policy = 9;
 
   // Specifies the maximum stream duration for this route.
   MaxStreamDuration max_stream_duration = 36;

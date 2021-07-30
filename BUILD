@@ -660,7 +660,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
@@ -797,6 +796,26 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "overload",
+    ],
+)
+
+grpc_cc_library(
+    name = "table",
+    external_deps = ["absl/utility"],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/table.h"],
+    deps = [
+        "bitset",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "bitset",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/bitset.h"],
+    deps = [
+        "gpr_platform",
     ],
 )
 

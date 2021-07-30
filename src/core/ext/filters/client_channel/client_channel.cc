@@ -319,11 +319,13 @@ class DynamicTerminationFilter::CallData {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call =
-        std::move(calld->lb_call_);
+    RefCountedPtr<SubchannelCall> subchannel_call;
+    if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
+      subchannel_call = calld->lb_call_->subchannel_call();
+    }
     calld->~CallData();
-    if (GPR_LIKELY(lb_call != nullptr)) {
-      lb_call->set_on_call_destruction_complete(then_schedule_closure);
+    if (GPR_LIKELY(subchannel_call != nullptr)) {
+      subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
     } else {
       // TODO(yashkt) : This can potentially be a Closure::Run
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
@@ -1057,10 +1059,6 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 
 namespace {
 
-bool GetEnableRetries(const grpc_channel_args* args) {
-  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, false);
-}
-
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
   const bool use_local_subchannel_pool = grpc_channel_args_find_bool(
@@ -1082,7 +1080,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
                              grpc_error_handle* error)
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
-      enable_retries_(GetEnableRetries(args->channel_args)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
@@ -1506,14 +1503,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  // Construct dynamic filter stack.
-  std::vector<const grpc_channel_filter*> filters =
-      config_selector->GetFilters();
-  if (enable_retries_) {
-    filters.push_back(&kRetryFilterVtable);
-  } else {
-    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
-  }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL), this,
@@ -1525,6 +1514,16 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       channel_args_, args_to_add.data(), args_to_add.size());
   new_args = config_selector->ModifyChannelArgs(new_args);
+  bool enable_retries =
+      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, false);
+  // Construct dynamic filter stack.
+  std::vector<const grpc_channel_filter*> filters =
+      config_selector->GetFilters();
+  if (enable_retries) {
+    filters.push_back(&kRetryFilterVtable);
+  } else {
+    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
+  }
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);
@@ -1987,6 +1986,19 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
     calld->InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         batch);
   }
+  // If we already have a dynamic call, pass the batch down to it.
+  // Note that once we have done so, we do not need to acquire the channel's
+  // resolution mutex, which is more efficient (especially for streaming calls).
+  if (calld->dynamic_call_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on dynamic_call=%p",
+              chand, calld, calld->dynamic_call_.get());
+    }
+    calld->dynamic_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a dynamic call.
+  //
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2013,35 +2025,16 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
       gpr_log(GPR_INFO, "chand=%p calld=%p: recording cancel_error=%s", chand,
               calld, grpc_error_std_string(calld->cancel_error_).c_str());
     }
-    // If we do not have a dynamic call (i.e., name resolution has not
-    // yet completed), fail all pending batches.  Otherwise, send the
-    // cancellation down to the dynamic call.
-    if (calld->dynamic_call_ == nullptr) {
-      calld->PendingBatchesFail(elem, GRPC_ERROR_REF(calld->cancel_error_),
-                                NoYieldCallCombiner);
-      // Note: This will release the call combiner.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->cancel_error_), calld->call_combiner_);
-    } else {
-      // Note: This will release the call combiner.
-      calld->dynamic_call_->StartTransportStreamOpBatch(batch);
-    }
+    // Fail all pending batches.
+    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(calld->cancel_error_),
+                              NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch, GRPC_ERROR_REF(calld->cancel_error_), calld->call_combiner_);
     return;
   }
   // Add the batch to the pending list.
   calld->PendingBatchesAdd(elem, batch);
-  // Check if we've already created a dynamic call.
-  // Note that once we have done so, we do not need to acquire the channel's
-  // resolution mutex, which is more efficient (especially for streaming calls).
-  if (calld->dynamic_call_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on dynamic_call=%p",
-              chand, calld, calld->dynamic_call_.get());
-    }
-    calld->PendingBatchesResume(elem);
-    return;
-  }
-  // We do not yet have a dynamic call.
   // For batches containing a send_initial_metadata op, acquire the
   // channel's resolution mutex to apply the service config to the call,
   // after which we will create a dynamic call.
@@ -2645,11 +2638,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
         gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
     call_attempt_tracer_->RecordEnd(latency);
   }
-  // Arrange to invoke on_call_destruction_complete_ once we know that
-  // the call stack has been destroyed.
-  if (GPR_LIKELY(subchannel_call_ != nullptr)) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-  } else {
+  if (on_call_destruction_complete_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
                  GRPC_ERROR_NONE);
   }
@@ -2830,6 +2819,21 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &recv_trailing_metadata_ready_;
   }
+  // If we've already gotten a subchannel call, pass the batch down to it.
+  // Note that once we have picked a subchannel, we do not need to acquire
+  // the channel's data plane mutex, which is more efficient (especially for
+  // streaming calls).
+  if (subchannel_call_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
+              chand_, this, subchannel_call_.get());
+    }
+    subchannel_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a subchannel call.
+  //
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2854,36 +2858,15 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: recording cancel_error=%s",
               chand_, this, grpc_error_std_string(cancel_error_).c_str());
     }
-    // If we do not have a subchannel call (i.e., a pick has not yet
-    // been started), fail all pending batches.  Otherwise, send the
-    // cancellation down to the subchannel call.
-    if (subchannel_call_ == nullptr) {
-      PendingBatchesFail(GRPC_ERROR_REF(cancel_error_), NoYieldCallCombiner);
-      // Note: This will release the call combiner.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
-    } else {
-      // Note: This will release the call combiner.
-      subchannel_call_->StartTransportStreamOpBatch(batch);
-    }
+    // Fail all pending batches.
+    PendingBatchesFail(GRPC_ERROR_REF(cancel_error_), NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
     return;
   }
   // Add the batch to the pending list.
   PendingBatchesAdd(batch);
-  // Check if we've already gotten a subchannel call.
-  // Note that once we have picked a subchannel, we do not need to acquire
-  // the channel's data plane mutex, which is more efficient (especially for
-  // streaming calls).
-  if (subchannel_call_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
-              chand_, this, subchannel_call_.get());
-    }
-    PendingBatchesResume();
-    return;
-  }
-  // We do not yet have a subchannel call.
   // For batches containing a send_initial_metadata op, acquire the
   // channel's data plane mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {
@@ -3001,6 +2984,10 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
             this, subchannel_call_.get(), grpc_error_std_string(error).c_str());
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+    on_call_destruction_complete_ = nullptr;
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     PendingBatchesFail(error, YieldCallCombiner);

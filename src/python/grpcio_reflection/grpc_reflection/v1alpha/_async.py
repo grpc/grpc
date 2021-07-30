@@ -16,7 +16,6 @@
 from typing import AsyncIterable
 
 import grpc
-
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha._base import BaseReflectionServicer
 

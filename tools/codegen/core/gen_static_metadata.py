@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import hashlib
 import itertools
-import collections
 import os
-import sys
-import subprocess
 import re
+import subprocess
+import sys
+
 import perfection
 
 # Configuration: a list of either strings or 2-tuples of strings.

@@ -176,9 +176,6 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -227,6 +224,9 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
 
   memset(ops, 0, sizeof(ops));
   op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &response_payload_recv;
+  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;

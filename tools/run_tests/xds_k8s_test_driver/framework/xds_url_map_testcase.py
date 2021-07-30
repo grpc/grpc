@@ -134,6 +134,7 @@ class RpcDistributionStats:
     def __init__(self, json_lb_stats: JsonType):
         self.num_failures = json_lb_stats.get('numFailures', 0)
 
+        self.num_peers = 0
         self.num_oks = 0
         self.default_service_rpc_count = 0
         self.alternative_service_rpc_count = 0
@@ -142,6 +143,8 @@ class RpcDistributionStats:
         self.unary_call_alternative_service_rpc_count = 0
         self.empty_call_alternative_service_rpc_count = 0
 
+        if 'rpcsByPeer' in json_lb_stats:
+            self.num_peers = len(json_lb_stats['rpcsByPeer'])
         if 'rpcsByMethod' in json_lb_stats:
             for rpc_type in json_lb_stats['rpcsByMethod']:
                 for peer in json_lb_stats['rpcsByMethod'][rpc_type][
@@ -218,6 +221,28 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
+    def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
+        """Updates the initial RPC configs for this test case.
+
+        Each test case will start a test client. The client takes RPC configs
+        and starts to send RPCs immediately. The config returned by this
+        function will be used to replace the default configs.
+
+        The default configs are passed in as arguments, so this method can
+        modify part of them.
+
+        Args:
+            rpc: The default rpc config, specifying RPCs to send, format
+            'UnaryCall,EmptyCall'
+            metadata: The metadata config, specifying metadata to send with each
+            RPC, format 'EmptyCall:key1:value1,UnaryCall:key2:value2'.
+
+        Returns:
+            A tuple contains the updated rpc and metadata config.
+        """
+        return rpc, metadata
+
+    @staticmethod
     @abc.abstractmethod
     def url_map_change(
             host_rule: HostRule,
@@ -278,10 +303,13 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         cls.started_test_cases.add(cls.__name__)
         # TODO(lidiz) concurrency is possible, pending multiple-instance change
         GcpResourceManager().test_client_runner.cleanup(force=True)
-        # Sending both RPCs when starting.
+        # Start the client, and allow the test to override the initial RPC config.
+        rpc, metadata = cls.client_init_config(rpc="UnaryCall,EmptyCall",
+                                               metadata="")
         cls.test_client = GcpResourceManager().test_client_runner.run(
             server_target=f'xds:///{cls.hostname()}',
-            rpc='UnaryCall,EmptyCall',
+            rpc=rpc,
+            metadata=metadata,
             qps=QPS.value,
             print_response=True)
 

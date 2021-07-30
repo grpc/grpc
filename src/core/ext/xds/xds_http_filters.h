@@ -107,6 +107,9 @@ class XdsHttpFilterImpl {
 
   // Returns true if the filter is supported on servers; false otherwise
   virtual bool IsSupportedOnServers() const = 0;
+
+  // Returns true if the filter must be the last filter in the chain.
+  virtual bool IsTerminalFilter() const { return false; }
 };
 
 class XdsHttpFilterRegistry {

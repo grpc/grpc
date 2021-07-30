@@ -18,12 +18,12 @@ test is considered successful if it doesn't freeze/timeout.
 """
 
 import atexit
+import logging
 import os
 import subprocess
 import sys
 import threading
 import unittest
-import logging
 
 from tests.unit import _server_shutdown_scenarios
 
