@@ -81,12 +81,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   p.client =
       grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
                       channel_args, "endpoint:server",
-                      grpc_slice_allocator_create_from_channel_args(
+                      grpc_slice_allocator_create(
                           resource_quota, "endpoint:server", channel_args));
   p.server =
       grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
                       channel_args, "endpoint:client",
-                      grpc_slice_allocator_create_from_channel_args(
+                      grpc_slice_allocator_create(
                           resource_quota, "endpoint:client", channel_args));
   grpc_resource_quota_unref_internal(resource_quota);
   return p;

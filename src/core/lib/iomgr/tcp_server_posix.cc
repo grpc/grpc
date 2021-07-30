@@ -272,7 +272,8 @@ static void on_read(void* arg, grpc_error_handle err) {
         grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str(),
                         grpc_slice_allocator_factory_create_slice_allocator(
                             sp->server->slice_allocator_factory,
-                            absl::StrCat("tcp_server_posix:", addr_str))),
+                            absl::StrCat("tcp_server_posix:", addr_str),
+                            sp->server->channel_args)),
         read_notifier_pollset, acceptor);
   }
 
@@ -617,9 +618,10 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->pending_data = buf;
     s_->on_accept_cb(
         s_->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(),
-                        grpc_slice_allocator_factory_create_slice_allocator(
-                            s_->slice_allocator_factory, addr_str)),
+        grpc_tcp_create(
+            fdobj, s_->channel_args, addr_str.c_str(),
+            grpc_slice_allocator_factory_create_slice_allocator(
+                s_->slice_allocator_factory, addr_str, s_->channel_args)),
         read_notifier_pollset, acceptor);
   }
 

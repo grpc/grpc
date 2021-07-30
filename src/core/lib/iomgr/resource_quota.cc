@@ -1005,28 +1005,19 @@ void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
 
 grpc_slice_allocator* grpc_slice_allocator_create(
     grpc_resource_quota* resource_quota, absl::string_view name,
-    size_t min_length, size_t max_length) {
+    const grpc_channel_args* args) {
   grpc_slice_allocator* slice_allocator = new grpc_slice_allocator;
+  slice_allocator->min_length = grpc_channel_args_find_integer(
+      args, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+      {GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE, -1, INT_MAX});
+  slice_allocator->max_length = grpc_channel_args_find_integer(
+      args, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+      {GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE, -1, INT_MAX});
   slice_allocator->resource_user =
       grpc_resource_user_create(resource_quota, name);
   GRPC_CLOSURE_INIT(&slice_allocator->on_allocated, ru_allocated_slices,
                     slice_allocator, grpc_schedule_on_exec_ctx);
-  slice_allocator->min_length = min_length;
-  slice_allocator->max_length = max_length;
   return slice_allocator;
-}
-
-grpc_slice_allocator* grpc_slice_allocator_create_from_channel_args(
-    grpc_resource_quota* resource_quota, absl::string_view name,
-    const grpc_channel_args* args) {
-  size_t min_allocate_length = grpc_channel_args_find_integer(
-      args, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
-      {GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE, -1, INT_MAX});
-  size_t max_allocate_length = grpc_channel_args_find_integer(
-      args, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
-      {GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE, -1, INT_MAX});
-  return grpc_slice_allocator_create(resource_quota, name, min_allocate_length,
-                                     max_allocate_length);
 }
 
 void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
@@ -1104,10 +1095,9 @@ grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
 
 grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
     grpc_slice_allocator_factory* slice_allocator_factory,
-    absl::string_view name) {
-  // TODO(hork): pull min & max allocate size from channel args
+    absl::string_view name, grpc_channel_args* args) {
   return grpc_slice_allocator_create(slice_allocator_factory->resource_quota,
-                                     name);
+                                     name, args);
 }
 
 void grpc_slice_allocator_factory_destroy(

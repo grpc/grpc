@@ -207,11 +207,11 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   addr = &req->addresses->addrs[req->next_address++];
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &req->connected, &req->ep,
-      grpc_slice_allocator_create(req->resource_quota,
-                                  grpc_sockaddr_to_uri(addr).c_str()),
-      req->context->pollset_set, nullptr, addr, req->deadline);
+  grpc_tcp_client_connect(&req->connected, &req->ep,
+                          grpc_slice_allocator_create(
+                              req->resource_quota, grpc_sockaddr_to_uri(addr)),
+                          req->context->pollset_set, nullptr, addr,
+                          req->deadline);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {

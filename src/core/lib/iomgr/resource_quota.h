@@ -166,24 +166,16 @@ typedef struct grpc_slice_allocator {
   grpc_resource_user* resource_user;
 } grpc_slice_allocator;
 
-/** Constructs a slice allocator. Caller is responsible for calling
-   \a grpc_slice_allocator_destroy.
-
-   \a min_length and \a max_length are the memory allocation limits that this
-   slice_allocator will allow, depending on the intent of the allocation. See
-   \a grpc_slice_allocator_allocate. Note: the default values are taken from the
-   original tcp_posix implementation. */
+/// Constructs a slice allocator using configuration from \a args.
+///
+/// Minimum and maximum limits for memory allocation size can be defined in
+/// \a args, and used to configure an allocator. See
+/// \a grpc_slice_allocator_allocate for details on how those values are used.
+///
+/// Caller is responsible for calling \a grpc_slice_allocator_destroy.
 grpc_slice_allocator* grpc_slice_allocator_create(
     grpc_resource_quota* resource_quota, absl::string_view name,
-    size_t min_length = GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE,
-    size_t max_length = GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE);
-
-/** Constructs a slice allocator using configuration from \a args. Currently,
-   \a min_length and \a max_length can be defined in channel_args, and used to
-   configure an allocator. See \a grpc_slice_allocator_create. */
-grpc_slice_allocator* grpc_slice_allocator_create_from_channel_args(
-    grpc_resource_quota* resource_quota, absl::string_view name,
-    const grpc_channel_args* args);
+    const grpc_channel_args* args = nullptr);
 
 /* Cleans up after a slice_allocator. */
 void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);
@@ -224,10 +216,11 @@ grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
 void grpc_slice_allocator_factory_destroy(
     grpc_slice_allocator_factory* slice_allocator_factory);
 
-/* A factory method to create and initialize a slice_allocator using the
- * factory's resource quota. \a name is the resulting resource_user name. */
+/** A factory method to create and initialize a slice_allocator using the
+  factory's resource quota. \a name is the resulting resource_user name. \a args
+  are used to configure the \a slice_allocator */
 grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
     grpc_slice_allocator_factory* slice_allocator_factory,
-    absl::string_view name);
+    absl::string_view name, grpc_channel_args* args = nullptr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

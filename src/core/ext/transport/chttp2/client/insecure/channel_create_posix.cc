@@ -51,9 +51,8 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_from_channel_args(args, true);
-  grpc_slice_allocator* allocator =
-      grpc_slice_allocator_create_from_channel_args(
-          resource_quota, "fd-client:endpoint", final_args);
+  grpc_slice_allocator* allocator = grpc_slice_allocator_create(
+      resource_quota, "fd-client:endpoint", final_args);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
       grpc_fd_create(fd, "client", true), args, "fd-client", allocator);
   grpc_transport* transport = grpc_create_chttp2_transport(
