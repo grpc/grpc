@@ -15,10 +15,10 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
 #include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
@@ -31,12 +31,8 @@ namespace grpc_core {
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
-  if (root_certificate.empty()) {
-    root_certificate_ = "";
-  } else {
-    root_certificate_ = std::move(root_certificate);
-  }
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      root_certificate_(std::move(root_certificate)) {
   if (IsKeyCertPairsListValid(pem_key_cert_pairs).ok()) {
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
@@ -72,11 +68,11 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
     if (root_being_watched && !root_has_update) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+          "Root Certificates are watched, while their contents are empty.");
     }
     if (identity_being_watched && !identity_has_update) {
       identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+          "Identity Certificates are watched, while their contents are empty.");
     }
     if (root_cert_error != GRPC_ERROR_NONE ||
         identity_cert_error != GRPC_ERROR_NONE) {
@@ -162,11 +158,11 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
     if (root_being_watched && !root_certificate.has_value()) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+          "Root Certificates are watched, while their contents are empty.");
     }
     if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
       identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+          "Identity Certificates are watched, while their contents are empty.");
     }
     if (root_cert_error != GRPC_ERROR_NONE ||
         identity_cert_error != GRPC_ERROR_NONE) {
@@ -219,10 +215,10 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
     grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unable to get latest root certificates.");
+        "Root Certificates are watched, while their contents are empty.");
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to get latest identity certificates.");
+            "Identity Certificates are watched, while their contents are empty.");
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
@@ -387,7 +383,7 @@ absl::Status DataWatcherCertificateProvider::SetRootCertificate(
   root_certificate_ = root_certificate;
   ExecCtx exec_ctx;
   grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unable to get latest root certificates.");
+      "Root Certificates are watched, while their contents are empty.");
   for (const auto& p : watcher_info_) {
     const std::string& cert_name = p.first;
     const WatcherInfo& info = p.second;
@@ -419,21 +415,12 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   if (!status.ok()) {
     std::string error_message = std::string(status.message());
     gpr_log(GPR_ERROR, "Key-Cert pair list error: %s", error_message.c_str());
-    grpc_error_handle identity_cert_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Key-Cert pair list.");
-    for (const auto& p : watcher_info_) {
-      if (p.second.identity_being_watched) {
-        distributor_->SetErrorForCert(/*cert_name*/ p.first, absl::nullopt,
-                                      GRPC_ERROR_REF(identity_cert_error));
-      }
-    }
-    GRPC_ERROR_UNREF(identity_cert_error);
     return status;
   }
   pem_key_cert_pairs_ = pem_key_cert_pairs;
   ExecCtx exec_ctx;
   grpc_error_handle identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unable to get latest identity certificates.");
+      "Identity Certificates are watched, while their contents are empty.");
   for (const auto& p : watcher_info_) {
     const std::string& cert_name = p.first;
     const WatcherInfo& info = p.second;

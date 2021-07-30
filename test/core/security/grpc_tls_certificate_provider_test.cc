@@ -45,9 +45,10 @@ namespace grpc_core {
 namespace testing {
 
 constexpr const char* kCertName = "cert_name";
-constexpr const char* kRootError = "Unable to get latest root certificates.";
+constexpr const char* kRootError = "Root Certificates are watched, while their contents are empty.";
 constexpr const char* kIdentityError =
-    "Unable to get latest identity certificates.";
+    "Identity Certificates are watched, while their contents are empty.";
+constexpr const char* kInvalidIdentityError = "Invalid Key-Cert pair list.";
 
 class GrpcTlsCertificateProviderTest : public ::testing::Test {
  protected:
@@ -722,7 +723,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
               ::testing::ElementsAre(
                   CredentialInfo(root_cert_, pem_key_cert_pair_list)));
   CancelWatch(watcher_state_1);
-  constexpr const char* kInvalidIdentityError = "Invalid Key-Cert pair list.";
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   absl::Status status = provider.SetKeyCertificatePairs(
@@ -732,8 +732,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(
                   CredentialInfo(root_cert_, pem_key_cert_pair_list)));
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              ::testing::ElementsAre(ErrorInfo("", kInvalidIdentityError)));
   CancelWatch(watcher_state_2);
 }
 
