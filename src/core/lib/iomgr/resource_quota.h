@@ -69,6 +69,8 @@ extern grpc_core::TraceFlag grpc_resource_quota_trace;
 // hard coding.
 constexpr size_t GRPC_RESOURCE_QUOTA_CALL_SIZE = 15 * 1024;
 constexpr size_t GRPC_RESOURCE_QUOTA_CHANNEL_SIZE = 50 * 1024;
+constexpr size_t GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE = 256;
+constexpr size_t GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE = 4 * 1024 * 1024;
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);
@@ -154,26 +156,53 @@ typedef struct grpc_slice_allocator {
   size_t length;
   /* Number of slices to allocate on the current request */
   size_t count;
+  /* Minimum size to allocate under memory pressure. */
+  size_t min_length;
+  /* Maximum size that can be allocated. */
+  size_t max_length;
   /* Destination for slices to allocate on the current request */
   grpc_slice_buffer* dest;
   /* Parent resource user */
   grpc_resource_user* resource_user;
 } grpc_slice_allocator;
 
-/* Constructs a slice allocator. Caller is responsible for calling
-   \a grpc_slice_allocator_destroy. */
+/** Constructs a slice allocator. Caller is responsible for calling
+   \a grpc_slice_allocator_destroy.
+
+   \a min_length and \a max_length are the memory allocation limits that this
+   slice_allocator will allow, depending on the intent of the allocation. See
+   \a grpc_slice_allocator_allocate. Note: the default values are taken from the
+   original tcp_posix implementation. */
 grpc_slice_allocator* grpc_slice_allocator_create(
-    grpc_resource_quota* resource_quota, absl::string_view name);
+    grpc_resource_quota* resource_quota, absl::string_view name,
+    size_t min_length = GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE,
+    size_t max_length = GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE);
+
+/** Constructs a slice allocator using configuration from \a args. Currently,
+   \a min_length and \a max_length can be defined in channel_args, and used to
+   configure an allocator. See \a grpc_slice_allocator_create. */
+grpc_slice_allocator* grpc_slice_allocator_create_from_channel_args(
+    grpc_resource_quota* resource_quota, absl::string_view name,
+    const grpc_channel_args* args);
 
 /* Cleans up after a slice_allocator. */
 void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);
 
-/* Allocate \a count slices of length \a length into \a dest. Only one request
+enum class grpc_slice_allocator_intent {
+  kDefault,    // Default intent allocates exactly the memory required.
+  kReadBuffer  // ReadBuffer intent may return a smaller slice than requested if
+               // memory pressure is high.
+};
+
+/** Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time. When an allocation is completed, calls \a cb
    with arg \a p. Returns whether the slice was allocated inline in the
-   function. If true, the \a cb will not be called. */
+   function. If true, the \a cb will not be called. The \a intent argument
+   allows allocation of smaller slices if memory pressure is high; the size is
+   implementation-dependent. */
 bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
                                    size_t length, size_t count,
+                                   grpc_slice_allocator_intent intent,
                                    grpc_slice_buffer* dest,
                                    grpc_iomgr_cb_func cb,
                                    void* p) GRPC_MUST_USE_RESULT;

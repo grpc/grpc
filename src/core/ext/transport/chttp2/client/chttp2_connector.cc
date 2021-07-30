@@ -84,8 +84,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   Ref().release();  // Ref held by callback.
   grpc_tcp_client_connect(
       &connected_, ep,
-      grpc_slice_allocator_create(
-          resource_quota_, grpc_sockaddr_to_string(&addr, false).c_str()),
+      grpc_slice_allocator_create_from_channel_args(
+          resource_quota_, grpc_sockaddr_to_string(&addr, false),
+          args.channel_args),
       args.interested_parties, args.channel_args, &addr, args.deadline);
 }
 

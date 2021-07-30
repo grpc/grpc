@@ -1004,13 +1004,29 @@ void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
 }
 
 grpc_slice_allocator* grpc_slice_allocator_create(
-    grpc_resource_quota* resource_quota, absl::string_view name) {
+    grpc_resource_quota* resource_quota, absl::string_view name,
+    size_t min_length, size_t max_length) {
   grpc_slice_allocator* slice_allocator = new grpc_slice_allocator;
   slice_allocator->resource_user =
       grpc_resource_user_create(resource_quota, name);
   GRPC_CLOSURE_INIT(&slice_allocator->on_allocated, ru_allocated_slices,
                     slice_allocator, grpc_schedule_on_exec_ctx);
+  slice_allocator->min_length = min_length;
+  slice_allocator->max_length = max_length;
   return slice_allocator;
+}
+
+grpc_slice_allocator* grpc_slice_allocator_create_from_channel_args(
+    grpc_resource_quota* resource_quota, absl::string_view name,
+    const grpc_channel_args* args) {
+  size_t min_allocate_length = grpc_channel_args_find_integer(
+      args, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+      {GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE, -1, INT_MAX});
+  size_t max_allocate_length = grpc_channel_args_find_integer(
+      args, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+      {GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE, -1, INT_MAX});
+  return grpc_slice_allocator_create(resource_quota, name, min_allocate_length,
+                                     max_allocate_length);
 }
 
 void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
@@ -1018,8 +1034,45 @@ void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
   delete slice_allocator;
 }
 
+size_t grpc_slice_allocator_adjust_allocation_length(
+    grpc_slice_allocator* slice_allocator, size_t requested_length,
+    grpc_slice_allocator_intent intent) {
+  if (intent == grpc_slice_allocator_intent::kDefault) {
+    return requested_length;
+  }
+  GPR_ASSERT(intent == grpc_slice_allocator_intent::kReadBuffer);
+  double pressure = grpc_resource_quota_get_memory_pressure(
+      slice_allocator->resource_user->resource_quota);
+  // Reduce allocation size proportional to the pressure > 80% usage.
+  size_t target =
+      requested_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
+  // Length will be some multiple of 8 bytes, rounded up
+  target = ((static_cast<size_t> GPR_CLAMP(target, slice_allocator->min_length,
+                                           slice_allocator->max_length)) +
+            255) &
+           ~static_cast<size_t>(255);
+  // Don't use more than 1/16th of the overall resource quota for a single
+  // read alloc
+  size_t rqmax = grpc_resource_quota_peek_size(
+      slice_allocator->resource_user->resource_quota);
+  if (target > rqmax / 16 && rqmax > 1024) {
+    target = rqmax / 16;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "SliceAllocator(%p) requested %d bytes for (%s) intent, adjusted "
+        "allocation size to %d",
+        slice_allocator, requested_length,
+        intent == grpc_slice_allocator_intent::kDefault ? "default" : "read",
+        target);
+  }
+  return target;
+}
+
 bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
                                    size_t length, size_t count,
+                                   grpc_slice_allocator_intent intent,
                                    grpc_slice_buffer* dest,
                                    grpc_iomgr_cb_func cb, void* p) {
   if (GPR_UNLIKELY(
@@ -1031,12 +1084,13 @@ bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
   }
   GRPC_CLOSURE_INIT(&slice_allocator->on_done, cb, p,
                     grpc_schedule_on_exec_ctx);
-  slice_allocator->length = length;
+  slice_allocator->length = grpc_slice_allocator_adjust_allocation_length(
+      slice_allocator, length, intent);
   slice_allocator->count = count;
   slice_allocator->dest = dest;
-  const bool ret =
-      grpc_resource_user_alloc(slice_allocator->resource_user, count * length,
-                               &slice_allocator->on_allocated);
+  const bool ret = grpc_resource_user_alloc(slice_allocator->resource_user,
+                                            count * slice_allocator->length,
+                                            &slice_allocator->on_allocated);
   if (ret) ru_alloc_slices(slice_allocator);
   return ret;
 }
@@ -1051,6 +1105,7 @@ grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
 grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
     grpc_slice_allocator_factory* slice_allocator_factory,
     absl::string_view name) {
+  // TODO(hork): pull min & max allocate size from channel args
   return grpc_slice_allocator_create(slice_allocator_factory->resource_quota,
                                      name);
 }

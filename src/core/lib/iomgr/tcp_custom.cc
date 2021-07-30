@@ -204,7 +204,8 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   TCP_REF(tcp, "read");
   if (grpc_slice_allocator_allocate(
           tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-          tcp->read_slices, tcp_read_allocation_done, tcp)) {
+          grpc_slice_allocator_intent::kReadBuffer, tcp->read_slices,
+          tcp_read_allocation_done, tcp)) {
     tcp_read_allocation_done(tcp, GRPC_ERROR_NONE);
   }
 }

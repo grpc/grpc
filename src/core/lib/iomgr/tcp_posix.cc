@@ -584,27 +584,6 @@ static void finish_estimate(grpc_tcp* tcp) {
   tcp->bytes_read_this_round = 0;
 }
 
-static size_t get_target_read_size(grpc_tcp* tcp) {
-  // DO NOT SUBMIT(hork): See @roth's comments on adding "peek size" to the
-  // slice_allocator.
-  grpc_resource_quota* rq =
-      grpc_resource_user_quota(tcp->slice_allocator->resource_user);
-  double pressure = grpc_resource_quota_get_memory_pressure(rq);
-  double target =
-      tcp->target_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
-  size_t sz = ((static_cast<size_t> GPR_CLAMP(target, tcp->min_read_chunk_size,
-                                              tcp->max_read_chunk_size)) +
-               255) &
-              ~static_cast<size_t>(255);
-  // don't use more than 1/16th of the overall resource quota for a single read
-  // alloc
-  size_t rqmax = grpc_resource_quota_peek_size(rq);
-  if (sz > rqmax / 16 && rqmax > 1024) {
-    sz = rqmax / 16;
-  }
-  return sz;
-}
-
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
@@ -866,7 +845,6 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
 }
 
 static void tcp_continue_read(grpc_tcp* tcp) {
-  size_t target_read_size = get_target_read_size(tcp);
   /* Wait for allocation only when there is no buffer left. */
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
@@ -874,7 +852,8 @@ static void tcp_continue_read(grpc_tcp* tcp) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
     if (GPR_UNLIKELY(!grpc_slice_allocator_allocate(
-            tcp->slice_allocator, target_read_size, 1, tcp->incoming_buffer,
+            tcp->slice_allocator, tcp->target_length, 1,
+            grpc_slice_allocator_intent::kReadBuffer, tcp->incoming_buffer,
             tcp_read_allocation_done, tcp))) {
       // Wait for allocation.
       return;

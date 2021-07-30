@@ -695,8 +695,9 @@ static void test_one_slice(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_slice_allocator_allocate(alloc, 1024, 1, &buffer,
-                                              inc_int_cb, &num_allocs));
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        alloc, 1024, 1, grpc_slice_allocator_intent::kDefault, &buffer,
+        inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
@@ -724,8 +725,9 @@ static void test_one_slice_through_slice_allocator_factory(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_slice_allocator_allocate(slice_allocator, 1024, 1, &buffer,
-                                              inc_int_cb, &num_allocs));
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        slice_allocator, 1024, 1, grpc_slice_allocator_intent::kDefault,
+        &buffer, inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
@@ -749,8 +751,9 @@ static void test_one_slice_deleted_late(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_slice_allocator_allocate(alloc, 1024, 1, &buffer,
-                                              inc_int_cb, &num_allocs));
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        alloc, 1024, 1, grpc_slice_allocator_intent::kDefault, &buffer,
+        inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
@@ -783,8 +786,9 @@ static void test_negative_rq_free_pool(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(!grpc_slice_allocator_allocate(alloc, 1024, 1, &buffer,
-                                              inc_int_cb, &num_allocs));
+    GPR_ASSERT(!grpc_slice_allocator_allocate(
+        alloc, 1024, 1, grpc_slice_allocator_intent::kDefault, &buffer,
+        inc_int_cb, &num_allocs));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }

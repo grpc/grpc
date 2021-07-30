@@ -61,15 +61,15 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   std::string final_name = absl::StrCat(name, ":client");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_from_channel_args(args, true);
-  p.client = grpc_tcp_create(
-      grpc_fd_create(sv[1], final_name.c_str(), false), args,
-      "socketpair-server",
-      grpc_slice_allocator_create(resource_quota, "server_endpoint"));
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
+                             args, "socketpair-server",
+                             grpc_slice_allocator_create_from_channel_args(
+                                 resource_quota, "server_endpoint", args));
   final_name = absl::StrCat(name, ":server");
-  p.server = grpc_tcp_create(
-      grpc_fd_create(sv[0], final_name.c_str(), false), args,
-      "socketpair-client",
-      grpc_slice_allocator_create(resource_quota, "client_endpoint"));
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
+                             args, "socketpair-client",
+                             grpc_slice_allocator_create_from_channel_args(
+                                 resource_quota, "client_endpoint", args));
   grpc_resource_quota_unref_internal(resource_quota);
   return p;
 }

@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
