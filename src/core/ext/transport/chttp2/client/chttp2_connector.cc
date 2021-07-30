@@ -46,6 +46,9 @@ Chttp2Connector::Chttp2Connector() {
 }
 
 Chttp2Connector::~Chttp2Connector() {
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref_internal(resource_quota_);
+  }
   if (endpoint_ != nullptr) {
     grpc_endpoint_destroy(endpoint_);
   }
@@ -203,9 +206,6 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       // code. Just verify that exit_early flag is set.
       GPR_DEBUG_ASSERT(args->exit_early);
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
-    }
-    if (self->resource_quota_ != nullptr) {
-      grpc_resource_quota_unref_internal(self->resource_quota_);
     }
     self->handshake_mgr_.reset();
   }
