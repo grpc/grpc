@@ -38,9 +38,6 @@ _CLEANUP_NAMESPACE = flags.DEFINE_bool(
     "cleanup_namespace",
     default=False,
     help="Delete namespace during resource cleanup")
-_REPLICA_COUNT = flags.DEFINE_integer("replica_count",
-                                     default=1,
-                                     help="Number of replicas")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
@@ -89,8 +86,7 @@ def main(argv):
         server_runner.run(
             test_port=xds_flags.SERVER_PORT.value,
             maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value,
-            secure_mode=_SECURE.value,
-            replica_count=_REPLICA_COUNT.value)
+            secure_mode=_SECURE.value)
 
     elif _CMD.value == 'cleanup':
         logger.info('Cleanup server')
