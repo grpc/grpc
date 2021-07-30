@@ -51,7 +51,7 @@ static const upb_msglayout *const envoy_extensions_filters_http_fault_v3_HTTPFau
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_HTTPFault__fields[14] = {
+static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_HTTPFault__fields[15] = {
   {1, UPB_SIZE(68, 136), 1, 1, 11, 1},
   {2, UPB_SIZE(72, 144), 2, 3, 11, 1},
   {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
@@ -66,12 +66,13 @@ static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_HTTPFaul
   {12, UPB_SIZE(44, 88), 0, 0, 9, 1},
   {13, UPB_SIZE(52, 104), 0, 0, 9, 1},
   {14, UPB_SIZE(60, 120), 0, 0, 9, 1},
+  {15, UPB_SIZE(1, 1), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_extensions_filters_http_fault_v3_HTTPFault_msginit = {
   &envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
-  UPB_SIZE(96, 192), 14, false, 255,
+  UPB_SIZE(96, 192), 15, false, 255,
 };
 
 #include "upb/port_undef.inc"
