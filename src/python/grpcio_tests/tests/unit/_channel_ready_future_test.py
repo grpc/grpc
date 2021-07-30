@@ -13,13 +13,14 @@
 # limitations under the License.
 """Tests of grpc.channel_ready_future."""
 
+import logging
 import threading
 import unittest
-import logging
 
 import grpc
-from tests.unit.framework.common import test_constants
+
 from tests.unit import thread_pool
+from tests.unit.framework.common import test_constants
 
 
 class _Callback(object):

@@ -27,9 +27,10 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset

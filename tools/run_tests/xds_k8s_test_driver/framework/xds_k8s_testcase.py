@@ -11,24 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
 import datetime
 import enum
 import hashlib
 import logging
 import time
-from typing import List
 from typing import Optional, Tuple
-
-import tenacity
-from google.protobuf import json_format
-from typing import Iterable, Optional, Tuple
 
 from absl import flags
 from absl.testing import absltest
+from google.protobuf import json_format
 
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.helpers import retryers
+import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -52,24 +50,35 @@ flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
 # Type aliases
+TrafficDirectorManager = traffic_director.TrafficDirectorManager
+TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
+KubernetesServerRunner = server_app.KubernetesServerRunner
+KubernetesClientRunner = client_app.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
-_DEFAULT_SECURE_MODE_MAINTENANCE_PORT = \
-    server_app.KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
 
-class XdsKubernetesTestCase(absltest.TestCase):
-    k8s_api_manager: k8s.KubernetesApiManager
-    secondary_k8s_api_manager: k8s.KubernetesApiManager
+class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
+    _resource_suffix_randomize: bool = True
+    client_namespace: str
+    client_runner: KubernetesClientRunner
     gcp_api_manager: gcp.api.GcpApiManager
-
-    TD_CONFIG_MAX_WAIT_SEC = 600
+    k8s_api_manager: k8s.KubernetesApiManager
+    resource_prefix: str
+    resource_suffix: str = ''
+    server_namespace: str
+    server_runner: KubernetesServerRunner
+    server_xds_port: int
+    td: TrafficDirectorManager
 
     @classmethod
     def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in
+        the class.
+        """
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
@@ -79,9 +88,17 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
-        # Base namespace
-        # TODO(sergiitk): generate for each test
-        cls.namespace: str = xds_flags.NAMESPACE.value
+        # Resource names.
+        # TODO(sergiitk): Drop namespace parsing when --namespace is removed.
+        cls.resource_prefix = (xds_flags.RESOURCE_PREFIX.value or
+                               xds_flags.NAMESPACE.value)
+        if not cls.resource_prefix:
+            raise flags.IllegalFlagValueError(
+                'Required one of the flags: --resource_prefix or --namespace')
+
+        if xds_flags.RESOURCE_SUFFIX.value is not None:
+            cls._resource_suffix_randomize = False
+            cls.resource_suffix = xds_flags.RESOURCE_SUFFIX.value
 
         # Test server
         cls.server_image = xds_k8s_flags.SERVER_IMAGE.value
@@ -105,25 +122,61 @@ class XdsKubernetesTestCase(absltest.TestCase):
         # Resource managers
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value)
-        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value)
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
     def setUp(self):
-        # TODO(sergiitk): generate namespace with run id for each test
-        self.server_namespace = self.namespace
-        self.client_namespace = self.namespace
+        """Hook method for setting up the test fixture before exercising it."""
+        super().setUp()
 
-        # Init this in child class
-        # TODO(sergiitk): consider making a method to be less error-prone
-        self.server_runners = {}
-        self.client_runner = None
-        self.td = None
+        if self._resource_suffix_randomize:
+            self.resource_suffix = framework.helpers.rand.random_resource_suffix(
+            )
+        logger.info('Test run resource prefix: %s, suffix: %s',
+                    self.resource_prefix, self.resource_suffix)
+
+        # TD Manager
+        self.td = self.initTrafficDirectorManager()
+
+        # Test Server runner
+        self.server_namespace = KubernetesServerRunner.make_namespace_name(
+            self.resource_prefix, self.resource_suffix)
+        self.server_runner = self.initKubernetesServerRunner()
+
+        # Test Client runner
+        self.client_namespace = KubernetesClientRunner.make_namespace_name(
+            self.resource_prefix, self.resource_suffix)
+        self.client_runner = self.initKubernetesClientRunner()
+
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
+
+        # Randomize xds port, when it's set to 0
+        if self.server_xds_port == 0:
+            # TODO(sergiitk): this is prone to race conditions:
+            #  The port might not me taken now, but there's not guarantee
+            #  it won't be taken until the tests get to creating
+            #  forwarding rule. This check is better than nothing,
+            #  but we should find a better approach.
+            self.server_xds_port = self.td.find_unused_forwarding_rule_port()
+            logger.info('Found unused xds port: %s', self.server_xds_port)
+
+    @abc.abstractmethod
+    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        raise NotImplementedError
 
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
-        cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def tearDown(self):
@@ -139,74 +192,34 @@ class XdsKubernetesTestCase(absltest.TestCase):
     def _cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
-        for server_runner in self.server_runners.values():
-            server_runner.cleanup(force=self.force_cleanup,
-                                       force_namespace=self.force_cleanup)
+        self.server_runner.cleanup(force=self.force_cleanup,
+                                   force_namespace=self.force_cleanup)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
                                self.server_xds_port,
                                health_check_port=self.server_maintenance_port)
 
-    def setupServerBackends(self, *, server_runner=None, bs_name=None,
-        wait_for_healthy_status=True, maxRatePerEndpoint: Optional[int] = None):
-        if server_runner is None:
-            server_runner = self.server_runners['default']
+    def setupServerBackends(self, *, wait_for_healthy_status=True):
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
-            server_runner.service_name, self.server_port)
+        neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
+            self.server_runner.service_name, self.server_port)
 
         # Add backends to the Backend Service
-        self.td.backend_service_add_neg_backends(neg_name, neg_zones,
-                                                 bs_name=bs_name,
-                                                 maxRatePerEndpoint=maxRatePerEndpoint)
+        self.td.backend_service_add_neg_backends(neg_name, neg_zones)
         if wait_for_healthy_status:
-            self.td.wait_for_backends_healthy_status(bs_name=bs_name)
-
-    def removeServerBackends(self, *, server_runner=None, bs_name=None):
-        if server_runner is None:
-            server_runner = self.server_runners['default']
-        # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
-            server_runner.service_name, self.server_port)
-
-        # Remove backends from the Backend Service
-        self.td.backend_service_remove_neg_backends(neg_name, neg_zones,
-                                                 bs_name=bs_name)
+            self.td.wait_for_backends_healthy_status()
 
     def assertSuccessfulRpcs(self,
                              test_client: XdsTestClient,
                              num_rpcs: int = 100):
-        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
+        lb_stats = self.sendRpcs(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
             failed,
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
-
-    @tenacity.retry(stop=tenacity.stop_after_delay(TD_CONFIG_MAX_WAIT_SEC),
-                    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
-                    wait=tenacity.wait_fixed(2),
-                    reraise=True)
-    def assertRpcsEventuallyGoToGivenServers(self,
-        test_client: XdsTestClient,
-        servers: List[XdsTestServer],
-        num_rpcs: int = 100):
-        server_names = [server.pod_name for server in servers]
-        logger.info(f'Verifying RPCs go to {server_names}')
-        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
-        failed = int(lb_stats.num_failures)
-        self.assertLessEqual(
-            failed,
-            0,
-            msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
-        for server_name in server_names:
-            self.assertIn(server_name, lb_stats.rpcs_by_peer,
-                          f'{server_name} did not receive RPCs')
-        for peer in lb_stats.rpcs_by_peer.keys():
-            self.assertIn(peer, server_names,
-                          f'Unexpected server {peer} received RPCs')
 
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
@@ -227,7 +240,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
-        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
+        lb_stats = self.sendRpcs(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertEqual(
             failed,
@@ -235,7 +248,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
             msg=f'Expected all RPCs to fail: {failed} of {num_rpcs} failed')
 
     @staticmethod
-    def getClientRpcStats(test_client: XdsTestClient,
+    def sendRpcs(test_client: XdsTestClient,
                  num_rpcs: int) -> LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
@@ -253,65 +266,60 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
+
     @classmethod
     def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in
+        the class.
+        """
         super().setUpClass()
         if cls.server_maintenance_port is None:
-            cls.server_maintenance_port = \
-                server_app.KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
+            cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
-    def setUp(self):
-        super().setUp()
+    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
+        return TrafficDirectorManager(self.gcp_api_manager,
+                                      project=self.project,
+                                      resource_prefix=self.resource_prefix,
+                                      resource_suffix=self.resource_suffix,
+                                      network=self.network)
 
-        # Traffic Director Configuration
-        self.td = traffic_director.TrafficDirectorManager(
-            self.gcp_api_manager,
-            project=self.project,
-            resource_prefix=self.namespace,
-            network=self.network)
-
-        # Ensures the firewall exist
-        if self.ensure_firewall:
-            self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
-
-        # Test Server Runner
-        self.server_runners['default'] = server_app.KubernetesServerRunner(
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        return KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
             image_name=self.server_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
-            network=self.network,
-            debug_use_port_forwarding=self.debug_use_port_forwarding)
+            network=self.network)
 
-        # Test Client Runner
-        self.client_runner = client_app.KubernetesClientRunner(
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        return KubernetesClientRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.client_namespace),
             deployment_name=self.client_name,
             image_name=self.client_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
-    def startTestServer(self, server_runner, replica_count=1, **kwargs) -> List[
-        XdsTestServer]:
-        test_servers = server_runner.run(
+    def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
+        test_server = self.server_runner.run(
             replica_count=replica_count,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
-            **kwargs)
-        for test_server in test_servers:
-            test_server.set_xds_address(self.server_xds_host,
-                                        self.server_xds_port)
-        return test_servers
+            **kwargs)[0]
+        test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
+        return test_server
 
     def startTestClient(self, test_server: XdsTestServer,
                         **kwargs) -> XdsTestClient:
@@ -322,6 +330,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
+    td: TrafficDirectorSecureManager
 
     class SecurityMode(enum.Enum):
         MTLS = enum.auto()
@@ -330,6 +339,9 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Hook method for setting up class fixture before running tests in
+        the class.
+        """
         super().setUpClass()
         if cls.server_maintenance_port is None:
             # In secure mode, the maintenance port is different from
@@ -337,44 +349,41 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             # Health Checks and Channelz tests available.
             # When not provided, use explicit numeric port value, so
             # Backend Health Checks are created on a fixed port.
-            cls.server_maintenance_port = _DEFAULT_SECURE_MODE_MAINTENANCE_PORT
+            cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
-    def setUp(self):
-        super().setUp()
-
-        # Traffic Director Configuration
-        self.td = traffic_director.TrafficDirectorSecureManager(
+    def initTrafficDirectorManager(self) -> TrafficDirectorSecureManager:
+        return TrafficDirectorSecureManager(
             self.gcp_api_manager,
             project=self.project,
-            resource_prefix=self.namespace,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
             network=self.network)
 
-        # Ensures the firewall exist
-        if self.ensure_firewall:
-            self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
-
-        # Test Server Runner
-        self.server_runners['default'] = server_app.KubernetesServerRunner(
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        return KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
             image_name=self.server_image,
+            td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             network=self.network,
-            td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             deployment_template='server-secure.deployment.yaml',
             debug_use_port_forwarding=self.debug_use_port_forwarding)
 
-        # Test Client Runner
-        self.client_runner = client_app.KubernetesClientRunner(
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        return KubernetesClientRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.client_namespace),
             deployment_name=self.client_name,
             image_name=self.client_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             deployment_template='client-secure.deployment.yaml',
@@ -383,12 +392,12 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding)
 
     def startSecureTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner['default'].run(
+        test_server = self.server_runner.run(
             replica_count=replica_count,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
             secure_mode=True,
-            **kwargs)
+            **kwargs)[0]
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 

@@ -18,14 +18,18 @@ import contextlib
 import enum
 import logging
 import sys
-import six
 
-from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
+from grpc._cython import cygrpc as _cygrpc
+from grpc._runtime_protos import protos
+from grpc._runtime_protos import protos_and_services
+from grpc._runtime_protos import services
+import six
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:
+    # pylint: disable=ungrouped-imports
     from grpc._grpcio_metadata import __version__
 except ImportError:
     __version__ = "dev0"
@@ -2091,8 +2095,6 @@ class Compression(enum.IntEnum):
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
 
-
-from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
 
 ###################################  __all__  #################################
 

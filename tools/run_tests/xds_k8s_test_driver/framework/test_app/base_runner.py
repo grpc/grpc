@@ -19,6 +19,7 @@ from typing import Optional
 import mako.template
 import yaml
 
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class RunnerError(Exception):
 class KubernetesBaseRunner:
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
     TEMPLATE_DIR_RELATIVE_PATH = f'../../{TEMPLATE_DIR_NAME}'
+    ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
 
     def __init__(self,
                  k8s_namespace,
@@ -53,7 +55,7 @@ class KubernetesBaseRunner:
 
     def cleanup(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
-            self._delete_namespace()
+            self.delete_namespace()
             self.namespace = None
 
     @staticmethod
@@ -129,6 +131,46 @@ class KubernetesBaseRunner:
                      namespace.metadata.creation_timestamp)
         return namespace
 
+    @staticmethod
+    def _get_workload_identity_member_name(project, namespace_name,
+                                           service_account_name):
+        """
+        Returns workload identity member name used to authenticate Kubernetes
+        service accounts.
+
+        https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+        """
+        return (f'serviceAccount:{project}.svc.id.goog'
+                f'[{namespace_name}/{service_account_name}]')
+
+    def _grant_workload_identity_user(self, *, gcp_iam, gcp_service_account,
+                                      service_account_name):
+        workload_identity_member = self._get_workload_identity_member_name(
+            gcp_iam.project, self.k8s_namespace.name, service_account_name)
+        logger.info('Granting %s to %s for GCP Service Account %s',
+                    self.ROLE_WORKLOAD_IDENTITY_USER, workload_identity_member,
+                    gcp_service_account)
+
+        gcp_iam.add_service_account_iam_policy_binding(
+            gcp_service_account, self.ROLE_WORKLOAD_IDENTITY_USER,
+            workload_identity_member)
+
+    def _revoke_workload_identity_user(self, *, gcp_iam, gcp_service_account,
+                                       service_account_name):
+        workload_identity_member = self._get_workload_identity_member_name(
+            gcp_iam.project, self.k8s_namespace.name, service_account_name)
+        logger.info('Revoking %s from %s for GCP Service Account %s',
+                    self.ROLE_WORKLOAD_IDENTITY_USER, workload_identity_member,
+                    gcp_service_account)
+        try:
+            gcp_iam.remove_service_account_iam_policy_binding(
+                gcp_service_account, self.ROLE_WORKLOAD_IDENTITY_USER,
+                workload_identity_member)
+        except gcp.api.Error as error:
+            logger.warning('Failed  %s from %s for Service Account %s: %r',
+                           self.ROLE_WORKLOAD_IDENTITY_USER,
+                           workload_identity_member, gcp_service_account, error)
+
     def _create_service_account(self, template,
                                 **kwargs) -> k8s.V1ServiceAccount:
         resource = self._create_from_template(template, **kwargs)
@@ -142,10 +184,6 @@ class KubernetesBaseRunner:
                      resource.metadata.self_link,
                      resource.metadata.creation_timestamp)
         return resource
-
-    def _reuse_service_account(self, service_account_name) -> k8s.V1ServiceAccount:
-        return self.k8s_namespace.get_service_account(service_account_name)
-
 
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         deployment = self._create_from_template(template, **kwargs)
@@ -211,7 +249,7 @@ class KubernetesBaseRunner:
             self.k8s_namespace.wait_for_service_account_deleted(name)
         logger.debug('Service account %s deleted', name)
 
-    def _delete_namespace(self, wait_for_deletion=True):
+    def delete_namespace(self, wait_for_deletion=True):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
@@ -248,3 +286,14 @@ class KubernetesBaseRunner:
             name, service_port)
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
+
+    @classmethod
+    def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,
+                             name: str) -> str:
+        """A helper to make consistent test app kubernetes namespace name
+        for given resource prefix and suffix."""
+        parts = [resource_prefix, name]
+        # Avoid trailing dash when the suffix is empty.
+        if resource_suffix:
+            parts.append(resource_suffix)
+        return '-'.join(parts)

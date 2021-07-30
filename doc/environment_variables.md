@@ -75,6 +75,7 @@ some configuration as environment variables that can be set.
     in DEBUG)
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
+  - ring_hash_lb - traces the ring hash load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - server_channel - lightweight trace of significant server channel events

@@ -388,17 +388,17 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 }
 
 /* set a socket using a grpc_socket_mutator */
-grpc_error_handle grpc_set_socket_with_mutator(int fd,
+grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);
-  if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
   }
   return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, const grpc_channel_args* args) {
+    int fd, grpc_fd_usage usage, const grpc_channel_args* args) {
   const grpc_arg* socket_mutator_arg =
       grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
   if (socket_mutator_arg == nullptr) {
@@ -407,7 +407,7 @@ grpc_error_handle grpc_apply_socket_mutator_in_args(
   GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
   grpc_socket_mutator* mutator =
       static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
-  return grpc_set_socket_with_mutator(fd, mutator);
+  return grpc_set_socket_with_mutator(fd, usage, mutator);
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;

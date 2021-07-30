@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 17.0.0
+PROJECT_NUMBER         = 18.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -811,7 +811,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
-include/grpc/event_engine/channel_args.h \
+include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice_allocator.h \
@@ -939,11 +939,13 @@ src/core/ext/filters/client_channel/resolver.h \
 src/core/ext/filters/client_channel/resolver/README.md \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
@@ -1009,6 +1011,7 @@ src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h \
 src/core/ext/filters/workarounds/workaround_utils.cc \
 src/core/ext/filters/workarounds/workaround_utils.h \
 src/core/ext/transport/README.md \
+src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
@@ -1034,6 +1037,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1483,6 +1488,7 @@ src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
+src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.cc \
@@ -1525,12 +1531,14 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
-src/core/lib/event_engine/slice_allocator.cc \
+src/core/lib/event_engine/endpoint_config.cc \
+src/core/lib/event_engine/endpoint_config_internal.h \
+src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/sockaddr.cc \
+src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
-src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
@@ -1635,6 +1643,7 @@ src/core/lib/iomgr/endpoint.h \
 src/core/lib/iomgr/endpoint_cfstream.cc \
 src/core/lib/iomgr/endpoint_cfstream.h \
 src/core/lib/iomgr/endpoint_pair.h \
+src/core/lib/iomgr/endpoint_pair_event_engine.cc \
 src/core/lib/iomgr/endpoint_pair_posix.cc \
 src/core/lib/iomgr/endpoint_pair_uv.cc \
 src/core/lib/iomgr/endpoint_pair_windows.cc \
@@ -1654,6 +1663,20 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/ev_windows.cc \
+src/core/lib/iomgr/event_engine/closure.cc \
+src/core/lib/iomgr/event_engine/closure.h \
+src/core/lib/iomgr/event_engine/endpoint.cc \
+src/core/lib/iomgr/event_engine/endpoint.h \
+src/core/lib/iomgr/event_engine/iomgr.cc \
+src/core/lib/iomgr/event_engine/iomgr.h \
+src/core/lib/iomgr/event_engine/pollset.cc \
+src/core/lib/iomgr/event_engine/pollset.h \
+src/core/lib/iomgr/event_engine/promise.h \
+src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
+src/core/lib/iomgr/event_engine/resolved_address_internal.h \
+src/core/lib/iomgr/event_engine/resolver.cc \
+src/core/lib/iomgr/event_engine/tcp.cc \
+src/core/lib/iomgr/event_engine/timer.cc \
 src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
@@ -1795,6 +1818,11 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
+src/core/lib/security/authorization/authorization_engine.h \
+src/core/lib/security/authorization/authorization_policy_provider.h \
+src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
+src/core/lib/security/authorization/evaluate_args.cc \
+src/core/lib/security/authorization/evaluate_args.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \

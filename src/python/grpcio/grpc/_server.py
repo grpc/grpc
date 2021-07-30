@@ -14,19 +14,18 @@
 """Service-side implementation of gRPC Python."""
 
 import collections
+from concurrent import futures
 import enum
 import logging
 import threading
 import time
-
-from concurrent import futures
-import six
 
 import grpc
 from grpc import _common
 from grpc import _compression
 from grpc import _interceptor
 from grpc._cython import cygrpc
+import six
 
 _LOGGER = logging.getLogger(__name__)
 

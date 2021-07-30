@@ -49,10 +49,6 @@ namespace {
 
 enum class Protocol { INPROC, TCP };
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using experimental::GenericCallbackServerContext;
-#endif
-
 class TestScenario {
  public:
   TestScenario(Protocol protocol, const std::string& creds_type)
@@ -96,7 +92,7 @@ class ContextAllocatorEnd2endTestBase
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
     }
-    builder.experimental().SetContextAllocator(std::move(context_allocator));
+    builder.SetContextAllocator(std::move(context_allocator));
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();
@@ -149,7 +145,7 @@ class ContextAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());

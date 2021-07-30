@@ -59,10 +59,10 @@ typedef enum {
 namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(experimental::ServerContextBase* context,
-                       const EchoRequest* request, EchoResponse* response);
+void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
+                       EchoResponse* response);
 
-void CheckServerAuthContext(const experimental::ServerContextBase* context,
+void CheckServerAuthContext(const ServerContextBase* context,
                             const std::string& expected_transport_security_type,
                             const std::string& expected_client_identity);
 
@@ -443,30 +443,28 @@ class TestMultipleServiceImpl : public RpcService {
 };
 
 class CallbackTestServiceImpl
-    : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
+    : public ::grpc::testing::EchoTestService::CallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
   explicit CallbackTestServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override;
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override;
 
-  experimental::ServerUnaryReactor* CheckClientInitialMetadata(
-      experimental::CallbackServerContext* context, const SimpleRequest*,
-      SimpleResponse*) override;
+  ServerUnaryReactor* CheckClientInitialMetadata(CallbackServerContext* context,
+                                                 const SimpleRequest*,
+                                                 SimpleResponse*) override;
 
-  experimental::ServerReadReactor<EchoRequest>* RequestStream(
-      experimental::CallbackServerContext* context,
-      EchoResponse* response) override;
+  ServerReadReactor<EchoRequest>* RequestStream(
+      CallbackServerContext* context, EchoResponse* response) override;
 
-  experimental::ServerWriteReactor<EchoResponse>* ResponseStream(
-      experimental::CallbackServerContext* context,
-      const EchoRequest* request) override;
+  ServerWriteReactor<EchoResponse>* ResponseStream(
+      CallbackServerContext* context, const EchoRequest* request) override;
 
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
-      experimental::CallbackServerContext* context) override;
+  ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {

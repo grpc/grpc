@@ -120,14 +120,6 @@ class PythonArtifact:
             environ['PIP'] = '/opt/python/{}/bin/pip3'.format(self.py_version)
             environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
-            # when crosscompiling, we need to force statically linking libstdc++
-            # otherwise libstdc++ symbols would be too new and the resulting
-            # wheel wouldn't pass the auditwheel check.
-            # This is needed because C core won't build with GCC 4.8 that's
-            # included in the default dockcross toolchain and we needed
-            # to opt into using a slighly newer version of GCC.
-            environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
-
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_python_linux_{}'.format(
@@ -146,14 +138,6 @@ class PythonArtifact:
             environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             if self.arch == 'aarch64':
                 environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
-                # when crosscompiling, we need to force statically linking libstdc++
-                # otherwise libstdc++ symbols would be too new and the resulting
-                # wheel wouldn't pass the auditwheel check.
-                # This is needed because C core won't build with GCC 4.8 that's
-                # included in the default dockcross toolchain and we needed
-                # to opt into using a slighly newer version of GCC.
-                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
-
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
@@ -263,7 +247,7 @@ class CSharpExtArtifact:
                 if self.arch == 'aarch64':
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux_2_24_aarch64'
                 return create_docker_jobspec(
                     self.name, dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh')
@@ -318,7 +302,7 @@ class ProtocArtifact:
                 if self.arch == 'aarch64':
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_protoc_aarch64'
                 environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
@@ -374,41 +358,34 @@ def targets():
         PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
-        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('manylinux_2_24', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('manylinux_2_24', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('manylinux_2_24', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux_2_24', 'aarch64', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m'),
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
-        PythonArtifact('macos', 'x64', 'python2.7'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('macos', 'x64', 'python3.9'),
-        PythonArtifact('windows', 'x86', 'Python27_32bit'),
         PythonArtifact('windows', 'x86', 'Python35_32bit'),
         PythonArtifact('windows', 'x86', 'Python36_32bit'),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x86', 'Python39_32bit'),
-        PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),

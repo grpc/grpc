@@ -31,7 +31,9 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
@@ -1614,28 +1616,25 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-// Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
-// Rolling dices in drop/fault-injection generates a binomial distribution (if
-// our code is not horribly wrong). Let's make "n" the number of samples, "p"
-// the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
-// binomial distribution as a normal distribution.
+// Returns the number of RPCs needed to pass error_tolerance at 99.99994%
+// chance. Rolling dices in drop/fault-injection generates a binomial
+// distribution (if our code is not horribly wrong). Let's make "n" the number
+// of samples, "p" the probability. If we have np>5 & n(1-p)>5, we can
+// approximately treat the binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
-// need to reach 99.99%. Based on Wiki's table
-// https://en.wikipedia.org/wiki/Standard_normal_table, we need 3.89 sigma
-// (standard deviation) to cover the probability area of 99.99%. In another
-// word, for a sample with size "n" probability "p" error-tolerance "k", we want
-// the error always land within 3.89 sigma. The sigma of binominal distribution
-// and be computed as sqrt(np(1-p)). Hence, we have the equation:
+// need to reach 99.995%. Based on Wiki's table
+// https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule, we need 5.00
+// sigma (standard deviation) to cover the probability area of 99.99994%. In
+// another word, for a sample with size "n" probability "p" error-tolerance "k",
+// we want the error always land within 5.00 sigma. The sigma of binominal
+// distribution and be computed as sqrt(np(1-p)). Hence, we have the equation:
 //
-//   kn <= 3.89 * sqrt(np(1-p))
-//
-// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
-// k=0.01, n >= 37830.
+//   kn <= 5.00 * sqrt(np(1-p))
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
-      ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+      ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
           "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
@@ -1879,8 +1878,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    int server_sleep_us = 0;
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
+    StatusCode server_expected_error = StatusCode::OK;
 
     RpcOptions() {}
 
@@ -1920,8 +1921,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
 
+    RpcOptions& set_server_sleep_us(int rpc_server_sleep_us) {
+      server_sleep_us = rpc_server_sleep_us;
+      return *this;
+    }
+
     RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
       client_cancel_after_us = rpc_client_cancel_after_us;
+      return *this;
+    }
+
+    RpcOptions& set_server_expected_error(StatusCode code) {
+      server_expected_error = code;
       return *this;
     }
 
@@ -1939,6 +1950,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (server_fail) {
         request->mutable_param()->mutable_expected_error()->set_code(
             GRPC_STATUS_FAILED_PRECONDITION);
+      }
+      if (server_sleep_us != 0) {
+        request->mutable_param()->set_server_sleep_us(server_sleep_us);
       }
       if (client_cancel_after_us != 0) {
         request->mutable_param()->set_client_cancel_after_us(
@@ -2095,6 +2109,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return addresses;
   }
 
+  std::string CreateMetadataValueThatHashesToBackendPort(int port) {
+    return absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":", port, "_0");
+  }
+
+  std::string CreateMetadataValueThatHashesToBackend(int index) {
+    return CreateMetadataValueThatHashesToBackendPort(backends_[index]->port());
+  }
+
   void SetNextResolution(
       const std::vector<int>& ports,
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
@@ -2179,6 +2201,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (local_response) response = new EchoResponse;
     ClientContext context;
     EchoRequest request;
+    if (rpc_options.server_expected_error != StatusCode::OK) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(rpc_options.server_expected_error);
+    }
     rpc_options.SetupRpc(&context, &request);
     Status status;
     switch (rpc_options.service) {
@@ -2210,16 +2236,89 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure(
-      const size_t times = 1, const RpcOptions& rpc_options = RpcOptions(),
-      const StatusCode expected_error_code = StatusCode::OK) {
-    for (size_t i = 0; i < times; ++i) {
-      const Status status = SendRpc(rpc_options);
+  struct CheckRpcSendFailureOptions {
+    std::function<bool(size_t)> continue_predicate = [](size_t i) {
+      return i < 1;
+    };
+    RpcOptions rpc_options;
+    StatusCode expected_error_code = StatusCode::OK;
+
+    CheckRpcSendFailureOptions() {}
+
+    CheckRpcSendFailureOptions& set_times(size_t times) {
+      continue_predicate = [times](size_t i) { return i < times; };
+      return *this;
+    }
+
+    CheckRpcSendFailureOptions& set_continue_predicate(
+        std::function<bool(size_t)> pred) {
+      continue_predicate = std::move(pred);
+      return *this;
+    }
+
+    CheckRpcSendFailureOptions& set_rpc_options(const RpcOptions& options) {
+      rpc_options = options;
+      return *this;
+    }
+
+    CheckRpcSendFailureOptions& set_expected_error_code(StatusCode code) {
+      expected_error_code = code;
+      return *this;
+    }
+  };
+
+  void CheckRpcSendFailure(const CheckRpcSendFailureOptions& options =
+                               CheckRpcSendFailureOptions()) {
+    for (size_t i = 0; options.continue_predicate(i); ++i) {
+      const Status status = SendRpc(options.rpc_options);
       EXPECT_FALSE(status.ok());
-      if (expected_error_code != StatusCode::OK) {
-        EXPECT_EQ(expected_error_code, status.error_code());
+      if (options.expected_error_code != StatusCode::OK) {
+        EXPECT_EQ(options.expected_error_code, status.error_code());
       }
     }
+  }
+
+  bool WaitForNack(
+      std::function<AdsServiceImpl::ResponseState::State()> get_state,
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    auto deadline = absl::Now() + absl::Seconds(30);
+    bool success = true;
+    CheckRpcSendFailure(CheckRpcSendFailureOptions()
+                            .set_continue_predicate([&](size_t) {
+                              if (absl::Now() >= deadline) {
+                                success = false;
+                                return false;
+                              }
+                              return get_state() !=
+                                     AdsServiceImpl::ResponseState::NACKED;
+                            })
+                            .set_expected_error_code(expected_status));
+    return success;
+  }
+
+  bool WaitForLdsNack(StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    return WaitForNack(
+        [&]() {
+          return balancers_[0]->ads_service()->lds_response_state().state;
+        },
+        expected_status);
+  }
+
+  bool WaitForRdsNack() {
+    return WaitForNack(
+        [&]() { return RouteConfigurationResponseState(0).state; });
+  }
+
+  bool WaitForCdsNack() {
+    return WaitForNack([&]() {
+      return balancers_[0]->ads_service()->cds_response_state().state;
+    });
+  }
+
+  bool WaitForEdsNack() {
+    return WaitForNack([&]() {
+      return balancers_[0]->ads_service()->eds_response_state().state;
+    });
   }
 
   static Listener BuildListener(const RouteConfiguration& route_config) {
@@ -2236,6 +2335,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return listener;
   }
 
+  AdsServiceImpl::EdsResourceArgs::Endpoint CreateEndpoint(
+      size_t backend_idx, HealthStatus health_status = HealthStatus::UNKNOWN,
+      int lb_weight = 1) {
+    return AdsServiceImpl::EdsResourceArgs::Endpoint(
+        backends_[backend_idx]->port(), health_status, lb_weight);
+  }
+
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint>
   CreateEndpointsForBackends(size_t start_index = 0, size_t stop_index = 0,
                              HealthStatus health_status = HealthStatus::UNKNOWN,
@@ -2243,7 +2349,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (stop_index == 0) stop_index = backends_.size();
     std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
     for (size_t i = start_index; i < stop_index; ++i) {
-      endpoints.emplace_back(backends_[i]->port(), health_status, lb_weight);
+      endpoints.emplace_back(CreateEndpoint(i, health_status, lb_weight));
     }
     return endpoints;
   }
@@ -2271,6 +2377,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         if (locality.endpoints.size() > i &&
             locality.endpoints[i].health_status != HealthStatus::UNKNOWN) {
           lb_endpoints->set_health_status(locality.endpoints[i].health_status);
+        }
+        if (locality.endpoints.size() > i &&
+            locality.endpoints[i].lb_weight >= 1) {
+          lb_endpoints->mutable_load_balancing_weight()->set_value(
+              locality.endpoints[i].lb_weight);
         }
         auto* endpoint = lb_endpoints->mutable_endpoint();
         auto* address = endpoint->mutable_address();
@@ -2398,7 +2509,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
-        experimental::XdsServerBuilder builder;
+        XdsServerBuilder builder;
         if (GetParam().bootstrap_source() ==
             TestType::kBootstrapFromChannelArg) {
           builder.SetOption(
@@ -2659,18 +2770,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       ConcurrentRpc* rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
       grpc_millis t0 = NowFromCycleCounter();
-      stub->experimental_async()->Echo(
-          &rpc->context, &request, &rpc->response,
-          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
-            rpc->status = s;
-            rpc->elapsed_time = NowFromCycleCounter() - t0;
-            bool done;
-            {
-              absl::MutexLock lock(&mu);
-              done = (++completed) == num_rpcs;
-            }
-            if (done) cv.Signal();
-          });
+      stub->async()->Echo(&rpc->context, &request, &rpc->response,
+                          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
+                            rpc->status = s;
+                            rpc->elapsed_time = NowFromCycleCounter() - t0;
+                            bool done;
+                            {
+                              absl::MutexLock lock(&mu);
+                              done = (++completed) == num_rpcs;
+                            }
+                            if (done) cv.Signal();
+                          });
     }
     {
       absl::MutexLock lock(&mu);
@@ -2766,8 +2876,8 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   }
 }
 
-// Tests that subchannel sharing works when the same backend is listed multiple
-// times.
+// Tests that subchannel sharing works when the same backend is listed
+// multiple times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2852,8 +2962,8 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
-// Tests that RPCs fail when the backends are down, and will succeed again after
-// the backends are restarted.
+// Tests that RPCs fail when the backends are down, and will succeed again
+// after the backends are restarted.
 TEST_P(BasicTest, BackendsRestart) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2867,14 +2977,14 @@ TEST_P(BasicTest, BackendsRestart) {
   ShutdownAllBackends();
   // Sending multiple failed requests instead of just one to ensure that the
   // client notices that all backends are down before we restart them. If we
-  // didn't do this, then a single RPC could fail here due to the race condition
-  // between the LB pick and the GOAWAY from the chosen backend being shut down,
-  // which would not actually prove that the client noticed that all of the
-  // backends are down. Then, when we send another request below (which we
-  // expect to succeed), if the callbacks happen in the wrong order, the same
-  // race condition could happen again due to the client not yet having noticed
-  // that the backends were all down.
-  CheckRpcSendFailure(num_backends_);
+  // didn't do this, then a single RPC could fail here due to the race
+  // condition between the LB pick and the GOAWAY from the chosen backend
+  // being shut down, which would not actually prove that the client noticed
+  // that all of the backends are down. Then, when we send another request
+  // below (which we expect to succeed), if the callbacks happen in the wrong
+  // order, the same race condition could happen again due to the client not
+  // yet having noticed that the backends were all down.
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(num_backends_));
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
@@ -2991,7 +3101,7 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   do {
   } while (SendRpc(RpcOptions(), nullptr).ok());
   // Make sure RPCs are still failing.
-  CheckRpcSendFailure(1000);
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
@@ -3259,17 +3369,30 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_FALSE(status.ok());
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::AllOf(
-          ::testing::HasSubstr(absl::StrCat(
-              kServerName, ": Listener has neither address nor ApiListener")),
-          ::testing::HasSubstr(
-              absl::StrCat(kServerName2,
-                           ": Listener has neither address nor ApiListener"))));
+  // Wait for second NACK to be reported to xDS server.
+  auto deadline = absl::Now() + absl::Seconds(30);
+  bool timed_out = false;
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions().set_continue_predicate([&](size_t) {
+        if (absl::Now() >= deadline) {
+          timed_out = true;
+          return false;
+        }
+        const auto response_state =
+            balancers_[0]->ads_service()->lds_response_state();
+        return response_state.state != AdsServiceImpl::ResponseState::NACKED ||
+               !absl::StrContains(
+                   response_state.error_message,
+                   absl::StrCat(
+                       kServerName,
+                       ": Listener has neither address nor ApiListener")) ||
+               !absl::StrContains(
+                   response_state.error_message,
+                   absl::StrCat(
+                       kServerName2,
+                       ": Listener has neither address nor ApiListener"));
+      }));
+  ASSERT_FALSE(timed_out);
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
@@ -3443,9 +3566,8 @@ TEST_P(LdsTest, NoApiListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3465,9 +3587,8 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3489,9 +3610,8 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3501,7 +3621,8 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager has a config_source field that does not specify ADS.
+// http_connection_manager has a config_source field that does not specify
+// ADS.
 TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -3513,67 +3634,63 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
+                                   "RDS does not specify ADS."));
 }
 
-// Tests that we ignore filters after the router filter.
-TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
+// Tests that we NACK non-terminal filters at the end of the list.
+TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForAllBackends();
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "non-terminal filter for config type grpc.testing"
+                  ".client_only_http_filter is the last filter in the chain"));
 }
 
-// Test that we fail RPCs if there is no router filter.
-TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
+// Test that we NACK terminal filters that are not at the end of the list.
+TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  http_connection_manager.clear_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  Status status = SendRpc();
-  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(), "no xDS HTTP router filter configured");
-  // Wait until xDS server sees ACK.
-  while (balancers_[0]->ads_service()->lds_response_state().state ==
-         AdsServiceImpl::ResponseState::SENT) {
-    CheckRpcSendFailure();
-  }
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "terminal filter for config type envoy.extensions.filters.http"
+          ".router.v3.Router must be the last filter in the chain"));
 }
 
 // Test that we NACK empty filter names.
@@ -3582,23 +3699,21 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("empty filter name at index 1"));
+              ::testing::HasSubstr("empty filter name at index 0"));
 }
 
 // Test that we NACK duplicate HTTP filter names.
@@ -3609,16 +3724,14 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
+  http_connection_manager.mutable_http_filters(0)
+      ->mutable_typed_config()
+      ->PackFrom(HTTPFault());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3632,19 +3745,16 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3659,7 +3769,9 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   filter->set_is_optional(true);
@@ -3683,18 +3795,16 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->set_name("unknown");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3709,7 +3819,10 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->Clear();
   filter->set_name("unknown");
   filter->set_is_optional(true);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3732,21 +3845,18 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(listener);
   filter->mutable_typed_config()->set_type_url(
-      "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router");
+      "type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3754,7 +3864,7 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       response_state.error_message,
       ::testing::HasSubstr(
           "filter config for type "
-          "envoy.extensions.filters.http.router.v3.Router failed to parse"));
+          "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
 }
 
 // Test that we NACK HTTP filters unsupported on client-side.
@@ -3763,20 +3873,17 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -3792,7 +3899,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
@@ -3805,7 +3914,6 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForBackend(0);
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
@@ -3871,7 +3979,7 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   do {
   } while (SendRpc(RpcOptions(), nullptr).ok());
   // Make sure RPCs are still failing.
-  CheckRpcSendFailure(1000);
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
@@ -3893,8 +4001,8 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should choose the virtual host with matching domain if
-// multiple virtual hosts exist in the LDS response.
+// Tests that LDS client should choose the virtual host with matching domain
+// if multiple virtual hosts exist in the LDS response.
 TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   RouteConfiguration route_config = default_route_config_;
   *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
@@ -3935,7 +4043,7 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -3968,7 +4076,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -3984,7 +4092,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4000,7 +4108,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4016,7 +4124,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4032,7 +4140,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4048,7 +4156,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4064,7 +4172,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4080,7 +4188,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4096,7 +4204,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4113,7 +4221,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4129,7 +4237,7 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4147,7 +4255,7 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -4175,7 +4283,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4202,7 +4310,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -4230,13 +4338,12 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "RouteAction weighted_cluster cluster contains empty cluster name."));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("RouteAction weighted_cluster cluster "
+                                   "contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
@@ -4258,7 +4365,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -4278,7 +4385,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -4300,7 +4407,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -4660,72 +4767,6 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
 }
 
-TEST_P(LdsRdsTest, XdsRoutingPathRegexMatchingCaseInsensitive) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const size_t kNumEcho1Rpcs = 10;
-  const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
-  // Populating Route Configurations for LDS.
-  RouteConfiguration new_route_config = default_route_config_;
-  // First route will not match, since it's case-sensitive.
-  // Second route will match with same path.
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->mutable_safe_regex()->set_regex(
-      ".*EcHoTeSt1SErViCe.*");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->mutable_safe_regex()->set_regex(
-      ".*EcHoTeSt1SErViCe.*");
-  route2->mutable_match()->mutable_case_sensitive()->set_value(false);
-  route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(0, new_route_config);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
-}
-
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -4992,8 +5033,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
-  // Change default route to a new cluster to help to identify when new polices
-  // are seen by the client.
+  // Change default route to a new cluster to help to identify when new
+  // polices are seen by the client.
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
@@ -5258,8 +5299,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(0, new_route_config);
-  // Wait for RPCs to go to the new backend: 1, this ensures that the client has
-  // processed the update.
+  // Wait for RPCs to go to the new backend: 1, this ensures that the client
+  // has processed the update.
   WaitForBackend(
       1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
              true));
@@ -5366,13 +5407,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   grpc_millis t1 =
       t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
   grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_rpc_service(SERVICE_ECHO1)
-                          .set_rpc_method(METHOD_ECHO1)
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions()
+                  .set_rpc_service(SERVICE_ECHO1)
+                  .set_rpc_method(METHOD_ECHO1)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);
   EXPECT_LT(t0, t2);
@@ -5380,13 +5423,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t0 = NowFromCycleCounter();
   t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_rpc_service(SERVICE_ECHO2)
-                          .set_rpc_method(METHOD_ECHO2)
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions()
+                  .set_rpc_service(SERVICE_ECHO2)
+                  .set_rpc_method(METHOD_ECHO2)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);
   EXPECT_LT(t0, t2);
@@ -5394,10 +5439,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t0 = NowFromCycleCounter();
   t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   t2 = t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis;
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+              kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);
   EXPECT_LT(t0, t2);
@@ -5477,13 +5523,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   SetListenerAndRouteConfiguration(0, std::move(listener), new_route_config);
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_rpc_service(SERVICE_ECHO1)
-                          .set_rpc_method(METHOD_ECHO1)
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions()
+                  .set_rpc_service(SERVICE_ECHO1)
+                  .set_rpc_method(METHOD_ECHO1)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -5491,13 +5539,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
             kTimeoutApplicationSecond * 1000000000);
   // Test application timeout is applied for route 2
   t0 = system_clock::now();
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_rpc_service(SERVICE_ECHO2)
-                          .set_rpc_method(METHOD_ECHO2)
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions()
+                  .set_rpc_service(SERVICE_ECHO2)
+                  .set_rpc_method(METHOD_ECHO2)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
@@ -5529,10 +5579,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
                                    default_route_config_);
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+              kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -5551,15 +5602,340 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
       {{"locality0", {MakeNonExistantEndpoint()}}});
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+              kTimeoutApplicationSecond * 1000))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we retried the correct number of times on all supported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
+          .set_expected_error_code(StatusCode::INTERNAL));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::RESOURCE_EXHAUSTED))
+          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
+          .set_expected_error_code(StatusCode::UNAVAILABLE));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Ensure we don't retry on an unsupported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::UNAUTHENTICATED))
+          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* retry_policy =
+      new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we retried the correct number of times on a supported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  // Set num retries to 3, but due to longer back off, we expect only 1 retry
+  // will take place.
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  // Set backoff to 1 second, 1/2 of rpc timeout of 2 second.
+  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_interval->set_nanos(0);
+  SetRouteConfiguration(0, new_route_config);
+  // No need to set max interval and just let it be the default of 10x of base.
+  // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  // Set num retries to 3, but due to longer back off, we expect only 2 retry
+  // will take place, while the 2nd one will obey the max backoff.
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  // Set backoff to 1 second.
+  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_interval->set_nanos(0);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  // Set max interval to be the same as base, so 2 retries will take 2 seconds
+  // and both retries will take place before the 2.5 seconds rpc timeout.
+  // Tested to ensure if max is not set, this test will be the same as
+  // XdsRetryPolicyLongBackOff and we will only see 1 retry in that case.
+  max_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  max_interval->set_nanos(0);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("5xx");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect no retry.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("deadline-exceeded");
+  // Setting num_retries to zero is not valid.
+  retry_policy->mutable_num_retries()->set_value(0);
+  SetRouteConfiguration(0, new_route_config);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction RetryPolicy num_retries set to invalid value 0."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("deadline-exceeded");
+  retry_policy->mutable_num_retries()->set_value(1);
+  // RetryBackoff is there but base interval is missing.
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(0);
+  max_interval->set_nanos(250000000);
+  SetRouteConfiguration(0, new_route_config);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction RetryPolicy RetryBackoff missing base interval."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyDisabled) {
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we don't retry on supported statuses.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
+          .set_expected_error_code(StatusCode::INTERNAL));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::RESOURCE_EXHAUSTED))
+          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
+          .set_expected_error_code(StatusCode::UNAVAILABLE));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Ensure we don't retry on an unsupported status.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::UNAUTHENTICATED))
+          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
@@ -5972,11 +6348,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6017,11 +6389,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6040,11 +6408,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6085,11 +6449,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -6108,11 +6468,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6155,11 +6511,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6179,11 +6531,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6226,11 +6574,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -6254,11 +6598,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6311,11 +6651,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6341,11 +6677,7 @@ TEST_P(LdsRdsTest,
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
@@ -6398,11 +6730,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Wait until xDS server sees NACK.
-  do {
-    CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
@@ -6429,6 +6757,14 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Set Logical DNS result
   {
@@ -6440,6 +6776,263 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   }
   // Wait for traffic to go to backend 1.
   WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "load_assignment not present for LOGICAL_DNS cluster"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
+                           "exactly one locality, found 0"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* load_assignment = cluster.mutable_load_assignment();
+  load_assignment->add_endpoints();
+  load_assignment->add_endpoints();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
+                           "exactly one locality, found 2"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()->add_endpoints();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "locality for LOGICAL_DNS cluster must have exactly one "
+                  "endpoint, found 0"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* locality = cluster.mutable_load_assignment()->add_endpoints();
+  locality->add_lb_endpoints();
+  locality->add_lb_endpoints();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "locality for LOGICAL_DNS cluster must have exactly one "
+                  "endpoint, found 2"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LbEndpoint endpoint field not set"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("Endpoint address field not set"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("Address socket_address field not set"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address()
+      ->set_resolver_name("foo");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
+                                   "custom resolver name set"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address();
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("SocketAddress address field not set"));
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address()
+      ->set_address(kServerName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("SocketAddress port_value field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6522,6 +7115,14 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
@@ -6578,6 +7179,14 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
@@ -6618,7 +7227,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6640,7 +7249,7 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6648,15 +7257,15 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
               ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
-// Tests that CDS client should send a NACK if the cluster type in CDS response
-// is unsupported.
+// Tests that CDS client should send a NACK if the cluster type in CDS
+// response is unsupported.
 TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6683,7 +7292,7 @@ TEST_P(CdsTest, MultipleBadResources) {
   // Send RPC.
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6695,15 +7304,15 @@ TEST_P(CdsTest, MultipleBadResources) {
                       kClusterName2, ": DiscoveryType is not valid."))));
 }
 
-// Tests that CDS client should send a NACK if the eds_config in CDS response is
-// other than ADS.
+// Tests that CDS client should send a NACK if the eds_config in CDS response
+// is other than ADS.
 TEST_P(CdsTest, WrongEdsConfig) {
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6711,15 +7320,15 @@ TEST_P(CdsTest, WrongEdsConfig) {
               ::testing::HasSubstr("EDS ConfigSource is not ADS."));
 }
 
-// Tests that CDS client should send a NACK if the lb_policy in CDS response is
-// other than ROUND_ROBIN.
+// Tests that CDS client should send a NACK if the lb_policy in CDS response
+// is other than ROUND_ROBIN.
 TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6727,20 +7336,817 @@ TEST_P(CdsTest, WrongLbPolicy) {
               ::testing::HasSubstr("LB policy is not supported."));
 }
 
-// Tests that CDS client should send a NACK if the lrs_server in CDS response is
-// other than SELF.
+// Tests that CDS client should send a NACK if the lrs_server in CDS response
+// is other than SELF.
 TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = default_cluster_;
   cluster.mutable_lrs_server()->mutable_ads();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("LRS ConfigSource is not self."));
+}
+
+// Tests that ring hash policy that hashes using channel id ensures all RPCs
+// to go 1 particular backend.
+TEST_P(CdsTest, RingHashChannelIdHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk(100);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a header value can spread
+// RPCs across all the backends.
+TEST_P(CdsTest, RingHashHeaderHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  // Note each type of RPC will contains a header value that will always be
+  // hashed to a specific backend as the header value matches the value used
+  // to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(2, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(3, WaitForBackendOptions(), rpc_options3);
+  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(100, rpc_options1);
+  CheckRpcSendOk(100, rpc_options2);
+  CheckRpcSendOk(100, rpc_options3);
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
+  }
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a header value and regex
+// rewrite to aggregate RPCs to 1 backend.
+TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  hash_policy->mutable_header()
+      ->mutable_regex_rewrite()
+      ->mutable_pattern()
+      ->set_regex("[0-9]+");
+  hash_policy->mutable_header()->mutable_regex_rewrite()->set_substitution(
+      "foo");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
+  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(100, rpc_options1);
+  CheckRpcSendOk(100, rpc_options2);
+  CheckRpcSendOk(100, rpc_options3);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 400)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a random value.
+TEST_P(CdsTest, RingHashNoHashPolicy) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(kNumRpcs);
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that ring hash policy evaluation will continue past the terminal
+// policy if no results are produced yet.
+TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("header_not_present");
+  hash_policy->set_terminal(true);
+  auto* hash_policy2 = route->mutable_route()->add_hash_policy();
+  hash_policy2->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  CheckRpcSendOk(100, rpc_options);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test random hash is used when header hashing specified a header field that
+// the RPC did not have.
+TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("header_not_present");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"unmatched_header", absl::StrFormat("%" PRIu32, rand())},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(kNumRpcs, rpc_options);
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test random hash is used when only unsupported hash policies are
+// configured.
+TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
+  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
+      true);
+  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
+      "query_parameter");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(kNumRpcs);
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a random value can spread
+// RPCs across all the backends according to locality weight.
+TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kWeight1 = 1;
+  const size_t kWeight2 = 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(kNumRpcs);
+  const int weight_33_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_66_request_count =
+      backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight33Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight66Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a random value can spread
+// RPCs across all the backends according to locality weight.
+TEST_P(CdsTest,
+       RingHashRandomHashingDistributionAccordingToLocalityAndEndpointWeight) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kWeight1 = 1 * 1;
+  const size_t kWeight2 = 2 * 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1)}, 1},
+       {"locality1", {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}, 2}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(kNumRpcs);
+  const int weight_20_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_80_request_count =
+      backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(weight_20_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight20Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_80_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight80Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests round robin is not implacted by the endpoint weight, and that the
+// localities in a locality map are picked according to their weights.
+TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const int kLocalityWeight0 = 2;
+  const int kLocalityWeight1 = 8;
+  const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
+  const double kLocalityWeightRate0 =
+      static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
+  const double kLocalityWeightRate1 =
+      static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kLocalityWeightRate0, kErrorTolerance);
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0",
+       {CreateEndpoint(0, HealthStatus::UNKNOWN, 8)},
+       kLocalityWeight0},
+      {"locality1",
+       {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)},
+       kLocalityWeight1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Wait for both backends to be ready.
+  WaitForAllBackends(0, 2);
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  // The locality picking rates should be roughly equal to the expectation.
+  const double locality_picked_rate_0 =
+      static_cast<double>(backends_[0]->backend_service()->request_count()) /
+      kNumRpcs;
+  const double locality_picked_rate_1 =
+      static_cast<double>(backends_[1]->backend_service()->request_count()) /
+      kNumRpcs;
+  EXPECT_THAT(locality_picked_rate_0,
+              ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
+  EXPECT_THAT(locality_picked_rate_1,
+              ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
+}
+
+// Tests that ring hash policy that hashes using a fixed string ensures all
+// RPCs to go 1 particular backend; and that subsequent hashing policies are
+// ignored due to the setting of terminal.
+TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("fixed_string");
+  hash_policy->set_terminal(true);
+  auto* hash_policy_to_be_ignored = route->mutable_route()->add_hash_policy();
+  hash_policy_to_be_ignored->mutable_header()->set_header_name("random_string");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"fixed_string", "fixed_value"},
+      {"random_string", absl::StrFormat("%" PRIu32, rand())},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  CheckRpcSendOk(100, rpc_options);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that the channel will go from idle to ready via connecting;
+// (tho it is not possible to catch the connecting state before moving to
+// ready)
+TEST_P(CdsTest, RingHashIdleToReady) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  CheckRpcSendOk();
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that when the first pick is down leading to a transient failure, we
+// will move on to the next ring hash entry.
+TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  const int unused_port = grpc_pick_unused_port_or_die();
+  endpoints.emplace_back(unused_port);
+  endpoints.emplace_back(backends_[1]->port());
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", std::move(endpoints)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       CreateMetadataValueThatHashesToBackendPort(unused_port)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(100, rpc_options);
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that when a backend goes down, we will move on to the next subchannel
+// (with a lower priority).  When the backend comes back up, traffic will move
+// back.
+TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
+  StartBackend(0);
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(100, rpc_options);
+  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that when all backends are down, we will keep reattempting.
+TEST_P(CdsTest, RingHashAllFailReattempt) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(backends_[1]->port());
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", std::move(endpoints)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  ShutdownBackend(1);
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
+      RpcOptions().set_metadata(std::move(metadata))));
+  StartBackend(1);
+  // Ensure we are actively connecting without any traffic.
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that when all backends are down and then up, we may pick a TF backend
+// and we will then jump to ready backend.
+TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  // Make sure we include some unused ports to fill the ring.
+  endpoints.emplace_back(backends_[0]->port());
+  endpoints.emplace_back(backends_[1]->port());
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", std::move(endpoints)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  ShutdownBackend(0);
+  ShutdownBackend(1);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  // Bring up 0, should be picked as the RPC is hashed to it.
+  StartBackend(0);
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  // Bring down 0 and bring up 1.
+  // Note the RPC contains a header value that will always be hashed to
+  // backend 0. So by purposely bring down backend 0 and bring up another
+  // backend, this will ensure Picker's first choice of backend 0 will fail
+  // and it will
+  // 1. reattempt backend 0 and
+  // 2. go through the remaining subchannels to find one in READY.
+  // Since the the entries in the ring is pretty distributed and we have
+  // unused ports to fill the ring, it is almost guaranteed that the Picker
+  // will go through some non-READY entries and skip them as per design.
+  ShutdownBackend(0);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
+  StartBackend(1);
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test unspported hash policy types are all ignored before a supported
+// policy.
+TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
+  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
+      true);
+  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
+      "query_parameter");
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk(100);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test we nack when ring hash policy has invalid hash function (something
+// other than XX_HASH.
+TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      Cluster::RingHashLbConfig::MURMUR_HASH_2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("ring hash lb config has invalid hash function."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test we nack when ring hash policy has invalid ring size.
+TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      0);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "min_ring_size is not in the range of 1 to 8388608."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test we nack when ring hash policy has invalid ring size.
+TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
+      8388609);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "max_ring_size is not in the range of 1 to 8388608."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test we nack when ring hash policy has invalid ring size.
+TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
+      5000);
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      5001);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "min_ring_size cannot be greater than max_ring_size."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
 class XdsSecurityTest : public BasicTest {
@@ -6760,8 +8166,8 @@ class XdsSecurityTest : public BasicTest {
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
-    // TODO(yashykt): Use different client certs here instead of reusing server
-    // certs after https://github.com/grpc/grpc/pull/24876 is merged
+    // TODO(yashykt): Use different client certs here instead of reusing
+    // server certs after https://github.com/grpc/grpc/pull/24876 is merged
     fallback_identity_pair_ =
         ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
     bad_identity_pair_ =
@@ -6897,13 +8303,27 @@ class XdsSecurityTest : public BasicTest {
   std::vector<std::string> fallback_authenticated_identity_;
 };
 
+TEST_P(XdsSecurityTest, UnknownTransportSocket) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
 TEST_P(XdsSecurityTest,
        TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6926,7 +8346,7 @@ TEST_P(
   *validation_context->add_match_subject_alt_names() = server_san_exact_;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6945,10 +8365,10 @@ TEST_P(
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name(std::string("instance_name"));
+      ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6978,7 +8398,7 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   *validation_context->add_match_subject_alt_names() = matcher;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -6998,7 +8418,13 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
@@ -7018,7 +8444,13 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -7404,10 +8836,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7431,10 +8860,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
       HttpConnectionManager());
   listener.mutable_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7455,10 +8881,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
       backends_[0]->port());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7487,10 +8910,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7513,6 +8933,10 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
+  http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
@@ -7520,10 +8944,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7562,7 +8983,8 @@ TEST_P(XdsEnabledServerTest,
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Verify that a mismatch of listening address results in "not serving" status.
+// Verify that a mismatch of listening address results in "not serving"
+// status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   Listener listener;
   listener.set_name(
@@ -7599,10 +9021,7 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
       HttpConnectionManager());
   listener.mutable_use_original_dst()->set_value(true);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7845,12 +9264,69 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> client_authenticated_identity_;
 };
 
-TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
+TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
+TEST_P(
+    XdsServerSecurityTest,
+    NacksRequiringClientCertificateWithoutValidationCertificateProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration requires client certificates but no "
+                  "certificate provider instance specified for validation."));
+}
+
+TEST_P(XdsServerSecurityTest,
+       NacksTlsConfigurationWithoutIdentityProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
@@ -7862,7 +9338,8 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7876,13 +9353,35 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SetLdsUpdate("", "", "unknown", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
-  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
+}
+
+TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map;
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
 
@@ -8237,7 +9736,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     std::shared_ptr<Channel> channel;
     std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
     ClientContext context;
-    std::unique_ptr<ClientWriter<EchoRequest>> writer;
+    std::unique_ptr<ClientReaderWriter<EchoRequest, EchoResponse>> stream;
   } streaming_rpcs[kNumChannels];
   EchoRequest request;
   EchoResponse response;
@@ -8247,9 +9746,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     streaming_rpcs[i].stub =
         grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
     streaming_rpcs[i].context.set_wait_for_ready(true);
-    streaming_rpcs[i].writer = streaming_rpcs[i].stub->RequestStream(
-        &streaming_rpcs[i].context, &response);
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
+    streaming_rpcs[i].stream =
+        streaming_rpcs[i].stub->BidiStream(&streaming_rpcs[i].context);
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
@@ -8259,9 +9760,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
   for (int i = 0; i < kNumChannels; i++) {
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
-    EXPECT_TRUE(streaming_rpcs[i].writer->WritesDone());
-    EXPECT_TRUE(streaming_rpcs[i].writer->Finish().ok());
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
+    EXPECT_TRUE(streaming_rpcs[i].stream->WritesDone());
+    auto status = streaming_rpcs[i].stream->Finish();
+    EXPECT_TRUE(status.ok())
+        << status.error_message() << ", " << status.error_details() << ", "
+        << streaming_rpcs[i].context.debug_error_string();
     // New RPCs on the existing channels should fail.
     ClientContext new_context;
     new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
@@ -8421,8 +9927,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that filter chains that mention "raw_buffer" as the
-  // transport protocol are chosen as the best match in the round.
+  // A successful RPC proves that filter chains that mention "raw_buffer" as
+  // the transport protocol are chosen as the best match in the round.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -8449,8 +9955,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
-  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is the
-  // highest match, it should be chosen.
+  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is
+  // the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8462,7 +9968,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
-  // Add another filter chain with a non-matching prefix range (with length 30)
+  // Add another filter chain with a non-matching prefix range (with length
+  // 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8528,10 +10035,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter chain with source prefix range (length 16) but with a bad source
-  // port mentioned. (Prefix range is matched first.)
-  // Note that backends_[0]->port() will never be a match for the source port
-  // because it is already being used by a backend.
+  // Add filter chain with source prefix range (length 16) but with a bad
+  // source port mentioned. (Prefix range is matched first.) Note that
+  // backends_[0]->port() will never be a match for the source port because it
+  // is already being used by a backend.
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8545,8 +10052,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   source_prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
-  // Add filter chain with two source prefix ranges (length 8 and 24). Since 24
-  // is the highest match, it should be chosen.
+  // Add filter chain with two source prefix ranges (length 8 and 24). Since
+  // 24 is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8599,7 +10106,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   for (int i = 1; i < 65536; i++) {
     filter_chain->mutable_filter_chain_match()->add_source_ports(i);
   }
-  // Add another filter chain with no source prefix range mentioned with a bad
+  // Add another filter chain with no source port mentioned with a bad
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8609,7 +10116,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("unknown");
+      ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with matching source port
@@ -8634,12 +10141,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr(
@@ -8679,12 +10182,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
         balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -8716,20 +10215,16 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
-  // Add a duplicate filter chain with the same "raw_buffer" transport protocol
-  // entry
+  // Add a duplicate filter chain with the same "raw_buffer" transport
+  // protocol entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -8757,12 +10252,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -8791,12 +10282,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -8837,12 +10324,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
         balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -8880,12 +10363,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto initial_time = absl::Now();
-  do {
-    CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state !=
-               AdsServiceImpl::ResponseState::NACKED &&
-           initial_time + absl::Seconds(60) > absl::Now());
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -8903,7 +10382,7 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
       {"locality0", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure();
+  ASSERT_TRUE(WaitForEdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->eds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -9083,8 +10562,8 @@ TEST_P(LocalityMapTest, StressTest) {
   delayed_resource_setter.join();
 }
 
-// Tests that the localities in a locality map are picked correctly after update
-// (addition, modification, deletion).
+// Tests that the localities in a locality map are picked correctly after
+// update (addition, modification, deletion).
 TEST_P(LocalityMapTest, UpdateMap) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9148,8 +10627,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Backend 3 hasn't received any request.
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
-  // Wait until the locality update has been processed, as signaled by backend 3
-  // receiving a request.
+  // Wait until the locality update has been processed, as signaled by backend
+  // 3 receiving a request.
   WaitForAllBackends(3, 4);
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   // Send kNumRpcs RPCs.
@@ -9268,8 +10747,8 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
   EXPECT_EQ(0, std::get<1>(counts));
 }
 
-// If the higher priority localities are not reachable, failover to the highest
-// priority among the rest.
+// If the higher priority localities are not reachable, failover to the
+// highest priority among the rest.
 TEST_P(FailoverTest, Failover) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9372,8 +10851,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   delayed_resource_setter.join();
 }
 
-// Tests that after the localities' priorities are updated, we still choose the
-// highest READY priority with the updated localities.
+// Tests that after the localities' priorities are updated, we still choose
+// the highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9624,8 +11103,8 @@ TEST_P(DropTest, Update) {
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  // Wait until the drop rate increases to the middle of the two configs, which
-  // implies that the update has been in effect.
+  // Wait until the drop rate increases to the middle of the two configs,
+  // which implies that the update has been in effect.
   const double kDropRateThreshold =
       (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcsBoth;
@@ -9693,8 +11172,8 @@ class BalancerUpdateTest : public XdsEnd2endTest {
   BalancerUpdateTest() : XdsEnd2endTest(4, 3) {}
 };
 
-// Tests that the old LB call is still used after the balancer address update as
-// long as that call is still alive.
+// Tests that the old LB call is still used after the balancer address update
+// as long as that call is still alive.
 TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9752,10 +11231,10 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
 }
 
 // Tests that the old LB call is still used after multiple balancer address
-// updates as long as that call is still alive. Send an update with the same set
-// of LBs as the one in SetUp() in order to verify that the LB channel inside
-// xds keeps the initial connection (which by definition is also present in the
-// update).
+// updates as long as that call is still alive. Send an update with the same
+// set of LBs as the one in SetUp() in order to verify that the LB channel
+// inside xds keeps the initial connection (which by definition is also
+// present in the update).
 TEST_P(BalancerUpdateTest, Repeated) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9932,8 +11411,9 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
-                      RpcOptions().set_server_fail(true));
+  CheckRpcSendFailure(CheckRpcSendFailureOptions()
+                          .set_times(kNumFailuresPerAddress * num_backends_)
+                          .set_rpc_options(RpcOptions().set_server_fail(true)));
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
@@ -9979,8 +11459,9 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  CheckRpcSendFailure(kNumFailuresPerAddress * num_backends_,
-                      RpcOptions().set_server_fail(true));
+  CheckRpcSendFailure(CheckRpcSendFailureOptions()
+                          .set_times(kNumFailuresPerAddress * num_backends_)
+                          .set_rpc_options(RpcOptions().set_server_fail(true)));
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
@@ -10187,9 +11668,9 @@ class FaultInjectionTest : public XdsEnd2endTest {
  public:
   FaultInjectionTest() : XdsEnd2endTest(1, 1) {}
 
-  // Builds a Listener with Fault Injection filter config. If the http_fault is
-  // nullptr, then assign an empty filter config. This filter config is required
-  // to enable the fault injection features.
+  // Builds a Listener with Fault Injection filter config. If the http_fault
+  // is nullptr, then assign an empty filter config. This filter config is
+  // required to enable the fault injection features.
   static Listener BuildListenerWithFaultInjection(
       const HTTPFault& http_fault = HTTPFault()) {
     HttpConnectionManager http_connection_manager;
@@ -10253,8 +11734,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Fire several RPCs, and expect all of them to be aborted.
-  CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
-                      StatusCode::ABORTED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_times(5)
+          .set_rpc_options(RpcOptions().set_wait_for_ready(true))
+          .set_expected_error_code(StatusCode::ABORTED));
 }
 
 // Without the listener config, the fault injection won't be enabled.
@@ -10366,6 +11850,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -10374,6 +11859,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -10409,6 +11900,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const double kDelayRate = kDelayPercentage / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -10417,6 +11909,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
@@ -10457,6 +11955,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -10465,6 +11964,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -10501,9 +12006,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
               ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
-// This test and the above test apply different denominators to delay and abort.
-// This ensures that we are using the right denominator for each injected fault
-// in our code.
+// This test and the above test apply different denominators to delay and
+// abort. This ensures that we are using the right denominator for each
+// injected fault in our code.
 TEST_P(FaultInjectionTest,
        XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
   const uint32_t kAbortPercentagePerMillion = 500000;
@@ -10514,6 +12019,7 @@ TEST_P(FaultInjectionTest,
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -10522,6 +12028,12 @@ TEST_P(FaultInjectionTest,
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11240,8 +12752,10 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
   int kTimeoutMillisecond = 1000;
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
@@ -11274,8 +12788,10 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   routes2->mutable_route()->set_cluster(kClusterName2);
   SetRouteConfiguration(0, route_config);
   // Try to get the configs plumb through
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      StatusCode::DEADLINE_EXCEEDED);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
@@ -11302,8 +12818,10 @@ class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(grpc::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
@@ -11322,8 +12840,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
   SetNextResolutionForLbChannelAllBalancers();
   balancers_[0]->ads_service()->UnsetResource(kRdsTypeUrl,
                                               kDefaultRouteConfigurationName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(grpc::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).xds_config(),
@@ -11340,8 +12860,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(grpc::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
@@ -11359,8 +12881,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   SetNextResolutionForLbChannelAllBalancers();
   balancers_[0]->ads_service()->UnsetResource(kEdsTypeUrl,
                                               kDefaultEdsServiceName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
+          .set_expected_error_code(grpc::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).xds_config(),

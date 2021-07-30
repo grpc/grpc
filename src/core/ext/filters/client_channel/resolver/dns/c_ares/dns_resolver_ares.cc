@@ -60,8 +60,6 @@ namespace grpc_core {
 
 namespace {
 
-const char kDefaultPort[] = "https";
-
 class AresDnsResolver : public Resolver {
  public:
   explicit AresDnsResolver(ResolverArgs args);
@@ -431,7 +429,7 @@ void AresDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
-      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,

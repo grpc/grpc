@@ -42,21 +42,16 @@ import collections
 import json
 import re
 import sys
-
 from typing import Any, Callable, Dict, Iterable, NamedTuple
 
 import scenario_config
 
 # Language parameters for load test config generation.
+
 LanguageConfig = NamedTuple('LanguageConfig', [('category', str),
                                                ('language', str),
                                                ('client_language', str),
                                                ('server_language', str)])
-
-
-def as_dict_no_empty_values(self):
-    """Returns the parameters as a dictionary, ignoring empty values."""
-    return dict((item for item in self._asdict().items() if item[1]))
 
 
 def category_string(categories: Iterable[str], category: str) -> str:

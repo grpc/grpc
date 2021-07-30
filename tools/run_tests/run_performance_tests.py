@@ -30,6 +30,7 @@ import tempfile
 import time
 import traceback
 import uuid
+
 import six
 
 import performance.scenario_config as scenario_config

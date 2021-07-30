@@ -201,6 +201,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(readonly) NSUInteger channelOptionsHash;
 
+// Parameters for GTMSessionFetcher transport retry policy. This is only for internal users.
+@property(atomic, assign) NSTimeInterval maxRetryInterval;
+@property(atomic, assign) NSTimeInterval minRetryInterval;
+@property(atomic, assign) NSUInteger retryCount;
+@property(atomic, assign) double retryFactor;
+
 @end
 
 /**

@@ -14,10 +14,11 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the naming tests."""
 
-import yaml
 import collections
 import hashlib
 import json
+
+import yaml
 
 _LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
 

@@ -20,20 +20,19 @@ modules.
 import functools
 import logging
 import threading
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
-from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
-_XdsUpdateHealthServiceClient = grpc_testing.XdsUpdateHealthServiceClient
-_HealthClient = grpc_testing.HealthClient
+
 
 class XdsTestServer(framework.rpc.grpc.GrpcApp):
     """
@@ -65,28 +64,6 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
     @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
-
-    @property
-    @functools.lru_cache(None)
-    def update_health_service_client(self) -> _XdsUpdateHealthServiceClient:
-        return _XdsUpdateHealthServiceClient(self._make_channel(
-            self.maintenance_port))
-
-    @property
-    @functools.lru_cache(None)
-    def health_client(self) -> _HealthClient:
-        return _HealthClient(self._make_channel(
-            self.maintenance_port))
-
-    def set_serving(self):
-        logger.info('Setting health status to serving')
-        self.update_health_service_client.set_serving()
-        logger.info('Server reports %s', self.health_client.check_health())
-
-    def set_not_serving(self):
-        logger.info('Setting health status to not serving')
-        self.update_health_service_client.set_not_serving()
-        logger.info('Server reports %s', self.health_client.check_health())
 
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port
@@ -165,11 +142,13 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  *,
                  deployment_name,
                  image_name,
-                 gcp_service_account,
+                 td_bootstrap_image,
+                 gcp_api_manager: gcp.api.GcpApiManager,
+                 gcp_project: str,
+                 gcp_service_account: str,
                  service_account_name=None,
                  service_name=None,
                  neg_name=None,
-                 td_bootstrap_image=None,
                  xds_server_uri=None,
                  network='default',
                  deployment_template='server.deployment.yaml',
@@ -184,8 +163,6 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         # Settings
         self.deployment_name = deployment_name
         self.image_name = image_name
-        self.gcp_service_account = gcp_service_account
-        self.service_account_name = service_account_name or deployment_name
         self.service_name = service_name or deployment_name
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
@@ -196,10 +173,18 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                                      f'{self.service_name}')
         self.network = network
         self.deployment_template = deployment_template
-        self.service_account_template = service_account_template
         self.service_template = service_template
         self.reuse_service = reuse_service
         self.debug_use_port_forwarding = debug_use_port_forwarding
+        # Service account settings:
+        # Kubernetes service account
+        self.service_account_name = service_account_name or deployment_name
+        self.service_account_template = service_account_template
+        # GCP service account to map to Kubernetes service account
+        self.gcp_service_account = gcp_service_account
+        # GCP IAM API used to grant allow workload service accounts permission
+        # to use GCP service account identity.
+        self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
 
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
@@ -213,8 +198,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             maintenance_port=None,
             secure_mode=False,
             server_id=None,
-            replica_count=1) -> Iterator[XdsTestServer]:
-
+            replica_count=1) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security
@@ -249,6 +233,13 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                 neg_name=self.neg_name,
                 test_port=test_port)
         self._wait_service_neg(self.service_name, test_port)
+
+        # Allow Kubernetes service account to use the GCP service account
+        # identity.
+        self._grant_workload_identity_user(
+            gcp_iam=self.gcp_iam,
+            gcp_service_account=self.gcp_service_account,
+            service_account_name=self.service_account_name)
 
         # Create service account
         self.service_account = self._create_service_account(
@@ -295,17 +286,21 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                 logger.info(
                     'LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
                     pod_ip, maintenance_port, local_port)
-                self.port_forwarders.append(self.k8s_namespace.port_forward_pod(
-                    pod, remote_port=maintenance_port, local_port=local_port))
+                self.port_forwarders.append(
+                    self.k8s_namespace.port_forward_pod(
+                        pod,
+                        remote_port=maintenance_port,
+                        local_port=local_port))
                 rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-            servers.append(XdsTestServer(ip=pod_ip,
-                                 rpc_port=test_port,
-                                 maintenance_port=local_port,
-                                 secure_mode=secure_mode,
-                                 server_id=server_id,
-                                 rpc_host=rpc_host,
-                                 pod_name=pod_name))
+            servers.append(
+                XdsTestServer(ip=pod_ip,
+                              rpc_port=test_port,
+                              maintenance_port=local_port,
+                              secure_mode=secure_mode,
+                              server_id=server_id,
+                              rpc_host=rpc_host,
+                              pod_name=pod_name))
         return servers
 
     def cleanup(self, *, force=False, force_namespace=False):
@@ -320,6 +315,25 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             self._delete_service(self.service_name)
             self.service = None
         if self.service_account or force:
+            self._revoke_workload_identity_user(
+                gcp_iam=self.gcp_iam,
+                gcp_service_account=self.gcp_service_account,
+                service_account_name=self.service_account_name)
             self._delete_service_account(self.service_account_name)
             self.service_account = None
         super().cleanup(force=(force_namespace and force))
+
+    @classmethod
+    def make_namespace_name(cls,
+                            resource_prefix: str,
+                            resource_suffix: str,
+                            name: str = 'server') -> str:
+        """A helper to make consistent XdsTestServer kubernetes namespace name
+        for given resource prefix and suffix.
+
+        Note: the idea is to intentionally produce different namespace name for
+        the test server, and the test client, as that closely mimics real-world
+        deployments.
+        :rtype: object
+        """
+        return cls._make_namespace_name(resource_prefix, resource_suffix, name)

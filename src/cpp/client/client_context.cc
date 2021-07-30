@@ -31,8 +31,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
-#include "src/core/lib/surface/call.h"
-
 namespace grpc {
 
 class Channel;
@@ -100,7 +98,7 @@ std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const grpc::ServerContext& server_context, PropagationOptions options) {
+    const grpc::ServerContextBase& server_context, PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 
@@ -178,12 +176,6 @@ void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
   GPR_ASSERT(client_callbacks != nullptr);
   GPR_ASSERT(client_callbacks != g_default_client_callbacks);
   g_client_callbacks = client_callbacks;
-}
-
-bool ClientContext::trailers_only() const {
-  bool result = initial_metadata_received_ && grpc_call_is_trailers_only(call_);
-  GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.arr()->count == 0);
-  return result;
 }
 
 }  // namespace grpc

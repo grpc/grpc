@@ -1625,7 +1625,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
         compression_md.value = grpc_empty_slice();
-        compression_md.flags = 0;
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;
@@ -2023,7 +2022,11 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 }
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
-  return call->is_trailers_only;
+  bool result = call->is_trailers_only;
+  GPR_DEBUG_ASSERT(
+      !result || call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */]
+                         .list.count == 0);
+  return result;
 }
 
 bool grpc_call_failed_before_recv_message(const grpc_call* c) {

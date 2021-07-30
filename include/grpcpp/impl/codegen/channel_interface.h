@@ -156,7 +156,6 @@ class ChannelInterface {
     return internal::Call();
   }
 
-  // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this
   // channel. If the return value is nullptr, this channel doesn't support
   // callback operations.

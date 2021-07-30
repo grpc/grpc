@@ -19,12 +19,13 @@
 
 #include <string>
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 namespace grpc_core {
 
 // Interface for gRPC Authorization Engine.
-class AuthorizationEngine {
+class AuthorizationEngine : public RefCounted<AuthorizationEngine> {
  public:
   struct Decision {
     enum class Type {
@@ -35,7 +36,6 @@ class AuthorizationEngine {
     std::string matching_policy_name;
   };
 
-  virtual ~AuthorizationEngine() = default;
   virtual Decision Evaluate(const EvaluateArgs& args) const = 0;
 };
 

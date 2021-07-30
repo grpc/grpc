@@ -46,6 +46,7 @@ const grpc_socket_mutator_vtable mock_socket_mutator_vtable = {
     mock_socket_mutator_mutate_fd,
     mock_socket_mutator_compare,
     mock_socket_mutator_destroy,
+    nullptr,
 };
 
 class MockSocketMutator : public grpc_socket_mutator {

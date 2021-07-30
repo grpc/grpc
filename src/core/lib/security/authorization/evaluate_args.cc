@@ -65,6 +65,7 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
     spiffe_id =
         GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    uri_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_URI_PROPERTY_NAME);
     dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
     common_name =
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
@@ -182,6 +183,13 @@ absl::string_view EvaluateArgs::GetSpiffeId() const {
     return "";
   }
   return channel_args_->spiffe_id;
+}
+
+std::vector<absl::string_view> EvaluateArgs::GetUriSans() const {
+  if (channel_args_ == nullptr) {
+    return {};
+  }
+  return channel_args_->uri_sans;
 }
 
 std::vector<absl::string_view> EvaluateArgs::GetDnsSans() const {

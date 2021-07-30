@@ -15,8 +15,9 @@
 """Builds the content of xds-protos package"""
 
 import os
-import pkg_resources
+
 from grpc_tools import protoc
+import pkg_resources
 
 # We might not want to compile all the protos
 EXCLUDE_PROTO_PACKAGES_LIST = [

@@ -36,3 +36,8 @@ message RegexMatcher {
   // The regex match string. The string must be supported by the configured engine.
   string regex = 2;
 }
+
+message RegexMatchAndSubstitute {
+  RegexMatcher pattern = 1;
+  string substitution = 2;
+}

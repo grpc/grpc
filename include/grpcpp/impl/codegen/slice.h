@@ -74,6 +74,11 @@ class Slice final {
   Slice(const Slice& other)
       : slice_(g_core_codegen_interface->grpc_slice_ref(other.slice_)) {}
 
+  /// Move constructor, steals a reference.
+  Slice(Slice&& other) noexcept : slice_(other.slice_) {
+    other.slice_ = g_core_codegen_interface->grpc_empty_slice();
+  }
+
   /// Assignment, reference count is unchanged.
   Slice& operator=(Slice other) {
     std::swap(slice_, other.slice_);
@@ -106,6 +111,12 @@ class Slice final {
 
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
   const uint8_t* end() const { return GRPC_SLICE_END_PTR(slice_); }
+
+  /// Returns a substring of the `slice` as another slice.
+  Slice sub(size_t begin, size_t end) const {
+    return Slice(g_core_codegen_interface->grpc_slice_sub(slice_, begin, end),
+                 STEAL_REF);
+  }
 
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
   grpc_slice c_slice() const {

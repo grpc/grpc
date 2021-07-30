@@ -30,8 +30,9 @@ import argparse
 import collections
 import hashlib
 import os
-import requests
 import sys
+
+import requests
 
 _DEFAULT_PACKAGES = [
     "grpcio",

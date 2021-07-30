@@ -43,7 +43,7 @@ class ThreadPoolInterface {
   // current thread to be blocked (in case of unable to schedule).
   // Closure should contain a function pointer and arguments it will take, more
   // details for closure struct at /grpc/include/grpc/impl/codegen/grpc_types.h
-  virtual void Add(grpc_experimental_completion_queue_functor* closure) = 0;
+  virtual void Add(grpc_completion_queue_functor* closure) = 0;
 
   // Returns the current number of pending closures
   virtual int num_pending_closures() const = 0;
@@ -120,7 +120,7 @@ class ThreadPool : public ThreadPoolInterface {
 
   // Adds given closure into pending queue immediately. Since closure queue has
   // infinite length, this routine will not block.
-  void Add(grpc_experimental_completion_queue_functor* closure) override;
+  void Add(grpc_completion_queue_functor* closure) override;
 
   int num_pending_closures() const override;
   int pool_capacity() const override;

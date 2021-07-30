@@ -14,7 +14,7 @@
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from googleapiclient import discovery
 import googleapiclient.errors
@@ -112,18 +112,25 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             self,
             name: str,
             health_check: GcpResource,
+            affinity_header: str = None,
             protocol: Optional[BackendServiceProtocol] = None) -> GcpResource:
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
-        return self._insert_resource(
-            self.api.backendServices(),
-            {
-                'name': name,
-                'loadBalancingScheme':
-                    'INTERNAL_SELF_MANAGED',  # Traffic Director
-                'healthChecks': [health_check.url],
-                'protocol': protocol.name,
-            })
+        body = {
+            'name': name,
+            'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',  # Traffic Director
+            'healthChecks': [health_check.url],
+            'protocol': protocol.name,
+        }
+        # If affinity header is specified, config the backend service to support
+        # affinity, and set affinity header to the one given.
+        if affinity_header:
+            body['sessionAffinity'] = 'HEADER_FIELD'
+            body['localityLbPolicy'] = 'RING_HASH'
+            body['consistentHash'] = {
+                'httpHeaderName': affinity_header,
+            }
+        return self._insert_resource(self.api.backendServices(), body)
 
     def get_backend_service_traffic_director(self, name: str) -> GcpResource:
         return self._get_resource(self.api.backendServices(),
@@ -135,14 +142,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              body=body,
                              **kwargs)
 
-    def backend_service_add_backends(self, backend_service, backends,
-        maxRatePerEndpoint: Optional[int]):
-        if maxRatePerEndpoint is None:
-            maxRatePerEndpoint = 5
+    def backend_service_add_backends(self, backend_service, backends):
         backend_list = [{
             'group': backend.url,
             'balancingMode': 'RATE',
-            'maxRatePerEndpoint': maxRatePerEndpoint,
+            'maxRatePerEndpoint': 5
         } for backend in backends]
 
         self._patch_resource(collection=self.api.backendServices(),
@@ -160,16 +164,32 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def create_url_map(
         self,
-        body: Dict[str, Any],
+        name: str,
+        matcher_name: str,
+        src_hosts,
+        dst_default_backend_service: GcpResource,
+        dst_host_rule_match_backend_service: Optional[GcpResource] = None,
     ) -> GcpResource:
+        if dst_host_rule_match_backend_service is None:
+            dst_host_rule_match_backend_service = dst_default_backend_service
         return self._insert_resource(
-            self.api.urlMaps(), body)
+            self.api.urlMaps(), {
+                'name':
+                    name,
+                'defaultService':
+                    dst_default_backend_service.url,
+                'hostRules': [{
+                    'hosts': src_hosts,
+                    'pathMatcher': matcher_name,
+                }],
+                'pathMatchers': [{
+                    'name': matcher_name,
+                    'defaultService': dst_host_rule_match_backend_service.url,
+                }],
+            })
 
-    def patch_url_map(self, url_map: GcpResource, body: Dict[str, Any]):
-        return self._patch_resource(
-            collection=self.api.urlMaps(),
-            body=body,
-            urlMap=url_map.name)
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        return self._insert_resource(self.api.urlMaps(), url_map_body)
 
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)
@@ -221,6 +241,17 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 'network': network_url,
                 'target': target_proxy.url,
             })
+
+    def exists_forwarding_rule(self, src_port) -> bool:
+        # TODO(sergiitk): Better approach for confirming the port is available.
+        #   It's possible a rule allocates actual port range, e.g 8000-9000,
+        #   and this wouldn't catch it. For now, we assume there's no
+        #   port ranges used in the project.
+        filter_str = (f'(portRange eq "{src_port}-{src_port}") '
+                      f'(IPAddress eq "0.0.0.0")'
+                      f'(loadBalancingScheme eq "INTERNAL_SELF_MANAGED")')
+        return self._exists_resource(self.api.globalForwardingRules(),
+                                     filter=filter_str)
 
     def delete_forwarding_rule(self, name):
         self._delete_resource(self.api.globalForwardingRules(),
@@ -313,19 +344,29 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
         logger.info('Loaded compute resource:\n%s',
-                    self._resource_pretty_format(resp))
+                    self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
+
+    def _exists_resource(self, collection: discovery.Resource,
+                         filter: str) -> bool:
+        resp = collection.list(
+            project=self.project, filter=filter,
+            maxResults=1).execute(num_retries=self._GCP_API_RETRIES)
+        if 'kind' not in resp:
+            # TODO(sergiitk): better error
+            raise ValueError('List response "kind" is missing')
+        return 'items' in resp and resp['items']
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
         logger.info('Creating compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
         logger.info('Patching compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 

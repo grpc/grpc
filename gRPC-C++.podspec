@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.39.0-dev'
+  version = '1.40.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -149,6 +149,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
+                      'include/grpcpp/security/authorization_policy_provider.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
                       'include/grpcpp/security/tls_certificate_provider.h',
@@ -194,6 +195,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -267,6 +269,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -492,6 +495,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
@@ -514,8 +518,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/endpoint_config_internal.h',
+                      'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
-                      'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
@@ -572,6 +577,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_epollex_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
+                      'src/core/lib/iomgr/event_engine/closure.h',
+                      'src/core/lib/iomgr/event_engine/endpoint.h',
+                      'src/core/lib/iomgr/event_engine/iomgr.h',
+                      'src/core/lib/iomgr/event_engine/pollset.h',
+                      'src/core/lib/iomgr/event_engine/promise.h',
+                      'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -632,6 +643,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider.h',
+                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -908,6 +922,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                               'src/core/ext/transport/chttp2/transport/context_list.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -1133,6 +1148,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
@@ -1155,8 +1171,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/endpoint_config_internal.h',
+                              'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
-                              'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
@@ -1213,6 +1230,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_epollex_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
+                              'src/core/lib/iomgr/event_engine/closure.h',
+                              'src/core/lib/iomgr/event_engine/endpoint.h',
+                              'src/core/lib/iomgr/event_engine/iomgr.h',
+                              'src/core/lib/iomgr/event_engine/pollset.h',
+                              'src/core/lib/iomgr/event_engine/promise.h',
+                              'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -1273,6 +1296,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/authorization_policy_provider.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
