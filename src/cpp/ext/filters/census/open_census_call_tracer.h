@@ -96,7 +96,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   grpc_slice path_;
   absl::string_view method_;
   std::string qualified_method_;
-  CensusContext* context_;
+  CensusContext context_;
   grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call

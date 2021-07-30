@@ -52,7 +52,7 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();
     if (span_ctxt.IsValid()) {
-      new (ctxt) CensusContext(method, &span, TagMap{});
+      new (ctxt) CensusContext(method, &span, parent_ctxt->tags());
       return;
     }
   }

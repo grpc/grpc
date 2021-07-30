@@ -59,9 +59,8 @@ grpc_error_handle CensusClientCallData::Init(
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
                               uint32_t /* flags */) {
-  GenerateClientContext(
-      parent_->qualified_method_, &context_,
-      (parent_->context_ == nullptr) ? nullptr : parent_->context_);
+  GenerateClientContext(parent_->qualified_method_, &context_,
+                        &parent_->context_);
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
@@ -175,14 +174,18 @@ OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : path_(grpc_slice_ref_internal(args->path)),
       method_(GetMethod(&path_)),
       qualified_method_(absl::StrCat("Sent.", method_)),
-      context_(reinterpret_cast<CensusContext*>(
-          args->context[GRPC_CONTEXT_TRACING].value)),
-      arena_(args->arena) {}
+      arena_(args->arena) {
+  auto* parent_context = reinterpret_cast<CensusContext*>(
+      args->context[GRPC_CONTEXT_TRACING].value);
+  GenerateClientContext(qualified_method_, &context_,
+                        (parent_context == nullptr) ? nullptr : parent_context);
+}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
-      opencensus::tags::GetCurrentTagMap().tags();
+      context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(method_));
+
   ::opencensus::stats::Record(
       {{RpcClientRetriesPerCall(), retries_ - 1},  // exclude first attempt
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
