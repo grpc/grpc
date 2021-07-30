@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from absl import flags
 from absl.testing import absltest
-from typing import List
-
-from typing import List
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
@@ -44,8 +41,7 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('02_create_url_map'):
-            self.td.create_url_map(self.server_xds_host,
-                                   self.server_xds_port)
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest('03_create_target_proxy'):
             self.td.create_target_proxy()
@@ -54,34 +50,32 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self._test_servers: List[
-                _XdsTestServer] = self.startTestServer(
-                server_runner=self.server_runners['default'],
+            self.test_servers: List[_XdsTestServer] = self.startTestServers(
                 replica_count=REPLICA_COUNT)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
         with self.subTest('07_start_test_client'):
-            self._test_client: _XdsTestClient = self.startTestClient(
-                self._test_servers[0])
+            self.test_client: _XdsTestClient = self.startTestClient(
+                self.test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
-            self.assertXdsConfigExists(self._test_client)
+            self.assertXdsConfigExists(self.test_client)
 
         with self.subTest('09_test_server_received_rpcs_from_test_client'):
-            self.assertSuccessfulRpcs(self._test_client)
+            self.assertSuccessfulRpcs(self.test_client)
 
         with self.subTest('10_round_robin'):
             num_rpcs = 100
             expected_rpcs_per_replica = num_rpcs / REPLICA_COUNT
 
-            rpcs_by_peer = self.getClientRpcStats(self._test_client,
+            rpcs_by_peer = self.getClientRpcStats(self.test_client,
                                                   num_rpcs).rpcs_by_peer
             total_requests_received = sum(rpcs_by_peer[x] for x in rpcs_by_peer)
             self.assertEqual(total_requests_received, num_rpcs,
                              'Wrong number of RPCS')
-            for server in self._test_servers:
+            for server in self.test_servers:
                 pod_name = server.pod_name
                 self.assertIn(pod_name, rpcs_by_peer,
                               f'pod {pod_name} did not receive RPCs')
