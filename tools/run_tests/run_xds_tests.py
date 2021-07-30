@@ -3139,6 +3139,8 @@ try:
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
     secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
+    potential_service_ports = list(args.service_port_range)
+    random.shuffle(potential_service_ports)
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
@@ -3164,8 +3166,6 @@ try:
             gcp, alternate_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
         create_target_proxy(gcp, target_proxy_name)
-        potential_service_ports = list(args.service_port_range)
-        random.shuffle(potential_service_ports)
         create_global_forwarding_rule(gcp, forwarding_rule_name,
                                       potential_service_ports)
         if not gcp.service_port:
