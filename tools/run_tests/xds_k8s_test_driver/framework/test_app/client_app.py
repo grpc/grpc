@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -261,8 +261,9 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Kubernetes service account
         self.service_account_name = service_account_name or deployment_name
         self.service_account_template = service_account_template
-        # GCP project id.
+        # GCP.
         self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -290,7 +291,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             server_target, rpc, qps, metadata, secure_mode, print_response)
         self._logs_explorer_link(deployment_name=self.deployment_name,
                                  namespace_name=self.k8s_namespace.name,
-                                 gcp_project=self.gcp_project)
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
 
         super().run()
 

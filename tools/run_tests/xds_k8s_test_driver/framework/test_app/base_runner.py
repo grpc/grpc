@@ -308,9 +308,10 @@ class KubernetesBaseRunner:
 
     @staticmethod
     def _logs_explorer_link(*,
-                            deployment_name,
-                            namespace_name,
-                            gcp_project,
+                            deployment_name: str,
+                            namespace_name: str,
+                            gcp_project: str,
+                            gcp_ui_url: str,
                             end_delta: timedelta = None) -> None:
         """Output the link to test server/client logs in GCP Logs Explorer."""
         if end_delta is None:
@@ -324,15 +325,13 @@ class KubernetesBaseRunner:
             'resource.labels.container_name': deployment_name,
             'resource.labels.namespace_name': namespace_name,
         })
-        request = _logs_explorer_request({
+        req = _logs_explorer_request({
             'query': query,
             'timeRange': f'{time_now}/{time_end}',
         })
 
-        log_link = ('https://pantheon.corp.google.com/logs/query;'
-                    f'{request}?project={gcp_project}')
-        logger.info("GCP Logs Explorer link to %s:\n%s", deployment_name,
-                    log_link)
+        link = f'https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}'
+        logger.info("GCP Logs Explorer link to %s:\n%s", deployment_name, link)
 
     @staticmethod
     def _make_namespace_name(resource_prefix: str, resource_suffix: str,

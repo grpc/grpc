@@ -180,8 +180,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         # Kubernetes service account
         self.service_account_name = service_account_name or deployment_name
         self.service_account_template = service_account_template
-        # GCP project id.
+        # GCP.
         self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -226,7 +227,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             maintenance_port, secure_mode, server_id, replica_count)
         self._logs_explorer_link(deployment_name=self.deployment_name,
                                  namespace_name=self.k8s_namespace.name,
-                                 gcp_project=self.gcp_project)
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
 
         # Create namespace.
         super().run()
