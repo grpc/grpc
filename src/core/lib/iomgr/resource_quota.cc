@@ -1052,8 +1052,8 @@ size_t grpc_slice_allocator_adjust_allocation_length(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(
         GPR_INFO,
-        "SliceAllocator(%p) requested %d bytes for (%s) intent, adjusted "
-        "allocation size to %d",
+        "SliceAllocator(%p) requested %ld bytes for (%s) intent, adjusted "
+        "allocation size to %ld",
         slice_allocator, requested_length,
         intent == grpc_slice_allocator_intent::kDefault ? "default" : "read",
         target);
