@@ -93,9 +93,9 @@ absl::Status CheckPrivateKeyFormat(absl::string_view private_key) {
     default:
       gpr_log(GPR_ERROR, "Key type currently not supported.");
   }
-  OwnedOpenSslConnectionConfig connection_config(TLS_method());
+  OpenSslConnectionConfig connection_config(TLS_method());
   return SSL_CTX_use_PrivateKey(connection_config.get_config(),
-                                private_evp_pkey.get_private_key())
+                                private_evp_pkey.get_p_key())
              ? absl::OkStatus()
              : absl::InvalidArgumentError("Invalid private key.");
 }
@@ -111,7 +111,7 @@ absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
   if (num_certs == 0) {
     return absl::InvalidArgumentError(bad_format_string);
   }
-  OwnedOpenSslConnectionConfig connection_config(TLS_method());
+  OpenSslConnectionConfig connection_config(TLS_method());
   for (int i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get_stack(), i);
     if (i == 0) {

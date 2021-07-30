@@ -23,6 +23,7 @@
 
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/ssl.h>
 
 namespace grpc_core {
 
@@ -74,11 +75,13 @@ class OpenSslX509InfoStack {
 };
 
 // A class for managing openssl `SSL_CTX` structures.
-class OwnedOpenSslConnectionConfig {
+class OpenSslConnectionConfig {
  public:
-  explicit OwnedOpenSslConnectionConfig(const SSL_METHOD* method);
+  explicit OpenSslConnectionConfig(const SSL_METHOD* method) {
+    config = SSL_CTX_new(method);
+  }
 
-  ~OwnedOpenSslConnectionConfig();
+  ~OpenSslConnectionConfig() { SSL_CTX_free(config); }
 
   SSL_CTX* get_config() { return config; }
 
