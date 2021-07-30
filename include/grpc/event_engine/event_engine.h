@@ -134,7 +134,9 @@ class EventEngine {
     /// \a on_writable is called when the connection is ready for more data. The
     /// Slices within the \a data buffer may be mutated at will by the Endpoint
     /// until \a on_writable is called. The \a data SliceBuffer will remain
-    /// valid after calling \a Write, but its state is otherwise undefined.
+    /// valid after calling \a Write, but its state is otherwise undefined.  All
+    /// bytes in \a data must have been written before calling \a on_writable
+    /// unless an error has occurred.
     ///
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
