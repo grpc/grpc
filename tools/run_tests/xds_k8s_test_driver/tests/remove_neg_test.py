@@ -49,8 +49,7 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def tearDown(self):
         if hasattr(self, 'alternate_server_runner'):
-            self.alternate_server_runner.cleanup(
-                force=self.force_cleanup, force_namespace=self.force_cleanup)
+            self.alternate_server_runner.cleanup()
         super().tearDown()
 
     def test_remove_neg(self) -> None:

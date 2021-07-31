@@ -51,8 +51,7 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def tearDown(self):
         if hasattr(self, 'secondary_server_runner'):
-            self.secondary_server_runner.cleanup(
-                force=self.force_cleanup, force_namespace=self.force_cleanup)
+            self.secondary_server_runner.cleanup()
         super().tearDown()
 
     def test_failover(self) -> None:
