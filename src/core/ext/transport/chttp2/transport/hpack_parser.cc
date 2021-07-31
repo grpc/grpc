@@ -923,7 +923,7 @@ class HPackParser::String {
 // Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input input, HPackParser::Sink* sink, grpc_chttp2_hptbl* table)
+  Parser(Input input, HPackParser::Sink* sink, HPackTable* table)
       : input_(input), sink_(sink), table_(table) {}
 
   // Skip any priority bits, or return false on failure
@@ -987,7 +987,7 @@ class HPackParser::Parser {
       GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
                            GRPC_MDELEM_STORAGE_INTERNED ||
                        GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
-      grpc_error_handle err = grpc_chttp2_hptbl_add(table_, md);
+      grpc_error_handle err = table_->Add(md);
       if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
         input_.SetError(err);
         return false;
@@ -1120,7 +1120,7 @@ class HPackParser::Parser {
   // Parse an index encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseIdxKey(uint32_t index) {
-    auto elem = grpc_chttp2_hptbl_lookup(table_, index);
+    auto elem = table_->Peek(index);
     if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
       return InvalidHPackIndexError(index, elem);
     }
@@ -1155,7 +1155,7 @@ class HPackParser::Parser {
   bool FinishIndexed(absl::optional<uint32_t> index) {
     dynamic_table_updates_allowed_ = 0;
     if (!index.has_value()) return false;
-    grpc_mdelem md = grpc_chttp2_hptbl_lookup<true>(table_, *index);
+    grpc_mdelem md = table_->Fetch(*index);
     if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
       return InvalidHPackIndexError(*index, false);
     }
@@ -1179,7 +1179,7 @@ class HPackParser::Parser {
       gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
     }
     grpc_error_handle err =
-        grpc_chttp2_hptbl_set_current_table_size(table_, *size);
+        table_->SetCurrentTableSize(*size);
     if (err != GRPC_ERROR_NONE) {
       input_.SetError(err);
       return false;
@@ -1199,14 +1199,14 @@ class HPackParser::Parser {
                                  GRPC_ERROR_INT_INDEX,
                                  static_cast<intptr_t>(index)),
               GRPC_ERROR_INT_SIZE,
-              static_cast<intptr_t>(this->table_->num_ents));
+              static_cast<intptr_t>(this->table_->num_entries()));
         },
         result);
   }
 
   Input input_;
   HPackParser::Sink* sink_;
-  grpc_chttp2_hptbl* const table_;
+  HPackTable* const table_;
   uint8_t dynamic_table_updates_allowed_ = 2;
 };
 
@@ -1255,7 +1255,7 @@ ManagedMemorySlice HPackParser::String::Take(Intern) {
 
 HPackParser::HPackParser() = default;
 
-HPackParser::~HPackParser() { grpc_chttp2_hptbl_destroy(&table_); }
+HPackParser::~HPackParser() = default;
 
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);

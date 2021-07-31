@@ -101,7 +101,7 @@ class HPackParser {
   void FinishFrame();
 
   // Retrieve the associated hpack table (for tests, debugging)
-  grpc_chttp2_hptbl* hpack_table() { return &table_; }
+  HPackTable* hpack_table() { return &table_; }
   // Is the current frame a boundary of some sort
   bool is_boundary() const { return boundary_ != Boundary::None; }
   // Is the current frame the end of a stream
@@ -128,7 +128,7 @@ class HPackParser {
   Priority priority_;
 
   // hpack table
-  grpc_chttp2_hptbl table_;
+  HPackTable table_;
 };
 
 }  // namespace grpc_core
