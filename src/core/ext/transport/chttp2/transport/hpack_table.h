@@ -32,15 +32,15 @@ namespace grpc_core {
 namespace hpack_table_detail {
 // Per entry overhead bytes as per the spec
 static constexpr uint32_t kEntryOverhead = 32;
-  // Initial table size as per the spec
-  static constexpr uint32_t kInitialTableSize = 4096;
+// Initial table size as per the spec
+static constexpr uint32_t kInitialTableSize = 4096;
 
 static constexpr uint32_t EntriesForBytes(uint32_t bytes) noexcept {
   return (bytes + kEntryOverhead - 1) / kEntryOverhead;
 }
 
-  static constexpr uint32_t kInlineEntries = EntriesForBytes(kInitialTableSize);
-}
+static constexpr uint32_t kInlineEntries = EntriesForBytes(kInitialTableSize);
+}  // namespace hpack_table_detail
 
 // HPACK header table
 class HPackTable {
@@ -48,7 +48,8 @@ class HPackTable {
   // last index in the static table
   static constexpr uint32_t kLastStaticEntry = 61;
   // Initial table size as per the spec
-  static constexpr uint32_t kInitialTableSize = hpack_table_detail::kInitialTableSize;
+  static constexpr uint32_t kInitialTableSize =
+      hpack_table_detail::kInitialTableSize;
   // Per entry overhead bytes as per the spec
   static constexpr uint32_t kEntryOverhead = hpack_table_detail::kEntryOverhead;
 
@@ -73,7 +74,8 @@ class HPackTable {
   uint32_t num_entries() const { return num_entries_; }
 
  private:
-  using EntriesVec = absl::InlinedVector<grpc_mdelem, hpack_table_detail::kInlineEntries>;
+  using EntriesVec =
+      absl::InlinedVector<grpc_mdelem, hpack_table_detail::kInlineEntries>;
 
   /* lookup a table entry based on its hpack index */
   template <bool take_ref>
@@ -129,7 +131,7 @@ class HPackTable {
   EntriesVec entries_;
 };
 
-}
+}  // namespace grpc_core
 
 size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata);

@@ -275,6 +275,12 @@ END2END_TESTS = {
     "retry": _test_options(needs_client_channel = True),
     "retry_cancellation": _test_options(needs_client_channel = True),
     "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry_cancel_with_multiple_send_batches": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel3",
+        needs_client_channel = True,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_delay": _test_options(
         needs_client_channel = True,

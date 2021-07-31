@@ -459,7 +459,8 @@ class HPackParser::Input {
         const uint8_t* end)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
-        end_(end) {}
+        end_(end),
+        frontier_(begin) {}
 
   // If input is backed by a slice, retrieve its refcount. If not, return
   // nullptr.
@@ -471,6 +472,8 @@ class HPackParser::Input {
   size_t remaining() const { return end_ - begin_; }
   // Current position, as a pointer
   const uint8_t* cur_ptr() const { return begin_; }
+  // End position, as a pointer
+  const uint8_t* end_ptr() const { return end_; }
   // Move read position forward by n, unchecked
   void Advance(size_t n) { begin_ += n; }
 
@@ -553,7 +556,7 @@ class HPackParser::Input {
   // Parse a string prefix
   absl::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
-    if (!cur.has_value()) return UnexpectedEOF(absl::optional<StringPrefix>());
+    if (!cur.has_value()) return {};
     // Huffman if the top bit is 1
     const bool huff = (*cur & 0x80) != 0;
     // String length
@@ -567,6 +570,9 @@ class HPackParser::Input {
     return StringPrefix{strlen, huff};
   }
 
+  // Check if we saw an EOF.. must be verified before looking at TakeError
+  bool eof_error() const { return eof_error_; }
+
   // Extract the parse error, leaving the current error as NONE.
   grpc_error_handle TakeError() {
     grpc_error_handle out = error_;
@@ -577,7 +583,7 @@ class HPackParser::Input {
   // Set the current error - allows the rest of the code not to need to pass
   // around StatusOr<> which would be prohibitive here.
   GPR_ATTRIBUTE_NOINLINE void SetError(grpc_error_handle error) {
-    if (error_ != GRPC_ERROR_NONE) {
+    if (error_ != GRPC_ERROR_NONE || eof_error_) {
       GRPC_ERROR_UNREF(error);
       return;
     }
@@ -590,7 +596,7 @@ class HPackParser::Input {
   template <typename F, typename T>
   GPR_ATTRIBUTE_NOINLINE T MaybeSetErrorAndReturn(F error_factory,
                                                   T return_value) {
-    if (error_ != GRPC_ERROR_NONE) return return_value;
+    if (error_ != GRPC_ERROR_NONE || eof_error_) return return_value;
     error_ = error_factory();
     begin_ = end_;
     return return_value;
@@ -599,14 +605,17 @@ class HPackParser::Input {
   // Set the error to an unexpected eof, and return result (code golfed as this
   // is a common case)
   template <typename T>
-  T UnexpectedEOF(T result) {
-    return MaybeSetErrorAndReturn(
-        []() {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Unexpected end of headers");
-        },
-        std::move(result));
+  T UnexpectedEOF(T return_value) {
+    if (error_ != GRPC_ERROR_NONE) return return_value;
+    eof_error_ = true;
+    return return_value;
   }
+
+  // Update the frontier - signifies we've successfully parsed another element
+  void UpdateFrontier() { frontier_ = begin_; }
+
+  // Get the frontier - for buffering should we fail due to eof
+  const uint8_t* frontier() const { return frontier_; }
 
  private:
   // Helper to set the error to out of range for ParseVarint
@@ -630,8 +639,12 @@ class HPackParser::Input {
   const uint8_t* begin_;
   // End of stream point
   const uint8_t* const end_;
+  // Frontier denotes the first byte past successfully processed input
+  const uint8_t* frontier_;
   // Current error
   grpc_error_handle error_ = GRPC_ERROR_NONE;
+  // If the error was EOF, we flag it here..
+  bool eof_error_ = false;
 };
 
 // Helper to parse a string and turn it into a slice with appropriate memory
@@ -923,29 +936,120 @@ class HPackParser::String {
 // Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input input, HPackParser::Sink* sink, HPackTable* table)
-      : input_(input), sink_(sink), table_(table) {}
+  Parser(Input* input, HPackParser::Sink* sink, HPackTable* table,
+         uint8_t* dynamic_table_updates_allowed)
+      : input_(input),
+        sink_(sink),
+        table_(table),
+        dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
 
   // Skip any priority bits, or return false on failure
   bool SkipPriority() {
-    if (input_.remaining() < 5) return input_.UnexpectedEOF(false);
-    input_.Advance(5);
+    if (input_->remaining() < 5) return input_->UnexpectedEOF(false);
+    input_->Advance(5);
     return true;
   }
 
-  // Parse the body of the headers
-  bool ParseBody() {
-    // While there's input, parse one header element
-    while (!input_.end_of_stream()) {
-      if (!ParseElem()) {
-        return false;
-      }
+  bool Parse() {
+    auto cur = *input_->Next();
+    switch (cur >> 4) {
+        // Literal header not indexed - First byte format: 0000xxxx
+        // Literal header never indexed - First byte format: 0001xxxx
+        // Where xxxx:
+        //   0000  - literal key
+        //   1111  - indexed key, varint encoded index
+        //   other - indexed key, inline encoded index
+      case 0:
+      case 1:
+        switch (cur & 0xf) {
+          case 0:  // literal key
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseLiteralKey<String::Extern>());
+          case 0xf:  // varint encoded key index
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseVarIdxKey<String::Extern>(0xf));
+          default:  // inline encoded key index
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseIdxKey<String::Extern>(cur & 0xf));
+        }
+        // Update max table size.
+        // First byte format: 001xxxxx
+        // Where xxxxx:
+        //   11111 - max size is varint encoded
+        //   other - max size is stored inline
+      case 2:
+        // inline encoded max table size
+        return FinishMaxTableSize(cur & 0x1f);
+      case 3:
+        if (cur == 0x3f) {
+          // varint encoded max table size
+          return FinishMaxTableSize(input_->ParseVarint(0x1f));
+        } else {
+          // inline encoded max table size
+          return FinishMaxTableSize(cur & 0x1f);
+        }
+        // Literal header with incremental indexing.
+        // First byte format: 01xxxxxx
+        // Where xxxxxx:
+        //   000000 - literal key
+        //   111111 - indexed key, varint encoded index
+        //   other  - indexed key, inline encoded index
+      case 4:
+        if (cur == 0x40) {
+          // literal key
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseLiteralKey<String::Intern>());
+        }
+      case 5:
+      case 6:
+        // inline encoded key index
+        return FinishHeader<TableAction::kAddToTable>(
+            ParseIdxKey<String::Intern>(cur & 0x3f));
+      case 7:
+        if (cur == 0x7f) {
+          // varint encoded key index
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseVarIdxKey<String::Intern>(0x3f));
+        } else {
+          // inline encoded key index
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseIdxKey<String::Intern>(cur & 0x3f));
+        }
+        // Indexed Header Field Representation
+        // First byte format: 1xxxxxxx
+        // Where xxxxxxx:
+        //   0000000 - illegal
+        //   1111111 - varint encoded field index
+        //   other   - inline encoded field index
+      case 8:
+        if (cur == 0x80) {
+          // illegal value.
+          return input_->MaybeSetErrorAndReturn(
+              [] {
+                return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "Illegal hpack op code");
+              },
+              false);
+        }
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+        // inline encoded field index
+        return FinishIndexed(cur & 0x7f);
+      case 15:
+        if (cur == 0xff) {
+          // varint encoded field index
+          return FinishIndexed(input_->ParseVarint(0x7f));
+        } else {
+          // inline encoded field index
+          return FinishIndexed(cur & 0x7f);
+        }
     }
-    return true;
+    GPR_UNREACHABLE_CODE(abort());
   }
-
-  // Fetch the error that occurred, resetting it to NONE.
-  grpc_error_handle TakeError() { return input_.TakeError(); }
 
  private:
   void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
@@ -987,126 +1091,25 @@ class HPackParser::Parser {
       GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
                            GRPC_MDELEM_STORAGE_INTERNED ||
                        GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
-      grpc_error_handle err = table_->Add(md);
+      grpc_error_handle err = grpc_chttp2_hptbl_add(table_, md);
       if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-        input_.SetError(err);
+        input_->SetError(err);
         return false;
       };
     }
     // Pass up to the transport
     grpc_error_handle err = (*sink_)(md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-      input_.SetError(err);
+      input_->SetError(err);
       return false;
     }
     return true;
   }
 
-  bool ParseElem() {
-    auto cur = *input_.Next();
-    switch (cur >> 4) {
-        // Literal header not indexed - First byte format: 0000xxxx
-        // Literal header never indexed - First byte format: 0001xxxx
-        // Where xxxx:
-        //   0000  - literal key
-        //   1111  - indexed key, varint encoded index
-        //   other - indexed key, inline encoded index
-      case 0:
-      case 1:
-        switch (cur & 0xf) {
-          case 0:  // literal key
-            return FinishHeader<TableAction::kOmitFromTable>(
-                ParseLiteralKey<String::Extern>());
-          case 0xf:  // varint encoded key index
-            return FinishHeader<TableAction::kOmitFromTable>(
-                ParseVarIdxKey<String::Extern>(0xf));
-          default:  // inline encoded key index
-            return FinishHeader<TableAction::kOmitFromTable>(
-                ParseIdxKey<String::Extern>(cur & 0xf));
-        }
-        // Update max table size.
-        // First byte format: 001xxxxx
-        // Where xxxxx:
-        //   11111 - max size is varint encoded
-        //   other - max size is stored inline
-      case 2:
-        // inline encoded max table size
-        return FinishMaxTableSize(cur & 0x1f);
-      case 3:
-        if (cur == 0x3f) {
-          // varint encoded max table size
-          return FinishMaxTableSize(input_.ParseVarint(0x1f));
-        } else {
-          // inline encoded max table size
-          return FinishMaxTableSize(cur & 0x1f);
-        }
-        // Literal header with incremental indexing.
-        // First byte format: 01xxxxxx
-        // Where xxxxxx:
-        //   000000 - literal key
-        //   111111 - indexed key, varint encoded index
-        //   other  - indexed key, inline encoded index
-      case 4:
-        if (cur == 0x40) {
-          // literal key
-          return FinishHeader<TableAction::kAddToTable>(
-              ParseLiteralKey<String::Intern>());
-        }
-      case 5:
-      case 6:
-        // inline encoded key index
-        return FinishHeader<TableAction::kAddToTable>(
-            ParseIdxKey<String::Intern>(cur & 0x3f));
-      case 7:
-        if (cur == 0x7f) {
-          // varint encoded key index
-          return FinishHeader<TableAction::kAddToTable>(
-              ParseVarIdxKey<String::Intern>(0x3f));
-        } else {
-          // inline encoded key index
-          return FinishHeader<TableAction::kAddToTable>(
-              ParseIdxKey<String::Intern>(cur & 0x3f));
-        }
-        // Indexed Header Field Representation
-        // First byte format: 1xxxxxxx
-        // Where xxxxxxx:
-        //   0000000 - illegal
-        //   1111111 - varint encoded field index
-        //   other   - inline encoded field index
-      case 8:
-        if (cur == 0x80) {
-          // illegal value.
-          return input_.MaybeSetErrorAndReturn(
-              [] {
-                return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "Illegal hpack op code");
-              },
-              false);
-        }
-      case 9:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-      case 14:
-        // inline encoded field index
-        return FinishIndexed(cur & 0x7f);
-      case 15:
-        if (cur == 0xff) {
-          // varint encoded field index
-          return FinishIndexed(input_.ParseVarint(0x7f));
-        } else {
-          // inline encoded field index
-          return FinishIndexed(cur & 0x7f);
-        }
-    }
-    GPR_UNREACHABLE_CODE(abort());
-  }
-
   // Parse a string encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseLiteralKey() {
-    auto key = String::Parse(&input_);
+    auto key = String::Parse(input_);
     if (!key.has_value()) return GRPC_MDNULL;
     auto key_slice = key->Take<String::Intern>();
     auto value = ParseValueString(key_slice);
@@ -1136,7 +1139,7 @@ class HPackParser::Parser {
   // Parse a varint index encoded key and a string encoded value
   template <typename TakeValueType>
   grpc_mdelem ParseVarIdxKey(uint32_t offset) {
-    auto index = input_.ParseVarint(offset);
+    auto index = input_->ParseVarint(offset);
     if (GPR_UNLIKELY(!index.has_value())) return GRPC_MDNULL;
     return ParseIdxKey<TakeValueType>(*index);
   }
@@ -1145,15 +1148,15 @@ class HPackParser::Parser {
   template <typename SliceType>
   absl::optional<String> ParseValueString(const SliceType& key) {
     if (grpc_is_refcounted_slice_binary_header(key)) {
-      return String::ParseBinary(&input_);
+      return String::ParseBinary(input_);
     } else {
-      return String::Parse(&input_);
+      return String::Parse(input_);
     }
   }
 
   // Emit an indexed field
   bool FinishIndexed(absl::optional<uint32_t> index) {
-    dynamic_table_updates_allowed_ = 0;
+    *dynamic_table_updates_allowed_ = 0;
     if (!index.has_value()) return false;
     grpc_mdelem md = table_->Fetch(*index);
     if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
@@ -1166,22 +1169,21 @@ class HPackParser::Parser {
   // finish parsing a max table size change
   bool FinishMaxTableSize(absl::optional<uint32_t> size) {
     if (!size.has_value()) return false;
-    if (dynamic_table_updates_allowed_ == 0) {
-      return input_.MaybeSetErrorAndReturn(
+    if (*dynamic_table_updates_allowed_ == 0) {
+      return input_->MaybeSetErrorAndReturn(
           [] {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "More than two max table size changes in a single frame");
           },
           false);
     }
-    dynamic_table_updates_allowed_--;
+    (*dynamic_table_updates_allowed_)--;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
       gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
     }
-    grpc_error_handle err =
-        table_->SetCurrentTableSize(*size);
+    grpc_error_handle err = table_->SetCurrentTableSize(*size);
     if (err != GRPC_ERROR_NONE) {
-      input_.SetError(err);
+      input_->SetError(err);
       return false;
     }
     return true;
@@ -1191,7 +1193,7 @@ class HPackParser::Parser {
   // unmodified.
   template <typename R>
   R InvalidHPackIndexError(uint32_t index, R result) {
-    return input_.MaybeSetErrorAndReturn(
+    return input_->MaybeSetErrorAndReturn(
         [this, index] {
           return grpc_error_set_int(
               grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1204,10 +1206,10 @@ class HPackParser::Parser {
         result);
   }
 
-  Input input_;
+  Input* input_;
   HPackParser::Sink* sink_;
   HPackTable* const table_;
-  uint8_t dynamic_table_updates_allowed_ = 2;
+  uint8_t* dynamic_table_updates_allowed_;
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
@@ -1261,27 +1263,57 @@ void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);
   boundary_ = boundary;
   priority_ = priority;
+  dynamic_table_updates_allowed_ = 2;
 }
 
-void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
-  buffer_.Queue(slice);
+grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
+  if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
+    std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
+    buffer.insert(buffer.end(), GRPC_SLICE_START_PTR(slice),
+                  GRPC_SLICE_END_PTR(slice));
+    return ParseInput(
+        Input(nullptr, buffer.data(), buffer.data() + buffer.size()), is_last);
+  }
+  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
+                          GRPC_SLICE_END_PTR(slice)),
+                    is_last);
 }
 
-grpc_error_handle HPackParser::Parse(const grpc_slice& last_slice) {
-  return buffer_.Finalize(
-      last_slice, [this](grpc_slice_refcount* refcount, const uint8_t* begin,
-                         const uint8_t* end) {
-        Parser p(Input(refcount, begin, end), &sink_, &table_);
-        switch (priority_) {
-          case Priority::None:
-            break;
-          case Priority::Included:
-            if (!p.SkipPriority()) return p.TakeError();
-            break;
-        }
-        if (!p.ParseBody()) return p.TakeError();
-        return GRPC_ERROR_NONE;
-      });
+grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
+  if (ParseInputInner(&input)) {
+    return GRPC_ERROR_NONE;
+  }
+  if (input.eof_error()) {
+    if (GPR_UNLIKELY(is_last && is_boundary())) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Incomplete header at the end of a header/continuation sequence");
+    }
+    unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
+    return GRPC_ERROR_NONE;
+  }
+  return input.TakeError();
+}
+
+bool HPackParser::ParseInputInner(Input* input) {
+  switch (priority_) {
+    case Priority::None:
+      break;
+    case Priority::Included: {
+      if (input->remaining() < 5) return input->UnexpectedEOF(false);
+      input->Advance(5);
+      input->UpdateFrontier();
+      priority_ = Priority::None;
+    }
+  }
+  while (!input->end_of_stream()) {
+    if (GPR_UNLIKELY(
+            !Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_)
+                 .Parse())) {
+      return false;
+    }
+    input->UpdateFrontier();
+  }
+  return true;
 }
 
 void HPackParser::FinishFrame() { sink_ = Sink(); }
@@ -1337,42 +1369,44 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
-  if (!is_last || !parser->is_boundary()) {
-    parser->QueueBufferToParse(slice);
-    return GRPC_ERROR_NONE;
-  }
-  grpc_error_handle error = parser->Parse(slice);
+  grpc_error_handle error = parser->Parse(slice, is_last != 0);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
-  /* need to check for null stream: this can occur if we receive an invalid
-      stream id on a header */
-  if (s != nullptr) {
-    if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many trailer frames");
-    }
-    /* Process stream compression md element if it exists */
-    if (s->header_frames_received == 0) { /* Only acts on initial metadata */
-      parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
-    }
-    s->published_metadata[s->header_frames_received] =
-        GRPC_METADATA_PUBLISHED_FROM_WIRE;
-    maybe_complete_funcs[s->header_frames_received](t, s);
-    s->header_frames_received++;
-    if (parser->is_eof()) {
-      if (t->is_client && !s->write_closed) {
-        /* server eof ==> complete closure; we may need to forcefully close
-            the stream. Wait until the combiner lock is ready to be released
-            however -- it might be that we receive a RST_STREAM following this
-            and can avoid the extra write */
-        GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-        t->combiner->FinallyRun(
-            GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
-            GRPC_ERROR_NONE);
+  if (is_last) {
+    /* need to check for null stream: this can occur if we receive an invalid
+       stream id on a header */
+    if (s != nullptr) {
+      if (parser->is_boundary()) {
+        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Too many trailer frames");
+        }
+        /* Process stream compression md element if it exists */
+        if (s->header_frames_received ==
+            0) { /* Only acts on initial metadata */
+          parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
+        }
+        s->published_metadata[s->header_frames_received] =
+            GRPC_METADATA_PUBLISHED_FROM_WIRE;
+        maybe_complete_funcs[s->header_frames_received](t, s);
+        s->header_frames_received++;
       }
-      grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+      if (parser->is_eof()) {
+        if (t->is_client && !s->write_closed) {
+          /* server eof ==> complete closure; we may need to forcefully close
+             the stream. Wait until the combiner lock is ready to be released
+             however -- it might be that we receive a RST_STREAM following this
+             and can avoid the extra write */
+          GRPC_CHTTP2_STREAM_REF(s, "final_rst");
+          t->combiner->FinallyRun(
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
+              GRPC_ERROR_NONE);
+        }
+        grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+      }
     }
+    parser->FinishFrame();
   }
-  parser->FinishFrame();
   return GRPC_ERROR_NONE;
 }

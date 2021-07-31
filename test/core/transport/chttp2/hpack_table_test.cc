@@ -43,8 +43,8 @@ static void assert_str(const HPackTable* /*tbl*/, grpc_slice mdstr,
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
-static void assert_index(const HPackTable* tbl, uint32_t idx,
-                         const char* key, const char* value) {
+static void assert_index(const HPackTable* tbl, uint32_t idx, const char* key,
+                         const char* value) {
   grpc_mdelem md = tbl->Peek(idx);
   assert_str(tbl, GRPC_MDKEY(md), key);
   assert_str(tbl, GRPC_MDVALUE(md), value);

@@ -885,7 +885,8 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
                             GRPC_MDELEM_DATA(l->md))
-                            ->StaticIndex()) < grpc_core::HPackTable::kLastStaticEntry) {
+                            ->StaticIndex()) <
+            grpc_core::HPackTable::kLastStaticEntry) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);

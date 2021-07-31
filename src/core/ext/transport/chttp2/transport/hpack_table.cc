@@ -38,8 +38,8 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-using hpack_table_detail::kInlineEntries;
 using hpack_table_detail::EntriesForBytes;
+using hpack_table_detail::kInlineEntries;
 
 HPackTable::~HPackTable() {
   for (size_t i = 0; i < num_entries_; i++) {
@@ -118,8 +118,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
 grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
-                      kEntryOverhead;
+                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) + kEntryOverhead;
 
   if (current_table_bytes_ > max_bytes_) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -146,8 +145,7 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   }
 
   // evict entries to ensure no overflow
-  while (elem_bytes >
-         static_cast<size_t>(current_table_bytes_) - mem_used_) {
+  while (elem_bytes > static_cast<size_t>(current_table_bytes_) - mem_used_) {
     EvictOne();
   }
 
@@ -161,7 +159,7 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
-}
+}  // namespace grpc_core
 
 static size_t get_base64_encoded_size(size_t raw_length) {
   static const uint8_t tail_xtra[3] = {0, 2, 3};
