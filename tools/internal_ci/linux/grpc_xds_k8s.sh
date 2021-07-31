@@ -20,6 +20,8 @@ readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
 readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
 readonly GKE_CLUSTER_ZONE="us-central1-a"
+readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+readonly SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
 ## xDS test server/client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
@@ -82,6 +84,7 @@ build_docker_images_if_needed() {
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
 #   KUBE_CONTEXT: The name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: The name of kubectl context with secondary GKE cluster access, if any
 #   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
@@ -100,6 +103,7 @@ run_test() {
   python -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
+    --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
@@ -123,6 +127,7 @@ run_test() {
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
 #   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   None
 # Outputs:
@@ -144,7 +149,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   run_test baseline_test
   run_test change_backend_service_test
-  #run_test failover_test  # TODO(ericgribkoff) Needs secondary region cluster
+  run_test failover_test
   run_test remove_neg_test
   run_test round_robin_test
   run_test security_test
