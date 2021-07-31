@@ -59,7 +59,7 @@ class HPackTable {
   HPackTable(const HPackTable&);
   HPackTable& operator=(const HPackTable&);
 
-  void SetMaxBytes(uint32_t count);
+  void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
   // Lookup, but don't ref.
@@ -111,7 +111,7 @@ class HPackTable {
   }
 
   void EvictOne();
-  void Rebuild(uint32_t new_size);
+  void Rebuild(uint32_t new_cap);
 
   // The first used entry in ents.
   uint32_t first_entry_ = 0;
