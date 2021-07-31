@@ -39,6 +39,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::ResolvedAddressToURI;
+using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -107,7 +108,7 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
 
 void endpoint_destroy(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  grpc_slice_allocator_destroy(ep->slice_allocator);
+  grpc_slice_allocator_destroy(eeep->slice_allocator);
   delete eeep;
 }
 
@@ -156,7 +157,8 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 }  // namespace
 
 grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
+    std::unique_ptr<SliceAllocator> slice_allocator) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   // TODO(hork): populate endpoint->ru from the uvEngine's subclass

@@ -41,23 +41,44 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 using ::grpc_event_engine::experimental::SliceBuffer;
 }  // namespace
 
-// TODO(hork): remove these classes in PR #26643, when the iomgr APIs change to
-// accept SliceAllocators and SliceAllocatorFactory(ie)s. In the meantime, the
-// libuv work has temporary implementations as well.
-class NoopSliceAllocator : public SliceAllocator {
+class WrappedInternalSliceAllocator : public SliceAllocator {
  public:
+  explicit WrappedInternalSliceAllocator(grpc_slice_allocator* slice_allocator)
+      : slice_allocator_(slice_allocator) {}
+
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb) {
+    // TODO(nnoble): requires the SliceBuffer definition.
+    grpc_slice_allocator_allocate(
+        slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
+        dest->RawSliceBuffer(),
+        [](void* arg, grpc_error_handle error) {
+          auto cb = static_cast<SliceAllocator::AllocateCallback*>(arg);
+          (*cb)(grpc_error_to_absl_status(error));
+          delete cb;
+        },
+        new SliceAllocator::AllocateCallback(cb));
     return absl::OkStatus();
   }
+
+ private:
+  grpc_slice_allocator* slice_allocator_;
 };
 
-class NoopSliceAllocatorFactory : public SliceAllocatorFactory {
+class WrappedInternalSliceAllocatorFactory : public SliceAllocatorFactory {
  public:
+  explicit WrappedInternalSliceAllocatorFactory(
+      grpc_slice_allocator_factory* slice_allocator_factory)
+      : slice_allocator_factory_(slice_allocator_factory) {}
   std::unique_ptr<SliceAllocator> CreateSliceAllocator(
       absl::string_view peer_name) {
-    return absl::make_unique<NoopSliceAllocator>();
+    return absl::make_unique<WrappedInternalSliceAllocator>(
+        grpc_slice_allocator_factory_create_slice_allocator(
+            slice_allocator_factory_, peer_name));
   };
+
+ private:
+  grpc_slice_allocator_factory* slice_allocator_factory_;
 };
 
 struct grpc_tcp_server {
@@ -115,16 +136,16 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
-  // TODO(hork): tcp_connect will change to accept a SliceAllocator. This is
-  // temporary.
-  auto sa = absl::make_unique<NoopSliceAllocator>();
+  auto ee_slice_allocator =
+      absl::make_unique<WrappedInternalSliceAllocator>(slice_allocator);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
   absl::Status connected = grpc_iomgr_event_engine()->Connect(
-      ee_on_connect, ra, endpoint_config, std::move(sa), ee_deadline);
+      ee_on_connect, ra, endpoint_config, std::move(ee_slice_allocator),
+      ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
     grpc_endpoint_destroy(*endpoint);
@@ -139,18 +160,19 @@ grpc_error* tcp_server_create(
     grpc_slice_allocator_factory* slice_allocator_factory,
     grpc_tcp_server** server) {
   ChannelArgsEndpointConfig endpoint_config(args);
-  // TODO(hork): tcp_server_create will change to accept a
-  // SliceAllocatorFactory. This is temporary.
-  grpc_slice_allocator_factory_destroy(slice_allocator_factory);
-  auto saf = absl::make_unique<NoopSliceAllocatorFactory>();
+  auto ee_slice_allocator_factory =
+      absl::make_unique<WrappedInternalSliceAllocatorFactory>(
+          slice_allocator_factory);
   EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
-          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
+                   std::unique_ptr<SliceAllocator> slice_allocator) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* iomgr_endpoint =
-                grpc_tcp_server_endpoint_create(std::move(ee_endpoint));
+                grpc_tcp_server_endpoint_create(std::move(ee_endpoint),
+                                                std::move(slice_allocator));
             grpc_tcp_server_acceptor* acceptor =
                 static_cast<grpc_tcp_server_acceptor*>(
                     gpr_zalloc(sizeof(*acceptor)));
@@ -163,7 +185,7 @@ grpc_error* tcp_server_create(
             grpc_pollset_ee_broadcast_event();
           },
           GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE),
-          endpoint_config, std::move(saf));
+          endpoint_config, std::move(ee_slice_allocator_factory));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
