@@ -241,8 +241,8 @@ class KubernetesNamespace:
 
         @retrying.retry(
             retry_on_result=lambda r: not self._replicas_available(r, count),
-            stop_max_delay=timeout_sec * 1000 * 10,  # TODO
-            wait_fixed=wait_sec * 1000 * 10)  # TODO
+            stop_max_delay=timeout_sec * 1000,
+            wait_fixed=wait_sec * 1000)
         def _wait_for_deployment_available_replicas():
             deployment = self.get_deployment(name)
             logger.debug(
