@@ -1091,7 +1091,7 @@ class HPackParser::Parser {
       GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
                            GRPC_MDELEM_STORAGE_INTERNED ||
                        GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
-      grpc_error_handle err = grpc_chttp2_hptbl_add(table_, md);
+      grpc_error_handle err = table_->Add(md);
       if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
         input_->SetError(err);
         return false;
