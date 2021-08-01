@@ -133,6 +133,8 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
+  Promise<CallCompletion> CreatePromise(InitialMetadata initial_metadata);
+
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
@@ -272,6 +274,10 @@ class ClientChannel {
       SubchannelInterface* subchannel) const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
+  Promise<absl::Status> ApplyServiceConfigPromise(
+      const InitialMetadata& initial_metadata,
+      RefCountedPtr<ConfigSelector> config_selector);
+
   //
   // Fields set at construction and never modified.
   //
@@ -284,6 +290,9 @@ class ClientChannel {
   UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
+
+  Observable<absl::StatusOr<RefCountedPtr<ConfigSelector>>>
+      config_selector_observable_;
 
   //
   // Fields related to name resolution.  Guarded by resolution_mu_.
@@ -408,6 +417,8 @@ class ClientChannel::LoadBalancedCall
     return subchannel_call_;
   }
 
+  Promise<CallCompletion> CreatePromise(InitialMetadata initial_metadata);
+
  private:
   class LbQueuedCallCanceller;
   class Metadata;
@@ -456,6 +467,9 @@ class ClientChannel::LoadBalancedCall
   // Adds the call to the channel's list of queued picks if not already present.
   void MaybeAddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
+
+  LoopControl<absl::StatusOr<PickResult::Complete>> DoPick(
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker);
 
   ClientChannel* chand_;
 
