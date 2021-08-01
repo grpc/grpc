@@ -53,7 +53,7 @@ class HPackTable {
   // Per entry overhead bytes as per the spec
   static constexpr uint32_t kEntryOverhead = hpack_table_detail::kEntryOverhead;
 
-  HPackTable() = default;
+  HPackTable();
   ~HPackTable();
 
   HPackTable(const HPackTable&);

@@ -41,6 +41,8 @@ namespace grpc_core {
 using hpack_table_detail::EntriesForBytes;
 using hpack_table_detail::kInlineEntries;
 
+HPackTable::HPackTable() : entries_(kInlineEntries) {}
+
 HPackTable::~HPackTable() {
   for (size_t i = 0; i < num_entries_; i++) {
     GRPC_MDELEM_UNREF(entries_[(first_entry_ + i) % entries_.size()]);
