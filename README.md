@@ -29,7 +29,7 @@ For instructions on how to use the language-specific gRPC runtime for a project,
  * [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
  * [Java](https://github.com/grpc/grpc-java): Use JARs from Maven Central Repository
  * [Kotlin](https://github.com/grpc/grpc-kotlin): Use JARs from Maven Central Repository
- * [Node](https://github.com/grpc/grpc-node): `npm install grpc`
+ * [Node](https://github.com/grpc/grpc-node): `npm install @grpc/grpc-js`
  * [Objective-C](src/objective-c): Add `gRPC-ProtoRPC` dependency to podspec
  * [PHP](src/php): `pecl install grpc`
  * [Python](src/python/grpcio): `pip install grpcio`
