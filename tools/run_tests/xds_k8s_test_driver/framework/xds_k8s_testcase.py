@@ -51,6 +51,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 
 # Type aliases
 TrafficDirectorManager = traffic_director.TrafficDirectorManager
+TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
@@ -327,6 +328,18 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
                                              **kwargs)
         test_client.wait_for_active_server_channel()
         return test_client
+
+
+class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
+    td: TrafficDirectorAppNetManager
+
+    def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
+        return TrafficDirectorAppNetManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
