@@ -1648,14 +1648,17 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
+  src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
   src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
@@ -1682,6 +1685,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
+  src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
