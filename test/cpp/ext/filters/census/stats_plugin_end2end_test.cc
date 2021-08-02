@@ -505,17 +505,13 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
               entry.second.mean());
     }
     // We expect the retry delay to be around 100ms.
-    // TODO(roth): On some runs, the retry_filter does not invoke
-    // `RecordEnd()` on an attempt before starting a new attempt. This causes
-    // the OpenCensus filter to believe that there are multiple runs in progress
-    // which leads to inconsistencies in the calculation of retry delay.
-    EXPECT_THAT(client_retry_delay_per_call_view.GetData().distribution_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(client_method_name_),
-                    ::testing::Property(
-                        &Distribution::mean,
-                        ::testing::AllOf(
-                            /* ::testing::Ge(50), */ ::testing::Le(300))))));
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(
+                &Distribution::mean,
+                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
   }
 }
 

@@ -185,7 +185,6 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(method_));
-
   ::opencensus::stats::Record(
       {{RpcClientRetriesPerCall(), retries_ - 1},  // exclude first attempt
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
