@@ -38,7 +38,7 @@ INSTALL_REQUIRES = [
 SETUP_REQUIRES = INSTALL_REQUIRES + ['grpcio-tools']
 setuptools.setup(
     name='xds-protos',
-    version='0.0.10',
+    version='0.0.11',
     packages=PACKAGES,
     description='Generated Python code from envoyproxy/data-plane-api',
     long_description_content_type='text/x-rst',
