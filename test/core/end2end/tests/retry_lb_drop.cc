@@ -159,11 +159,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests that we don't retry when retries are disabled via the
-// GRPC_ARG_ENABLE_RETRIES channel arg, even when there is retry
-// configuration in the service config.
-// - 1 retry allowed for ABORTED status
-// - first attempt returns ABORTED but does not retry
+// Tests that we don't retry when the LB policy drops a call,
+// even when there is retry configuration in the service config.
+// - 1 retry allowed for UNAVAILABLE status
+// - first attempt returns UNAVAILABLE due to LB drop but does not retry
 static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_op ops[6];
