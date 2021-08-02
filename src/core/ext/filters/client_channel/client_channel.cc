@@ -2750,8 +2750,6 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     if (batch->recv_initial_metadata) {
       recv_initial_metadata_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata;
-      recv_initial_metadata_flags_ =
-          batch->payload->recv_initial_metadata.recv_flags;
       original_recv_initial_metadata_ready_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
       GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
@@ -2863,8 +2861,11 @@ void ClientChannel::LoadBalancedCall::SendInitialMetadataOnComplete(
 void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  self->call_attempt_tracer_->RecordReceivedInitialMetadata(
-      self->recv_initial_metadata_, *self->recv_initial_metadata_flags_);
+  if (error == GRPC_ERROR_NONE) {
+    // recv_initial_metadata_flags is not populated for clients
+    self->call_attempt_tracer_->RecordReceivedInitialMetadata(
+        self->recv_initial_metadata_, 0 /* recv_initial_metadata_flags */);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                GRPC_ERROR_REF(error));
 }
@@ -2872,7 +2873,9 @@ void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
 void ClientChannel::LoadBalancedCall::RecvMessageReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
+  if (*self->recv_message_ != nullptr) {
+    self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
                GRPC_ERROR_REF(error));
 }
