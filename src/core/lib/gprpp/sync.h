@@ -152,26 +152,6 @@ static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
   }
 }
 
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
-                                 absl::Duration timeout) {
-  while (!pred()) {
-    if (cv->WaitWithTimeout(mu, timeout)) return true;
-  }
-  return false;
-}
-
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred,
-                                  absl::Time deadline) {
-  while (!pred()) {
-    if (cv->WaitWithDeadline(mu, deadline)) return true;
-  }
-  return false;
-}
-
 // Deprecated. Prefer MutexLock
 class MutexLockForGprMu {
  public:
