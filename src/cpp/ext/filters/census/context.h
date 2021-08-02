@@ -106,6 +106,12 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
                            CensusContext* parent_ctx);
 
+// Creates a new client context with \a parent_ctxt as the parent and propagates
+// the tags as well.
+void GenerateClientContextFromParentWithTags(absl::string_view method,
+                                             CensusContext* ctxt,
+                                             const CensusContext& parent_ctxt);
+
 // Returns the incoming data size from the grpc call final info.
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);
 

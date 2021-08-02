@@ -59,8 +59,8 @@ grpc_error_handle CensusClientCallData::Init(
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
                               uint32_t /* flags */) {
-  GenerateClientContext(parent_->qualified_method_, &context_,
-                        &parent_->context_);
+  GenerateClientContextFromParentWithTags(parent_->qualified_method_, &context_,
+                                          parent_->context_);
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {

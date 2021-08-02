@@ -52,7 +52,7 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();
     if (span_ctxt.IsValid()) {
-      new (ctxt) CensusContext(method, &span, parent_ctxt->tags());
+      new (ctxt) CensusContext(method, &span, TagMap{});
       return;
     }
   }
@@ -65,6 +65,16 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
   }
   // Create span without parent.
   new (ctxt) CensusContext(method, tags);
+}
+
+void GenerateClientContextFromParentWithTags(absl::string_view method,
+                                             CensusContext* ctxt,
+                                             const CensusContext& parent_ctxt) {
+  // Destruct the current CensusContext to free the Span memory before
+  // overwriting it below.
+  ctxt->~CensusContext();
+  GPR_DEBUG_ASSERT(parent_ctxt.Context().IsValid());
+  new (ctxt) CensusContext(method, &parent_ctxt.Span(), parent_ctxt.tags());
 }
 
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
