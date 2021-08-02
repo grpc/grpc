@@ -46,6 +46,10 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
   explicit WrappedInternalSliceAllocator(grpc_slice_allocator* slice_allocator)
       : slice_allocator_(slice_allocator) {}
 
+  ~WrappedInternalSliceAllocator() {
+    grpc_slice_allocator_destroy(slice_allocator_);
+  }
+
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb) override {
     // TODO(nnoble): requires the SliceBuffer definition.
@@ -61,10 +65,6 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
     return absl::OkStatus();
   }
 
-  ~WrappedInternalSliceAllocator() {
-    grpc_slice_allocator_destroy(slice_allocator_);
-  }
-
  private:
   grpc_slice_allocator* slice_allocator_;
 };
@@ -75,16 +75,16 @@ class WrappedInternalSliceAllocatorFactory : public SliceAllocatorFactory {
       grpc_slice_allocator_factory* slice_allocator_factory)
       : slice_allocator_factory_(slice_allocator_factory) {}
 
+  ~WrappedInternalSliceAllocatorFactory() {
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory_);
+  }
+
   std::unique_ptr<SliceAllocator> CreateSliceAllocator(
       absl::string_view peer_name) override {
     return absl::make_unique<WrappedInternalSliceAllocator>(
         grpc_slice_allocator_factory_create_slice_allocator(
             slice_allocator_factory_, peer_name));
   };
-
-  ~WrappedInternalSliceAllocatorFactory() {
-    grpc_slice_allocator_factory_destroy(slice_allocator_factory_);
-  }
 
  private:
   grpc_slice_allocator_factory* slice_allocator_factory_;
