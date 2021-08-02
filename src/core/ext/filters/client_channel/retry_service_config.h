@@ -83,7 +83,7 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
+      const grpc_channel_args* args, const Json& json,
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();

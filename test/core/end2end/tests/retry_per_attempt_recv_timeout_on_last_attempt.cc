@@ -120,6 +120,8 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
           const_cast<char*>(
