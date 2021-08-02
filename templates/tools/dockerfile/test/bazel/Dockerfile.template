@@ -48,12 +48,6 @@
       python3-all-dev ${'\\'}
       python-setuptools
 
-  # Install Python packages from PyPI
-  RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-  RUN pip install --upgrade pip==19.3.1
-  RUN pip install virtualenv==20.7.0
-  RUN pip install futures==3.3.0 enum34==1.1.10 protobuf==3.17.3 six==1.16.0 twisted==19.10.0
-
   <%include file="../../compile_python_36.include"/>
 
   <%include file="../../bazel.include"/>
