@@ -49,29 +49,12 @@
       python-setuptools
 
   # Install Python packages from PyPI
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3
-  RUN pip install virtualenv
-  RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.17.3 six==1.15.0 twisted
+  RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
+  RUN pip install --upgrade pip==19.3.1
+  RUN pip install virtualenv==20.7.0
+  RUN pip install futures==3.3.0 enum34==1.1.10 protobuf==3.17.3 six==1.16.0 twisted==19.10.0
 
-  #=================
-  # Compile CPython 3.6.9 from source
-
-  RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
-  RUN apt-get update && apt-get install -y jq build-essential libffi-dev
-
-  RUN cd /tmp && ${'\\'}
-      wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && ${'\\'}
-      tar xzvf Python-3.6.9.tgz && ${'\\'}
-      cd Python-3.6.9 && ${'\\'}
-      ./configure && ${'\\'}
-      make install
-
-  RUN cd /tmp && ${'\\'}
-      echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && ${'\\'}
-      md5sum -c checksum.md5
-
-  RUN python3.6 -m ensurepip && ${'\\'}
-      python3.6 -m pip install coverage
+  <%include file="../../compile_python_36.include"/>
 
   <%include file="../../bazel.include"/>
   

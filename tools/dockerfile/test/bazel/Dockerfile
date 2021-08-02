@@ -47,9 +47,10 @@ RUN apt-get update && apt-get install -y \
     python-setuptools
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
-RUN pip install virtualenv
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.17.3 six==1.15.0 twisted
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
+RUN pip install --upgrade pip==19.3.1
+RUN pip install virtualenv==20.7.0
+RUN pip install futures==3.3.0 enum34==1.1.10 protobuf==3.17.3 six==1.16.0 twisted==19.10.0
 
 #=================
 # Compile CPython 3.6.9 from source
@@ -70,6 +71,7 @@ RUN cd /tmp && \
 
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
+
 
 #========================
 # Bazel installation
