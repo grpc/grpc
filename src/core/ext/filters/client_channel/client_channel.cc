@@ -1516,7 +1516,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       channel_args_, args_to_add.data(), args_to_add.size());
   new_args = config_selector->ModifyChannelArgs(new_args);
   bool enable_retries =
-      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, false);
+      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, true);
   // Construct dynamic filter stack.
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();

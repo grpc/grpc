@@ -181,8 +181,6 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_core::g_pick_args_vector = &pick_args_seen;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
           const_cast<char*>(

@@ -384,7 +384,7 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
-/** Enables retry functionality.  Defaults to false.  When enabled,
+/** Enables retry functionality.  Defaults to true.  When enabled,
     configurable retries are enabled when they are configured via the
     service config.  For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
