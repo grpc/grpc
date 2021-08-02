@@ -411,7 +411,7 @@ class RetryFilter::CallData {
 
     CallData* calld_;
     AttemptDispatchController attempt_dispatch_controller_;
-    RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call_;
+    OrphanablePtr<ClientChannel::LoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
     grpc_timer per_attempt_recv_timer_;
@@ -521,7 +521,7 @@ class RetryFilter::CallData {
   static void OnRetryTimer(void* arg, grpc_error_handle error);
   static void OnRetryTimerLocked(void* arg, grpc_error_handle error);
 
-  RefCountedPtr<ClientChannel::LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<ClientChannel::LoadBalancedCall> CreateLoadBalancedCall(
       ConfigSelector::CallDispatchController* call_dispatch_controller);
 
   void CreateCallAttempt();
@@ -549,7 +549,7 @@ class RetryFilter::CallData {
   // LB call used when we've committed to a call attempt and the retry
   // state for that attempt is no longer needed.  This provides a fast
   // path for long-running streaming calls that minimizes overhead.
-  RefCountedPtr<ClientChannel::LoadBalancedCall> committed_call_;
+  OrphanablePtr<ClientChannel::LoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -1366,6 +1366,9 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   grpc_metadata_batch_move(
       &call_attempt_->recv_initial_metadata_,
       pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
+  // Propagate trailing_metadata_available.
+  *pending->batch->payload->recv_initial_metadata.trailing_metadata_available =
+      call_attempt_->trailing_metadata_available_;
   // Update bookkeeping.
   // Note: Need to do this before invoking the callback, since invoking
   // the callback will result in yielding the call combiner.
@@ -1593,6 +1596,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     call_attempt_->recv_trailing_metadata_error_ = error;
     return;
   }
+  // Copy transport stats to be delivered up to the surface.
+  grpc_transport_move_stats(
+      &call_attempt_->collect_stats_,
+      pending->batch->payload->recv_trailing_metadata.collect_stats);
   // Return metadata.
   grpc_metadata_batch_move(
       &call_attempt_->recv_trailing_metadata_,
@@ -1761,6 +1768,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   if (pending == nullptr) {
     GRPC_ERROR_UNREF(error);
     return;
+  }
+  // Propagate payload.
+  if (batch_.send_message) {
+    pending->batch->payload->send_message.stream_write_closed =
+        batch_.payload->send_message.stream_write_closed;
   }
   // Add closure.
   closures->Add(pending->batch->on_complete, error,
@@ -2189,6 +2201,11 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   }
   // If we do not yet have a call attempt, create one.
   if (call_attempt_ == nullptr) {
+    // If there is no retry policy, then commit retries immediately.
+    // This ensures that the code below will always jump to the fast path.
+    // TODO(roth): Remove this special case when we implement
+    // transparent retries.
+    if (retry_policy_ == nullptr) retry_committed_ = true;
     // If this is the first batch and retries are already committed
     // (e.g., if this batch put the call above the buffer size limit), then
     // immediately create an LB call and delegate the batch to it.  This
@@ -2239,7 +2256,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-RefCountedPtr<ClientChannel::LoadBalancedCall>
+OrphanablePtr<ClientChannel::LoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
