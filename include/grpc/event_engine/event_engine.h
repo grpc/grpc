@@ -161,9 +161,7 @@ class EventEngine {
   class Listener {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback =
-        std::function<void(std::unique_ptr<Endpoint>,
-                           std::unique_ptr<SliceAllocator> slice_allocator)>;
+    using AcceptCallback = std::function<void(std::unique_ptr<Endpoint>)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///

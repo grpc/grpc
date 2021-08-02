@@ -254,12 +254,9 @@ class SockPair : public EndpointPairFixture {
   explicit SockPair(Service* service,
                     const FixtureConfiguration& fixture_configuration =
                         FixtureConfiguration())
-      : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
-
- private:
-  static grpc_endpoint_pair MakeEndpoints() {
-    return grpc_iomgr_create_endpoint_pair("test", nullptr);
-  }
+      : EndpointPairFixture(service,
+                            grpc_iomgr_create_endpoint_pair("test", nullptr),
+                            fixture_configuration) {}
 };
 
 /* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)

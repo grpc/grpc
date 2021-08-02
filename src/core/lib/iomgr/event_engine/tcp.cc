@@ -47,7 +47,7 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
       : slice_allocator_(slice_allocator) {}
 
   absl::Status Allocate(size_t size, SliceBuffer* dest,
-                        SliceAllocator::AllocateCallback cb) {
+                        SliceAllocator::AllocateCallback cb) override {
     // TODO(nnoble): requires the SliceBuffer definition.
     grpc_slice_allocator_allocate(
         slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
@@ -61,6 +61,10 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
     return absl::OkStatus();
   }
 
+  ~WrappedInternalSliceAllocator() {
+    grpc_slice_allocator_destroy(slice_allocator_);
+  }
+
  private:
   grpc_slice_allocator* slice_allocator_;
 };
@@ -70,12 +74,17 @@ class WrappedInternalSliceAllocatorFactory : public SliceAllocatorFactory {
   explicit WrappedInternalSliceAllocatorFactory(
       grpc_slice_allocator_factory* slice_allocator_factory)
       : slice_allocator_factory_(slice_allocator_factory) {}
+
   std::unique_ptr<SliceAllocator> CreateSliceAllocator(
-      absl::string_view peer_name) {
+      absl::string_view peer_name) override {
     return absl::make_unique<WrappedInternalSliceAllocator>(
         grpc_slice_allocator_factory_create_slice_allocator(
             slice_allocator_factory_, peer_name));
   };
+
+  ~WrappedInternalSliceAllocatorFactory() {
+    grpc_slice_allocator_factory_destroy(slice_allocator_factory_);
+  }
 
  private:
   grpc_slice_allocator_factory* slice_allocator_factory_;
@@ -131,8 +140,8 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  const grpc_channel_args* channel_args,
                  const grpc_resolved_address* addr, grpc_millis deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
-      reinterpret_cast<grpc_event_engine_endpoint*>(grpc_tcp_create(
-          channel_args, grpc_sockaddr_to_uri(addr), slice_allocator));
+      reinterpret_cast<grpc_event_engine_endpoint*>(
+          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
@@ -166,13 +175,11 @@ grpc_error* tcp_server_create(
   EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
-          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
-                   std::unique_ptr<SliceAllocator> slice_allocator) {
+          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* iomgr_endpoint =
-                grpc_tcp_server_endpoint_create(std::move(ee_endpoint),
-                                                std::move(slice_allocator));
+                grpc_tcp_server_endpoint_create(std::move(ee_endpoint));
             grpc_tcp_server_acceptor* acceptor =
                 static_cast<grpc_tcp_server_acceptor*>(
                     gpr_zalloc(sizeof(*acceptor)));

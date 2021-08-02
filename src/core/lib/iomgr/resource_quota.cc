@@ -1025,7 +1025,7 @@ void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator) {
   delete slice_allocator;
 }
 
-size_t grpc_slice_allocator_adjust_allocation_length(
+static size_t grpc_slice_allocator_adjust_allocation_length(
     grpc_slice_allocator* slice_allocator, size_t requested_length,
     grpc_slice_allocator_intent intent) {
   if (intent == grpc_slice_allocator_intent::kDefault) {

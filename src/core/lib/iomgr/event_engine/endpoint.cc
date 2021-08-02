@@ -108,7 +108,6 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
 
 void endpoint_destroy(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  grpc_slice_allocator_destroy(eeep->slice_allocator);
   delete eeep;
 }
 
@@ -157,21 +156,17 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 }  // namespace
 
 grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
-    std::unique_ptr<SliceAllocator> slice_allocator) {
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  // TODO(hork): populate endpoint->ru from the uvEngine's subclass
   endpoint->endpoint = std::move(ee_endpoint);
   return endpoint;
 }
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
-                               absl::string_view peer_address,
-                               grpc_slice_allocator* slice_allocator) {
+                               absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->slice_allocator = slice_allocator;
   return &endpoint->base;
 }
 
