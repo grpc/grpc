@@ -22,12 +22,14 @@ import mako.template
 import yaml
 
 import framework.helpers.datetime
+import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
+_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _helper_datetime = framework.helpers.datetime
 timedelta = datetime.timedelta
 
@@ -57,6 +59,8 @@ class KubernetesBaseRunner:
                  k8s_namespace,
                  namespace_template=None,
                  reuse_namespace=False):
+        self._highlighter = _HighlighterYaml()
+
         # Kubernetes namespaced resources manager
         self.k8s_namespace: k8s.KubernetesNamespace = k8s_namespace
         self.reuse_namespace = reuse_namespace
@@ -107,7 +111,7 @@ class KubernetesBaseRunner:
 
         yaml_doc = self._render_template(template_file, **kwargs)
         logger.info("Rendered template %s/%s:\n%s", self.TEMPLATE_DIR_NAME,
-                    template_name, yaml_doc)
+                    template_name, self._highlighter.highlight(yaml_doc))
 
         manifests = self._manifests_from_str(yaml_doc)
         manifest = next(manifests)

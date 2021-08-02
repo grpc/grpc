@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from absl import flags
-import googleapiclient.discovery
+
+from framework.helpers import highlighter
 
 # GCP
 PROJECT = flags.DEFINE_string("project",
@@ -113,6 +114,8 @@ CLIENT_PORT = flags.DEFINE_integer(
         "The port test client uses to run gRPC services: Channelz, CSDS, "
         "XdsStats, XdsUpdateClientConfigure, and ProtoReflection (optional).\n"
         "Doesn't have to be within --firewall_allowed_ports."))
+
+flags.adopt_module_key_flags(highlighter)
 
 flags.mark_flags_as_required([
     "project",

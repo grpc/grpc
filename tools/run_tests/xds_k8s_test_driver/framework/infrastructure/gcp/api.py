@@ -28,6 +28,8 @@ import googleapiclient.http
 import tenacity
 import yaml
 
+import framework.helpers.highlighter
+
 logger = logging.getLogger(__name__)
 PRIVATE_API_KEY_SECRET_NAME = flags.DEFINE_string(
     "private_api_key_secret_name",
@@ -51,6 +53,7 @@ GCP_UI_URL = flags.DEFINE_string("gcp_ui_url",
 # Type aliases
 _HttpError = googleapiclient.errors.HttpError
 _HttpLib2Error = googleapiclient.http.httplib2.HttpLib2Error
+_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 Operation = operations_pb2.Operation
 HttpRequest = googleapiclient.http.HttpRequest
 
@@ -273,6 +276,7 @@ class GcpProjectApiResource:
     def __init__(self, api: discovery.Resource, project: str):
         self.api: discovery.Resource = api
         self.project: str = project
+        self._highlighter = _HighlighterYaml()
 
     # TODO(sergiitk): in upcoming GCP refactoring, differentiate between
     #   _execute for LRO (Long Running Operations), and immediate operations.
@@ -299,6 +303,11 @@ class GcpProjectApiResource:
         except _HttpLib2Error as error:
             raise TransportError(error)
 
+    def resource_pretty_format(self, body: dict) -> str:
+        """Return a string with pretty-printed resource body."""
+        yaml_out: str = yaml.dump(body, explicit_start=True, explicit_end=True)
+        return self._highlighter.highlight(yaml_out)
+
     @staticmethod
     def wait_for_operation(operation_request,
                            test_success_fn,
@@ -312,11 +321,6 @@ class GcpProjectApiResource:
             after=tenacity.after_log(logger, logging.DEBUG),
             reraise=True)
         return retryer(operation_request.execute)
-
-    @staticmethod
-    def resource_pretty_format(body: dict) -> str:
-        """Return a string with pretty-printed resource body."""
-        return yaml.dump(body, explicit_start=True, explicit_end=True)
 
 
 class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
