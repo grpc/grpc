@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
@@ -28,8 +30,8 @@ OpenSslPKey::OpenSslPKey(absl::string_view private_key) {
   BIO_free(bio);
 }
 
-OpenSslX509::OpenSslX509(absl::string_view cert) {
-  BIO* bio = BIO_new_mem_buf(cert.data(), cert.size());
+OpenSslX509::OpenSslX509(absl::string_view cert_chain) {
+  BIO* bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
   x_509_ = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }
