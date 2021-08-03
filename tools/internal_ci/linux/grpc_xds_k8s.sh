@@ -143,10 +143,6 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   run_test baseline_test
-  run_test change_backend_service_test
-  #run_test failover_test  # TODO(ericgribkoff) Needs secondary region cluster
-  run_test remove_neg_test
-  run_test round_robin_test
   run_test security_test
 }
 
