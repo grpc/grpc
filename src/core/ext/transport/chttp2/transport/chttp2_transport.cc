@@ -1590,8 +1590,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_message(t, s);
     if (s->id != 0) {
       if (!s->read_closed && s->frame_storage.length == 0) {
-        size_t after = s->frame_storage.length +
-                       s->unprocessed_incoming_frames_buffer_cached_length;
+        size_t after = s->unprocessed_incoming_frames_buffer_cached_length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   before - after);
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
