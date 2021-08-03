@@ -73,7 +73,7 @@ def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file,
     if not _insert_scenario_result(bq, dataset_id, table_id, scenario_result,
                                    metadata_file):
         print('Error uploading result to bigquery.')
-    sys.exit(1)
+        sys.exit(1)
 
 
 def _insert_result(bq, dataset_id, table_id, scenario_result, flatten=True):
@@ -173,9 +173,18 @@ def _populate_metadata_inplace(scenario_result):
 def _populate_metadata_from_file(scenario_result, test_metadata_file):
     with open(test_metadata_file, 'r') as f:
         test_metadata = json.loads(f.read())
-    annotations = json.loads
-    (test_metadata['kubectl.kubernetes.io/last-applied-configuration'])
-    ['metadata']['annotations']
+
+    """eliminate managedField from metadata set"""
+    if 'managedFields' in test_metadata:
+        del test_metadata['managedFields']
+    annotations = test_metadata['annotations']
+
+    """if use kubectl apply ..., kubectl will append current configuration to
+     annotation, the field is deleted since it includes a lot of irrelevant 
+     information"""
+    if 'kubectl.kubernetes.io/last-applied-configuration' in annotations:
+        del annotations['kubectl.kubernetes.io/last-applied-configuration']
+
     utc_timestamp = str(calendar.timegm(time.gmtime()))
     metadata = {'created': utc_timestamp}
 
@@ -187,6 +196,8 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
         metadata['jobName'] = annotations['jobName']
     if 'gitCommit' in annotations:
         metadata['gitCommit'] = annotations['gitCommit']
+    """actual commit is the actual head of PR that is getting tested, use
+    same way as before to populate this field"""
     if 'gitActualCommit' in annotations:
         metadata['gitActualCommit'] = annotations['gitActualCommit']
     scenario_result['metadata'] = metadata
