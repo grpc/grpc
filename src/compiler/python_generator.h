@@ -37,6 +37,7 @@ struct GeneratorConfiguration {
   // TODO(https://github.com/protocolbuffers/protobuf/issues/888): Drop this.
   std::string import_prefix;
   std::vector<std::string> prefixes_to_filter;
+  bool snake_case_methods;
 };
 
 class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
