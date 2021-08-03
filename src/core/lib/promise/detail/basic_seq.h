@@ -144,7 +144,8 @@ struct GetSeqStateInner<I, Traits, I, Fs...> {
 };
 
 template <char I, template <typename> class Traits, char J, typename... Fs>
-absl::enable_if_t<I<=J, SeqState<Traits, I, Fs...>*> GetSeqState(SeqState<Traits, J, Fs...>* p) {
+absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
+    SeqState<Traits, J, Fs...>* p) {
   return GetSeqStateInner<I, Traits, J, Fs...>::f(p);
 }
 
@@ -216,8 +217,9 @@ class BasicSeq {
 
   // Get the next state's promise.
   template <char I>
-    auto next_promise() -> absl::enable_if_t <
-      I!=N - 2, decltype(&GetSeqState<I + 1>(&penultimate_state_)->current_promise)> {
+  auto next_promise() -> absl::enable_if_t<
+      I != N - 2,
+      decltype(&GetSeqState<I + 1>(&penultimate_state_)->current_promise)> {
     return &GetSeqState<I + 1>(&penultimate_state_)->current_promise;
   }
 
@@ -256,71 +258,65 @@ class BasicSeq {
 
   // Poll the current state, advance it if necessary.
   template <char I>
-  absl::enable_if_t<I != N-1, Poll<Result>> RunState() {
-      // Get a pointer to the state object.
-      auto* s = state<I>();
-      // Poll the current promise in this state.
-      auto r = s->current_promise();
-      // If we are still pending, say so by returning.
-      if (absl::holds_alternative<Pending>(r)) {
-        return Pending();
-      }
-      // Current promise is ready, as the traits to do the next thing.
-      // That may be returning - eg if TrySeq sees an error.
-      // Or it may be by calling the callable we hand down - RunNext - which
-      // will advance the state and call the next promise.
-      return Traits<typename absl::remove_reference_t<decltype(
-          *s)>::Types::PromiseResult>::
-          template CheckResultAndRunNext<Result>(
-              std::move(absl::get<kPollReadyIdx>(std::move(r))), RunNext<I>{this});
+  absl::enable_if_t<I != N - 1, Poll<Result>> RunState() {
+    // Get a pointer to the state object.
+    auto* s = state<I>();
+    // Poll the current promise in this state.
+    auto r = s->current_promise();
+    // If we are still pending, say so by returning.
+    if (absl::holds_alternative<Pending>(r)) {
+      return Pending();
     }
+    // Current promise is ready, as the traits to do the next thing.
+    // That may be returning - eg if TrySeq sees an error.
+    // Or it may be by calling the callable we hand down - RunNext - which
+    // will advance the state and call the next promise.
+    return Traits<
+        typename absl::remove_reference_t<decltype(*s)>::Types::PromiseResult>::
+        template CheckResultAndRunNext<Result>(
+            std::move(absl::get<kPollReadyIdx>(std::move(r))),
+            RunNext<I>{this});
+  }
 
   // Specialization of RunState to run the final state.
   template <char I>
-  absl::enable_if_t<I == N-1, Poll<Result>> RunState() {
-      // Poll the final promise.
-      auto r = final_promise_();
-      // If we are still pending, say so by returning.
-      if (absl::holds_alternative<Pending>(r)) {
-        return Pending();
-      }
-      // We are complete, return the (wrapped) result.
-      return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
+  absl::enable_if_t<I == N - 1, Poll<Result>> RunState() {
+    // Poll the final promise.
+    auto r = final_promise_();
+    // If we are still pending, say so by returning.
+    if (absl::holds_alternative<Pending>(r)) {
+      return Pending();
     }
+    // We are complete, return the (wrapped) result.
+    return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
+  }
 
   // For state numbered I, destruct the current promise and the next promise
   // factory, and recursively destruct the next promise factories for future
   // states (since they also still exist).
   template <char I>
-  struct DestructCurrentPromiseAndSubsequentFactories {
-    BasicSeq* s;
-    void operator()() {
-      Destruct(&GetSeqState<I>(&s->penultimate_state_)->current_promise);
-      DestructSubsequentFactories<I>::Run(s);
-    }
-  };
+  absl::enable_if_t<I != N - 1, void>
+  DestructCurrentPromiseAndSubsequentFactories() {
+    Destruct(&GetSeqState<I>(&penultimate_state_)->current_promise);
+    DestructSubsequentFactories<I>();
+  }
+
+  template <char I>
+  absl::enable_if_t<I == N - 1, void>
+  DestructCurrentPromiseAndSubsequentFactories() {
+    Destruct(&final_promise_);
+  }
 
   // For state I, destruct the next promise factory, and recursively the next
   // promise factories after.
   template <char I>
-  struct DestructSubsequentFactories {
-    static void Run(BasicSeq* s) {
-      Destruct(&GetSeqState<I>(&s->penultimate_state_)->next_factory);
-      DestructSubsequentFactories<I + 1>::Run(s);
-    }
-  };
+  absl::enable_if_t<I != N - 1, void> DestructSubsequentFactories() {
+    Destruct(&GetSeqState<I>(&penultimate_state_)->next_factory);
+    DestructSubsequentFactories<I + 1>();
+  }
 
-  // Terminator for the above recursion.
-  template <>
-  struct DestructSubsequentFactories<N - 1> {
-    static void Run(BasicSeq*) {}
-  };
-
-  template <>
-  struct DestructCurrentPromiseAndSubsequentFactories<N - 1> {
-    BasicSeq* s;
-    void operator()() { Destruct(&s->final_promise_); }
-  };
+  template <char I>
+  absl::enable_if_t<I == N - 1, void> DestructSubsequentFactories() {}
 
   // Run the current state (and possibly later states if that one finishes).
   // Single argument is a type that encodes the integer sequence 0, 1, 2, ...,
@@ -330,7 +326,7 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return Switch<Poll<Result>>(state_, [this]{ return RunState<I>(); }...);
+    return Switch<Poll<Result>>(state_, [this] { return RunState<I>(); }...);
   }
 
   // Run the appropriate destructors for a given state.
@@ -340,8 +336,9 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    Switch<void>(state_,
-                 DestructCurrentPromiseAndSubsequentFactories<I>{this}...);
+    Switch<void>(state_, [this] {
+      DestructCurrentPromiseAndSubsequentFactories<I>();
+    }...);
   }
 
  public:
