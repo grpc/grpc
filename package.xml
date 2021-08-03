@@ -2068,12 +2068,11 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/third_party/wyhash/wyhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/decode.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
@@ -2081,18 +2080,20 @@
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/msg_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/reflection.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/table_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text_encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/xxhash/xxhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
