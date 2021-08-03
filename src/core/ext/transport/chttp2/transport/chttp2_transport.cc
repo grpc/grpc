@@ -1879,6 +1879,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
             &s->unprocessed_incoming_frames_buffer);
       }
     }
+    GPR_ASSERT(!s->pending_byte_stream);
     if (!s->pending_byte_stream) {
       while (s->unprocessed_incoming_frames_buffer.length > 0 ||
              s->frame_storage.length > 0) {
