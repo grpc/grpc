@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/core/v3/substitution_format_string.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
@@ -25,18 +25,18 @@ static const upb_msglayout *const envoy_config_core_v3_SubstitutionFormatString_
 };
 
 static const upb_msglayout_field envoy_config_core_v3_SubstitutionFormatString__fields[6] = {
-  {1, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, 1},
-  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 2, 11, 1},
-  {3, UPB_SIZE(0, 0), 0, 0, 8, 1},
-  {4, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {5, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 11, 1},
-  {6, UPB_SIZE(12, 24), 0, 1, 11, 3},
+  {1, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 2, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(12, 24), 0, 1, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_config_core_v3_SubstitutionFormatString_msginit = {
   &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
-  UPB_SIZE(32, 64), 6, false, 255,
+  UPB_SIZE(32, 64), 6, false, 6, 255,
 };
 
 #include "upb/port_undef.inc"

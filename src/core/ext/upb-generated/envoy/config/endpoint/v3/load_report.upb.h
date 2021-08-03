@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_H_
 #define ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -53,13 +53,19 @@ UPB_INLINE envoy_config_endpoint_v3_UpstreamLocalityStats *envoy_config_endpoint
 UPB_INLINE envoy_config_endpoint_v3_UpstreamLocalityStats *envoy_config_endpoint_v3_UpstreamLocalityStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_UpstreamLocalityStats *ret = envoy_config_endpoint_v3_UpstreamLocalityStats_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_UpstreamLocalityStats *envoy_config_endpoint_v3_UpstreamLocalityStats_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_UpstreamLocalityStats *ret = envoy_config_endpoint_v3_UpstreamLocalityStats_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_UpstreamLocalityStats_serialize(const envoy_config_endpoint_v3_UpstreamLocalityStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, arena, len);
@@ -140,13 +146,19 @@ UPB_INLINE envoy_config_endpoint_v3_UpstreamEndpointStats *envoy_config_endpoint
 UPB_INLINE envoy_config_endpoint_v3_UpstreamEndpointStats *envoy_config_endpoint_v3_UpstreamEndpointStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_UpstreamEndpointStats *ret = envoy_config_endpoint_v3_UpstreamEndpointStats_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_UpstreamEndpointStats *envoy_config_endpoint_v3_UpstreamEndpointStats_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_UpstreamEndpointStats *ret = envoy_config_endpoint_v3_UpstreamEndpointStats_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_UpstreamEndpointStats_serialize(const envoy_config_endpoint_v3_UpstreamEndpointStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, arena, len);
@@ -223,13 +235,19 @@ UPB_INLINE envoy_config_endpoint_v3_EndpointLoadMetricStats *envoy_config_endpoi
 UPB_INLINE envoy_config_endpoint_v3_EndpointLoadMetricStats *envoy_config_endpoint_v3_EndpointLoadMetricStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_EndpointLoadMetricStats *ret = envoy_config_endpoint_v3_EndpointLoadMetricStats_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_EndpointLoadMetricStats *envoy_config_endpoint_v3_EndpointLoadMetricStats_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_EndpointLoadMetricStats *ret = envoy_config_endpoint_v3_EndpointLoadMetricStats_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_EndpointLoadMetricStats_serialize(const envoy_config_endpoint_v3_EndpointLoadMetricStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, arena, len);
@@ -257,13 +275,19 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterStats *envoy_config_endpoint_v3_Clust
 UPB_INLINE envoy_config_endpoint_v3_ClusterStats *envoy_config_endpoint_v3_ClusterStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterStats *ret = envoy_config_endpoint_v3_ClusterStats_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_ClusterStats *envoy_config_endpoint_v3_ClusterStats_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterStats *ret = envoy_config_endpoint_v3_ClusterStats_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_ClusterStats_serialize(const envoy_config_endpoint_v3_ClusterStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_ClusterStats_msginit, arena, len);
@@ -336,13 +360,19 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterStats_DroppedRequests *envoy_config_e
 UPB_INLINE envoy_config_endpoint_v3_ClusterStats_DroppedRequests *envoy_config_endpoint_v3_ClusterStats_DroppedRequests_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterStats_DroppedRequests *ret = envoy_config_endpoint_v3_ClusterStats_DroppedRequests_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_ClusterStats_DroppedRequests *envoy_config_endpoint_v3_ClusterStats_DroppedRequests_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterStats_DroppedRequests *ret = envoy_config_endpoint_v3_ClusterStats_DroppedRequests_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_ClusterStats_DroppedRequests_serialize(const envoy_config_endpoint_v3_ClusterStats_DroppedRequests *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, arena, len);
