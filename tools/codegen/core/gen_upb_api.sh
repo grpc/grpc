@@ -42,6 +42,7 @@ UPB_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upb
 $bazel build @upb//upbc:protoc-gen-upbdefs
 UPBDEFS_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upbdefs
 
+# Please keep the proto list sorted alphabetically.
 proto_files=( \
   "envoy/admin/v3/config_dump.proto" \
   "envoy/annotations/deprecation.proto" \
@@ -63,26 +64,29 @@ proto_files=( \
   "envoy/config/core/v3/http_uri.proto" \
   "envoy/config/core/v3/protocol.proto" \
   "envoy/config/core/v3/proxy_protocol.proto" \
+  "envoy/config/core/v3/resolver.proto" \
   "envoy/config/core/v3/socket_option.proto" \
   "envoy/config/core/v3/substitution_format_string.proto" \
-  "envoy/config/endpoint/v3/endpoint.proto" \
+  "envoy/config/core/v3/udp_socket_config.proto" \
   "envoy/config/endpoint/v3/endpoint_components.proto" \
+  "envoy/config/endpoint/v3/endpoint.proto" \
   "envoy/config/endpoint/v3/load_report.proto" \
   "envoy/config/listener/v3/api_listener.proto" \
-  "envoy/config/listener/v3/listener.proto" \
   "envoy/config/listener/v3/listener_components.proto" \
+  "envoy/config/listener/v3/listener.proto" \
+  "envoy/config/listener/v3/quic_config.proto" \
   "envoy/config/listener/v3/udp_listener_config.proto" \
   "envoy/config/metrics/v3/stats.proto" \
   "envoy/config/overload/v3/overload.proto" \
   "envoy/config/rbac/v3/rbac.proto" \
-  "envoy/config/route/v3/route.proto" \
   "envoy/config/route/v3/route_components.proto" \
+  "envoy/config/route/v3/route.proto" \
   "envoy/config/route/v3/scoped_route.proto" \
   "envoy/config/trace/v3/http_tracer.proto" \
   "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
-  "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/common/fault/v3/fault.proto" \
   "envoy/extensions/filters/http/fault/v3/fault.proto" \
+  "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
   "envoy/extensions/transport_sockets/tls/v3/common.proto" \
@@ -97,6 +101,7 @@ proto_files=( \
   "envoy/service/route/v3/rds.proto" \
   "envoy/service/route/v3/srds.proto" \
   "envoy/service/status/v3/csds.proto" \
+  "envoy/type/http/v3/path_transformation.proto" \
   "envoy/type/matcher/v3/metadata.proto" \
   "envoy/type/matcher/v3/node.proto" \
   "envoy/type/matcher/v3/number.proto" \
@@ -129,20 +134,20 @@ proto_files=( \
   "src/proto/grpc/health/v1/health.proto" \
   "src/proto/grpc/lb/v1/load_balancer.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
-  "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/security.proto" \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
+  "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/type/v1/typed_struct.proto" \
+  "validate/validate.proto" \
   "xds/core/v3/authority.proto" \
   "xds/core/v3/collection_entry.proto" \
   "xds/core/v3/context_params.proto" \
   "xds/core/v3/resource_locator.proto" \
   "xds/core/v3/resource_name.proto" \
-  "xds/core/v3/resource.proto" \
-  "validate/validate.proto")
+  "xds/core/v3/resource.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \
   -I=$PWD/third_party/envoy-api \
@@ -166,5 +171,5 @@ do
     $INCLUDE_OPTIONS \
     $i \
     --upb_out=$UPBDEFS_OUTPUT_DIR \
-    --plugin=protoc-gen-upb=$UPBDEFS_PLUGIN    
+    --plugin=protoc-gen-upb=$UPBDEFS_PLUGIN
 done

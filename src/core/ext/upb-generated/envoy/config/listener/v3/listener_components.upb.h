@@ -162,6 +162,8 @@ UPB_INLINE upb_strview envoy_config_listener_v3_FilterChainMatch_transport_proto
 UPB_INLINE upb_strview const* envoy_config_listener_v3_FilterChainMatch_application_protocols(const envoy_config_listener_v3_FilterChainMatch *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(44, 80), len); }
 UPB_INLINE upb_strview const* envoy_config_listener_v3_FilterChainMatch_server_names(const envoy_config_listener_v3_FilterChainMatch *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(48, 88), len); }
 UPB_INLINE int32_t envoy_config_listener_v3_FilterChainMatch_source_type(const envoy_config_listener_v3_FilterChainMatch *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
+UPB_INLINE bool envoy_config_listener_v3_FilterChainMatch_has_direct_source_prefix_ranges(const envoy_config_listener_v3_FilterChainMatch *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(52, 96)); }
+UPB_INLINE const struct envoy_config_core_v3_CidrRange* const* envoy_config_listener_v3_FilterChainMatch_direct_source_prefix_ranges(const envoy_config_listener_v3_FilterChainMatch *msg, size_t *len) { return (const struct envoy_config_core_v3_CidrRange* const*)_upb_array_accessor(msg, UPB_SIZE(52, 96), len); }
 
 UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_config_listener_v3_FilterChainMatch_mutable_prefix_ranges(envoy_config_listener_v3_FilterChainMatch *msg, size_t *len) {
   return (struct envoy_config_core_v3_CidrRange**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
@@ -253,6 +255,19 @@ UPB_INLINE bool envoy_config_listener_v3_FilterChainMatch_add_server_names(envoy
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_source_type(envoy_config_listener_v3_FilterChainMatch *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_config_listener_v3_FilterChainMatch_mutable_direct_source_prefix_ranges(envoy_config_listener_v3_FilterChainMatch *msg, size_t *len) {
+  return (struct envoy_config_core_v3_CidrRange**)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 96), len);
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_config_listener_v3_FilterChainMatch_resize_direct_source_prefix_ranges(envoy_config_listener_v3_FilterChainMatch *msg, size_t len, upb_arena *arena) {
+  return (struct envoy_config_core_v3_CidrRange**)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 96), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange* envoy_config_listener_v3_FilterChainMatch_add_direct_source_prefix_ranges(envoy_config_listener_v3_FilterChainMatch *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_CidrRange* sub = (struct envoy_config_core_v3_CidrRange*)_upb_msg_new(&envoy_config_core_v3_CidrRange_msginit, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(52, 96), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
 }
 
 /* envoy.config.listener.v3.FilterChain */

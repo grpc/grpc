@@ -50,17 +50,18 @@ UPB_INLINE char *envoy_extensions_filters_http_router_v3_Router_serialize(const 
 }
 
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_dynamic_stats(const envoy_extensions_filters_http_router_v3_Router *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_router_v3_Router_dynamic_stats(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_BoolValue*); }
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_router_v3_Router_dynamic_stats(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct google_protobuf_BoolValue*); }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_start_child_span(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
-UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_upstream_log(const envoy_extensions_filters_http_router_v3_Router *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct envoy_config_accesslog_v3_AccessLog* const* envoy_extensions_filters_http_router_v3_Router_upstream_log(const envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) { return (const struct envoy_config_accesslog_v3_AccessLog* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
+UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_upstream_log(const envoy_extensions_filters_http_router_v3_Router *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 16)); }
+UPB_INLINE const struct envoy_config_accesslog_v3_AccessLog* const* envoy_extensions_filters_http_router_v3_Router_upstream_log(const envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) { return (const struct envoy_config_accesslog_v3_AccessLog* const*)_upb_array_accessor(msg, UPB_SIZE(12, 16), len); }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_suppress_envoy_headers(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool); }
-UPB_INLINE upb_strview const* envoy_extensions_filters_http_router_v3_Router_strict_check_headers(const envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
+UPB_INLINE upb_strview const* envoy_extensions_filters_http_router_v3_Router_strict_check_headers(const envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(16, 24), len); }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_respect_expected_rq_timeout(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool); }
+UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_suppress_grpc_request_failure_code_stats(const envoy_extensions_filters_http_router_v3_Router *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool); }
 
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_dynamic_stats(envoy_extensions_filters_http_router_v3_Router *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_BoolValue*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_router_v3_Router_mutable_dynamic_stats(envoy_extensions_filters_http_router_v3_Router *msg, upb_arena *arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_extensions_filters_http_router_v3_Router_dynamic_stats(msg);
@@ -75,15 +76,15 @@ UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_start_child_s
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AccessLog** envoy_extensions_filters_http_router_v3_Router_mutable_upstream_log(envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) {
-  return (struct envoy_config_accesslog_v3_AccessLog**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+  return (struct envoy_config_accesslog_v3_AccessLog**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 16), len);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AccessLog** envoy_extensions_filters_http_router_v3_Router_resize_upstream_log(envoy_extensions_filters_http_router_v3_Router *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_config_accesslog_v3_AccessLog**)_upb_array_resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
+  return (struct envoy_config_accesslog_v3_AccessLog**)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 16), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AccessLog* envoy_extensions_filters_http_router_v3_Router_add_upstream_log(envoy_extensions_filters_http_router_v3_Router *msg, upb_arena *arena) {
   struct envoy_config_accesslog_v3_AccessLog* sub = (struct envoy_config_accesslog_v3_AccessLog*)_upb_msg_new(&envoy_config_accesslog_v3_AccessLog_msginit, arena);
   bool ok = _upb_array_append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+      msg, UPB_SIZE(12, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -91,17 +92,20 @@ UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_suppress_envo
   *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
 }
 UPB_INLINE upb_strview* envoy_extensions_filters_http_router_v3_Router_mutable_strict_check_headers(envoy_extensions_filters_http_router_v3_Router *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 24), len);
 }
 UPB_INLINE upb_strview* envoy_extensions_filters_http_router_v3_Router_resize_strict_check_headers(envoy_extensions_filters_http_router_v3_Router *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(3, 4), arena);
+  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(16, 24), len, UPB_SIZE(3, 4), arena);
 }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_add_strict_check_headers(envoy_extensions_filters_http_router_v3_Router *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(3, 4), &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(16, 24), UPB_SIZE(3, 4), &val,
       arena);
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_respect_expected_rq_timeout(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool) = value;
+}
+UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_suppress_grpc_request_failure_code_stats(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
 }
 
 #ifdef __cplusplus

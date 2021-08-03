@@ -16,6 +16,7 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -44,7 +45,7 @@ static const upb_msglayout *const envoy_config_listener_v3_FilterChainMatch_subm
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_listener_v3_FilterChainMatch__fields[10] = {
+static const upb_msglayout_field envoy_config_listener_v3_FilterChainMatch__fields[11] = {
   {3, UPB_SIZE(32, 56), 0, 0, 11, 3},
   {4, UPB_SIZE(8, 8), 0, 0, 9, 1},
   {5, UPB_SIZE(24, 40), 1, 1, 11, 1},
@@ -55,12 +56,13 @@ static const upb_msglayout_field envoy_config_listener_v3_FilterChainMatch__fiel
   {10, UPB_SIZE(44, 80), 0, 0, 9, 3},
   {11, UPB_SIZE(48, 88), 0, 0, 9, 3},
   {12, UPB_SIZE(4, 4), 0, 0, 14, 1},
+  {13, UPB_SIZE(52, 96), 0, 0, 11, 3},
 };
 
 const upb_msglayout envoy_config_listener_v3_FilterChainMatch_msginit = {
   &envoy_config_listener_v3_FilterChainMatch_submsgs[0],
   &envoy_config_listener_v3_FilterChainMatch__fields[0],
-  UPB_SIZE(56, 96), 10, false, 255,
+  UPB_SIZE(56, 112), 11, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_FilterChain_submsgs[7] = {
