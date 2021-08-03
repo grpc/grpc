@@ -26,8 +26,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -1694,9 +1694,9 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
       for (const auto& p : args_seen.metadata) {
         metadata.push_back(absl::StrCat(p.first, "=", p.second));
       }
-      entries.push_back(
-          absl::StrFormat("{path=\"%s\", metadata=[%s]}", args_seen.path,
-                          absl::StrJoin(metadata, ", ")));
+      entries.push_back(absl::StrFormat("{path=\"%s\", metadata=[%s]}",
+                                        args_seen.path,
+                                        absl::StrJoin(metadata, ", ")));
     }
     return absl::StrCat("[", absl::StrJoin(entries, ", "), "]");
   }
@@ -1733,15 +1733,14 @@ TEST_F(ClientLbPickArgsTest, Basic) {
   CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/true);
   auto pick_args_seen_list = args_seen_list();
   EXPECT_THAT(pick_args_seen_list,
-              ::testing::ElementsAre(
-                  ::testing::AllOf(
-                      ::testing::Field(&grpc_core::PickArgsSeen::path,
-                                       "/grpc.testing.EchoTestService/Echo"),
-                      ::testing::Field(&grpc_core::PickArgsSeen::metadata,
-                                       ::testing::UnorderedElementsAre(
-                                           ::testing::Pair("foo", "1"),
-                                           ::testing::Pair("bar", "2"),
-                                           ::testing::Pair("baz", "3"))))))
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field(&grpc_core::PickArgsSeen::path,
+                                   "/grpc.testing.EchoTestService/Echo"),
+                  ::testing::Field(&grpc_core::PickArgsSeen::metadata,
+                                   ::testing::UnorderedElementsAre(
+                                       ::testing::Pair("foo", "1"),
+                                       ::testing::Pair("bar", "2"),
+                                       ::testing::Pair("baz", "3"))))))
       << ArgsSeenListString(pick_args_seen_list);
 }
 
