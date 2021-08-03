@@ -1169,6 +1169,7 @@ def test_api_listener(gcp, backend_service, instance_group,
                       alternate_backend_service):
     logger.info("Running api_listener")
     passed = True
+    new_config_suffix = ''
     try:
         wait_for_healthy_backends(gcp, backend_service, instance_group)
         backend_instances = get_instance_names(gcp, instance_group)
