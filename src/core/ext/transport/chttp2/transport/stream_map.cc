@@ -162,16 +162,3 @@ void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
   }
   return map->values[(static_cast<size_t>(rand())) % map->count];
 }
-
-void grpc_chttp2_stream_map_for_each(const grpc_chttp2_stream_map* map,
-                                     void (*f)(void* user_data, uint32_t key,
-                                               void* value),
-                                     void* user_data) {
-  size_t i;
-
-  for (i = 0; i < map->count; i++) {
-    if (map->values[i]) {
-      f(user_data, map->keys[i], map->values[i]);
-    }
-  }
-}
