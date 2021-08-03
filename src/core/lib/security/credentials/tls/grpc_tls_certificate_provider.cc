@@ -492,3 +492,9 @@ grpc_tls_status_or_bool grpc_tls_certificate_key_match(
   grpc_tls_status_or_bool result = {code, error_details, match_bool};
   return result;
 }
+
+void grpc_tls_certificate_key_match_release(grpc_tls_status_or_bool* message){
+  if (message->error_details != nullptr){
+    gpr_free(const_cast<char*>(message->error_details));
+  }
+}

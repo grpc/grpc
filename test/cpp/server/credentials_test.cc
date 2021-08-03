@@ -137,19 +137,15 @@ TEST(
 TEST(
     CredentialsTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyPrivateKey){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
   std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
   std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
-//  gpr_log(GPR_ERROR,
-//          "CODE REACHED");
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       /*private_key=*/"", cert_chain_.c_str());
   EXPECT_FALSE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_TRUE(strcmp (matched.error_details,"Private key string is empty.") == 0);
+  std::string error_message = matched.error_details;
+  EXPECT_EQ("Private key string is empty.", error_message);
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 TEST(
@@ -158,14 +154,13 @@ TEST(
   std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
   std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
   std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), /*cert_chain=*/"");
+  std::string error_message = matched.error_details;
   EXPECT_FALSE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_TRUE(strcmp (matched.error_details,"Certificate string is empty.") == 0);
+  EXPECT_EQ("Certificate string is empty.", error_message);
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 TEST(
@@ -174,14 +169,13 @@ TEST(
   std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
   std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
   std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), "invalid_certificate");
+  std::string error_message = matched.error_details;
   EXPECT_FALSE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_TRUE(strcmp (matched.error_details,"Conversion from PEM string to X509 failed.") == 0);
+  EXPECT_EQ("Conversion from PEM string to X509 failed.", error_message);
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 TEST(
@@ -195,17 +189,16 @@ TEST(
   std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       "invalid_private_key", cert_chain_2_.c_str());
+  std::string error_message = matched.error_details;
   EXPECT_FALSE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_TRUE(strcmp (matched.error_details,"Conversion from PEM string to EVP_PKEY failed.") == 0);
+  EXPECT_EQ("Conversion from PEM string to EVP_PKEY failed.", error_message);
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 TEST(
     CredentialsTest,
     APIWrapperForPrivateKeyAndCertificateMatchForSuccessfulKeyCertMatch){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
   std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
   std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
   std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
@@ -213,6 +206,7 @@ TEST(
       private_key_2_.c_str(), cert_chain_2_.c_str());
   EXPECT_TRUE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 TEST(
@@ -228,6 +222,7 @@ TEST(
       private_key_2_.c_str(), cert_chain_.c_str());
   EXPECT_FALSE(matched.matched_or);
   EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
+  grpc_tls_certificate_key_match_release(&matched);
 }
 
 }  // namespace

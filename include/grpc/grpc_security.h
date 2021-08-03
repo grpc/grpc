@@ -864,6 +864,10 @@ GRPCAPI void grpc_tls_certificate_provider_release(
  */
 GRPCAPI grpc_tls_status_or_bool grpc_tls_certificate_key_match(const char* private_key, const char* cert_chain);
 
+/**
+ * Releases the grpc_tls_status_or_bool after a call to grpc_tls_certificate_key_match
+ */
+GPRAPI void grpc_tls_certificate_key_match_release(grpc_tls_status_or_bool* message);
 
 /**
  * Creates an grpc_tls_credentials_options.
