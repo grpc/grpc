@@ -220,7 +220,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
 // to be as performant as possible.
 class TransportFlowControl final : public TransportFlowControlBase {
  public:
-  TransportFlowControl(grpc_chttp2_transport* t, bool enable_bdp_probe);
+  TransportFlowControl(const grpc_chttp2_transport* t, bool enable_bdp_probe);
   ~TransportFlowControl() override {}
 
   bool flow_control_enabled() const override { return true; }
@@ -309,7 +309,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
     return action;
   }
 
-  grpc_chttp2_transport* t_;
+  const grpc_chttp2_transport* const t_;
 
   /** calculating what we should give for local window:
       we track the total amount of flow control over initial window size

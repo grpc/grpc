@@ -33,7 +33,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gpr/string.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
@@ -178,7 +177,7 @@ TransportFlowControlDisabled::TransportFlowControlDisabled(
       kMaxWindow;
 }
 
-TransportFlowControl::TransportFlowControl(grpc_chttp2_transport* t,
+TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
