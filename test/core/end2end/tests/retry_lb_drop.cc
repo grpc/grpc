@@ -60,9 +60,8 @@ class DropPolicy : public LoadBalancingPolicy {
   class DropPicker : public SubchannelPicker {
    public:
     PickResult Pick(PickArgs /*args*/) override {
-      PickResult result;
-      result.type = PickResult::PICK_COMPLETE;
-      return result;
+      return PickResult::Drop(
+          absl::UnavailableError("Call dropped by drop LB policy"));
     }
   };
 };
@@ -246,8 +245,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details,
-                                     "Call dropped by load balancing policy"));
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(details, "Call dropped by drop LB policy"));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

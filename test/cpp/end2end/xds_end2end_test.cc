@@ -2021,16 +2021,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return true;
   }
 
-  void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops,
-                       const RpcOptions& rpc_options = RpcOptions(),
-                       const char* drop_error_message =
-                           "Call dropped by load balancing policy") {
+  void SendRpcAndCount(
+      int* num_total, int* num_ok, int* num_failure, int* num_drops,
+      const RpcOptions& rpc_options = RpcOptions(),
+      const char* drop_error_message_prefix = "EDS-configured drop: ") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == drop_error_message) {
+      if (absl::StartsWith(status.error_message(), drop_error_message_prefix)) {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -3211,7 +3210,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // we hit the max concurrent requests limit and got dropped.
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
   status = SendRpc();
@@ -3272,7 +3271,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // we hit the max concurrent requests limit and got dropped.
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
   status = SendRpc();
@@ -10965,7 +10964,7 @@ TEST_P(DropTest, Vanilla) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11002,7 +11001,7 @@ TEST_P(DropTest, DropPerHundred) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11039,7 +11038,7 @@ TEST_P(DropTest, DropPerTenThousand) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11083,7 +11082,7 @@ TEST_P(DropTest, Update) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11113,7 +11112,7 @@ TEST_P(DropTest, Update) {
     const Status status = SendRpc(RpcOptions(), &response);
     ++num_rpcs;
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11129,7 +11128,7 @@ TEST_P(DropTest, Update) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11163,7 +11162,8 @@ TEST_P(DropTest, DropAll) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+    EXPECT_THAT(status.error_message(),
+                ::testing::StartsWith("EDS-configured drop: "));
   }
 }
 
@@ -11630,7 +11630,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

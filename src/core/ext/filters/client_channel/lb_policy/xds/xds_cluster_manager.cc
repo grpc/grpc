@@ -212,15 +212,8 @@ XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);
   }
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("xds cluster manager picker: unknown cluster \"",
-                       cluster_name, "\"")
-              .c_str()),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-  return result;
+  return PickResult::Fail(absl::InternalError(absl::StrCat(
+      "xds cluster manager picker: unknown cluster \"", cluster_name, "\"")));
 }
 
 //
