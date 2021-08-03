@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
 import datetime
+import subprocess
 
 # this script is only of historical interest: it's the script that was used to
 # bootstrap the dataset

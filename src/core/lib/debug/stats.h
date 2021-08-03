@@ -67,4 +67,4 @@ double grpc_stats_histo_percentile(const grpc_stats_data* stats,
 size_t grpc_stats_histo_count(const grpc_stats_data* stats,
                               grpc_stats_histograms histogram);
 
-#endif
+#endif  // GRPC_CORE_LIB_DEBUG_STATS_H

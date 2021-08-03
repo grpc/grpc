@@ -269,7 +269,7 @@ $ make
 
 ### A note on `protoc`
 
-By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
+By default gRPC uses [protocol buffers](https://github.com/protocolbuffers/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
 If you compile gRPC from source, as described below, the Makefile will

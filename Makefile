@@ -1179,14 +1179,17 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
     src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c \
     src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c \
@@ -1213,6 +1216,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
     src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c \
+    src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
@@ -1266,14 +1270,17 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c \
@@ -1299,6 +1306,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c \
@@ -2727,14 +2735,17 @@ src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c: $(OPENSSL_DE
 src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c: $(OPENSSL_DEP)
@@ -2761,6 +2772,7 @@ src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c: $(OPENSSL_DEP)
@@ -2810,14 +2822,17 @@ src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.c: $(OP
 src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c: $(OPENSSL_DEP)
@@ -2843,6 +2858,7 @@ src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c: $(OPEN
 src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c: $(OPENSSL_DEP)

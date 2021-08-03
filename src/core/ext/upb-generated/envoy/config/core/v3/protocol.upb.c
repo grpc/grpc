@@ -9,9 +9,11 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/config/core/v3/protocol.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -22,6 +24,22 @@ const upb_msglayout envoy_config_core_v3_TcpProtocolOptions_msginit = {
   NULL,
   NULL,
   UPB_SIZE(0, 0), 0, false, 255,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_QuicProtocolOptions_submsgs[1] = {
+  &google_protobuf_UInt32Value_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_QuicProtocolOptions__fields[3] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
+  {3, UPB_SIZE(12, 24), 3, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_QuicProtocolOptions_msginit = {
+  &envoy_config_core_v3_QuicProtocolOptions_submsgs[0],
+  &envoy_config_core_v3_QuicProtocolOptions__fields[0],
+  UPB_SIZE(16, 32), 3, false, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_UpstreamHttpProtocolOptions__fields[2] = {
@@ -35,23 +53,39 @@ const upb_msglayout envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit = {
   UPB_SIZE(8, 8), 2, false, 255,
 };
 
+static const upb_msglayout *const envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[1] = {
+  &google_protobuf_UInt32Value_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_AlternateProtocolsCacheOptions_msginit = {
+  &envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[0],
+  &envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[0],
+  UPB_SIZE(16, 32), 2, false, 255,
+};
+
 static const upb_msglayout *const envoy_config_core_v3_HttpProtocolOptions_submsgs[2] = {
   &google_protobuf_Duration_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_HttpProtocolOptions__fields[5] = {
+static const upb_msglayout_field envoy_config_core_v3_HttpProtocolOptions__fields[6] = {
   {1, UPB_SIZE(8, 8), 1, 0, 11, 1},
   {2, UPB_SIZE(12, 16), 2, 1, 11, 1},
   {3, UPB_SIZE(16, 24), 3, 0, 11, 1},
   {4, UPB_SIZE(20, 32), 4, 0, 11, 1},
   {5, UPB_SIZE(4, 4), 0, 0, 14, 1},
+  {6, UPB_SIZE(24, 40), 5, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_HttpProtocolOptions_msginit = {
   &envoy_config_core_v3_HttpProtocolOptions_submsgs[0],
   &envoy_config_core_v3_HttpProtocolOptions__fields[0],
-  UPB_SIZE(24, 40), 5, false, 255,
+  UPB_SIZE(32, 48), 6, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_submsgs[2] = {
@@ -75,18 +109,20 @@ const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_msginit = {
   UPB_SIZE(24, 48), 7, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[1] = {
+static const upb_msglayout *const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[2] = {
   &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit,
+  &envoy_config_core_v3_TypedExtensionConfig_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__fields[1] = {
+static const upb_msglayout_field envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__fields[2] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit = {
   &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[0],
   &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 2, false, 255,
 };
 
 const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit = {
@@ -100,16 +136,17 @@ static const upb_msglayout *const envoy_config_core_v3_KeepaliveSettings_submsgs
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_KeepaliveSettings__fields[3] = {
+static const upb_msglayout_field envoy_config_core_v3_KeepaliveSettings__fields[4] = {
   {1, UPB_SIZE(4, 8), 1, 1, 11, 1},
   {2, UPB_SIZE(8, 16), 2, 1, 11, 1},
   {3, UPB_SIZE(12, 24), 3, 0, 11, 1},
+  {4, UPB_SIZE(16, 32), 4, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_KeepaliveSettings_msginit = {
   &envoy_config_core_v3_KeepaliveSettings_submsgs[0],
   &envoy_config_core_v3_KeepaliveSettings__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(24, 40), 4, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Http2ProtocolOptions_submsgs[4] = {
@@ -172,10 +209,30 @@ const upb_msglayout envoy_config_core_v3_GrpcProtocolOptions_msginit = {
   UPB_SIZE(8, 16), 1, false, 255,
 };
 
+static const upb_msglayout *const envoy_config_core_v3_Http3ProtocolOptions_submsgs[2] = {
+  &envoy_config_core_v3_QuicProtocolOptions_msginit,
+  &google_protobuf_BoolValue_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_Http3ProtocolOptions__fields[2] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 2, 1, 11, 1},
+};
+
 const upb_msglayout envoy_config_core_v3_Http3ProtocolOptions_msginit = {
+  &envoy_config_core_v3_Http3ProtocolOptions_submsgs[0],
+  &envoy_config_core_v3_Http3ProtocolOptions__fields[0],
+  UPB_SIZE(16, 24), 2, false, 255,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_SchemeHeaderTransformation__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_SchemeHeaderTransformation_msginit = {
   NULL,
-  NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  &envoy_config_core_v3_SchemeHeaderTransformation__fields[0],
+  UPB_SIZE(16, 32), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

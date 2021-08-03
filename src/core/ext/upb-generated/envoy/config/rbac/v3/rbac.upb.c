@@ -16,6 +16,7 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/api/expr/v1alpha1/checked.upb.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"

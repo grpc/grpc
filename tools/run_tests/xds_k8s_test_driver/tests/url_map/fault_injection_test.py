@@ -161,6 +161,14 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
     """EMPTY_CALL is not fault injected, so it should succeed."""
 
     @staticmethod
+    def client_init_config(rpc: str, metadata: str):
+        # Python interop client will stuck if the traffic is slow (in this case,
+        # 20s injected). The purpose of this test is examining the un-injected
+        # traffic is not impacted, so it's fine to just send un-injected
+        # traffic.
+        return 'EmptyCall', metadata
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -195,9 +203,6 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
                 'typedPerFilterConfig', {}))
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeEmptyCall],
-                                                   num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(
                                      rpc_type=RpcTypeEmptyCall,

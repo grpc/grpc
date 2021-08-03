@@ -14,9 +14,9 @@
 """Common code used throughout tests of gRPC."""
 
 import collections
+from concurrent import futures
 import threading
 
-from concurrent import futures
 import grpc
 import six
 

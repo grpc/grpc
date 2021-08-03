@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import threading
 from typing import Iterator
-from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 

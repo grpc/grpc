@@ -536,12 +536,12 @@ void CdsLb::OnError(const std::string& name, grpc_error_handle error) {
   // policy (i.e., we have not yet received data from xds).  Otherwise,
   // we keep running with the data we had previously.
   if (child_policy_ == nullptr) {
+    absl::Status status = grpc_error_to_absl_status(error);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
-  } else {
-    GRPC_ERROR_UNREF(error);
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 void CdsLb::OnResourceDoesNotExist(const std::string& name) {
@@ -549,15 +549,11 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
           "[cdslb %p] CDS resource for %s does not exist -- reporting "
           "TRANSIENT_FAILURE",
           this, name.c_str());
-  grpc_error_handle error =
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                             absl::StrCat("CDS resource \"", config_->cluster(),
-                                          "\" does not exist")
-                                 .c_str()),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  absl::Status status = absl::UnavailableError(
+      absl::StrCat("CDS resource \"", config_->cluster(), "\" does not exist"));
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-      absl::make_unique<TransientFailurePicker>(error));
+      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+      absl::make_unique<TransientFailurePicker>(status));
   MaybeDestroyChildPolicyLocked();
 }
 

@@ -14,12 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_generate_one_off_targets",
+    "grpc_upb_proto_library",
+    "python_config_settings",
+)
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
-exports_files([
-    "LICENSE",
-    "etc/roots.pem",
-])
+licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -29,13 +33,10 @@ package(
     ],
 )
 
-load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
-    "grpc_generate_one_off_targets",
-    "grpc_upb_proto_library",
-    "python_config_settings",
-)
+exports_files([
+    "LICENSE",
+    "etc/roots.pem",
+])
 
 config_setting(
     name = "grpc_no_ares",
@@ -43,8 +44,31 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds",
+    name = "grpc_no_xds_define",
     values = {"define": "grpc_no_xds=true"},
+)
+
+config_setting(
+    name = "android",
+    values = {"crosstool_top": "//external:android/crosstool"},
+)
+
+config_setting(
+    name = "ios",
+    values = {"apple_platform_type": "ios"},
+)
+
+selects.config_setting_group(
+    name = "grpc_no_xds",
+    match_any = [
+        ":grpc_no_xds_define",
+        # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
 )
 
 config_setting(
@@ -636,7 +660,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
@@ -773,6 +796,26 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "overload",
+    ],
+)
+
+grpc_cc_library(
+    name = "table",
+    external_deps = ["absl/utility"],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/table.h"],
+    deps = [
+        "bitset",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "bitset",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/bitset.h"],
+    deps = [
+        "gpr_platform",
     ],
 )
 
@@ -3227,12 +3270,15 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c",
+        "src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c",
+        "src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c",
+        "src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c",
         "src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c",
         "src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c",
@@ -3259,6 +3305,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c",
         "src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c",
         "src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c",
+        "src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h",
@@ -3268,12 +3315,15 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.h",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.h",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.h",
+        "src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h",
+        "src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.h",
         "src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h",
+        "src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h",
         "src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h",
         "src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h",
@@ -3300,6 +3350,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h",
         "src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h",
         "src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h",
+        "src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -3328,12 +3379,15 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c",
@@ -3359,6 +3413,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c",
     ],
     hdrs = [
         "src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h",
@@ -3368,12 +3423,15 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h",
@@ -3399,6 +3457,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h",
     ],
     external_deps = [
         "upb_lib",

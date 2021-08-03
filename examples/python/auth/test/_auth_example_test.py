@@ -17,11 +17,12 @@ import asyncio
 import unittest
 
 import grpc
+
 from examples.python.auth import _credentials
-from examples.python.auth import customized_auth_client
-from examples.python.auth import customized_auth_server
 from examples.python.auth import async_customized_auth_client
 from examples.python.auth import async_customized_auth_server
+from examples.python.auth import customized_auth_client
+from examples.python.auth import customized_auth_server
 
 _SERVER_ADDR_TEMPLATE = 'localhost:%d'
 

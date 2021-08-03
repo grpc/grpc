@@ -495,7 +495,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == "Call dropped by load balancing policy") {
+      if (status.error_message() == "drop directed by grpclb balancer") {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -1781,7 +1781,7 @@ TEST_F(SingleBalancerTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -1813,7 +1813,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
       0);
   const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 TEST_F(SingleBalancerTest, DropAll) {
@@ -1838,7 +1838,7 @@ TEST_F(SingleBalancerTest, DropAll) {
     status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
@@ -1970,7 +1970,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

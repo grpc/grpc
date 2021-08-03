@@ -750,6 +750,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx bdp_estimator_test)
   endif()
   add_dependencies(buildtests_cxx binder_smoke_test)
+  add_dependencies(buildtests_cxx bitset_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bm_alarm)
   endif()
@@ -959,6 +960,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx streaming_throughput_test)
   endif()
   add_dependencies(buildtests_cxx string_ref_test)
+  add_dependencies(buildtests_cxx table_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
@@ -1123,12 +1125,14 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
   test/core/end2end/tests/retry_cancel_during_delay.cc
+  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_lb_drop.cc
+  test/core/end2end/tests/retry_lb_fail.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
@@ -1262,12 +1266,14 @@ add_library(end2end_tests
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
   test/core/end2end/tests/retry_cancel_during_delay.cc
+  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_lb_drop.cc
+  test/core/end2end/tests/retry_lb_fail.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
@@ -1642,14 +1648,17 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
+  src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
   src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
@@ -1676,6 +1685,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
+  src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
@@ -1729,14 +1739,17 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
@@ -1762,6 +1775,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
@@ -8340,6 +8354,40 @@ target_link_libraries(binder_smoke_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(bitset_test
+  test/core/gprpp/bitset_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(bitset_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bitset_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bm_alarm
@@ -14313,6 +14361,42 @@ target_link_libraries(string_ref_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(table_test
+  test/core/gprpp/table_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(table_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(table_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::optional
+  absl::utility
 )
 
 

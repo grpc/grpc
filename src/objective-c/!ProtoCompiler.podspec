@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     The generated code will have a dependency on the Protobuf Objective-C runtime of the same
     version. The runtime can be obtained as the "Protobuf" pod.
   DESC
-  s.homepage = 'https://github.com/google/protobuf'
+  s.homepage = 'https://github.com/protocolbuffers/protobuf'
   s.license  = {
     :type => 'New BSD',
     :text => <<-LICENSE

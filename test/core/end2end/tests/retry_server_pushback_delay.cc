@@ -126,8 +126,6 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   pushback_md.value = grpc_slice_from_static_string("2000");
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
           const_cast<char*>(
