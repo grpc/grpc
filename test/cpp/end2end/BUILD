@@ -82,6 +82,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "crl_end2end_test",
+    srcs = ["crl_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "time_change_test",
     srcs = ["time_change_test.cc"],
     data = [

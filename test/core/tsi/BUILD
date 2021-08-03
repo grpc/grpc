@@ -100,7 +100,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds/crl_supported:valid.pem",
     ],
     language = "C++",
-        tags = ["no_windows"],
+    tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",

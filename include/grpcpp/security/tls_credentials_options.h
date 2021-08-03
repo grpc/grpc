@@ -188,6 +188,11 @@ class TlsCredentialsOptions {
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
 
+  // If set, gRPC will read all hashed x.509 CRL files in the directory and
+  // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
+  // version > 1.1.
+  void set_crl_directory(const std::string& path);
+
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {
