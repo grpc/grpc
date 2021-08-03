@@ -232,6 +232,9 @@ static void send_message_on_complete(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->send_message_cache.Destroy();
+  // Set the batch's send_message bit back to true, so the retry code
+  // above knows what was in this batch.
+  calld->send_message_batch->send_message = true;
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_send_message_on_complete,
                           GRPC_ERROR_REF(error));
@@ -474,8 +477,8 @@ static void http_client_start_transport_stream_op_batch(
 
 done:
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
+    grpc_transport_stream_op_batch_finish_with_failure(batch, error,
+                                                       calld->call_combiner);
   } else if (!batch_will_be_handled_asynchronously) {
     grpc_call_next_op(elem, batch);
   }

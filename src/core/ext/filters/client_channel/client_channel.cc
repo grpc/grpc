@@ -378,7 +378,7 @@ class DynamicTerminationFilter::CallData {
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call_;
+  OrphanablePtr<ClientChannel::LoadBalancedCall> lb_call_;
 };
 
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
@@ -1163,15 +1163,15 @@ ClientChannel::~ClientChannel() {
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
 }
 
-RefCountedPtr<ClientChannel::LoadBalancedCall>
+OrphanablePtr<ClientChannel::LoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry) {
-  return args.arena->New<LoadBalancedCall>(
+  return OrphanablePtr<LoadBalancedCall>(args.arena->New<LoadBalancedCall>(
       this, args, pollent, on_call_destruction_complete,
-      call_dispatch_controller, is_transparent_retry);
+      call_dispatch_controller, is_transparent_retry));
 }
 
 namespace {
@@ -1516,7 +1516,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       channel_args_, args_to_add.data(), args_to_add.size());
   new_args = config_selector->ModifyChannelArgs(new_args);
   bool enable_retries =
-      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, false);
+      grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, true);
   // Construct dynamic filter stack.
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();
@@ -2561,9 +2561,10 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
-                     ? "LoadBalancedCall"
-                     : nullptr),
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
+              ? "LoadBalancedCall"
+              : nullptr),
       chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       deadline_(args.deadline),
@@ -2589,16 +2590,20 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
   }
+  if (on_call_destruction_complete_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
+                 GRPC_ERROR_NONE);
+  }
+}
+
+void ClientChannel::LoadBalancedCall::Orphan() {
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer_ != nullptr) {
     gpr_timespec latency =
         gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
     call_attempt_tracer_->RecordEnd(latency);
   }
-  if (on_call_destruction_complete_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
-                 GRPC_ERROR_NONE);
-  }
+  Unref();
 }
 
 size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
@@ -2745,8 +2750,6 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     if (batch->recv_initial_metadata) {
       recv_initial_metadata_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata;
-      recv_initial_metadata_flags_ =
-          batch->payload->recv_initial_metadata.recv_flags;
       original_recv_initial_metadata_ready_ =
           batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
       GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
@@ -2858,8 +2861,11 @@ void ClientChannel::LoadBalancedCall::SendInitialMetadataOnComplete(
 void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  self->call_attempt_tracer_->RecordReceivedInitialMetadata(
-      self->recv_initial_metadata_, *self->recv_initial_metadata_flags_);
+  if (error == GRPC_ERROR_NONE) {
+    // recv_initial_metadata_flags is not populated for clients
+    self->call_attempt_tracer_->RecordReceivedInitialMetadata(
+        self->recv_initial_metadata_, 0 /* recv_initial_metadata_flags */);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                GRPC_ERROR_REF(error));
 }
@@ -2867,7 +2873,9 @@ void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
 void ClientChannel::LoadBalancedCall::RecvMessageReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
+  if (*self->recv_message_ != nullptr) {
+    self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
                GRPC_ERROR_REF(error));
 }
