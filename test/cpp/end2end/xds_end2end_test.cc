@@ -1211,8 +1211,9 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     grpc_core::CondVar cv;
     if (result_queue_.empty()) {
       load_report_cond_ = &cv;
-      grpc_core::WaitUntil(load_report_cond_, &load_report_mu_,
-                           [this] { return !result_queue_.empty(); });
+      while (result_queue_.empty()) {
+        cv.Wait(&load_report_mu_);
+      }
       load_report_cond_ = nullptr;
     }
     std::vector<ClientStats> result = std::move(result_queue_.front());
@@ -1279,8 +1280,9 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
         }
         // Wait until notified done.
         grpc_core::MutexLock lock(&parent_->lrs_mu_);
-        grpc_core::WaitUntil(&parent_->lrs_cv_, &parent_->lrs_mu_,
-                             [this] { return parent_->lrs_done_; });
+        while (!parent_->lrs_done_) {
+          parent_->lrs_cv_.Wait(&parent_->lrs_mu_);
+        }
       }
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
       return Status::OK;
