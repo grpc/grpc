@@ -65,6 +65,9 @@ grpc_cc_test(
     srcs = ["credentials_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:multi-domain.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],

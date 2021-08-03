@@ -776,6 +776,15 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 typedef struct grpc_tls_identity_pairs grpc_tls_identity_pairs;
 
 /**
+ * Status generated for certificate-key match.
+ */
+typedef struct grpc_tls_status_or_bool {
+  grpc_status_code code;
+  const char* error_details;
+  bool matched_or;
+} grpc_tls_status_or_bool;
+
+/**
  * Creates a grpc_tls_identity_pairs that stores a list of identity credential
  * data, including identity private key and identity certificate chain. It is
  * used for experimental purpose for now and subject to change.
@@ -853,7 +862,7 @@ GRPCAPI void grpc_tls_certificate_provider_release(
  * Returns a not-OK status on failure, or a bool indicating
  * whether the key/cert pair matches.
  */
-GRPCAPI bool grpc_tls_certificate_key_match(const char* private_key, const char* cert_chain, grpc_status_code* code, const char** error_details);
+GRPCAPI grpc_tls_status_or_bool grpc_tls_certificate_key_match(const char* private_key, const char* cert_chain);
 
 
 /**

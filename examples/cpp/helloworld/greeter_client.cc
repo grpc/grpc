@@ -35,12 +35,8 @@
 //#include "src/core/lib/surface/api_trace.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-#define CA_CERT_PATH_2 "src/core/tsi/test_creds/multi-domain.pem"
-#define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
-#define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
-#define INVALID_PATH "invalid/path"
+#define CLIENT_CERT_PATH "src/core/tsi/test_creds/client1.pem"
+#define CLIENT_KEY_PATH "src/core/tsi/test_creds/client1.key"
 //done
 
 #ifdef BAZEL_BUILD
@@ -55,6 +51,31 @@ using grpc::Status;
 using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
+using ::grpc::experimental::TlsServerAuthorizationCheckArg;
+using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
+using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
+
+class TestTlsServerAuthorizationCheck
+    : public TlsServerAuthorizationCheckInterface {
+  int Schedule(TlsServerAuthorizationCheckArg* arg) override {
+    GPR_ASSERT(arg != nullptr);
+    std::string cb_user_data = "cb_user_data";
+    arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
+    arg->set_success(1);
+    arg->set_target_name("sync_target_name");
+    arg->set_peer_cert("sync_peer_cert");
+    arg->set_status(GRPC_STATUS_OK);
+    arg->set_error_details("sync_error_details");
+    return 1;
+  }
+
+  void Cancel(TlsServerAuthorizationCheckArg* arg) override {
+    GPR_ASSERT(arg != nullptr);
+    arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
+    arg->set_error_details("cancelled");
+  }
+};
+
 
 class GreeterClient {
  public:
@@ -158,15 +179,8 @@ int main(int argc, char** argv) {
   constexpr const char* kCertName = "cert_name";
   constexpr const char* kRootCertName = "root_cert_name";
   constexpr const char* kIdentityCertName = "identity_cert_name";
-  constexpr const char* kRootError = "Unable to get latest root certificates.";
-  constexpr const char* kIdentityError =
-      "Unable to get latest identity certificates.";
-//  TlsCredentialsOptions options;
-//  // Doing only the certificate check and skip the hostname check.
-//  options.SetServerAutorizationOptions(GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-//  options.setCustomAuthorization(ExampleSyncTlsAuthorization);
-  auto certificate_provider = std::make_shared<grpc::experimental::FileWatcherCertificateProvider>(
-    SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+//  auto certificate_provider = std::make_shared<grpc::experimental::FileWatcherCertificateProvider>(
+//    CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
@@ -180,7 +194,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<grpc::Channel> channel = CreateChannel("0.0.0.0:50051", channel_credentials);
   std::unique_ptr<Greeter::Stub> stub(Greeter::NewStub(channel));
   GreeterClient greeter(
-        grpc::CreateChannel(target_str, channel_credentials));
+      grpc::CreateChannel(target_str, channel_credentials));
 //      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
 

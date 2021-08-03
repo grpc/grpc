@@ -17,6 +17,11 @@ licenses(["notice"])  # 3-clause BSD
 cc_binary(
     name = "greeter_client",
     srcs = ["greeter_client.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
@@ -69,6 +74,11 @@ cc_binary(
 cc_binary(
     name = "greeter_server",
     srcs = ["greeter_server.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",

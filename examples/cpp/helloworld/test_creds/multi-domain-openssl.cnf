@@ -1,0 +1,33 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+countryName = Country Name (2 letter code)
+countryName_default = US
+stateOrProvinceName = State or Province Name (full name)
+stateOrProvinceName_default = CA
+localityName = Locality Name (eg, city)
+localityName_default = SF
+organizationalUnitName = Organizational Unit Name (eg, section)
+organizationalUnitName_default = Google
+commonName = Common Name (CN)
+commonName_default =xpigors
+commonName_max = 64
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = foo.test.domain.com
+DNS.2 = bar.test.domain.com
+URI.1 = https://foo.test.domain.com/test
+URI.2 = https://bar.test.domain.com/test
+URI.3 = spiffe://foo.com/bar/baz
+email.1 = foo@test.domain.com
+email.2 = bar@test.domain.com
+IP.1 = 192.168.7.1
+IP.2 = 13::17
+RID.1 = 1.2.3.4
