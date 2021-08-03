@@ -792,20 +792,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                   response->DebugString().c_str());
           stream->Write(response.value());
         }
-        // If we didn't find anything to do, delay before the next loop
-        // iteration; otherwise, check whether we should exit and then
-        // immediately continue.
-        gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
         {
           grpc_core::MutexLock lock(&parent_->ads_mu_);
-          if (!grpc_core::WaitUntilWithDeadline(
-                  &parent_->ads_cond_, &parent_->ads_mu_,
-                  [this] { return parent_->ads_done_; },
-                  grpc_core::ToAbslTime(deadline))) {
+          if (parent_->ads_done_) {
             break;
           }
         }
+        // If we didn't find anything to do, delay before the next loop
+        // iteration; otherwise, check whether we should exit and then
+        // immediately continue.
+        gpr_sleep_until(
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10));
       }
       // Done with main loop.  Clean up before returning.
       // Join reader thread.
