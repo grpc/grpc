@@ -23,18 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdlib.h>
-#ifdef USE_GOOGLE
-#include "base/init_google.h"
-#endif
+#ifndef UPB_REFLECTION_HPP_
+#define UPB_REFLECTION_HPP_
 
-extern "C" {
-int run_tests(int argc, char *argv[]);
-}
+#include "upb/reflection.h"
 
-int main(int argc, char *argv[]) {
-#ifdef USE_GOOGLE
-  InitGoogle(NULL, &argc, &argv, true);
-#endif
-  run_tests(argc, argv);
-}
+namespace upb {
+
+typedef upb_msgval MessageValue;
+
+}  // namespace upb
+
+#endif  // UPB_REFLECTION_HPP_

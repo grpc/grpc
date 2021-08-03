@@ -25,55 +25,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UPB_TEST_H_
-#define UPB_TEST_H_
+#ifndef UPB_INT_H_
+#define UPB_INT_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "upb/upb.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct mem_block;
+typedef struct mem_block mem_block;
 
-int num_assertions = 0;
-uint32_t testhash = 0;
+struct upb_arena {
+  _upb_arena_head head;
+  /* Stores cleanup metadata for this arena.
+   * - a pointer to the current cleanup counter.
+   * - a boolean indicating if there is an unowned initial block.  */
+  uintptr_t cleanup_metadata;
 
-#define PRINT_FAILURE(expr) \
-  fprintf(stderr, "Assertion failed: %s:%d\n", __FILE__, __LINE__); \
-  fprintf(stderr, "expr: %s\n", #expr); \
-  if (testhash) { \
-    fprintf(stderr, "assertion failed running test %x.  " \
-                    "Run with the arg %x to run only this test.\n", \
-                    testhash, testhash); \
-  }
+  /* Allocator to allocate arena blocks.  We are responsible for freeing these
+   * when we are destroyed. */
+  upb_alloc *block_alloc;
+  uint32_t last_size;
 
-#define ASSERT(expr) do { \
-  ++num_assertions; \
-  if (!(expr)) { \
-    PRINT_FAILURE(expr) \
-    abort(); \
-  } \
-} while (0)
+  /* When multiple arenas are fused together, each arena points to a parent
+   * arena (root points to itself). The root tracks how many live arenas
+   * reference it. */
+  uint32_t refcount;  /* Only used when a->parent == a */
+  struct upb_arena *parent;
 
-#define ASSERT_NOCOUNT(expr) do { \
-  if (!(expr)) { \
-    PRINT_FAILURE(expr) \
-    abort(); \
-  } \
-} while (0)
+  /* Linked list of blocks to free/cleanup. */
+  mem_block *freelist, *freelist_tail;
+};
 
-#define ASSERT_STATUS(expr, status) do { \
-  ++num_assertions; \
-  if (!(expr)) { \
-    PRINT_FAILURE(expr) \
-    fprintf(stderr, "failed status: %s\n", upb_status_errmsg(status)); \
-    abort(); \
-  } \
-} while (0)
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
-
-#endif  /* UPB_DECODER_H_ */
+#endif  /* UPB_INT_H_ */
