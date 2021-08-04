@@ -2297,6 +2297,19 @@ grpc_error_handle DownstreamTlsContextParse(
       downstream_tls_context->require_client_certificate =
           google_protobuf_BoolValue_value(require_client_certificate);
     }
+    auto* require_sni =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
+            downstream_tls_context_proto);
+    if (require_sni != nullptr &&
+        google_protobuf_BoolValue_value(require_sni)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("require_sni: unsupported");
+    }
+    if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
+            downstream_tls_context_proto) !=
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "ocsp_staple_policy: Only LENIENT_STAPLING supported");
+    }
   }
   if (downstream_tls_context->common_tls_context
           .tls_certificate_certificate_provider_instance.instance_name
@@ -2462,9 +2475,14 @@ grpc_error_handle FilterChainParse(
       error = DownstreamTlsContextParse(
           context, transport_socket,
           &filter_chain->filter_chain_data->downstream_tls_context);
+      if (error != GRPC_ERROR_NONE) {
+        return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                        "Error parsing DownstreamTlsContext"),
+                                    error);
+      }
     }
   }
-  return error;
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle AddressParse(
