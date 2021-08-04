@@ -16,6 +16,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -115,11 +116,11 @@ class TestServerWrapper {
     std::string certificate_file = absl::StrCat(kCredentialsDir, "/server.pem");
     std::string key_file = absl::StrCat(kCredentialsDir, "/server.key");
     std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
-    std::string certificate_pem = ReadFile(certificate_file);
+    std::string certificate_pem = ReadFile(certificate_file.c_str());
     GPR_ASSERT(!certificate_pem.empty());
-    std::string key_pem = ReadFile(key_file);
+    std::string key_pem = ReadFile(key_file.c_str());
     GPR_ASSERT(!key_pem.empty());
-    std::string ca_bundle_pem = ReadFile(ca_bundle_file);
+    std::string ca_bundle_pem = ReadFile(ca_bundle_file.c_str());
     GPR_ASSERT(!ca_bundle_pem.empty());
     grpc_cpp_test::RunServer(certificate_file, key_file, ca_bundle_file);
   }
