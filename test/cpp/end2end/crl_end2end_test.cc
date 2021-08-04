@@ -23,6 +23,9 @@ using ::grpc::Status;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
+using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
+using ::grpc::experimental::TlsServerAuthorizationCheckArg;
+using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
@@ -43,7 +46,7 @@ namespace {
 class EchoServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
                     EchoResponse* reply) override {
-    std::cout << "Server: received message: " << request->message()
+    std::cout << "Server: received message: " << request->message().c_str()
               << std::endl;
     reply->set_message(request->message());
     return Status::OK;
@@ -67,7 +70,7 @@ void RunServer(const std::string& listen_addr,
   EchoServiceImpl service;
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening at " << listen_addr << std::endl;
+  std::cout << "Server listening at " << listen_addr.c_str() << std::endl;
 }
 
 void RunClient(const std::string& server_addr,
@@ -103,9 +106,9 @@ void RunClient(const std::string& server_addr,
     ClientContext context;
     Status status = stub->Echo(&context, request, &reply);
     if (status.ok()) {
-      gpr_log(GPR_INFO, "Client: received message: %s", reply.message());
+      gpr_log(GPR_INFO, "Client: received message: %s", reply.message().c_str());
     } else {
-      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(), reply.message());
+      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(), reply.message().c_str());
       break;
     }
     sleep(10 * 60);
