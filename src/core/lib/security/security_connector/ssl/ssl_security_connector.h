@@ -35,6 +35,7 @@ struct grpc_ssl_config {
   verify_peer_options verify_options;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
+  char* crl_directory;
 };
 
 /* Creates an SSL channel_security_connector.
@@ -67,6 +68,7 @@ struct grpc_ssl_server_config {
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
+  char* crl_directory = nullptr;
 };
 /* Creates an SSL server_security_connector.
    - config is the SSL config to be used for the SSL channel establishment.

@@ -216,12 +216,13 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
 void grpc_ssl_server_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
-    grpc_ssl_client_certificate_request_type client_certificate_request) {
+    grpc_ssl_client_certificate_request_type client_certificate_request, const char* crl_directory) {
   config_.client_certificate_request = client_certificate_request;
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config_.num_key_cert_pairs = num_key_cert_pairs;
+  config_.crl_directory = crl_directory;
 }
 
 void grpc_ssl_server_credentials::set_min_tls_version(
