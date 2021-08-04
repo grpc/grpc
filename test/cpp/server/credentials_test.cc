@@ -59,6 +59,25 @@ namespace grpc {
 namespace testing {
 namespace {
 
+class GrpcTlsCertificateKeyMatchTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+    cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+    private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
+    root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
+    cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
+    private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
+  }
+
+  std::string root_cert_;
+  std::string private_key_;
+  std::string cert_chain_;
+  std::string root_cert_2_;
+  std::string private_key_2_;
+  std::string cert_chain_2_;
+};
+
 TEST(
     CredentialsTest,
     TlsServerCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
@@ -134,11 +153,9 @@ TEST(
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyPrivateKey){
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       /*private_key=*/"", cert_chain_.c_str());
   EXPECT_FALSE(matched.matched_or);
@@ -148,12 +165,9 @@ TEST(
   grpc_tls_certificate_key_match_release(&matched);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyCertificate){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), /*cert_chain=*/"");
   std::string error_message = matched.error_details;
@@ -163,12 +177,9 @@ TEST(
   grpc_tls_certificate_key_match_release(&matched);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidCertFormat){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), "invalid_certificate");
   std::string error_message = matched.error_details;
@@ -178,15 +189,9 @@ TEST(
   grpc_tls_certificate_key_match_release(&matched);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidKeyFormat){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       "invalid_private_key", cert_chain_2_.c_str());
   std::string error_message = matched.error_details;
@@ -196,12 +201,9 @@ TEST(
   grpc_tls_certificate_key_match_release(&matched);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForSuccessfulKeyCertMatch){
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_2_.c_str());
   EXPECT_TRUE(matched.matched_or);
@@ -209,15 +211,9 @@ TEST(
   grpc_tls_certificate_key_match_release(&matched);
 }
 
-TEST(
-    CredentialsTest,
+TEST_F(
+    GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidPair){
-  std::string root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-  std::string cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-  std::string private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-  std::string root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-  std::string cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-  std::string private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
   grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_.c_str());
   EXPECT_FALSE(matched.matched_or);
