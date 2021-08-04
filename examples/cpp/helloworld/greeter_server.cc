@@ -24,18 +24,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-//my include
-#include <grpc/support/port_platform.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <openssl/ssl.h>
-
-#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-//done
-
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
@@ -49,43 +37,12 @@ using grpc::Status;
 using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
-using ::grpc::experimental::TlsServerAuthorizationCheckArg;
-using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
-using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
-
-class TestTlsServerAuthorizationCheck
-    : public TlsServerAuthorizationCheckInterface {
-  int Schedule(TlsServerAuthorizationCheckArg* arg) override {
-    GPR_ASSERT(arg != nullptr);
-    std::string cb_user_data = "cb_user_data";
-    arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
-    arg->set_success(1);
-    arg->set_target_name("sync_target_name");
-    arg->set_peer_cert("sync_peer_cert");
-    arg->set_status(GRPC_STATUS_OK);
-    arg->set_error_details("sync_error_details");
-    return 1;
-  }
-
-  void Cancel(TlsServerAuthorizationCheckArg* arg) override {
-    GPR_ASSERT(arg != nullptr);
-    arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
-    arg->set_error_details("cancelled");
-  }
-};
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
     std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
-    return Status::OK;
-  }
-
-  Status SayHelloAgain(ServerContext* context, const HelloRequest* request,
-                       HelloReply* reply) override {
-    std::string prefix("Hello again ");
     reply->set_message(prefix + request->name());
     return Status::OK;
   }
@@ -98,26 +55,7 @@ void RunServer() {
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
-
-  constexpr const char* kCertName = "cert_name";
-  constexpr const char* kRootCertName = "root_cert_name";
-  constexpr const char* kIdentityCertName = "identity_cert_name";
-//  auto certificate_provider = std::make_shared<grpc::experimental::FileWatcherCertificateProvider>(
-//      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  grpc::experimental::TlsServerCredentialsOptions options(nullptr);
-  options.watch_root_certs();
-  options.set_root_cert_name(kRootCertName);
-  options.watch_identity_key_cert_pairs();
-  options.set_identity_cert_name(kIdentityCertName);
-  options.set_cert_request_type(
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  //ServerBuilder builder;
-  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-//builder.AddListeningPort("[::]:<port>", server_credentials);
-//std::unique_ptr<Server> server(builder.BuildAndStart());
-
   // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, server_credentials);
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
