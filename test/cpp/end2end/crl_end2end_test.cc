@@ -100,7 +100,7 @@ class TestServerWrapper {
   TestServerWrapper()
       : server_address_("localhost:" +
                         std::to_string(grpc_pick_unused_port_or_die())) {}
-  Start() {
+  void Start() {
     std::string certificate_file = absl::StrCat(kCredentialsDir, "/server.pem");
     std::string key_file = absl::StrCat(kCredentialsDir, "/server.key");
     std::string ca_bundle_file =
@@ -121,8 +121,8 @@ class TestServerWrapper {
   std::unique_ptr<Server> server_;
 
  private:
-  Start(const std::string& certificate_file, const std::string& key_file,
-        const std::string& ca_bundle_file) {
+  void Start(const std::string& certificate_file, const std::string& key_file,
+             const std::string& ca_bundle_file) {
     auto certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
             key_file, certificate_file, ca_bundle_file,
