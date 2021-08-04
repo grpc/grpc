@@ -28,6 +28,7 @@ using ::grpc::experimental::TlsServerAuthorizationCheckArg;
 using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+using grpc::testing::EchoTestService;
 
 namespace grpc {
 namespace testing {
@@ -97,7 +98,7 @@ void RunClient(const std::string& server_addr,
   grpc::ChannelArguments args;
   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "testserver");
   auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
-  std::unique_ptr<Echo::Stub> stub = Echo::NewStub(channel);
+  std::unique_ptr<EchoTestService::Stub> stub = EchoTestService::NewStub(channel);
   EchoRequest request;
   request.set_message("This is a test.");
   EchoResponse reply;
