@@ -23,13 +23,23 @@ using ::grpc::Status;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TestTlsServerAuthorizationCheck;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
 namespace {
+
+  class TestTlsServerAuthorizationCheck
+    : public TlsServerAuthorizationCheckInterface {
+  int Schedule(TlsServerAuthorizationCheckArg* arg) override {
+    GPR_ASSERT(arg != nullptr);
+    arg->set_success(1);
+    arg->set_status(GRPC_STATUS_OK);
+    return 0;
+  }
+};
+
 class EchoServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
                     EchoResponse* reply) override {
@@ -101,17 +111,6 @@ void RunClient(const std::string& server_addr,
     sleep(10 * 60);
   }
 }
-
-class TestTlsServerAuthorizationCheck
-    : public TlsServerAuthorizationCheckInterface {
-  int Schedule(TlsServerAuthorizationCheckArg* arg) override {
-    GPR_ASSERT(arg != nullptr);
-    arg->set_success(1);
-    arg->set_status(GRPC_STATUS_OK);
-    return 0;
-  }
-};
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
