@@ -11,7 +11,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-
 #include <memory>
 #include <string>
 
@@ -25,11 +24,11 @@ using ::grpc::ServerBuilder;
 using ::grpc::ServerContext;
 using ::grpc::Status;
 using ::grpc::experimental::FileWatcherCertificateProvider;
-using ::grpc::experimental::TlsServerCredentialsOptions;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
 using ::grpc::experimental::TlsServerAuthorizationCheckArg;
 using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
+using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
+using ::grpc::experimental::TlsServerCredentialsOptions;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
@@ -38,7 +37,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
-  class TestTlsServerAuthorizationCheck
+constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/"
+
+    class TestTlsServerAuthorizationCheck
     : public TlsServerAuthorizationCheckInterface {
   int Schedule(TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
@@ -48,41 +49,10 @@ namespace {
   }
 };
 
-class EchoServiceImpl final : public ::grpc::testing::EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
-                    EchoResponse* reply) override {
-    std::cout << "Server: received message: " << request->message().c_str()
-              << std::endl;
-    reply->set_message(request->message());
-    return Status::OK;
-  }
-};
-
-void RunServer(const std::string& listen_addr,
-               const std::string& certificate_file, const std::string& key_file,
-               const std::string& ca_bundle_file) {
-  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      key_file, certificate_file, ca_bundle_file, /*refresh_interval_sec=*/10);
-  TlsServerCredentialsOptions options(certificate_provider);
-  // options.watch_root_certs();
-  options.watch_identity_key_cert_pairs();
-  options.set_cert_request_type(
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  options.set_crl_directory("");
-  auto creds = grpc::experimental::TlsServerCredentials(options);
-  ServerBuilder builder;
-  builder.AddListeningPort(listen_addr, creds);
-  EchoServiceImpl service;
-  builder.RegisterService(&service);
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening at " << listen_addr.c_str() << std::endl;
-}
-
-void RunClient(const std::string& server_addr,
-               const std::string& certificate_file, const std::string& key_file,
-               const std::string& ca_bundle_file) {
-  gpr_log(GPR_INFO, "Start gRPC client");
-
+void CallEchoRPC(const std::string& server_addr,
+                 const std::string& certificate_file,
+                 const std::string& key_file,
+                 const std::string& ca_bundle_file) {
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       key_file, certificate_file, ca_bundle_file,
       /*refresh_interval_sec=*/10);
@@ -102,7 +72,8 @@ void RunClient(const std::string& server_addr,
   grpc::ChannelArguments args;
   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "testserver");
   auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
-  std::unique_ptr<EchoTestService::Stub> stub = EchoTestService::NewStub(channel);
+  std::unique_ptr<EchoTestService::Stub> stub =
+      EchoTestService::NewStub(channel);
   EchoRequest request;
   request.set_message("This is a test.");
   EchoResponse reply;
@@ -111,14 +82,75 @@ void RunClient(const std::string& server_addr,
     ClientContext context;
     Status status = stub->Echo(&context, request, &reply);
     if (status.ok()) {
-      gpr_log(GPR_INFO, "Client: received message: %s", reply.message().c_str());
+      gpr_log(GPR_INFO, "Client: received message: %s",
+              reply.message().c_str());
     } else {
-      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(), reply.message().c_str());
+      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(),
+              reply.message().c_str());
       break;
     }
     sleep(10 * 60);
   }
 }
+
+class TestServerWrapper {
+ public:
+  TestServerWrapper()
+      : server_address_("localhost:" +
+                        std::to_string(grpc_pick_unused_port_or_die())) {}
+  Start() {
+    std::string certificate_file = absl::StrCat(kCredentialsDir, "/server.pem");
+    std::string key_file = absl::StrCat(kCredentialsDir, "/server.key");
+    std::string ca_bundle_file =
+        kCredentialsDir, "/ca.pem");
+    std::string certificate_pem = ReadFile(certificate_file);
+    GPR_ASSERT(!certificate_pem.empty())
+    std::string key_pem = ReadFile(key_file);
+    GPR_ASSERT(!key_pem.empty())
+    std::string ca_bundle_pem = ReadFile(ca_bundle_file);
+    GPR_ASSERT(!ca_bundle_pem.empty())
+    grpc_cpp_test::RunServer(certificate_file, key_file, ca_bundle_file);
+  }
+
+  ~TestServerWrapper() override { server_->Shutdown(); }
+
+  const std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+
+ private:
+  Start(const std::string& certificate_file, const std::string& key_file,
+        const std::string& ca_bundle_file) {
+    auto certificate_provider =
+        std::make_shared<FileWatcherCertificateProvider>(
+            key_file, certificate_file, ca_bundle_file,
+            /*refresh_interval_sec=*/10);
+    TlsServerCredentialsOptions options(certificate_provider);
+    // options.watch_root_certs();
+    options.watch_identity_key_cert_pairs();
+    options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    options.set_crl_directory("");
+    auto creds = grpc::experimental::TlsServerCredentials(options);
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address_, creds);
+    EchoServiceImpl service;
+    builder.RegisterService(&service);
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+
+    std::cout << "Server listening at " << server_address_.c_str() << std::endl;
+  }
+}
+
+class CrlTest : public ::testing::Test {
+ protected:
+  CrlTest() {}
+
+ private:
+};
+
+TEST_F(CrlTest, ValidTraffic) {}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

@@ -87,6 +87,14 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    data = [
+        "//src/core/tsi/test_creds/crl_supported:ab06acdd.r0",
+        "//src/core/tsi/test_creds/crl_supported:ca.pem",
+        "//src/core/tsi/test_creds/crl_supported:revoked.key",
+        "//src/core/tsi/test_creds/crl_supported:revoked.pem",
+        "//src/core/tsi/test_creds/crl_supported:valid.key",
+        "//src/core/tsi/test_creds/crl_supported:valid.pem",
+    ],
     tags = ["no_test_ios"],
     deps = [
         "//:grpc",
