@@ -97,6 +97,7 @@ grpc_cc_test(
     ],
     tags = ["no_test_ios"],
     deps = [
+        ":test_service_impl",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
