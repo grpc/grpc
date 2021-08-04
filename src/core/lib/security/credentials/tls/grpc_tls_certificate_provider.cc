@@ -38,7 +38,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   if (all_matched_or.ok() && *all_matched_or) {
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
-    gpr_log(GPR_ERROR, "Invalid key-cert pair list passed at constructor");
+    gpr_log(GPR_ERROR, "Invalid key-cert pair list passed at constructor.");
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
