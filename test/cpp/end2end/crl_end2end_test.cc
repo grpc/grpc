@@ -42,6 +42,12 @@ namespace {
 
 constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
 
+std::string ReadFile(const std::string& path) {
+  std::ifstream file(path);
+  return std::string(std::istreambuf_iterator<char>(file),
+                     std::istreambuf_iterator<char>());
+}
+
 class TestTlsServerAuthorizationCheck
     : public TlsServerAuthorizationCheckInterface {
   int Schedule(TlsServerAuthorizationCheckArg* arg) override {
