@@ -42,10 +42,13 @@ namespace {
 
 constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
 
-std::string ReadFile(const std::string& path) {
-  std::ifstream file(path);
-  return std::string(std::istreambuf_iterator<char>(file),
-                     std::istreambuf_iterator<char>());
+std::string ReadFile(const char* file_path) {
+  grpc_slice slice;
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  std::string file_contents(grpc_core::StringViewFromSlice(slice));
+  grpc_slice_unref(slice);
+  return file_contents;
 }
 
 class TestTlsServerAuthorizationCheck
