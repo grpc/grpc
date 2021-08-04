@@ -43,12 +43,11 @@ namespace chttp2 {
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
 
+bool g_test_only_transport_flow_control_window_check;
+
 namespace {
 
 static constexpr const int kTracePadding = 30;
-static constexpr const uint32_t kMinInitialWindowSize = 128;
-static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
-static constexpr const uint32_t kMaxWindowDelta = (1u << 10);
 static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
 static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
