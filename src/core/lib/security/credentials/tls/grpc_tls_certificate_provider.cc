@@ -218,7 +218,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         "Root Certificates are watched, while their contents are empty.");
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Identity Certificates are watched, while their contents are empty.");
+            "Identity Certificates are watched, while their contents are "
+            "empty.");
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
@@ -544,11 +545,6 @@ grpc_tls_certificate_provider_data_watcher_create(
       ConvertToCoreObject(pem_key_cert_pairs));
 }
 
-grpc_tls_status grpc_set_credentials_status_create(
-    grpc_status_code status_code, const std::string& error_message) {
-  return grpc_tls_status{status_code, strdup(error_message.c_str())};
-}
-
 grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate) {
   GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
@@ -556,9 +552,8 @@ grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_root_cert(
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status =
       data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
-  return grpc_set_credentials_status_create(
-      static_cast<grpc_status_code>(status.code()),
-      std::string(status.message()));
+  return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
+                         strdup(std::string(status.message()).c_str())};
 }
 
 grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
@@ -569,9 +564,12 @@ grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status = data_watcher->SetKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
-  return grpc_set_credentials_status_create(
-      static_cast<grpc_status_code>(status.code()),
-      std::string(status.message()));
+  return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
+                         strdup(std::string(status.message()).c_str())};
+}
+
+void grpc_tls_status_release(grpc_tls_status status) {
+  free(const_cast<char*>(status.error_details));
 }
 
 grpc_tls_certificate_provider*

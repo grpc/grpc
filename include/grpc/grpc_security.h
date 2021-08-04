@@ -864,16 +864,27 @@ grpc_tls_certificate_provider_data_watcher_create(
 GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
-/* Sets |root_certificate| to the grpc_tls_certificate_provider. */
+/* Sets |root_certificate| to the grpc_tls_certificate_provider, while
+ * allocating memory to the returned object's `error_details` field.
+ */
 GRPCAPI grpc_tls_status
 gprc_tls_certificate_provider_data_watcher_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate);
 
-/* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider. */
+/* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider, while
+ * allocating memory to the returned object's `error_details` field.
+ */
 GRPCAPI grpc_tls_status
 gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
+
+/* Releases the allocated fields in a `grpc_tls_status`. Note that the
+ * `error_details` field is allocated memory in
+ * `gprc_tls_certificate_provider_data_watcher_set_root_cert` and
+ * `gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs`.
+ */
+GRPCAPI void grpc_tls_status_release(grpc_tls_status status);
 
 /**
  * Creates an grpc_tls_credentials_options.

@@ -65,6 +65,7 @@ grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
   grpc_tls_status status =
       gprc_tls_certificate_provider_data_watcher_set_root_cert(
           c_provider_, root_certificate.c_str());
+  grpc_tls_status_release(status);
   return grpc::Status(static_cast<grpc::StatusCode>(status.status),
                       status.error_details);
   ;
@@ -81,6 +82,7 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   grpc_tls_status status =
       gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(c_provider_,
                                                                     pairs_core);
+  grpc_tls_status_release(status);
   return grpc::Status(static_cast<grpc::StatusCode>(status.status),
                       status.error_details);
 }
