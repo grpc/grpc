@@ -112,17 +112,20 @@ class TestServerWrapper {
   TestServerWrapper()
       : server_address_("localhost:" +
                         std::to_string(grpc_pick_unused_port_or_die())) {}
-  void Start() {
-    std::string certificate_file = absl::StrCat(kCredentialsDir, "/server.pem");
-    std::string key_file = absl::StrCat(kCredentialsDir, "/server.key");
-    std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
+
+  void Start(std::string certificate_file = absl::StrCat(kCredentialsDir,
+                                                         "/server.pem"),
+             std::string key_file = absl::StrCat(kCredentialsDir,
+                                                 "/server.key"),
+             std::string ca_bundle_file = absl::StrCat(kCredentialsDir,
+                                                       "/ca.pem")) {
     std::string certificate_pem = ReadFile(certificate_file.c_str());
     GPR_ASSERT(!certificate_pem.empty());
     std::string key_pem = ReadFile(key_file.c_str());
     GPR_ASSERT(!key_pem.empty());
     std::string ca_bundle_pem = ReadFile(ca_bundle_file.c_str());
     GPR_ASSERT(!ca_bundle_pem.empty());
-    grpc_cpp_test::RunServer(certificate_file, key_file, ca_bundle_file);
+    Start(certificate_file, key_file, ca_bundle_file);
   }
 
   ~TestServerWrapper() { server_->Shutdown(); }
@@ -147,19 +150,19 @@ class TestServerWrapper {
     auto creds = grpc::experimental::TlsServerCredentials(options);
     ServerBuilder builder;
     builder.AddListeningPort(server_address_, creds);
-    EchoServiceImpl service;
+    TestServiceImpl service;
     builder.RegisterService(&service);
     std::unique_ptr<Server> server(builder.BuildAndStart());
 
     std::cout << "Server listening at " << server_address_.c_str() << std::endl;
   }
-}
+};
 
 class CrlTest : public ::testing::Test {
  protected:
-  CrlTest() {}
+  CrlTest() { wrapper_.Start(); }
 
- private:
+  TestServerWrapper wrapper_;
 };
 
 TEST_F(CrlTest, ValidTraffic) {}
