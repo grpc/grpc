@@ -179,7 +179,7 @@ class PropagationOptions {
 /// - Add custom metadata key-value pairs that will propagated to the server
 ///   side.
 /// - Control call settings such as compression and authentication.
-/// - Receive initial and trailing metadata coming from the server.
+/// - Get initial and trailing metadata coming from the server.
 /// - Get performance metrics (ie, census).
 ///
 /// Context settings are only relevant to the call they are invoked with, that
