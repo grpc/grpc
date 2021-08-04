@@ -36,8 +36,8 @@ OpenSslX509::OpenSslX509(absl::string_view cert_chain) {
   BIO_free(bio);
 }
 
-OpenSslX509InfoStack::OpenSslX509InfoStack(absl::string_view cert) {
-  BIO* bio = BIO_new_mem_buf(cert.data(), cert.size());
+OpenSslX509InfoStack::OpenSslX509InfoStack(absl::string_view cert_chain) {
+  BIO* bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
   info_stack_ = PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
   BIO_free(bio);
 }

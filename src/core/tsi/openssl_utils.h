@@ -22,8 +22,8 @@
 #include "absl/strings/string_view.h"
 
 #include <openssl/evp.h>
-#include <openssl/x509.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 
 namespace grpc_core {
 
@@ -60,7 +60,7 @@ class OpenSslX509 {
 // A class for managing openssl `STACK_OF(X509_INFO)` structures.
 class OpenSslX509InfoStack {
  public:
-  explicit OpenSslX509InfoStack(absl::string_view cert);
+  explicit OpenSslX509InfoStack(absl::string_view cert_chain);
 
   explicit OpenSslX509InfoStack(STACK_OF(X509_INFO) * sk) { info_stack_ = sk; }
 
