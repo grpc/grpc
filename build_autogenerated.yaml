@@ -393,6 +393,7 @@ libs:
   - src/core/lib/profiling/stap_timers.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/memory:memory
   - absl/status:status
   - absl/strings:cord

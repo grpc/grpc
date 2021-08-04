@@ -603,6 +603,7 @@ grpc_error_handle HPackParser::parse_begin(const uint8_t* cur,
         // literal key
         return parse_lithdr_incidx_v(cur, end);
       }
+      ABSL_FALLTHROUGH_INTENDED;
     case 5:
     case 6:
       // inline encoded key index
@@ -626,6 +627,7 @@ grpc_error_handle HPackParser::parse_begin(const uint8_t* cur,
         // illegal value.
         return parse_illegal_op(cur, end);
       }
+      ABSL_FALLTHROUGH_INTENDED;
     case 9:
     case 10:
     case 11:
@@ -1209,8 +1211,8 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         return GRPC_ERROR_NONE;
       }
       GRPC_STATS_INC_HPACK_RECV_BINARY_BASE64();
-    /* fallthrough */
     b64_byte0:
+      ABSL_FALLTHROUGH_INTENDED;
     case BinaryState::kBase64Byte0:
       if (cur == end) {
         binary_ = BinaryState::kBase64Byte0;
@@ -1226,8 +1228,8 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         goto b64_byte0;
       }
       base64_buffer_ = bits << 18;
-    /* fallthrough */
     b64_byte1:
+      ABSL_FALLTHROUGH_INTENDED;
     case BinaryState::kBase64Byte1:
       if (cur == end) {
         binary_ = BinaryState::kBase64Byte1;
@@ -1243,8 +1245,8 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         goto b64_byte1;
       }
       base64_buffer_ |= bits << 12;
-    /* fallthrough */
     b64_byte2:
+      ABSL_FALLTHROUGH_INTENDED;
     case BinaryState::kBase64Byte2:
       if (cur == end) {
         binary_ = BinaryState::kBase64Byte2;
@@ -1260,8 +1262,8 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         goto b64_byte2;
       }
       base64_buffer_ |= bits << 6;
-    /* fallthrough */
     b64_byte3:
+      ABSL_FALLTHROUGH_INTENDED;
     case BinaryState::kBase64Byte3:
       if (cur == end) {
         binary_ = BinaryState::kBase64Byte3;

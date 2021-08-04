@@ -166,7 +166,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_timespec_to_millis_round_up(now);
-      // fallthrough
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
             "pollset_work",

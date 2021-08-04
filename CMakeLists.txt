@@ -1437,6 +1437,7 @@ target_include_directories(gpr
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::memory
   absl::status
   absl::cord
@@ -16051,7 +16052,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_base absl_cord absl_memory absl_optional absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_status absl_str_format absl_strings absl_synchronization absl_time"
   "-lgpr"
   ""
   "gpr.pc")
@@ -16061,7 +16062,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -16071,7 +16072,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "gpr absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
@@ -16081,7 +16082,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++"
   ""
   "grpc++.pc")
@@ -16091,7 +16092,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "grpc_unsecure absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")
