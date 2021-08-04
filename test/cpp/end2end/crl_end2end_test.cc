@@ -61,7 +61,7 @@ void RunServer(const std::string& listen_addr,
 void RunClient(const std::string& server_addr,
                const std::string& certificate_file, const std::string& key_file,
                const std::string& ca_bundle_file) {
-  LOG(INFO) << "RUNNING CLIENT";
+  gpr_log(GPR_INFO, "Start gRPC client");
 
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       key_file, certificate_file, ca_bundle_file,
@@ -91,10 +91,9 @@ void RunClient(const std::string& server_addr,
     ClientContext context;
     Status status = stub->Echo(&context, request, &reply);
     if (status.ok()) {
-      std::cout << "Client: received message: " << reply.message() << std::endl;
+      gpr_log(GPR_INFO, "Client: received message: %s", reply.message());
     } else {
-      std::cerr << "Client: error: " << status.error_code() << ": "
-                << status.error_message() << std::endl;
+      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(), reply.message());
       break;
     }
     sleep(10 * 60);
