@@ -14,8 +14,10 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 #include <gtest/gtest.h>
 
@@ -37,9 +39,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
-constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/"
+constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
 
-    class TestTlsServerAuthorizationCheck
+class TestTlsServerAuthorizationCheck
     : public TlsServerAuthorizationCheckInterface {
   int Schedule(TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
@@ -112,7 +114,7 @@ class TestServerWrapper {
     grpc_cpp_test::RunServer(certificate_file, key_file, ca_bundle_file);
   }
 
-  ~TestServerWrapper() override { server_->Shutdown(); }
+  ~TestServerWrapper() { server_->Shutdown(); }
 
   const std::string server_address_;
   TestServiceImpl service_;
