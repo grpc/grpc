@@ -318,6 +318,24 @@ class BasicSeq {
   template <char I>
   absl::enable_if_t<I == N - 1, void> DestructSubsequentFactories() {}
 
+  // Placate older compilers by wrapping RunState in a struct so that their
+  // parameter unpacking can work.
+  template <char I>
+  struct RunStateStruct {
+    BasicSeq* s;
+    Poll<Result> operator()() { return s->RunState<I>(); }
+  };
+
+  // Similarly placate those compilers for
+  // DestructCurrentPromiseAndSubsequentFactories
+  template <char I>
+  struct DestructCurrentPromiseAndSubsequentFactoriesStruct {
+    BasicSeq* s;
+    void operator()() {
+      return s->DestructCurrentPromiseAndSubsequentFactories<I>();
+    }
+  };
+
   // Run the current state (and possibly later states if that one finishes).
   // Single argument is a type that encodes the integer sequence 0, 1, 2, ...,
   // N-1 as a type, but which uses no memory. This is used to expand out
@@ -326,7 +344,7 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return Switch<Poll<Result>>(state_, [this] { return RunState<I>(); }...);
+    return Switch<Poll<Result>>(state_, RunStateStruct<I>{this}...);
   }
 
   // Run the appropriate destructors for a given state.
@@ -336,9 +354,8 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    Switch<void>(state_, [this] {
-      DestructCurrentPromiseAndSubsequentFactories<I>();
-    }...);
+    Switch<void>(
+        state_, DestructCurrentPromiseAndSubsequentFactoriesStruct<I>{this}...);
   }
 
  public:
