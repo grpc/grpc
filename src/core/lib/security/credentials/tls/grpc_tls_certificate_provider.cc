@@ -33,10 +33,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)) {
-  if (IsKeyCertPairsListValid(pem_key_cert_pairs).ok()) {
+  absl::StatusOr<bool> all_matched_or =
+      PrivateKeyAndCertificateMatch(pem_key_cert_pairs);
+  if (all_matched_or.ok() && *all_matched_or) {
     pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   } else {
-    gpr_log(GPR_ERROR, "Invalid key-cert pair list passed at constructor.");
+    gpr_log(GPR_ERROR, "Invalid key-cert pair list passed at constructor");
   }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
@@ -412,11 +414,17 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
     return absl::InvalidArgumentError(
         "The Key-Cert pair list has not changed.");
   }
-  absl::Status status = IsKeyCertPairsListValid(pem_key_cert_pairs);
-  if (!status.ok()) {
-    std::string error_message = std::string(status.message());
+  absl::StatusOr<bool> all_matched_or =
+      PrivateKeyAndCertificateMatch(pem_key_cert_pairs);
+  if (!all_matched_or.ok()) {
+    std::string error_message = std::string(all_matched_or.status().message());
     gpr_log(GPR_ERROR, "Key-Cert pair list error: %s", error_message.c_str());
-    return status;
+    return all_matched_or.status();
+  }
+  if (!(*all_matched_or)) {
+    std::string error_message = "Invalid Key-Cert pair list.";
+    gpr_log(GPR_ERROR, "Key-Cert pair list error: %s", error_message.c_str());
+    return absl::InvalidArgumentError(error_message);
   }
   pem_key_cert_pairs_ = pem_key_cert_pairs;
   ExecCtx exec_ctx;
@@ -490,18 +498,16 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   return result;
 }
 
-absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    const PemKeyCertPairList& pair_list) {
   for (size_t i = 0; i < pair_list.size(); ++i) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
-    if (!matched_or.ok()) {
-      return matched_or.status();
-    }
-    if (!*matched_or) {
-      return absl::InvalidArgumentError("Invalid Key-Cert pair list.");
+    if (!(matched_or.ok() && *matched_or)) {
+      return matched_or;
     }
   }
-  return absl::OkStatus();
+  return true;
 }
 
 }  // namespace grpc_core
@@ -553,7 +559,7 @@ grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_root_cert(
   absl::Status status =
       data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
   return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
-                         strdup(std::string(status.message()).c_str())};
+                         gpr_strdup(std::string(status.message()).c_str())};
 }
 
 grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
@@ -565,11 +571,11 @@ grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
   absl::Status status = data_watcher->SetKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
   return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
-                         strdup(std::string(status.message()).c_str())};
+                         gpr_strdup(std::string(status.message()).c_str())};
 }
 
 void grpc_tls_status_release(grpc_tls_status status) {
-  free(const_cast<char*>(status.error_details));
+  gpr_free(const_cast<char*>(status.error_details));
 }
 
 grpc_tls_certificate_provider*
