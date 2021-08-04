@@ -16,6 +16,8 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
+#include <gtest/gtest.h>
+
 using ::grpc::Server;
 using ::grpc::ServerBuilder;
 using ::grpc::ServerContext;
@@ -115,10 +117,6 @@ void RunClient(const std::string& server_addr,
     sleep(10 * 60);
   }
 }
-
-TEST_F(CrlEnd2EndTest, SimpleTest) {
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
