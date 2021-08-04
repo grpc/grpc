@@ -26,6 +26,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -1679,9 +1681,24 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  const std::vector<grpc_core::PickArgsSeen>& args_seen_list() {
+  std::vector<grpc_core::PickArgsSeen> args_seen_list() {
     grpc::internal::MutexLock lock(&mu_);
     return args_seen_list_;
+  }
+
+  static std::string ArgsSeenListString(
+      const std::vector<grpc_core::PickArgsSeen>& args_seen_list) {
+    std::vector<std::string> entries;
+    for (const auto& args_seen : args_seen_list) {
+      std::vector<std::string> metadata;
+      for (const auto& p : args_seen.metadata) {
+        metadata.push_back(absl::StrCat(p.first, "=", p.second));
+      }
+      entries.push_back(absl::StrFormat("{path=\"%s\", metadata=[%s]}",
+                                        args_seen.path,
+                                        absl::StrJoin(metadata, ", ")));
+    }
+    return absl::StrCat("[", absl::StrJoin(entries, ", "), "]");
   }
 
  private:
@@ -1705,29 +1722,26 @@ TEST_F(ClientLbPickArgsTest, Basic) {
   auto channel = BuildChannel("test_pick_args_lb", response_generator);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
-  CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/true);
+  // Proactively connect the channel, so that the LB policy will always
+  // be connected before it sees the pick.  Otherwise, the test would be
+  // flaky because sometimes the pick would be seen twice (once in
+  // CONNECTING and again in READY) and other times only once (in READY).
+  ASSERT_TRUE(channel->WaitForConnected(gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   // Check LB policy name for the channel.
   EXPECT_EQ("test_pick_args_lb", channel->GetLoadBalancingPolicyName());
-  // There will be two entries, one for the pick tried in state
-  // CONNECTING and another for the pick tried in state READY.
-  EXPECT_THAT(args_seen_list(),
-              ::testing::ElementsAre(
-                  ::testing::AllOf(
-                      ::testing::Field(&grpc_core::PickArgsSeen::path,
-                                       "/grpc.testing.EchoTestService/Echo"),
-                      ::testing::Field(&grpc_core::PickArgsSeen::metadata,
-                                       ::testing::UnorderedElementsAre(
-                                           ::testing::Pair("foo", "1"),
-                                           ::testing::Pair("bar", "2"),
-                                           ::testing::Pair("baz", "3")))),
-                  ::testing::AllOf(
-                      ::testing::Field(&grpc_core::PickArgsSeen::path,
-                                       "/grpc.testing.EchoTestService/Echo"),
-                      ::testing::Field(&grpc_core::PickArgsSeen::metadata,
-                                       ::testing::UnorderedElementsAre(
-                                           ::testing::Pair("foo", "1"),
-                                           ::testing::Pair("bar", "2"),
-                                           ::testing::Pair("baz", "3"))))));
+  // Now send an RPC and check that the picker sees the expected data.
+  CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/true);
+  auto pick_args_seen_list = args_seen_list();
+  EXPECT_THAT(pick_args_seen_list,
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field(&grpc_core::PickArgsSeen::path,
+                                   "/grpc.testing.EchoTestService/Echo"),
+                  ::testing::Field(&grpc_core::PickArgsSeen::metadata,
+                                   ::testing::UnorderedElementsAre(
+                                       ::testing::Pair("foo", "1"),
+                                       ::testing::Pair("bar", "2"),
+                                       ::testing::Pair("baz", "3"))))))
+      << ArgsSeenListString(pick_args_seen_list);
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
