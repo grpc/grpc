@@ -91,7 +91,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc++",
-                "//:grpcpp_channelz",
+        "//:grpcpp_channelz",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
