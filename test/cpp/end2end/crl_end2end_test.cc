@@ -115,6 +115,10 @@ void RunClient(const std::string& server_addr,
     sleep(10 * 60);
   }
 }
+
+TEST_F(CrlEnd2EndTest, SimpleTest) {
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
