@@ -17,6 +17,8 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "xds/core/v3/context_params.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -70,45 +72,64 @@ const upb_msglayout envoy_config_core_v3_Extension_msginit = {
   UPB_SIZE(32, 64), 5, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Node_submsgs[5] = {
+static const upb_msglayout *const envoy_config_core_v3_Node_submsgs[6] = {
   &envoy_config_core_v3_Address_msginit,
   &envoy_config_core_v3_BuildVersion_msginit,
   &envoy_config_core_v3_Extension_msginit,
   &envoy_config_core_v3_Locality_msginit,
+  &envoy_config_core_v3_Node_DynamicParametersEntry_msginit,
   &google_protobuf_Struct_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Node__fields[10] = {
+static const upb_msglayout_field envoy_config_core_v3_Node__fields[11] = {
   {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
   {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {3, UPB_SIZE(28, 56), 1, 4, 11, 1},
+  {3, UPB_SIZE(28, 56), 1, 5, 11, 1},
   {4, UPB_SIZE(32, 64), 2, 3, 11, 1},
   {6, UPB_SIZE(20, 40), 0, 0, 9, 1},
-  {7, UPB_SIZE(48, 96), UPB_SIZE(-57, -113), 0, 9, 1},
-  {8, UPB_SIZE(48, 96), UPB_SIZE(-57, -113), 1, 11, 1},
+  {7, UPB_SIZE(52, 104), UPB_SIZE(-61, -121), 0, 9, 1},
+  {8, UPB_SIZE(52, 104), UPB_SIZE(-61, -121), 1, 11, 1},
   {9, UPB_SIZE(36, 72), 0, 2, 11, 3},
   {10, UPB_SIZE(40, 80), 0, 0, 9, 3},
   {11, UPB_SIZE(44, 88), 0, 0, 11, 3},
+  {12, UPB_SIZE(48, 96), 0, 4, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_core_v3_Node_msginit = {
   &envoy_config_core_v3_Node_submsgs[0],
   &envoy_config_core_v3_Node__fields[0],
-  UPB_SIZE(64, 128), 10, false, 255,
+  UPB_SIZE(64, 128), 11, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_Metadata_submsgs[1] = {
+static const upb_msglayout *const envoy_config_core_v3_Node_DynamicParametersEntry_submsgs[1] = {
+  &xds_core_v3_ContextParams_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_Node_DynamicParametersEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_Node_DynamicParametersEntry_msginit = {
+  &envoy_config_core_v3_Node_DynamicParametersEntry_submsgs[0],
+  &envoy_config_core_v3_Node_DynamicParametersEntry__fields[0],
+  UPB_SIZE(16, 32), 2, false, 255,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_Metadata_submsgs[2] = {
   &envoy_config_core_v3_Metadata_FilterMetadataEntry_msginit,
+  &envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_Metadata__fields[1] = {
+static const upb_msglayout_field envoy_config_core_v3_Metadata__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
+  {2, UPB_SIZE(4, 8), 0, 1, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_core_v3_Metadata_msginit = {
   &envoy_config_core_v3_Metadata_submsgs[0],
   &envoy_config_core_v3_Metadata__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 16), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Metadata_FilterMetadataEntry_submsgs[1] = {
@@ -123,6 +144,21 @@ static const upb_msglayout_field envoy_config_core_v3_Metadata_FilterMetadataEnt
 const upb_msglayout envoy_config_core_v3_Metadata_FilterMetadataEntry_msginit = {
   &envoy_config_core_v3_Metadata_FilterMetadataEntry_submsgs[0],
   &envoy_config_core_v3_Metadata_FilterMetadataEntry__fields[0],
+  UPB_SIZE(16, 32), 2, false, 255,
+};
+
+static const upb_msglayout *const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_submsgs[1] = {
+  &google_protobuf_Any_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_Metadata_TypedFilterMetadataEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_msginit = {
+  &envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_submsgs[0],
+  &envoy_config_core_v3_Metadata_TypedFilterMetadataEntry__fields[0],
   UPB_SIZE(16, 32), 2, false, 255,
 };
 

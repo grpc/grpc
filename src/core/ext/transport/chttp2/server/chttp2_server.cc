@@ -129,7 +129,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
       RefCountedPtr<ActiveConnection> const connection_;
       grpc_pollset* const accepting_pollset_;
-      grpc_tcp_server_acceptor* const acceptor_;
+      grpc_tcp_server_acceptor* acceptor_;
       RefCountedPtr<HandshakeManager> handshake_mgr_
           ABSL_GUARDED_BY(&connection_->mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
@@ -329,6 +329,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
   if (channel_resource_user_ != nullptr) {
     grpc_resource_user_unref(channel_resource_user_);
   }
+  gpr_free(acceptor_);
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
@@ -485,6 +486,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     handshaking_state_ref = std::move(self->connection_->handshaking_state_);
   }
   gpr_free(self->acceptor_);
+  self->acceptor_ = nullptr;
   OrphanablePtr<ActiveConnection> connection;
   if (self->channel_resource_user_ != nullptr) {
     grpc_resource_user_free(self->channel_resource_user_,
@@ -769,6 +771,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
   auto connection = MakeOrphanable<ActiveConnection>(
       accepting_pollset, acceptor, args, channel_resource_user);
+  // We no longer own acceptor
+  acceptor = nullptr;
   // Hold a ref to connection to allow starting handshake outside the
   // critical region
   RefCountedPtr<ActiveConnection> connection_ref = connection->Ref();

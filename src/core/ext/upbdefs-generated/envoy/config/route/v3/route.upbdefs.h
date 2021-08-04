@@ -26,6 +26,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_RouteConfiguration_getmsgdef(
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RouteConfiguration");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_ClusterSpecifierPlugin_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.ClusterSpecifierPlugin");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_Vhds_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.Vhds");

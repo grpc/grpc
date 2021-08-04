@@ -28,7 +28,7 @@ from tests.testing.proto import services_pb2
 from tests.unit.framework.common import test_constants
 
 
-# TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.
+# TODO(https://github.com/protocolbuffers/protobuf/issues/3452): Drop this skip.
 @unittest.skipIf(
     services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None,
     'Fix protobuf issue 3452!')

@@ -190,7 +190,7 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
 
 static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
   memset(info, 0, sizeof(*info));
-  info->length = sizeof(*info) - sizeof(socklen_t);
+  info->length = offsetof(grpc_core::tcp_info, length);
   return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
 }
 } /* namespace */

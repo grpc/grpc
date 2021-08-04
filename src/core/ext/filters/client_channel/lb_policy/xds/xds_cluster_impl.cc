@@ -284,59 +284,51 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(absl::UnavailableError(
+        absl::StrCat("EDS-configured drop: ", *drop_category)));
   }
   // Handle circuit breaking.
   uint32_t current = call_counter_->Load();
   // Check and see if we exceeded the max concurrent requests count.
   if (current >= max_concurrent_requests_) {
     if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(absl::UnavailableError("circuit breaker drop"));
   }
   call_counter_->Increment();
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
-    PickResult result;
-    result.type = PickResult::PICK_FAILED;
-    result.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "xds_cluster_impl picker not given any child picker"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     call_counter_->Decrement();
-    return result;
+    return PickResult::Fail(absl::InternalError(
+        "xds_cluster_impl picker not given any child picker"));
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
-  if (result.type == result.PICK_COMPLETE && result.subchannel != nullptr) {
+  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  if (complete_pick != nullptr) {
     XdsClusterLocalityStats* locality_stats = nullptr;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.
       auto* subchannel_wrapper =
-          static_cast<StatsSubchannelWrapper*>(result.subchannel.get());
+          static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
       // Handle load reporting.
       locality_stats = subchannel_wrapper->locality_stats()->Ref().release();
       // Record a call started.
       locality_stats->AddCallStarted();
       // Unwrap subchannel to pass back up the stack.
-      result.subchannel = subchannel_wrapper->wrapped_subchannel();
+      complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
     // Intercept the recv_trailing_metadata op to record call completion.
     auto* call_counter = call_counter_->Ref(DEBUG_LOCATION, "call").release();
     auto original_recv_trailing_metadata_ready =
-        result.recv_trailing_metadata_ready;
-    result.recv_trailing_metadata_ready =
+        complete_pick->recv_trailing_metadata_ready;
+    complete_pick->recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
         // work serializer or in the data plane mutex.
         [locality_stats, original_recv_trailing_metadata_ready, call_counter](
-            grpc_error_handle error, MetadataInterface* metadata,
+            absl::Status status, MetadataInterface* metadata,
             CallState* call_state) {
           // Record call completion for load reporting.
           if (locality_stats != nullptr) {
-            const bool call_failed = error != GRPC_ERROR_NONE;
-            locality_stats->AddCallFinished(call_failed);
+            locality_stats->AddCallFinished(!status.ok());
             locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
           }
           // Decrement number of calls in flight.
@@ -344,7 +336,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           call_counter->Unref(DEBUG_LOCATION, "call");
           // Invoke the original recv_trailing_metadata_ready callback, if any.
           if (original_recv_trailing_metadata_ready != nullptr) {
-            original_recv_trailing_metadata_ready(error, metadata, call_state);
+            original_recv_trailing_metadata_ready(status, metadata, call_state);
           }
         };
   } else {

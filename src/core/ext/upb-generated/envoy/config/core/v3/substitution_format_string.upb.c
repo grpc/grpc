@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 

@@ -19,10 +19,9 @@
 #ifndef GRPC_CORE_LIB_GPRPP_SYNC_H
 #define GRPC_CORE_LIB_GPRPP_SYNC_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
-#include <grpc/impl/codegen/sync.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -150,26 +149,6 @@ static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
   while (!pred()) {
     cv->Wait(mu);
   }
-}
-
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
-                                 absl::Duration timeout) {
-  while (!pred()) {
-    if (cv->WaitWithTimeout(mu, timeout)) return true;
-  }
-  return false;
-}
-
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred,
-                                  absl::Time deadline) {
-  while (!pred()) {
-    if (cv->WaitWithDeadline(mu, deadline)) return true;
-  }
-  return false;
 }
 
 // Deprecated. Prefer MutexLock
