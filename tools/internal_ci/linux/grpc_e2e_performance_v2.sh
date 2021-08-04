@@ -26,7 +26,7 @@ gcloud auth configure-docker
 
 # Connect to benchmarks-prod cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-kb3 \
+gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
 
 # List tests that have running pods and are in errored state.
