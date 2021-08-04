@@ -112,11 +112,11 @@ class TestServerWrapper {
     std::string key_file = absl::StrCat(kCredentialsDir, "/server.key");
     std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
     std::string certificate_pem = ReadFile(certificate_file);
-    GPR_ASSERT(!certificate_pem.empty())
+    GPR_ASSERT(!certificate_pem.empty());
     std::string key_pem = ReadFile(key_file);
-    GPR_ASSERT(!key_pem.empty())
+    GPR_ASSERT(!key_pem.empty());
     std::string ca_bundle_pem = ReadFile(ca_bundle_file);
-    GPR_ASSERT(!ca_bundle_pem.empty())
+    GPR_ASSERT(!ca_bundle_pem.empty());
     grpc_cpp_test::RunServer(certificate_file, key_file, ca_bundle_file);
   }
 
