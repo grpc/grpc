@@ -12,7 +12,7 @@
 # --ensure_firewall
 
 # Use a resource prefix to describe usage and ownership
---resource_prefix=foo
+--resource_prefix=xds-k8s-test
 
 # Use predictable resource suffix to simplify debugging
 # If left blank, the framework will randomly generate one
