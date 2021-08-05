@@ -63,13 +63,18 @@ class TestTlsServerAuthorizationCheck
   }
 };
 
-void CallEchoRPC(
-    const std::string& server_addr,
-    const std::string& certificate_file = absl::StrCat(kCredentialsDir,
-                                                       "/valid.pem"),
-    const std::string& key_file = absl::StrCat(kCredentialsDir, "/valid.key"),
-    const std::string& ca_bundle_file = absl::StrCat(kCredentialsDir,
-                                                     "/ca.pem")) {
+void CallEchoRPC(const std::string& server_addr, bool revoked_certs = false) {
+  std::string certificate_file;
+  std::string key_file;
+  if (revoked_certs) {
+    certificate_file = absl::StrCat(kCredentialsDir, "/revoked.pem");
+    key_file = absl::StrCat(kCredentialsDir, "/revoked.key");
+  } else {
+    certificate_file = absl::StrCat(kCredentialsDir, "/valid.pem");
+    key_file = absl::StrCat(kCredentialsDir, "/valid.key");
+  }
+  const std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
+
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       key_file, certificate_file, ca_bundle_file,
       /*refresh_interval_sec=*/10);
@@ -95,19 +100,9 @@ void CallEchoRPC(
   request.set_message("This is a test.");
   EchoResponse reply;
   std::cout << "Sending test message" << std::endl;
-  while (true) {
-    ClientContext context;
-    Status status = stub->Echo(&context, request, &reply);
-    if (status.ok()) {
-      gpr_log(GPR_INFO, "Client: received message: %s",
-              reply.message().c_str());
-    } else {
-      gpr_log(GPR_INFO, "Client: errorCode: %d error: %s", status.error_code(),
-              reply.message().c_str());
-      break;
-    }
-    sleep(10 * 60);
-  }
+  ClientContext context;
+  Status s = stub->Echo(&context, request, &reply);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
 class TestServerWrapper {
@@ -171,6 +166,11 @@ class CrlTest : public ::testing::Test {
 TEST_F(CrlTest, ValidTraffic) {
   wrapper_.Start();
   CallEchoRPC(wrapper_.server_address_);
+}
+
+TEST_F(CrlTest, RevokedTraffic) {
+  wrapper_.Start();
+  CallEchoRPC(wrapper_.server_address_, );
 }
 
 }  // namespace
