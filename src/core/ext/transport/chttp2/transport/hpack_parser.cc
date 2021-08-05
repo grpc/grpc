@@ -1000,6 +1000,7 @@ class HPackParser::Parser {
           return FinishHeader<TableAction::kAddToTable>(
               ParseLiteralKey<String::Intern>());
         }
+        ABSL_FALLTHROUGH_INTENDED;
       case 5:
       case 6:
         // inline encoded key index
@@ -1031,6 +1032,7 @@ class HPackParser::Parser {
               },
               false);
         }
+        ABSL_FALLTHROUGH_INTENDED;
       case 9:
       case 10:
       case 11:
