@@ -67,7 +67,7 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
                  bool revoked_server_certs) {
   std::string certificate_file;
   std::string key_file;
-  if (revoked_certs) {
+  if (revoked_client_certs) {
     certificate_file = absl::StrCat(kCredentialsDir, "/revoked.pem");
     key_file = absl::StrCat(kCredentialsDir, "/revoked.key");
   } else {
