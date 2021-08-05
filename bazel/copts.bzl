@@ -14,9 +14,11 @@
 
 # This is a list of llvm flags to be used when being built with use_strict_warning=1
 GRPC_LLVM_WARNING_FLAGS = [
-    # Enable all & extra waninrgs
+    # Enable all & extra warnings
     "-Wall",
     "-Wextra",
+    # Avoid some known traps
+    "-Wimplicit-fallthrough",
     # Consider warnings as errors
     "-Werror",
     # Ignore unknown warning flags

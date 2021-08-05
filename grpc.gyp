@@ -395,6 +395,7 @@
       'type': 'static_library',
       'dependencies': [
         'absl/base:base',
+        'absl/base:core_headers',
         'absl/memory:memory',
         'absl/status:status',
         'absl/strings:cord',
