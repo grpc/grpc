@@ -125,7 +125,7 @@ class TestServerWrapper {
     GPR_ASSERT(!key_pem.empty());
     std::string ca_bundle_pem = ReadFile(ca_bundle_file.c_str());
     GPR_ASSERT(!ca_bundle_pem.empty());
-    Start(certificate_file, key_file, ca_bundle_file);
+    InitializeAndStartServer(certificate_file, key_file, ca_bundle_file);
   }
 
   ~TestServerWrapper() { server_->Shutdown(); }
@@ -135,8 +135,9 @@ class TestServerWrapper {
   std::unique_ptr<Server> server_;
 
  private:
-  void Start(const std::string& certificate_file, const std::string& key_file,
-             const std::string& ca_bundle_file) {
+  void InitializeAndStartServer(const std::string& certificate_file,
+                                const std::string& key_file,
+                                const std::string& ca_bundle_file) {
     auto certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
             key_file, certificate_file, ca_bundle_file,
