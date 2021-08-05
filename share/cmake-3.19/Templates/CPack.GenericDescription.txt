@@ -1,5 +1,0 @@
-DESCRIPTION
-===========
-
-This is an installer created using CPack (https://cmake.org). No additional installation instructions provided.
-

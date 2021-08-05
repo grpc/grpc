@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-  <mime-type type="application/x-cmakecache">
-    <comment>CMake cache file</comment>
-    <glob pattern="CMakeCache.txt"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
-</mime-info>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<installer-gui-script minSpecVersion="1.0">
-    <title>@CPACK_PACKAGE_NAME@</title>
-    <welcome file="@CPACK_RESOURCE_FILE_WELCOME_NOPATH@"/>
-    <readme file="@CPACK_RESOURCE_FILE_README_NOPATH@"/>
-    <license file="@CPACK_RESOURCE_FILE_LICENSE_NOPATH@"/>
-    <options allow-external-scripts="no" customize="allow" rootVolumeOnly="false"></options>
-    @CPACK_PACKAGEMAKER_CHOICES@
-</installer-gui-script>

@@ -1,9 +1,0 @@
-CMake >= |disallowed_version| prefer that this command never be called.
-The ``OLD`` behavior for this policy is to allow the command to be called.
-The ``NEW`` behavior for this policy is to issue a ``FATAL_ERROR`` when the
-command is called.
-
-This policy was introduced in CMake version |disallowed_version|.
-CMake version |release| warns when the policy is not set and uses
-``OLD`` behavior.  Use the :command:`cmake_policy` command to set it to ``OLD`` or
-``NEW`` explicitly.

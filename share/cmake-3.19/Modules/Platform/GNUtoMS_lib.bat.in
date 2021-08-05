@@ -1,4 +1,0 @@
-@echo off
-set VSCMD_START_DIR=.
-call "@CMAKE_GNUtoMS_BAT@"
-lib /machine:"@CMAKE_GNUtoMS_ARCH@" %*
