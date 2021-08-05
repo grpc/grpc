@@ -38,7 +38,7 @@ class PopularityCount {
     } else {
       HalveFilter();
     }
-    return elems_[idx] > 2 * sum_ / kElems;
+    return elems_[idx] >= 2 * sum_ / kElems;
   }
 
  private:

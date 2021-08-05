@@ -24,25 +24,44 @@
 namespace grpc_core {
 namespace testing {
 
-TEST(PopularityCountTest, OneThing) {
-  PopularityCount<4> pop;
-  for (int i = 0; i < 1000; i++) {
-    EXPECT_TRUE(pop.AddElement(0));
+static constexpr uint8_t kTestSize = 4;
+
+struct Scenario {
+  std::array<uint8_t, kTestSize> initial_values;
+  uint8_t final_add;
+  bool expectation;
+};
+
+std::ostream& operator<<(std::ostream& out, Scenario s) {
+  out << "init:";
+  for (size_t i = 0; i < kTestSize; i++) {
+    if (i != 0) {
+      out << ",";
+    }
+    out << static_cast<int>(s.initial_values[i]);
   }
+  out << " final:" << static_cast<int>(s.final_add);
+  out << " expect:" << (s.expectation? "true" : "false");
+  return out;
 }
 
-TEST(PopularityCountTest, TwoThings) {
-  for (int first = 2; first < 254; first++) {
-    PopularityCount<4> pop;
-    for (int i = 0; i < first; i++) {
-      EXPECT_TRUE(pop.AddElement(0)) << "i = " << i << "; first = " << first;
+struct PopularityCountTest : public ::testing::TestWithParam<Scenario> {};
+
+TEST_P(PopularityCountTest, Test) {
+  Scenario s = GetParam();
+  PopularityCount<kTestSize> pop;
+  for (size_t i = 0; i < kTestSize; i++) {
+    for (size_t j = 0; j < s.initial_values[i]; j++) {
+      pop.AddElement(i);
     }
-    for (int i = 0; i < 2 * first / (4 - 2); i++) {
-      EXPECT_FALSE(pop.AddElement(1)) << "i = " << i << "; first = " << first;
-    }
-    EXPECT_TRUE(pop.AddElement(1)) << "first = " << first;
   }
+  EXPECT_EQ(pop.AddElement(s.final_add), s.expectation);
 }
+
+INSTANTIATE_TEST_SUITE_P(InterestingTests, PopularityCountTest, ::testing::Values(
+    Scenario{{0,0,0,0}, 0, true},
+    Scenario{{64,0,0,0}, 0, true},
+    Scenario{{64,0,0,0}, 1, false}));
 
 }  // namespace testing
 }  // namespace grpc_core
