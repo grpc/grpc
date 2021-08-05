@@ -472,10 +472,12 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             this);
   }
   current_child_from_before_update_ = nullptr;
-  absl::Status status = absl::UnavailableError("no ready priority");
+  grpc_error_handle error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready priority"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-      absl::make_unique<TransientFailurePicker>(status));
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+      absl::make_unique<TransientFailurePicker>(error));
 }
 
 void PriorityLb::SelectPriorityLocked(uint32_t priority) {

@@ -213,7 +213,10 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
-  return PickResult::Complete(subchannels_[last_picked_index_]);
+  PickResult result;
+  result.type = PickResult::PICK_COMPLETE;
+  result.subchannel = subchannels_[last_picked_index_];
+  return result;
 }
 
 //
@@ -328,11 +331,13 @@ void RoundRobin::RoundRobinSubchannelList::
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
-    absl::Status status =
-        absl::UnavailableError("connections to all backends failing");
+    grpc_error_handle error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "connections to all backends failing"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+        absl::make_unique<TransientFailurePicker>(error));
   }
 }
 
@@ -444,10 +449,12 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
-    absl::Status status = absl::UnavailableError("Empty update");
+    grpc_error_handle error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+        absl::make_unique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to
