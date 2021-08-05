@@ -92,13 +92,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
         # Resource names.
-        # TODO(sergiitk): Drop namespace parsing when --namespace is removed.
-        cls.resource_prefix = (xds_flags.RESOURCE_PREFIX.value or
-                               xds_flags.NAMESPACE.value)
-        if not cls.resource_prefix:
-            raise flags.IllegalFlagValueError(
-                'Required one of the flags: --resource_prefix or --namespace')
-
+        cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
         if xds_flags.RESOURCE_SUFFIX.value is not None:
             cls._resource_suffix_randomize = False
             cls.resource_suffix = xds_flags.RESOURCE_SUFFIX.value
