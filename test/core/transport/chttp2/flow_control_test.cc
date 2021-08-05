@@ -310,7 +310,6 @@ class FlowControlTest : public ::testing::Test {
     channel_ = grpc_insecure_channel_create(server_address.c_str(),
                                             &client_channel_args, nullptr);
     VerifyChannelReady(channel_, cq_);
-    cqv_ = cq_verifier_create(cq_);
     g_target_initial_window_size_mocker->Reset();
   }
 
@@ -329,7 +328,6 @@ class FlowControlTest : public ::testing::Test {
   grpc_server* server_ = nullptr;
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
-  cq_verifier* cqv_ = nullptr;
 };
 
 TEST_F(FlowControlTest,
