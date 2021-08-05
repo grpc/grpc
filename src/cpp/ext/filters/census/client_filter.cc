@@ -61,11 +61,9 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
     bool is_transparent_retry, bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      context_(CensusContext(absl::StrCat("Attempt.", parent_->method_),
-                             &parent_->context_.Span(),
-                             parent_->context_.tags())),
+      context_(absl::StrCat("Attempt.", parent_->method_),
+               &parent_->context_.Span(), parent_->context_.tags()),
       start_time_(absl::Now()) {
-  GPR_DEBUG_ASSERT(parent_->context_.Context().IsValid());
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
   memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
@@ -229,6 +227,8 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     }
     ++num_active_rpcs_;
   }
+  // Per-attempt spans use the overall-call span as the parent.
+  GPR_DEBUG_ASSERT(context_.Context().IsValid());
   if (is_first_attempt) {
     return arena_->New<OpenCensusCallAttemptTracer>(
         this, attempt_num, is_transparent_retry, true /* arena_allocated */);
