@@ -3140,7 +3140,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
       // picker.
       GRPC_ERROR_UNREF(result.error);
     }
-    // Fallthrough
+      ABSL_FALLTHROUGH_INTENDED;
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       MaybeAddCallToLbQueuedCallsLocked();
       return false;
