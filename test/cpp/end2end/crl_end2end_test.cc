@@ -170,7 +170,7 @@ TEST_F(CrlTest, ValidTraffic) {
 
 TEST_F(CrlTest, RevokedTraffic) {
   wrapper_.Start();
-  CallEchoRPC(wrapper_.server_address_, );
+  CallEchoRPC(wrapper_.server_address_, true);
 }
 
 }  // namespace
