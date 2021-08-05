@@ -194,3 +194,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "popularity_count_test",
+    srcs = ["popularity_count_test.cc"],
+    deps = [
+        "//:popularity_count",
+        "//:gpr_platform",
+    ],
+    external_deps = [
+        "gtest"
+    ]
+)
+
