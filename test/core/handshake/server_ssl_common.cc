@@ -86,14 +86,16 @@ class ServerInfo {
 
   void Await() {
     grpc_core::MutexLock lock(&mu_);
-    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
+    while (!ready_) {
+      cv_.Wait(&mu_);
+    }
   }
 
  private:
   const int port_;
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
-  bool ready_ = false;
+  bool ready_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 // Simple gRPC server. This listens until client_handshake_complete occurs.
