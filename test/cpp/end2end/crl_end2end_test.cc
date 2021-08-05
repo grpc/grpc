@@ -92,7 +92,11 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_certs = false) {
       server_authorization_check_config);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
   grpc::ChannelArguments args;
-  args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "testserver");
+  if (revoked_certs) {
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "revoked");
+  } else {
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
+  }
   auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
   std::unique_ptr<EchoTestService::Stub> stub =
       EchoTestService::NewStub(channel);
