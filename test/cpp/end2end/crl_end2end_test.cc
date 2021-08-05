@@ -155,7 +155,7 @@ class TestServerWrapper {
     builder.AddListeningPort(server_address_, creds);
     TestServiceImpl service;
     builder.RegisterService(&service);
-    server_ = std::move(builder.BuildAndStart());
+    server_ = builder.BuildAndStart();
 
     std::cout << "Server listening at " << server_address_.c_str() << std::endl;
   }
