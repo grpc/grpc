@@ -238,8 +238,6 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     }
     ++num_active_rpcs_;
   }
-  // Per-attempt spans use the overall-call span as the parent.
-  GPR_DEBUG_ASSERT(context_.Context().IsValid());
   if (is_first_attempt) {
     return arena_->New<OpenCensusCallAttemptTracer>(
         this, attempt_num, is_transparent_retry, true /* arena_allocated */);
