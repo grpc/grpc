@@ -2489,10 +2489,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/popularity_count.h",
     ],
+    language = "c++",
     deps = [
         "gpr_platform",
     ],
-    language = "c++",
 )
 
 grpc_cc_library(

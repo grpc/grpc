@@ -198,12 +198,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "popularity_count_test",
     srcs = ["popularity_count_test.cc"],
-    deps = [
-        "//:popularity_count",
-        "//:gpr_platform",
-    ],
     external_deps = [
-        "gtest"
-    ]
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:popularity_count",
+    ],
 )
-
