@@ -171,6 +171,7 @@ UPB_INLINE upb_strview envoy_extensions_filters_http_fault_v3_HTTPFault_abort_ht
 UPB_INLINE upb_strview envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults_runtime(const envoy_extensions_filters_http_fault_v3_HTTPFault *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 88), upb_strview); }
 UPB_INLINE upb_strview envoy_extensions_filters_http_fault_v3_HTTPFault_response_rate_limit_percent_runtime(const envoy_extensions_filters_http_fault_v3_HTTPFault *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(52, 104), upb_strview); }
 UPB_INLINE upb_strview envoy_extensions_filters_http_fault_v3_HTTPFault_abort_grpc_status_runtime(const envoy_extensions_filters_http_fault_v3_HTTPFault *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(60, 120), upb_strview); }
+UPB_INLINE bool envoy_extensions_filters_http_fault_v3_HTTPFault_disable_downstream_cluster_stats(const envoy_extensions_filters_http_fault_v3_HTTPFault *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
 
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_delay(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, struct envoy_extensions_filters_common_fault_v3_FaultDelay* value) {
   _upb_sethas(msg, 1);
@@ -270,6 +271,9 @@ UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_response_ra
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_abort_grpc_status_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(60, 120), upb_strview) = value;
+}
+UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_disable_downstream_cluster_stats(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
 #ifdef __cplusplus

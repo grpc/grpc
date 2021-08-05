@@ -63,8 +63,9 @@ def _build_retry_route_rule(retryConditions, num_retries):
     }
 
 
-@absltest.skipUnless('java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Retry is currently only implemented in Java.')
+@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
+                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
+                     'Xds-retry is currently only implemented in C++ and Java.')
 class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
@@ -100,8 +101,9 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
                                  tolerance=_NON_RANDOM_ERROR_TOLERANCE)
 
 
-@absltest.skipUnless('java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Retry is currently only implemented in Java.')
+@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
+                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
+                     'Xds-retry is currently only implemented in C++ Java.')
 class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
