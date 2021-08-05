@@ -170,7 +170,7 @@ class CrlTest : public ::testing::Test {
 
 TEST_F(CrlTest, ValidTraffic) {
   wrapper_.Start();
-  CallEchoRpc(wrapper_.server_address_);
+  CallEchoRPC(wrapper_.server_address_);
 }
 
 }  // namespace
