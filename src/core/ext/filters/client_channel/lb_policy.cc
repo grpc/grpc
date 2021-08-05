@@ -125,21 +125,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                      parent, nullptr),
                  GRPC_ERROR_NONE);
   }
-  PickResult result;
-  result.type = PickResult::PICK_QUEUE;
-  return result;
-}
-
-//
-// LoadBalancingPolicy::TransientFailurePicker
-//
-
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = GRPC_ERROR_REF(error_);
-  return result;
+  return PickResult::Queue();
 }
 
 }  // namespace grpc_core

@@ -142,11 +142,17 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              body=body,
                              **kwargs)
 
-    def backend_service_add_backends(self, backend_service, backends):
+    def backend_service_patch_backends(
+            self,
+            backend_service,
+            backends,
+            max_rate_per_endpoint: Optional[int] = None):
+        if max_rate_per_endpoint is None:
+            max_rate_per_endpoint = 5
         backend_list = [{
             'group': backend.url,
             'balancingMode': 'RATE',
-            'maxRatePerEndpoint': 5
+            'maxRatePerEndpoint': max_rate_per_endpoint
         } for backend in backends]
 
         self._patch_resource(collection=self.api.backendServices(),
@@ -190,6 +196,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
         return self._insert_resource(self.api.urlMaps(), url_map_body)
+
+    def patch_url_map(self, url_map: GcpResource, body, **kwargs):
+        self._patch_resource(collection=self.api.urlMaps(),
+                             urlMap=url_map.name,
+                             body=body,
+                             **kwargs)
 
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)

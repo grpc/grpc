@@ -72,7 +72,7 @@ inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
 }
 
 // A type of Orphanable with internal ref-counting.
-template <typename Child>
+template <typename Child, UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class InternallyRefCounted : public Orphanable {
  public:
   // Not copyable nor movable.
@@ -102,12 +102,12 @@ class InternallyRefCounted : public Orphanable {
 
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      delete this;
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      delete this;
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
     }
   }
 
