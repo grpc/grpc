@@ -88,6 +88,10 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
         server_address_, ::grpc::InsecureChannelCredentials()));
   }
 
+  void ResetStub(std::shared_ptr<Channel> channel) {
+    stub_ = EchoTestService::NewStub(channel);
+  }
+
   void TearDown() override {
     server_->Shutdown();
     server_thread_.join();
@@ -411,6 +415,103 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
             ::testing::AllOf(::testing::Property(&Distribution::count, i + 1),
                              ::testing::Property(&Distribution::mean,
                                                  ::testing::DoubleEq(1.0))))));
+  }
+}
+
+TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
+  View client_retries_cumulative_view(ClientRetriesCumulative());
+  View client_transparent_retries_cumulative_view(
+      ClientTransparentRetriesCumulative());
+  View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      ::grpc::ClientContext context;
+      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      ASSERT_TRUE(status.ok());
+      EXPECT_EQ("foo", response.message());
+    }
+    absl::SleepFor(absl::Milliseconds(500));
+    TestUtils::Flush();
+    EXPECT_THAT(
+        client_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    EXPECT_THAT(
+        client_transparent_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(&Distribution::mean, ::testing::Eq(0)))));
+  }
+}
+
+TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
+  View client_retries_cumulative_view(ClientRetriesCumulative());
+  View client_transparent_retries_cumulative_view(
+      ClientTransparentRetriesCumulative());
+  View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
+  args.SetString(GRPC_ARG_SERVICE_CONFIG,
+                 "{\n"
+                 "  \"methodConfig\": [ {\n"
+                 "    \"name\": [\n"
+                 "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+                 "    ],\n"
+                 "    \"retryPolicy\": {\n"
+                 "      \"maxAttempts\": 3,\n"
+                 "      \"initialBackoff\": \"0.1s\",\n"
+                 "      \"maxBackoff\": \"120s\",\n"
+                 "      \"backoffMultiplier\": 1,\n"
+                 "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+                 "    }\n"
+                 "  } ]\n"
+                 "}");
+  auto channel =
+      CreateCustomChannel(server_address_, InsecureChannelCredentials(), args);
+  ResetStub(channel);
+  EchoRequest request;
+  request.mutable_param()->mutable_expected_error()->set_code(
+      StatusCode::ABORTED);
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      ::grpc::ClientContext context;
+      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
+    }
+    absl::SleepFor(absl::Milliseconds(500));
+    TestUtils::Flush();
+    EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(
+                    ::testing::Pair(::testing::ElementsAre(client_method_name_),
+                                    ::testing::Eq((i + 1) * 2))));
+    EXPECT_THAT(
+        client_transparent_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    auto data = client_retry_delay_per_call_view.GetData().distribution_data();
+    for (const auto& entry : data) {
+      gpr_log(GPR_ERROR, "Mean Retry Delay %s: %lf ms", entry.first[0].c_str(),
+              entry.second.mean());
+    }
+    // We expect the retry delay to be around 100ms.
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(
+                &Distribution::mean,
+                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
   }
 }
 

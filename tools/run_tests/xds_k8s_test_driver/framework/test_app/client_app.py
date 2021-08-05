@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -261,6 +261,9 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Kubernetes service account
         self.service_account_name = service_account_name or deployment_name
         self.service_account_template = service_account_template
+        # GCP.
+        self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -272,6 +275,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.port_forwarder = None
 
+    # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(self,
             *,
             server_target,
@@ -280,8 +284,17 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             metadata='',
             secure_mode=False,
             print_response=False) -> XdsTestClient:
+        logger.info(
+            'Deploying xDS test client "%s" to k8s namespace %s: '
+            'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
+            'print_response=%s', self.deployment_name, self.k8s_namespace.name,
+            server_target, rpc, qps, metadata, secure_mode, print_response)
+        self._logs_explorer_link(deployment_name=self.deployment_name,
+                                 namespace_name=self.k8s_namespace.name,
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
+
         super().run()
-        # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
 
         # Allow Kubernetes service account to use the GCP service account
         # identity.

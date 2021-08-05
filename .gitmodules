@@ -49,3 +49,6 @@
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
+[submodule "third_party/opentelemetry"]
+	path = third_party/opentelemetry
+	url = https://github.com/open-telemetry/opentelemetry-proto.git

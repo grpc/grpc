@@ -26,12 +26,15 @@ from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
+_XdsUpdateHealthServiceClient = grpc_testing.XdsUpdateHealthServiceClient
+_HealthClient = grpc_testing.HealthClient
 
 
 class XdsTestServer(framework.rpc.grpc.GrpcApp):
@@ -64,6 +67,27 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
     @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def update_health_service_client(self) -> _XdsUpdateHealthServiceClient:
+        return _XdsUpdateHealthServiceClient(
+            self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def health_client(self) -> _HealthClient:
+        return _HealthClient(self._make_channel(self.maintenance_port))
+
+    def set_serving(self):
+        logger.info('Setting health status to serving')
+        self.update_health_service_client.set_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
+
+    def set_not_serving(self):
+        logger.info('Setting health status to not serving')
+        self.update_health_service_client.set_not_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
 
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port
@@ -180,6 +204,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         # Kubernetes service account
         self.service_account_name = service_account_name or deployment_name
         self.service_account_template = service_account_template
+        # GCP.
+        self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -216,6 +243,16 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         if not (isinstance(test_port, int) and
                 isinstance(maintenance_port, int)):
             raise TypeError('Port numbers must be integer')
+
+        logger.info(
+            'Deploying xDS test server "%s" to k8s namespace %s: test_port=%s '
+            'maintenance_port=%s secure_mode=%s server_id=%s replica_count=%s',
+            self.deployment_name, self.k8s_namespace.name, test_port,
+            maintenance_port, secure_mode, server_id, replica_count)
+        self._logs_explorer_link(deployment_name=self.deployment_name,
+                                 namespace_name=self.k8s_namespace.name,
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
 
         # Create namespace.
         super().run()

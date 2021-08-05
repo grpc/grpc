@@ -142,6 +142,7 @@ class RpcDistributionStats:
         self.empty_call_default_service_rpc_count = 0
         self.unary_call_alternative_service_rpc_count = 0
         self.empty_call_alternative_service_rpc_count = 0
+        self.raw = json_lb_stats
 
         if 'rpcsByPeer' in json_lb_stats:
             self.num_peers = len(json_lb_stats['rpcsByPeer'])

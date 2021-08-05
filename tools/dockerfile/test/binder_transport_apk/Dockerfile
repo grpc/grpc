@@ -15,10 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# TODO(jtattermusch): with the latest version we'd get clang12+
-# which makes our build fail due to new warnings being treated
-# as errors.
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:de220fd2433cd53bd06b215770dcd14a5e74632e0215acea7401fee8cafb18da
+# Image(c7f1523ebd92) is built on Jul 29, 2021
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:c7f1523ebd9234b9ff57e5240f8c06569143373be019c92f1e6df18a1e048f37
 
 # This Dockerfile creates the environment for compiling and e2e testing of Android binder transport implementation
 

@@ -416,9 +416,9 @@ class Server : public InternallyRefCounted<Server> {
   Mutex mu_global_;  // mutex for server and channel state
   Mutex mu_call_;    // mutex for call-specific state
 
-  // startup synchronization: flag is protected by mu_global_, signals whether
-  // we are doing the listener start routine or not.
-  bool starting_ = false;
+  // startup synchronization: flag, signals whether we are doing the listener
+  // start routine or not.
+  bool starting_ ABSL_GUARDED_BY(mu_global_) = false;
   CondVar starting_cv_;
 
   std::vector<std::unique_ptr<RegisteredMethod>> registered_methods_;

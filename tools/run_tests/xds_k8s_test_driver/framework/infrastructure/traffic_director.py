@@ -14,7 +14,7 @@
 import functools
 import logging
 import random
-from typing import Any, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -203,20 +203,35 @@ class TrafficDirectorManager:
         self.compute.delete_backend_service(name)
         self.backend_service = None
 
-    def backend_service_add_neg_backends(self, name, zones):
+    def backend_service_add_neg_backends(self,
+                                         name,
+                                         zones,
+                                         max_rate_per_endpoint: Optional[
+                                             int] = None):
         logger.info('Waiting for Network Endpoint Groups to load endpoints.')
         for zone in zones:
             backend = self.compute.wait_for_network_endpoint_group(name, zone)
             logger.info('Loaded NEG "%s" in zone %s', backend.name,
                         backend.zone)
             self.backends.add(backend)
-        self.backend_service_add_backends()
+        self.backend_service_patch_backends(max_rate_per_endpoint)
 
-    def backend_service_add_backends(self):
+    def backend_service_remove_neg_backends(self, name, zones):
+        logger.info('Waiting for Network Endpoint Groups to load endpoints.')
+        for zone in zones:
+            backend = self.compute.wait_for_network_endpoint_group(name, zone)
+            logger.info('Loaded NEG "%s" in zone %s', backend.name,
+                        backend.zone)
+            self.backends.remove(backend)
+        self.backend_service_patch_backends()
+
+    def backend_service_patch_backends(
+            self, max_rate_per_endpoint: Optional[int] = None):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.backend_service.name, self.backends)
-        self.compute.backend_service_add_backends(self.backend_service,
-                                                  self.backends)
+        self.compute.backend_service_patch_backends(self.backend_service,
+                                                    self.backends,
+                                                    max_rate_per_endpoint)
 
     def backend_service_remove_all_backends(self):
         logging.info('Removing backends from Backend Service %s',
@@ -266,13 +281,13 @@ class TrafficDirectorManager:
             logger.info('Loaded NEG "%s" in zone %s', backend.name,
                         backend.zone)
             self.alternative_backends.add(backend)
-        self.alternative_backend_service_add_backends()
+        self.alternative_backend_service_patch_backends()
 
-    def alternative_backend_service_add_backends(self):
+    def alternative_backend_service_patch_backends(self):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.alternative_backend_service.name,
                      self.alternative_backends)
-        self.compute.backend_service_add_backends(
+        self.compute.backend_service_patch_backends(
             self.alternative_backend_service, self.alternative_backends)
 
     def alternative_backend_service_remove_all_backends(self):
@@ -326,13 +341,13 @@ class TrafficDirectorManager:
             logger.info('Loaded NEG "%s" in zone %s', backend.name,
                         backend.zone)
             self.affinity_backends.add(backend)
-        self.affinity_backend_service_add_backends()
+        self.affinity_backend_service_patch_backends()
 
-    def affinity_backend_service_add_backends(self):
+    def affinity_backend_service_patch_backends(self):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.affinity_backend_service.name, self.affinity_backends)
-        self.compute.backend_service_add_backends(self.affinity_backend_service,
-                                                  self.affinity_backends)
+        self.compute.backend_service_patch_backends(
+            self.affinity_backend_service, self.affinity_backends)
 
     def affinity_backend_service_remove_all_backends(self):
         logging.info('Removing backends from Backend Service %s',
@@ -347,6 +362,31 @@ class TrafficDirectorManager:
         self.compute.wait_for_backends_healthy_status(
             self.affinity_backend_service, self.affinity_backends)
 
+    def _generate_url_map_body(
+        self,
+        name: str,
+        matcher_name: str,
+        src_hosts,
+        dst_default_backend_service: GcpResource,
+        dst_host_rule_match_backend_service: Optional[GcpResource] = None,
+    ) -> Dict[str, Any]:
+        if dst_host_rule_match_backend_service is None:
+            dst_host_rule_match_backend_service = dst_default_backend_service
+        return {
+            'name':
+                name,
+            'defaultService':
+                dst_default_backend_service.url,
+            'hostRules': [{
+                'hosts': src_hosts,
+                'pathMatcher': matcher_name,
+            }],
+            'pathMatchers': [{
+                'name': matcher_name,
+                'defaultService': dst_host_rule_match_backend_service.url,
+            }],
+        }
+
     def create_url_map(
         self,
         src_host: str,
@@ -357,11 +397,23 @@ class TrafficDirectorManager:
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
         logger.info('Creating URL map "%s": %s -> %s', name, src_address,
                     self.backend_service.name)
-        resource = self.compute.create_url_map(name, matcher_name,
-                                               [src_address],
-                                               self.backend_service)
+        resource = self.compute.create_url_map_with_content(
+            self._generate_url_map_body(name, matcher_name, [src_address],
+                                        self.backend_service))
         self.url_map = resource
         return resource
+
+    def patch_url_map(self, src_host: str, src_port: int,
+                      backend_service: GcpResource):
+        src_address = f'{src_host}:{src_port}'
+        name = self.make_resource_name(self.URL_MAP_NAME)
+        matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
+        logger.info('Patching URL map "%s": %s -> %s', name, src_address,
+                    backend_service.name)
+        self.compute.patch_url_map(
+            self.url_map,
+            self._generate_url_map_body(name, matcher_name, [src_address],
+                                        backend_service))
 
     def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
         logger.info('Creating URL map: %s', url_map_body)
@@ -478,6 +530,100 @@ class TrafficDirectorManager:
         logger.info('Deleting Firewall Rule "%s"', name)
         self.compute.delete_firewall_rule(name)
         self.firewall_rule = None
+
+
+class TrafficDirectorAppNetManager(TrafficDirectorManager):
+
+    GRPC_ROUTE_NAME = "grpc-route"
+    ROUTER_NAME = "router"
+
+    def __init__(self,
+                 gcp_api_manager: gcp.api.GcpApiManager,
+                 project: str,
+                 *,
+                 resource_prefix: str,
+                 resource_suffix: Optional[str] = None,
+                 network: str = 'default'):
+        super().__init__(gcp_api_manager,
+                         project,
+                         resource_prefix=resource_prefix,
+                         resource_suffix=resource_suffix,
+                         network=network)
+
+        # API
+        self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
+
+        # Managed resources
+        self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
+        self.router: Optional[_NetworkServicesV1Alpha1.Router] = None
+
+    def create_router(self) -> GcpResource:
+        name = self.make_resource_name(self.ROUTER_NAME)
+        logger.info("Creating Router %s", name)
+        body = {
+            "type": "PROXYLESS_GRPC",
+            "routes": [self.grpc_route.url],
+            "network": "default",
+        }
+        resource = self.netsvc.create_router(name, body)
+        self.router = self.netsvc.get_router(name)
+        logger.debug("Loaded Router: %s", self.router)
+        return resource
+
+    def delete_router(self, force=False):
+        if force:
+            name = self.make_resource_name(self.ROUTER_NAME)
+        elif self.router:
+            name = self.router.name
+        else:
+            return
+        logger.info('Deleting Router %s', name)
+        self.netsvc.delete_router(name)
+        self.router = None
+
+    def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
+        host = f'{src_host}:{src_port}'
+        body = {
+            "hostnames":
+                host,
+            "rules": [{
+                "action": {
+                    "destination": {
+                        "serviceName": self.backend_service.name
+                    }
+                }
+            }],
+        }
+        name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        logger.info("Creating GrpcRoute %s", name)
+        resource = self.netsvc.create_grpc_route(name, body)
+        self.grpc_route = self.netsvc.get_grpc_route(name)
+        logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
+        return resource
+
+    def create_grpc_route_with_content(self, body: Any) -> GcpResource:
+        name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        logger.info("Creating GrpcRoute %s", name)
+        resource = self.netsvc.create_grpc_route(name, body)
+        self.grpc_route = self.netsvc.get_grpc_route(name)
+        logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
+        return resource
+
+    def delete_grpc_route(self, force=False):
+        if force:
+            name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        elif self.grpc_route:
+            name = self.grpc_route.name
+        else:
+            return
+        logger.info('Deleting GrpcRoute %s', name)
+        self.netsvc.delete_grpc_route(name)
+        self.grpc_route = None
+
+    def cleanup(self, *, force=False):
+        self.delete_router(force=force)
+        self.delete_grpc_route(force=force)
+        super().cleanup(force=force)
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):

@@ -13,7 +13,9 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/type/matcher/v3/node.upb.h"
 #include "google/api/annotations.upb.h"
-#include "udpa/annotations/migrate.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 
@@ -59,20 +61,46 @@ const upb_msglayout envoy_service_status_v3_PerXdsConfig_msginit = {
   UPB_SIZE(16, 24), 7, false, 255,
 };
 
-static const upb_msglayout *const envoy_service_status_v3_ClientConfig_submsgs[2] = {
+static const upb_msglayout *const envoy_service_status_v3_ClientConfig_submsgs[3] = {
   &envoy_config_core_v3_Node_msginit,
+  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit,
   &envoy_service_status_v3_PerXdsConfig_msginit,
 };
 
-static const upb_msglayout_field envoy_service_status_v3_ClientConfig__fields[2] = {
+static const upb_msglayout_field envoy_service_status_v3_ClientConfig__fields[3] = {
   {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, 3},
+  {2, UPB_SIZE(8, 16), 0, 2, 11, 3},
+  {3, UPB_SIZE(12, 24), 0, 1, 11, 3},
 };
 
 const upb_msglayout envoy_service_status_v3_ClientConfig_msginit = {
   &envoy_service_status_v3_ClientConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig__fields[0],
-  UPB_SIZE(16, 24), 2, false, 255,
+  UPB_SIZE(16, 32), 3, false, 255,
+};
+
+static const upb_msglayout *const envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[3] = {
+  &envoy_admin_v3_UpdateFailureState_msginit,
+  &google_protobuf_Any_msginit,
+  &google_protobuf_Timestamp_msginit,
+};
+
+static const upb_msglayout_field envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[9] = {
+  {1, UPB_SIZE(16, 16), 0, 0, 9, 1},
+  {2, UPB_SIZE(24, 32), 0, 0, 9, 1},
+  {3, UPB_SIZE(32, 48), 0, 0, 9, 1},
+  {4, UPB_SIZE(40, 64), 1, 1, 11, 1},
+  {5, UPB_SIZE(44, 72), 2, 2, 11, 1},
+  {6, UPB_SIZE(4, 4), 0, 0, 14, 1},
+  {7, UPB_SIZE(8, 8), 0, 0, 14, 1},
+  {8, UPB_SIZE(48, 80), 3, 0, 11, 1},
+  {9, UPB_SIZE(12, 12), 0, 0, 8, 1},
+};
+
+const upb_msglayout envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit = {
+  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[0],
+  &envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[0],
+  UPB_SIZE(56, 96), 9, false, 255,
 };
 
 static const upb_msglayout *const envoy_service_status_v3_ClientStatusResponse_submsgs[1] = {

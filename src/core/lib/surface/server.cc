@@ -809,7 +809,9 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);
-    WaitUntil(&starting_cv_, &mu_global_, [this] { return !starting_; });
+    while (starting_) {
+      starting_cv_.Wait(&mu_global_);
+    }
     // Stay locked, and gather up some stuff to do.
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     if (shutdown_published_) {
