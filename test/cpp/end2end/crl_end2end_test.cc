@@ -63,7 +63,8 @@ class TestTlsServerAuthorizationCheck
   }
 };
 
-void CallEchoRPC(const std::string& server_addr, bool revoked_certs = false) {
+void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
+                 bool revoked_server_certs) {
   std::string certificate_file;
   std::string key_file;
   if (revoked_certs) {
@@ -92,11 +93,11 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_certs = false) {
       server_authorization_check_config);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
   grpc::ChannelArguments args;
-  // if (revoked_certs) {
-  //   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "revoked");
-  // } else {
-  //   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
-  // }
+  if (revoked_server_certs) {
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "revoked");
+  } else {
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
+  }
   auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
   std::unique_ptr<EchoTestService::Stub> stub =
       EchoTestService::NewStub(channel);
@@ -169,12 +170,12 @@ class CrlTest : public ::testing::Test {
 
 TEST_F(CrlTest, ValidTraffic) {
   wrapper_.Start();
-  CallEchoRPC(wrapper_.server_address_);
+  CallEchoRPC(wrapper_.server_address_, false, false);
 }
 
 TEST_F(CrlTest, RevokedTraffic) {
   wrapper_.Start();
-  CallEchoRPC(wrapper_.server_address_, true);
+  CallEchoRPC(wrapper_.server_address_, true, false);
 }
 
 }  // namespace
