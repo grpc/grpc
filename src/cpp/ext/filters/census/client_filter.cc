@@ -56,13 +56,24 @@ grpc_error_handle CensusClientCallData::Init(
 // OpenCensusCallTracer::OpenCensusCallAttemptTracer
 //
 
+namespace {
+
+CensusContext CreateCensusContextForCallAttempt(
+    absl::string_view method, const CensusContext& parent_context) {
+  GPR_DEBUG_ASSERT(parent_context.Context().IsValid());
+  return CensusContext(absl::StrCat("Attempt.", method), &parent_context.Span(),
+                       parent_context.tags());
+}
+
+}  // namespace
+
 OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
     OpenCensusCallTracer* parent, uint64_t attempt_num,
     bool is_transparent_retry, bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      context_(absl::StrCat("Attempt.", parent_->method_),
-               &parent_->context_.Span(), parent_->context_.tags()),
+      context_(CreateCensusContextForCallAttempt(parent_->method_,
+                                                 parent_->context_)),
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
