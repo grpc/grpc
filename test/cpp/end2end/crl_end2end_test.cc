@@ -63,10 +63,13 @@ class TestTlsServerAuthorizationCheck
   }
 };
 
-void CallEchoRPC(const std::string& server_addr,
-                 const std::string& certificate_file,
-                 const std::string& key_file,
-                 const std::string& ca_bundle_file) {
+void CallEchoRPC(
+    const std::string& server_addr,
+    const std::string& certificate_file = absl::StrCat(kCredentialsDir,
+                                                       "/valid.pem"),
+    const std::string& key_file = absl::StrCat(kCredentialsDir, "/valid.key"),
+    const std::string& ca_bundle_file = absl::StrCat(kCredentialsDir,
+                                                     "/ca.pem")) {
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       key_file, certificate_file, ca_bundle_file,
       /*refresh_interval_sec=*/10);
@@ -114,9 +117,8 @@ class TestServerWrapper {
                         std::to_string(grpc_pick_unused_port_or_die())) {}
 
   void Start(std::string certificate_file = absl::StrCat(kCredentialsDir,
-                                                         "/server.pem"),
-             std::string key_file = absl::StrCat(kCredentialsDir,
-                                                 "/server.key"),
+                                                         "/valid.pem"),
+             std::string key_file = absl::StrCat(kCredentialsDir, "/valid.key"),
              std::string ca_bundle_file = absl::StrCat(kCredentialsDir,
                                                        "/ca.pem")) {
     std::string certificate_pem = ReadFile(certificate_file.c_str());
@@ -161,12 +163,15 @@ class TestServerWrapper {
 
 class CrlTest : public ::testing::Test {
  protected:
-  CrlTest() { wrapper_.Start(); }
+  CrlTest() {}
 
   TestServerWrapper wrapper_;
 };
 
-TEST_F(CrlTest, ValidTraffic) {}
+TEST_F(CrlTest, ValidTraffic) {
+  wrapper_.Start();
+  CallEchoRpc(wrapper_.server_address_);
+}
 
 }  // namespace
 }  // namespace testing
