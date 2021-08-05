@@ -90,7 +90,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
-      num_threads = cores();
+      num_threads = std::min(64, cores());
       gpr_log(GPR_INFO, "Sizing async server to %d threads", num_threads);
     }
 
