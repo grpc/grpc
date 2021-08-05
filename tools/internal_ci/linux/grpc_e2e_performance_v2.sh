@@ -58,11 +58,16 @@ DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
+# Update go version.
+TEST_INFRA_GOVERSION=go1.16.6
+go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
+"${TEST_INFRA_GOVERSION}" download
+
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
-make all-tools
+make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
 # Build test configurations.
