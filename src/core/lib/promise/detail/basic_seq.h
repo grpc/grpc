@@ -73,9 +73,9 @@ struct SeqState {
   // illegal to move a promise after polling it.
   SeqState(const SeqState& other)
       : prior(other.prior), next_factory(other.next_factory) {}
-  // No destructor - we instead destruct the innards in BasicSeq manually
+  // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
-  ~SeqState() = delete;
+  ~SeqState() {}
   // Evaluate the current promise, next promise factory types for this state.
   // The current promise is the next promise from the prior state.
   // The next factory callable is from the callables passed in:
@@ -112,9 +112,9 @@ struct SeqState<Traits, 0, Fs...> {
   SeqState(const SeqState& other)
       : current_promise(other.current_promise),
         next_factory(other.next_factory) {}
-  // No destructor - we instead destruct the innards in BasicSeq manually
+  // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
-  ~SeqState() = delete;
+  ~SeqState() {};
   // Evaluate the current promise, next promise factory types for this state.
   // Our callable is the first element of Fs, wrapped in PromiseLike to handle
   // some common edge cases. The next factory is the second element.
