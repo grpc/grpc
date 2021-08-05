@@ -1,5 +1,5 @@
 name: PR AutoFix
-on: [push, pull_request]
+on: [push]
 jobs:
   PRAutoFix:
     runs-on: ubuntu-latest
