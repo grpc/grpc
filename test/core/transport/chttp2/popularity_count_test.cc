@@ -19,6 +19,7 @@
 #include "include/grpc/impl/codegen/port_platform.h"
 
 #include <gtest/gtest.h>
+#include <array>
 #include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 
 namespace grpc_core {
