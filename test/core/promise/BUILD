@@ -39,3 +39,21 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "join_test",
+    srcs = ["join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:join"],
+)
+
+grpc_cc_test(
+    name = "try_join_test",
+    srcs = ["try_join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:try_join"],
+)
+
