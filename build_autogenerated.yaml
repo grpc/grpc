@@ -5098,6 +5098,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/context.h
+  src:
+  - test/core/promise/context_test.cc
+  deps: []
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
