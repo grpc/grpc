@@ -143,7 +143,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 //  Checks if the private key and leaf cert for all pairs in the list match.
 //  Returns an OK status if so or if the list is empty and an error status
 //  otherwise.
-absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list);
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    const PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 
