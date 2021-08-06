@@ -91,7 +91,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
       num_threads = std::min(64, cores());
-      gpr_log(GPR_INFO, "Sizing async server to %d threads. Defaults to number of cores in machine or 64 threads if machine has more than 64 cores to avoid OOMs.", num_threads);
+      gpr_log(GPR_INFO,
+              "Sizing async server to %d threads. Defaults to number of cores "
+              "in machine or 64 threads if machine has more than 64 cores to "
+              "avoid OOMs.",
+              num_threads);
     }
 
     int tpc = std::max(1, config.threads_per_cq());  // 1 if unspecified
