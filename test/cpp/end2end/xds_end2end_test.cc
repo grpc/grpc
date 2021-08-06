@@ -2507,7 +2507,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
-        XdsServerBuilder builder;
+        experimental::XdsServerBuilder builder;
         if (GetParam().bootstrap_source() ==
             TestType::kBootstrapFromChannelArg) {
           builder.SetOption(
