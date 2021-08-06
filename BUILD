@@ -842,6 +842,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/switch.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+
+grpc_cc_library(
     name = "poll",
     external_deps = [
         "absl/types:variant",
