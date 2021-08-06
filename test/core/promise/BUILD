@@ -32,3 +32,13 @@ grpc_cc_test(
     deps = ["//:promise"],
 )
 
+grpc_cc_test(
+    name = "map_test",
+    srcs = ["map_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:map", "//:promise"],
+)
+
+

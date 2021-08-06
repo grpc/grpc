@@ -847,6 +847,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "map",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/map.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
     name = "promise",
     external_deps = [
         "absl/types:optional",
