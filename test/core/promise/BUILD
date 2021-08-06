@@ -23,3 +23,12 @@ grpc_cc_test(
     deps = ["//:poll"],
 )
 
+grpc_cc_test(
+    name = "race_test",
+    srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:race"],
+)
+
