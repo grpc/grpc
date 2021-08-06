@@ -59,6 +59,10 @@ build_test_app_docker_images() {
 
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
+
+  branch_name=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/(.+)/linux/grpc_xds_k8s_python$|\1|')
+  tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
+  tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
 }
 
 #######################################
