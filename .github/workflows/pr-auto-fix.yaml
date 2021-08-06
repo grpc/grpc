@@ -55,9 +55,9 @@ jobs:
       # Report back with a PR if things are broken
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
-        delete-branch: true
-        branch-suffix: short-commit-hash
         with:
+          delete-branch: true
+          branch-suffix: short-commit-hash
           commit-message: "Automated change: Fix sanity tests"
           body: |
             PanCakes to the rescue!
