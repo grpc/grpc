@@ -38,6 +38,10 @@ using Poll = absl::variant<Pending, T>;
 // Variant of Poll that serves as a ready value
 static constexpr size_t kPollReadyIdx = 1;
 
+// PollTraits tells us whether a type is Poll<> or some other type, and is
+// leveraged in the PromiseLike/PromiseFactory machinery to select the
+// appropriate implementation of those concepts based upon the return type of a
+// lambda, for example (via enable_if).
 template <typename T>
 struct PollTraits {
   static constexpr bool is_poll() { return false; }
