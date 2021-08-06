@@ -204,5 +204,6 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:popularity_count",
+        "//test/core/util:grpc_suppressions",
     ],
 )
