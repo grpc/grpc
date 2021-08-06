@@ -39,3 +39,12 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "if_test",
+    srcs = ["if_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:if"],
+)
+
