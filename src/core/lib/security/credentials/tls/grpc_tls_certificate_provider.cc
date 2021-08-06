@@ -417,8 +417,8 @@ absl::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
   absl::StatusOr<bool> all_matched_or =
       PrivateKeyAndCertificateMatch(pem_key_cert_pairs);
   if (!all_matched_or.ok()) {
-    std::string error_message = std::string(all_matched_or.status().message());
-    gpr_log(GPR_ERROR, "Key-Cert pair list error: %s", error_message.c_str());
+    gpr_log(GPR_ERROR, "Key-Cert pair list error: %s",
+            std::string(all_matched_or.status().message()).c_str());
     return all_matched_or.status();
   }
   if (!(*all_matched_or)) {
