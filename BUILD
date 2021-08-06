@@ -835,6 +835,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "context",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/context.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
