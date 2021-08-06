@@ -24,7 +24,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # pre-built images in the optimization.
 gcloud auth configure-docker
 
-# Connect to benchmarks-prod cluster.
+# Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
