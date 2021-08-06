@@ -41,7 +41,7 @@ std::ostream& operator<<(std::ostream& out, Scenario s) {
     out << static_cast<int>(s.initial_values[i]);
   }
   out << " final:" << static_cast<int>(s.final_add);
-  out << " expect:" << (s.expectation? "true" : "false");
+  out << " expect:" << (s.expectation ? "true" : "false");
   return out;
 }
 
@@ -58,10 +58,10 @@ TEST_P(PopularityCountTest, Test) {
   EXPECT_EQ(pop.AddElement(s.final_add), s.expectation);
 }
 
-INSTANTIATE_TEST_SUITE_P(InterestingTests, PopularityCountTest, ::testing::Values(
-    Scenario{{0,0,0,0}, 0, true},
-    Scenario{{64,0,0,0}, 0, true},
-    Scenario{{64,0,0,0}, 1, false}));
+INSTANTIATE_TEST_SUITE_P(InterestingTests, PopularityCountTest,
+                         ::testing::Values(Scenario{{0, 0, 0, 0}, 0, true},
+                                           Scenario{{64, 0, 0, 0}, 0, true},
+                                           Scenario{{64, 0, 0, 0}, 1, false}));
 
 }  // namespace testing
 }  // namespace grpc_core
