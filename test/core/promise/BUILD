@@ -39,3 +39,12 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:loop"],
+)
+
