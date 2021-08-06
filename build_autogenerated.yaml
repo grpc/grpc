@@ -3305,6 +3305,7 @@ targets:
   - test/core/promise/benchmark/filter_stack.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
@@ -4452,6 +4453,7 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
   - absl/status:status
@@ -5691,6 +5693,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
   - absl/status:status
@@ -6354,6 +6357,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
@@ -6664,6 +6668,7 @@ targets:
   - test/core/promise/observable_test.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
   - absl/status:status
@@ -6873,6 +6878,7 @@ targets:
   - test/core/promise/pipe_test.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/memory:memory
   - absl/status:status
   - absl/status:statusor

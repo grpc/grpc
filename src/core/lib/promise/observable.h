@@ -169,7 +169,9 @@ class ObservableWatch final : private WatchCommitter {
   ObservableWatch(const ObservableWatch&) = delete;
   ObservableWatch& operator=(const ObservableWatch&) = delete;
   ObservableWatch(ObservableWatch&& other) noexcept
-      : state_(std::move(other.state_)), promise_(std::move(other.promise_)), factory_(std::move(other.factory_)) {}
+      : state_(std::move(other.state_)),
+        promise_(std::move(other.promise_)),
+        factory_(std::move(other.factory_)) {}
   ObservableWatch& operator=(ObservableWatch&&) noexcept = default;
 
   Poll<Result> operator()() {
