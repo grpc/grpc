@@ -84,6 +84,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "flow_control_test",
+    size = "large",
     srcs = ["flow_control_test.cc"],
     external_deps = [
         "gtest",
