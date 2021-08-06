@@ -296,9 +296,6 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
                                                  size_t have_already) {
   FlowControlTrace trace("app st recv", tfc_, this);
   uint32_t max_recv_bytes;
-  uint32_t sent_init_window =
-      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
   if (max_size_hint >= kMaxWindowDelta) {
@@ -315,7 +312,12 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(max_recv_bytes <= kMaxWindowUpdateSize - sent_init_window);
+  GPR_DEBUG_ASSERT(
+      max_recv_bytes <=
+      kMaxWindowUpdateSize -
+          tfc_->transport()
+              ->settings[GRPC_SENT_SETTINGS]
+                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
   if (local_window_delta_ < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
