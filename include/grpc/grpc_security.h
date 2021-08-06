@@ -1140,8 +1140,6 @@ GRPCAPI void grpc_authorization_policy_provider_release(
 
 #ifdef __cplusplus
 }
-
-
 #endif
 
 #endif /* GRPC_GRPC_SECURITY_H */
