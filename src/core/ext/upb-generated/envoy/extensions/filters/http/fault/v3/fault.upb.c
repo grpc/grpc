@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
@@ -25,22 +25,22 @@ static const upb_msglayout *const envoy_extensions_filters_http_fault_v3_FaultAb
 };
 
 static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_FaultAbort__fields[4] = {
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, 1},
-  {3, UPB_SIZE(4, 8), 1, 1, 11, 1},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(4, 8), 1, 1, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_http_fault_v3_FaultAbort_msginit = {
   &envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_FaultAbort__fields[0],
-  UPB_SIZE(16, 32), 4, false, 255,
+  UPB_SIZE(16, 32), 4, false, 0, 255,
 };
 
 const upb_msglayout envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[5] = {
@@ -52,27 +52,27 @@ static const upb_msglayout *const envoy_extensions_filters_http_fault_v3_HTTPFau
 };
 
 static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_HTTPFault__fields[15] = {
-  {1, UPB_SIZE(68, 136), 1, 1, 11, 1},
-  {2, UPB_SIZE(72, 144), 2, 3, 11, 1},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {4, UPB_SIZE(84, 168), 0, 0, 11, 3},
-  {5, UPB_SIZE(88, 176), 0, 0, 9, 3},
-  {6, UPB_SIZE(76, 152), 3, 4, 11, 1},
-  {7, UPB_SIZE(80, 160), 4, 2, 11, 1},
-  {8, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {9, UPB_SIZE(20, 40), 0, 0, 9, 1},
-  {10, UPB_SIZE(28, 56), 0, 0, 9, 1},
-  {11, UPB_SIZE(36, 72), 0, 0, 9, 1},
-  {12, UPB_SIZE(44, 88), 0, 0, 9, 1},
-  {13, UPB_SIZE(52, 104), 0, 0, 9, 1},
-  {14, UPB_SIZE(60, 120), 0, 0, 9, 1},
-  {15, UPB_SIZE(1, 1), 0, 0, 8, 1},
+  {1, UPB_SIZE(68, 136), 1, 1, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(72, 144), 2, 3, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(84, 168), 0, 0, 11, _UPB_MODE_ARRAY},
+  {5, UPB_SIZE(88, 176), 0, 0, 9, _UPB_MODE_ARRAY},
+  {6, UPB_SIZE(76, 152), 3, 4, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(80, 160), 4, 2, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_SCALAR},
+  {11, UPB_SIZE(36, 72), 0, 0, 9, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(44, 88), 0, 0, 9, _UPB_MODE_SCALAR},
+  {13, UPB_SIZE(52, 104), 0, 0, 9, _UPB_MODE_SCALAR},
+  {14, UPB_SIZE(60, 120), 0, 0, 9, _UPB_MODE_SCALAR},
+  {15, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_http_fault_v3_HTTPFault_msginit = {
   &envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
-  UPB_SIZE(96, 192), 15, false, 255,
+  UPB_SIZE(96, 192), 15, false, 15, 255,
 };
 
 #include "upb/port_undef.inc"

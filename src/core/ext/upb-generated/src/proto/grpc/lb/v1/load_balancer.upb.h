@@ -9,7 +9,7 @@
 #ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -61,13 +61,19 @@ UPB_INLINE grpc_lb_v1_LoadBalanceRequest *grpc_lb_v1_LoadBalanceRequest_new(upb_
 UPB_INLINE grpc_lb_v1_LoadBalanceRequest *grpc_lb_v1_LoadBalanceRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_LoadBalanceRequest *ret = grpc_lb_v1_LoadBalanceRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_LoadBalanceRequest *grpc_lb_v1_LoadBalanceRequest_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_LoadBalanceRequest *ret = grpc_lb_v1_LoadBalanceRequest_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_LoadBalanceRequest_serialize(const grpc_lb_v1_LoadBalanceRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_LoadBalanceRequest_msginit, arena, len);
@@ -118,13 +124,19 @@ UPB_INLINE grpc_lb_v1_InitialLoadBalanceRequest *grpc_lb_v1_InitialLoadBalanceRe
 UPB_INLINE grpc_lb_v1_InitialLoadBalanceRequest *grpc_lb_v1_InitialLoadBalanceRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_InitialLoadBalanceRequest *ret = grpc_lb_v1_InitialLoadBalanceRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_InitialLoadBalanceRequest *grpc_lb_v1_InitialLoadBalanceRequest_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_InitialLoadBalanceRequest *ret = grpc_lb_v1_InitialLoadBalanceRequest_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_InitialLoadBalanceRequest_serialize(const grpc_lb_v1_InitialLoadBalanceRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena, len);
@@ -144,13 +156,19 @@ UPB_INLINE grpc_lb_v1_ClientStatsPerToken *grpc_lb_v1_ClientStatsPerToken_new(up
 UPB_INLINE grpc_lb_v1_ClientStatsPerToken *grpc_lb_v1_ClientStatsPerToken_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_ClientStatsPerToken *ret = grpc_lb_v1_ClientStatsPerToken_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_ClientStatsPerToken *grpc_lb_v1_ClientStatsPerToken_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_ClientStatsPerToken *ret = grpc_lb_v1_ClientStatsPerToken_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_ClientStatsPerToken_serialize(const grpc_lb_v1_ClientStatsPerToken *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ClientStatsPerToken_msginit, arena, len);
@@ -174,13 +192,19 @@ UPB_INLINE grpc_lb_v1_ClientStats *grpc_lb_v1_ClientStats_new(upb_arena *arena) 
 UPB_INLINE grpc_lb_v1_ClientStats *grpc_lb_v1_ClientStats_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_ClientStats *ret = grpc_lb_v1_ClientStats_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_ClientStats *grpc_lb_v1_ClientStats_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_ClientStats *ret = grpc_lb_v1_ClientStats_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_ClientStats_serialize(const grpc_lb_v1_ClientStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ClientStats_msginit, arena, len);
@@ -242,13 +266,19 @@ UPB_INLINE grpc_lb_v1_LoadBalanceResponse *grpc_lb_v1_LoadBalanceResponse_new(up
 UPB_INLINE grpc_lb_v1_LoadBalanceResponse *grpc_lb_v1_LoadBalanceResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_LoadBalanceResponse *ret = grpc_lb_v1_LoadBalanceResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_LoadBalanceResponse *grpc_lb_v1_LoadBalanceResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_LoadBalanceResponse *ret = grpc_lb_v1_LoadBalanceResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_LoadBalanceResponse_serialize(const grpc_lb_v1_LoadBalanceResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_LoadBalanceResponse_msginit, arena, len);
@@ -314,13 +344,19 @@ UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceR
 UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_InitialLoadBalanceResponse *ret = grpc_lb_v1_InitialLoadBalanceResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_InitialLoadBalanceResponse *ret = grpc_lb_v1_InitialLoadBalanceResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_InitialLoadBalanceResponse_serialize(const grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena, len);
@@ -355,13 +391,19 @@ UPB_INLINE grpc_lb_v1_ServerList *grpc_lb_v1_ServerList_new(upb_arena *arena) {
 UPB_INLINE grpc_lb_v1_ServerList *grpc_lb_v1_ServerList_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_ServerList *ret = grpc_lb_v1_ServerList_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_ServerList *grpc_lb_v1_ServerList_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_ServerList *ret = grpc_lb_v1_ServerList_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_ServerList_serialize(const grpc_lb_v1_ServerList *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ServerList_msginit, arena, len);
@@ -392,13 +434,19 @@ UPB_INLINE grpc_lb_v1_Server *grpc_lb_v1_Server_new(upb_arena *arena) {
 UPB_INLINE grpc_lb_v1_Server *grpc_lb_v1_Server_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_Server *ret = grpc_lb_v1_Server_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_Server *grpc_lb_v1_Server_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_Server *ret = grpc_lb_v1_Server_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_Server_serialize(const grpc_lb_v1_Server *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_Server_msginit, arena, len);
@@ -430,13 +478,19 @@ UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_new(upb_aren
 UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lb_v1_FallbackResponse_serialize(const grpc_lb_v1_FallbackResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_FallbackResponse_msginit, arena, len);
