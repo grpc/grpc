@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/config/accesslog/v3/accesslog.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -58,58 +58,58 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[46] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 14, 1},
-  {2, UPB_SIZE(32, 32), 0, 0, 9, 1},
-  {3, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 15, 11, 1},
-  {4, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 7, 11, 1},
-  {5, UPB_SIZE(144, 256), 0, 13, 11, 3},
-  {6, UPB_SIZE(56, 80), 1, 18, 11, 1},
-  {7, UPB_SIZE(60, 88), 2, 11, 11, 1},
-  {8, UPB_SIZE(64, 96), 3, 1, 11, 1},
-  {9, UPB_SIZE(68, 104), 4, 2, 11, 1},
-  {10, UPB_SIZE(40, 48), 0, 0, 9, 1},
-  {12, UPB_SIZE(72, 112), 5, 19, 11, 1},
-  {13, UPB_SIZE(148, 264), 0, 0, 11, 3},
-  {14, UPB_SIZE(76, 120), 6, 18, 11, 1},
-  {15, UPB_SIZE(80, 128), 7, 18, 11, 1},
-  {16, UPB_SIZE(8, 8), 0, 0, 14, 1},
-  {17, UPB_SIZE(84, 136), 8, 10, 11, 1},
-  {18, UPB_SIZE(24, 24), 0, 0, 8, 1},
-  {19, UPB_SIZE(20, 20), 0, 0, 13, 1},
-  {20, UPB_SIZE(25, 25), 0, 0, 8, 1},
-  {21, UPB_SIZE(26, 26), 0, 0, 8, 1},
-  {22, UPB_SIZE(48, 64), 0, 0, 9, 1},
-  {23, UPB_SIZE(152, 272), 0, 12, 11, 3},
-  {24, UPB_SIZE(88, 144), 9, 19, 11, 1},
-  {25, UPB_SIZE(92, 152), 10, 8, 11, 1},
-  {26, UPB_SIZE(96, 160), 11, 19, 11, 1},
-  {28, UPB_SIZE(100, 168), 12, 19, 11, 1},
-  {29, UPB_SIZE(104, 176), 13, 20, 11, 1},
-  {30, UPB_SIZE(108, 184), 14, 18, 11, 1},
-  {31, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 17, 11, 1},
-  {32, UPB_SIZE(27, 27), 0, 0, 8, 1},
-  {33, UPB_SIZE(28, 28), 0, 0, 8, 1},
-  {34, UPB_SIZE(12, 12), 0, 0, 14, 1},
-  {35, UPB_SIZE(112, 192), 15, 4, 11, 1},
-  {36, UPB_SIZE(116, 200), 16, 16, 11, 1},
-  {37, UPB_SIZE(29, 29), 0, 0, 8, 1},
-  {38, UPB_SIZE(120, 208), 17, 14, 11, 1},
-  {39, UPB_SIZE(30, 30), 0, 0, 8, 1},
-  {40, UPB_SIZE(124, 216), 18, 18, 11, 1},
-  {41, UPB_SIZE(128, 224), 19, 19, 11, 1},
-  {42, UPB_SIZE(168, 300), UPB_SIZE(-173, -305), 0, 8, 1},
-  {43, UPB_SIZE(132, 232), 20, 9, 11, 1},
-  {44, UPB_SIZE(136, 240), 21, 3, 11, 1},
-  {45, UPB_SIZE(16, 16), 0, 0, 14, 1},
-  {46, UPB_SIZE(156, 280), 0, 6, 11, 3},
-  {47, UPB_SIZE(31, 31), 0, 0, 8, 1},
-  {48, UPB_SIZE(140, 248), 22, 5, 11, 1},
+  {1, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(32, 32), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 15, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 7, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(144, 256), 0, 13, 11, _UPB_MODE_ARRAY},
+  {6, UPB_SIZE(56, 80), 1, 18, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(60, 88), 2, 11, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(64, 96), 3, 1, 11, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(68, 104), 4, 2, 11, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(40, 48), 0, 0, 9, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(72, 112), 5, 19, 11, _UPB_MODE_SCALAR},
+  {13, UPB_SIZE(148, 264), 0, 0, 11, _UPB_MODE_ARRAY},
+  {14, UPB_SIZE(76, 120), 6, 18, 11, _UPB_MODE_SCALAR},
+  {15, UPB_SIZE(80, 128), 7, 18, 11, _UPB_MODE_SCALAR},
+  {16, UPB_SIZE(8, 8), 0, 0, 14, _UPB_MODE_SCALAR},
+  {17, UPB_SIZE(84, 136), 8, 10, 11, _UPB_MODE_SCALAR},
+  {18, UPB_SIZE(24, 24), 0, 0, 8, _UPB_MODE_SCALAR},
+  {19, UPB_SIZE(20, 20), 0, 0, 13, _UPB_MODE_SCALAR},
+  {20, UPB_SIZE(25, 25), 0, 0, 8, _UPB_MODE_SCALAR},
+  {21, UPB_SIZE(26, 26), 0, 0, 8, _UPB_MODE_SCALAR},
+  {22, UPB_SIZE(48, 64), 0, 0, 9, _UPB_MODE_SCALAR},
+  {23, UPB_SIZE(152, 272), 0, 12, 11, _UPB_MODE_ARRAY},
+  {24, UPB_SIZE(88, 144), 9, 19, 11, _UPB_MODE_SCALAR},
+  {25, UPB_SIZE(92, 152), 10, 8, 11, _UPB_MODE_SCALAR},
+  {26, UPB_SIZE(96, 160), 11, 19, 11, _UPB_MODE_SCALAR},
+  {28, UPB_SIZE(100, 168), 12, 19, 11, _UPB_MODE_SCALAR},
+  {29, UPB_SIZE(104, 176), 13, 20, 11, _UPB_MODE_SCALAR},
+  {30, UPB_SIZE(108, 184), 14, 18, 11, _UPB_MODE_SCALAR},
+  {31, UPB_SIZE(160, 288), UPB_SIZE(-165, -297), 17, 11, _UPB_MODE_SCALAR},
+  {32, UPB_SIZE(27, 27), 0, 0, 8, _UPB_MODE_SCALAR},
+  {33, UPB_SIZE(28, 28), 0, 0, 8, _UPB_MODE_SCALAR},
+  {34, UPB_SIZE(12, 12), 0, 0, 14, _UPB_MODE_SCALAR},
+  {35, UPB_SIZE(112, 192), 15, 4, 11, _UPB_MODE_SCALAR},
+  {36, UPB_SIZE(116, 200), 16, 16, 11, _UPB_MODE_SCALAR},
+  {37, UPB_SIZE(29, 29), 0, 0, 8, _UPB_MODE_SCALAR},
+  {38, UPB_SIZE(120, 208), 17, 14, 11, _UPB_MODE_SCALAR},
+  {39, UPB_SIZE(30, 30), 0, 0, 8, _UPB_MODE_SCALAR},
+  {40, UPB_SIZE(124, 216), 18, 18, 11, _UPB_MODE_SCALAR},
+  {41, UPB_SIZE(128, 224), 19, 19, 11, _UPB_MODE_SCALAR},
+  {42, UPB_SIZE(168, 300), UPB_SIZE(-173, -305), 0, 8, _UPB_MODE_SCALAR},
+  {43, UPB_SIZE(132, 232), 20, 9, 11, _UPB_MODE_SCALAR},
+  {44, UPB_SIZE(136, 240), 21, 3, 11, _UPB_MODE_SCALAR},
+  {45, UPB_SIZE(16, 16), 0, 0, 14, _UPB_MODE_SCALAR},
+  {46, UPB_SIZE(156, 280), 0, 6, 11, _UPB_MODE_ARRAY},
+  {47, UPB_SIZE(31, 31), 0, 0, 8, _UPB_MODE_SCALAR},
+  {48, UPB_SIZE(140, 248), 22, 5, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[0],
-  UPB_SIZE(176, 320), 46, false, 255,
+  UPB_SIZE(176, 320), 46, false, 10, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[4] = {
@@ -120,29 +120,29 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__fields[7] = {
-  {3, UPB_SIZE(4, 8), 1, 2, 11, 1},
-  {4, UPB_SIZE(8, 16), 2, 2, 11, 1},
-  {5, UPB_SIZE(12, 24), 3, 2, 11, 1},
-  {6, UPB_SIZE(1, 1), 0, 0, 8, 1},
-  {7, UPB_SIZE(16, 32), 4, 3, 11, 1},
-  {8, UPB_SIZE(24, 48), 0, 1, 11, 3},
-  {9, UPB_SIZE(20, 40), 5, 0, 11, 1},
+  {3, UPB_SIZE(4, 8), 1, 2, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(8, 16), 2, 2, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(12, 24), 3, 2, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(16, 32), 4, 3, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(24, 48), 0, 1, 11, _UPB_MODE_ARRAY},
+  {9, UPB_SIZE(20, 40), 5, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__fields[0],
-  UPB_SIZE(32, 56), 7, false, 255,
+  UPB_SIZE(32, 56), 7, false, 0, 255,
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit = {
   NULL,
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_submsgs[1] = {
@@ -150,17 +150,17 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__fields[5] = {
-  {1, UPB_SIZE(8, 8), 1, 0, 11, 1},
-  {3, UPB_SIZE(1, 1), 0, 0, 8, 1},
-  {4, UPB_SIZE(2, 2), 0, 0, 8, 1},
-  {5, UPB_SIZE(3, 3), 0, 0, 8, 1},
-  {6, UPB_SIZE(4, 4), 0, 0, 8, 1},
+  {1, UPB_SIZE(8, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(2, 2), 0, 0, 8, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(3, 3), 0, 0, 8, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(4, 4), 0, 0, 8, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__fields[0],
-  UPB_SIZE(16, 16), 5, false, 255,
+  UPB_SIZE(16, 16), 5, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_submsgs[2] = {
@@ -169,15 +169,15 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(16, 32), 0, 0, 11, 3},
-  {3, UPB_SIZE(12, 24), 1, 1, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(16, 32), 0, 0, 11, _UPB_MODE_ARRAY},
+  {3, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(24, 48), 3, false, 3, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_submsgs[1] = {
@@ -185,14 +185,14 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__fields[0],
-  UPB_SIZE(16, 24), 2, false, 255,
+  UPB_SIZE(16, 24), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_submsgs[2] = {
@@ -201,14 +201,14 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__fields[2] = {
-  {1, UPB_SIZE(8, 16), 0, 1, 11, 3},
-  {2, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {1, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__fields[0],
-  UPB_SIZE(16, 24), 2, false, 255,
+  UPB_SIZE(16, 24), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_submsgs[5] = {
@@ -220,17 +220,17 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper__fields[5] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(8, 16), 2, 4, 11, 1},
-  {3, UPB_SIZE(12, 24), 3, 1, 11, 1},
-  {4, UPB_SIZE(16, 32), 4, 3, 11, 1},
-  {5, UPB_SIZE(20, 40), 0, 2, 11, 3},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 2, 4, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(12, 24), 3, 1, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(16, 32), 4, 3, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(20, 40), 0, 2, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper__fields[0],
-  UPB_SIZE(24, 48), 5, false, 255,
+  UPB_SIZE(24, 48), 5, false, 5, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_Rds_submsgs[1] = {
@@ -238,14 +238,14 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_Rds__fields[2] = {
-  {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_Rds_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_Rds__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_submsgs[1] = {
@@ -253,13 +253,13 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_submsgs[4] = {
@@ -270,17 +270,17 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__fields[5] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 1, 3, 11, 1},
-  {3, UPB_SIZE(16, 32), 2, 0, 11, 1},
-  {4, UPB_SIZE(20, 40), UPB_SIZE(-25, -49), 2, 11, 1},
-  {5, UPB_SIZE(20, 40), UPB_SIZE(-25, -49), 1, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(12, 24), 1, 3, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(20, 40), UPB_SIZE(-25, -49), 2, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(20, 40), UPB_SIZE(-25, -49), 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__fields[0],
-  UPB_SIZE(32, 64), 5, false, 255,
+  UPB_SIZE(32, 64), 5, false, 5, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_submsgs[1] = {
@@ -288,13 +288,13 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_submsgs[1] = {
@@ -302,13 +302,13 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_submsgs[1] = {
@@ -316,27 +316,27 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__fields[4] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 13, 1},
-  {4, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 13, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__fields[0],
-  UPB_SIZE(24, 48), 4, false, 255,
+  UPB_SIZE(24, 48), 4, false, 4, 255,
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit = {
   NULL,
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_submsgs[1] = {
@@ -344,14 +344,14 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__fields[2] = {
-  {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[2] = {
@@ -360,16 +360,16 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[4] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {4, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
-  {5, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 0, 11, 1},
-  {6, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 0, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[0],
-  UPB_SIZE(24, 48), 4, false, 255,
+  UPB_SIZE(24, 48), 4, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[1] = {
@@ -377,13 +377,13 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_submsgs[1] = {
@@ -391,13 +391,13 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
 };
 
 static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 1, 255,
 };
 
 #include "upb/port_undef.inc"
