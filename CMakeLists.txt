@@ -5054,6 +5054,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(competition
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::base
+    absl::core_headers
     absl::memory
     absl::status
     absl::statusor
@@ -7920,6 +7921,7 @@ target_link_libraries(activity_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::flat_hash_set
   absl::memory
   absl::status
@@ -11138,6 +11140,7 @@ target_link_libraries(for_each_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::flat_hash_set
   absl::memory
   absl::status
@@ -12713,6 +12716,7 @@ target_link_libraries(latch_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::memory
   absl::status
   absl::statusor
@@ -13300,6 +13304,7 @@ target_link_libraries(observable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::flat_hash_set
   absl::memory
   absl::status
@@ -13546,6 +13551,7 @@ target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
+  absl::core_headers
   absl::memory
   absl::status
   absl::statusor
