@@ -9,7 +9,7 @@
 #ifndef UDPA_TYPE_V1_TYPED_STRUCT_PROTO_UPB_H_
 #define UDPA_TYPE_V1_TYPED_STRUCT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -35,13 +35,19 @@ UPB_INLINE udpa_type_v1_TypedStruct *udpa_type_v1_TypedStruct_new(upb_arena *are
 UPB_INLINE udpa_type_v1_TypedStruct *udpa_type_v1_TypedStruct_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   udpa_type_v1_TypedStruct *ret = udpa_type_v1_TypedStruct_new(arena);
-  return (ret && upb_decode(buf, size, ret, &udpa_type_v1_TypedStruct_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &udpa_type_v1_TypedStruct_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE udpa_type_v1_TypedStruct *udpa_type_v1_TypedStruct_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   udpa_type_v1_TypedStruct *ret = udpa_type_v1_TypedStruct_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &udpa_type_v1_TypedStruct_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &udpa_type_v1_TypedStruct_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *udpa_type_v1_TypedStruct_serialize(const udpa_type_v1_TypedStruct *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_type_v1_TypedStruct_msginit, arena, len);

@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -167,13 +167,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit, arena, len);
@@ -704,13 +710,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit, arena, len);
@@ -820,13 +832,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit, arena, len);
@@ -846,13 +864,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit, arena, len);
@@ -899,13 +923,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit, arena, len);
@@ -955,13 +985,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConne
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit, arena, len);
@@ -1007,13 +1043,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_LocalRepl
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig *envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig *envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig *ret = envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit, arena, len);
@@ -1059,13 +1101,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ResponseM
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper *envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper *ret = envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper *envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper *ret = envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit, arena, len);
@@ -1156,13 +1204,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_Rds *envo
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_Rds *envoy_extensions_filters_network_http_connection_manager_v3_Rds_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_Rds *ret = envoy_extensions_filters_network_http_connection_manager_v3_Rds_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_Rds *envoy_extensions_filters_network_http_connection_manager_v3_Rds_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_Rds *ret = envoy_extensions_filters_network_http_connection_manager_v3_Rds_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_Rds_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_Rds *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit, arena, len);
@@ -1197,13 +1251,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit, arena, len);
@@ -1234,13 +1294,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit, arena, len);
@@ -1325,13 +1391,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit, arena, len);
@@ -1362,13 +1434,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit, arena, len);
@@ -1404,13 +1482,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit, arena, len);
@@ -1460,13 +1544,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRou
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit, arena, len);
@@ -1490,13 +1580,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds *ret = envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit, arena, len);
@@ -1531,13 +1627,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpFilte
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter *envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter *envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter *ret = envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit, arena, len);
@@ -1596,13 +1698,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_RequestID
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension *envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension *ret = envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension *envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension *ret = envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit, arena, len);
@@ -1633,13 +1741,19 @@ UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobi
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager *envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager *ret = envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager *envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager *ret = envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_serialize(const envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit, arena, len);
