@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARILTY_COUNT_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARILTY_COUNT_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARITY_COUNT_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARITY_COUNT_H
 
 #include "include/grpc/impl/codegen/port_platform.h"
 
@@ -57,4 +57,4 @@ class PopularityCount {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARITY_COUNT_H */
