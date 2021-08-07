@@ -15,6 +15,18 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 grpc_cc_test(
+    name = "poll_test",
+    srcs = ["poll_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:poll",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     external_deps = ["gtest"],
@@ -22,3 +34,4 @@ grpc_cc_test(
     uses_polling = False,
     deps = ["//:context"],
 )
+
