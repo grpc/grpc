@@ -19,33 +19,6 @@
 
 #include "src/core/lib/promise/poll.h"
 
-// PromiseFactory is an adaptor class.
-//
-// Where a Promise is a thing that's polled periodically, a PromiseFactory
-// creates a Promise. Within this Promise/Activity framework, PromiseFactory's
-// then provide the edges for computation -- invoked at state transition
-// boundaries to provide the new steady state.
-//
-// A PromiseFactory formally is either f(A) -> Promise<T> for some types A & T.
-// This get a bit awkward and inapproprate to write however, and so the type
-// contained herein can adapt various kinds of callable into the correct form.
-// Of course a callable of a single argument returning a Promise will see an
-// identity translation. One taking no arguments and returning a Promise
-// similarly.
-//
-// A Promise passed to a PromiseFactory will yield a PromiseFactory that
-// returns just that Promise.
-//
-// Generalizing slightly, a callable taking a single argument A and returning a
-// Poll<T> will yield a PromiseFactory that captures it's argument A and
-// returns a Poll<T>.
-//
-// Since various consumers of PromiseFactory run either repeatedly through an
-// overarching Promises lifetime, or just once, and we can optimize just once
-// by moving the contents of the PromiseFactory, two factory methods are
-// provided: Once, that can be called just once, and Repeated, that can (wait
-// for it) be called Repeatedly.
-
 #include <utility>
 #include "src/core/lib/promise/poll.h"
 
