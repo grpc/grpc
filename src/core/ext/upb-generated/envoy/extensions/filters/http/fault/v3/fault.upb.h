@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_FAULT_V3_FAULT_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_FAULT_V3_FAULT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -49,13 +49,19 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort *envoy_extensions_f
 UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort *envoy_extensions_filters_http_fault_v3_FaultAbort_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_FaultAbort *ret = envoy_extensions_filters_http_fault_v3_FaultAbort_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort *envoy_extensions_filters_http_fault_v3_FaultAbort_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_FaultAbort *ret = envoy_extensions_filters_http_fault_v3_FaultAbort_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_http_fault_v3_FaultAbort_serialize(const envoy_extensions_filters_http_fault_v3_FaultAbort *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, arena, len);
@@ -118,13 +124,19 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *envoy_
 UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *ret = envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *ret = envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_serialize(const envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, arena, len);
@@ -140,13 +152,19 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_HTTPFault *envoy_extensions_fi
 UPB_INLINE envoy_extensions_filters_http_fault_v3_HTTPFault *envoy_extensions_filters_http_fault_v3_HTTPFault_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_HTTPFault *ret = envoy_extensions_filters_http_fault_v3_HTTPFault_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_http_fault_v3_HTTPFault *envoy_extensions_filters_http_fault_v3_HTTPFault_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_http_fault_v3_HTTPFault *ret = envoy_extensions_filters_http_fault_v3_HTTPFault_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_http_fault_v3_HTTPFault_serialize(const envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, arena, len);

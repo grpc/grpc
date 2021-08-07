@@ -1,20 +1,47 @@
 /*
-** Internal implementation details of the decoder that are shared between
-** decode.c and decode_fast.c.
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Internal implementation details of the decoder that are shared between
+ * decode.c and decode_fast.c.
+ */
 
 #ifndef UPB_DECODE_INT_H_
 #define UPB_DECODE_INT_H_
 
 #include <setjmp.h>
 
-#include "upb/msg.h"
-#include "upb/upb.int.h"
+#include "upb/msg_internal.h"
+#include "upb/upb_internal.h"
 
 /* Must be last. */
 #include "upb/port_def.inc"
 
-#define DECODE_NOGROUP -1
+#define DECODE_NOGROUP (uint32_t)-1
 
 typedef struct upb_decstate {
   const char *end;         /* Can read up to 16 bytes slop beyond this. */
@@ -115,10 +142,11 @@ bool decode_isdone(upb_decstate *d, const char **ptr) {
   }
 }
 
+#if UPB_FASTTABLE
 UPB_INLINE
 const char *fastdecode_tagdispatch(upb_decstate *d, const char *ptr,
                                     upb_msg *msg, intptr_t table,
-                                    uint64_t hasbits, uint32_t tag) {
+                                    uint64_t hasbits, uint64_t tag) {
   const upb_msglayout *table_p = decode_totablep(table);
   uint8_t mask = table;
   uint64_t data;
@@ -126,8 +154,10 @@ const char *fastdecode_tagdispatch(upb_decstate *d, const char *ptr,
   UPB_ASSUME((idx & 7) == 0);
   idx >>= 3;
   data = table_p->fasttable[idx].field_data ^ tag;
-  return table_p->fasttable[idx].field_parser(d, ptr, msg, table, hasbits, data);
+  UPB_MUSTTAIL return table_p->fasttable[idx].field_parser(d, ptr, msg, table,
+                                                           hasbits, data);
 }
+#endif
 
 UPB_INLINE uint32_t fastdecode_loadtag(const char* ptr) {
   uint16_t tag;
