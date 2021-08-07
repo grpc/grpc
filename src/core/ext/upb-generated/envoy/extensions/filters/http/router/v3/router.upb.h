@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -37,13 +37,19 @@ UPB_INLINE envoy_extensions_filters_http_router_v3_Router *envoy_extensions_filt
 UPB_INLINE envoy_extensions_filters_http_router_v3_Router *envoy_extensions_filters_http_router_v3_Router_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_http_router_v3_Router *ret = envoy_extensions_filters_http_router_v3_Router_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_http_router_v3_Router_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_http_router_v3_Router_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_http_router_v3_Router *envoy_extensions_filters_http_router_v3_Router_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_http_router_v3_Router *ret = envoy_extensions_filters_http_router_v3_Router_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_http_router_v3_Router_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_http_router_v3_Router_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_http_router_v3_Router_serialize(const envoy_extensions_filters_http_router_v3_Router *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_http_router_v3_Router_msginit, arena, len);

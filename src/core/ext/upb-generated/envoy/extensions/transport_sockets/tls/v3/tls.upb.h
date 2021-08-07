@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_TLS_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_TLS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -72,13 +72,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *envoy_e
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_serialize(const envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_msginit, arena, len);
@@ -132,13 +138,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *envoy
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_serialize(const envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit, arena, len);
@@ -259,13 +271,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *envoy_ext
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_serialize(const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit, arena, len);
@@ -462,13 +480,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_Certificat
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_serialize(const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_msginit, arena, len);
@@ -508,13 +532,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_Certificat
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_serialize(const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_msginit, arena, len);
@@ -538,13 +568,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCe
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext *ret = envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_serialize(const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_msginit, arena, len);

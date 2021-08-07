@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -29,14 +29,14 @@ static const upb_msglayout *const envoy_config_rbac_v3_RBAC_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_RBAC__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, _UPB_LABEL_MAP},
+  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_MAP},
 };
 
 const upb_msglayout envoy_config_rbac_v3_RBAC_msginit = {
   &envoy_config_rbac_v3_RBAC_submsgs[0],
   &envoy_config_rbac_v3_RBAC__fields[0],
-  UPB_SIZE(8, 16), 2, false, 255,
+  UPB_SIZE(8, 16), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_RBAC_PoliciesEntry_submsgs[1] = {
@@ -44,14 +44,14 @@ static const upb_msglayout *const envoy_config_rbac_v3_RBAC_PoliciesEntry_submsg
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_RBAC_PoliciesEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit = {
   &envoy_config_rbac_v3_RBAC_PoliciesEntry_submsgs[0],
   &envoy_config_rbac_v3_RBAC_PoliciesEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[4] = {
@@ -62,16 +62,16 @@ static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[4] = {
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Policy__fields[4] = {
-  {1, UPB_SIZE(12, 24), 0, 0, 11, 3},
-  {2, UPB_SIZE(16, 32), 0, 1, 11, 3},
-  {3, UPB_SIZE(4, 8), 1, 3, 11, 1},
-  {4, UPB_SIZE(8, 16), 2, 2, 11, 1},
+  {1, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY},
+  {2, UPB_SIZE(16, 32), 0, 1, 11, _UPB_MODE_ARRAY},
+  {3, UPB_SIZE(4, 8), 1, 3, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(8, 16), 2, 2, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Policy_msginit = {
   &envoy_config_rbac_v3_Policy_submsgs[0],
   &envoy_config_rbac_v3_Policy__fields[0],
-  UPB_SIZE(24, 40), 4, false, 255,
+  UPB_SIZE(24, 40), 4, false, 4, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[7] = {
@@ -85,22 +85,22 @@ static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[7] = {
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[10] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 13, 1},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, 1},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, 1},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 13, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Permission_msginit = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(8, 16), 10, false, 255,
+  UPB_SIZE(8, 16), 10, false, 10, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_Set_submsgs[1] = {
@@ -108,13 +108,13 @@ static const upb_msglayout *const envoy_config_rbac_v3_Permission_Set_submsgs[1]
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Permission_Set__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Permission_Set_msginit = {
   &envoy_config_rbac_v3_Permission_Set_submsgs[0],
   &envoy_config_rbac_v3_Permission_Set__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Principal_submsgs[7] = {
@@ -128,23 +128,23 @@ static const upb_msglayout *const envoy_config_rbac_v3_Principal_submsgs[7] = {
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Principal__fields[11] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, 1},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, 1},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, 1},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, 1},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
+  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Principal_msginit = {
   &envoy_config_rbac_v3_Principal_submsgs[0],
   &envoy_config_rbac_v3_Principal__fields[0],
-  UPB_SIZE(8, 16), 11, false, 255,
+  UPB_SIZE(8, 16), 11, false, 11, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Principal_Set_submsgs[1] = {
@@ -152,13 +152,13 @@ static const upb_msglayout *const envoy_config_rbac_v3_Principal_Set_submsgs[1] 
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Principal_Set__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Principal_Set_msginit = {
   &envoy_config_rbac_v3_Principal_Set_submsgs[0],
   &envoy_config_rbac_v3_Principal_Set__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Principal_Authenticated_submsgs[1] = {
@@ -166,13 +166,13 @@ static const upb_msglayout *const envoy_config_rbac_v3_Principal_Authenticated_s
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Principal_Authenticated__fields[1] = {
-  {2, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Principal_Authenticated_msginit = {
   &envoy_config_rbac_v3_Principal_Authenticated_submsgs[0],
   &envoy_config_rbac_v3_Principal_Authenticated__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"
