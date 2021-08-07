@@ -17,12 +17,6 @@
  *
  */
 
-require dirname(__FILE__) . '/../../lib/Grpc/MethodDescriptor.php';
-require dirname(__FILE__) . '/../../lib/Grpc/Status.php';
-require dirname(__FILE__) . '/../../lib/Grpc/ServerCallReader.php';
-require dirname(__FILE__) . '/../../lib/Grpc/ServerCallWriter.php';
-require dirname(__FILE__) . '/../../lib/Grpc/ServerContext.php';
-require dirname(__FILE__) . '/../../lib/Grpc/RpcServer.php';
 include 'vendor/autoload.php';
 
 class MathService extends Math\MathStub

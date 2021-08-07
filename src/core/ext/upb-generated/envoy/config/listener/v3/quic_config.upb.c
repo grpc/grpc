@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/listener/v3/quic_config.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
@@ -29,19 +29,19 @@ static const upb_msglayout *const envoy_config_listener_v3_QuicProtocolOptions_s
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_QuicProtocolOptions__fields[7] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(8, 16), 2, 3, 11, 1},
-  {3, UPB_SIZE(12, 24), 3, 3, 11, 1},
-  {4, UPB_SIZE(16, 32), 4, 1, 11, 1},
-  {5, UPB_SIZE(20, 40), 5, 4, 11, 1},
-  {6, UPB_SIZE(24, 48), 6, 2, 11, 1},
-  {7, UPB_SIZE(28, 56), 7, 2, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 2, 3, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(12, 24), 3, 3, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(16, 32), 4, 1, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(20, 40), 5, 4, 11, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(24, 48), 6, 2, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(28, 56), 7, 2, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_listener_v3_QuicProtocolOptions_msginit = {
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(32, 64), 7, false, 255,
+  UPB_SIZE(32, 64), 7, false, 7, 255,
 };
 
 #include "upb/port_undef.inc"
