@@ -5804,6 +5804,21 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/map_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: match_test
   gtest: true
   build: test
@@ -6011,6 +6026,20 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/promise_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
