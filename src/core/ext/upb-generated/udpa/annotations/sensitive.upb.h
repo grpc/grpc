@@ -9,7 +9,7 @@
 #ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"

@@ -20,7 +20,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:poll"],
+    deps = [
+        "//:poll",
+        "//test/core/util:grpc_suppressions",
+    ],
 )
 
 grpc_cc_test(
@@ -38,4 +41,3 @@ grpc_cc_test(
         "//:promise_factory",
     ],
 )
-

@@ -128,12 +128,15 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
 
 ### Updating third_party/xxhash
 
+TODO(https://github.com/Cyan4973/xxHash/issues/548): revisit LICENSE
+instructions if upstream splits library and CLI.
+
 The upstream xxhash repository contains a bunch of files that we don't want, so
 we employ a rather manual update flow to pick up just the bits we care about:
 
 ```
 git remote add xxhash https://github.com/Cyan4973/xxHash.git
 git fetch xxhash
-for file in LICENSE xxhash.h; do git show xxhash/dev:$file > third_party/xxhash/$file; done
-git commit
+git show xxhash/dev:xxhash.h > third_party/xxhash/xxhash.h
+git show xxhash/dev:LICENSE | sed -nE '/^-+$/q;p' > third_party/xxhash/LICENSE
 ```

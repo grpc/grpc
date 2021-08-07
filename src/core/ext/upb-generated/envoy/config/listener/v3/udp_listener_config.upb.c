@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/listener/v3/udp_listener_config.upb.h"
 #include "envoy/config/core/v3/udp_socket_config.upb.h"
 #include "envoy/config/listener/v3/quic_config.upb.h"
@@ -22,20 +22,20 @@ static const upb_msglayout *const envoy_config_listener_v3_UdpListenerConfig_sub
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_UdpListenerConfig__fields[2] = {
-  {5, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {7, UPB_SIZE(8, 16), 2, 1, 11, 1},
+  {5, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_listener_v3_UdpListenerConfig_msginit = {
   &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
   &envoy_config_listener_v3_UdpListenerConfig__fields[0],
-  UPB_SIZE(16, 24), 2, false, 255,
+  UPB_SIZE(16, 24), 2, false, 0, 255,
 };
 
 const upb_msglayout envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"
