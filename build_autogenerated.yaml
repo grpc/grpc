@@ -5986,6 +5986,17 @@ targets:
   - test/core/transport/pid_controller_test.cc
   deps:
   - grpc_test_util
+- name: poll_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/poll_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: port_sharing_end2end_test
   gtest: true
   build: test
