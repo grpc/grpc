@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "udpa/annotations/sensitive.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
