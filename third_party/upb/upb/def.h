@@ -1,23 +1,51 @@
 /*
-** Defs are upb's internal representation of the constructs that can appear
-** in a .proto file:
-**
-** - upb_msgdef: describes a "message" construct.
-** - upb_fielddef: describes a message field.
-** - upb_filedef: describes a .proto file and its defs.
-** - upb_enumdef: describes an enum.
-** - upb_oneofdef: describes a oneof.
-**
-** TODO: definitions of services.
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Defs are upb's internal representation of the constructs that can appear
+ * in a .proto file:
+ *
+ * - upb_msgdef: describes a "message" construct.
+ * - upb_fielddef: describes a message field.
+ * - upb_filedef: describes a .proto file and its defs.
+ * - upb_enumdef: describes an enum.
+ * - upb_oneofdef: describes a oneof.
+ *
+ * TODO: definitions of services.
+ */
 
 #ifndef UPB_DEF_H_
 #define UPB_DEF_H_
 
 #include "upb/upb.h"
-#include "upb/table.int.h"
+#include "upb/table_internal.h"
 #include "google/protobuf/descriptor.upb.h"
 
+/* Must be last. */
 #include "upb/port_def.inc"
 
 #ifdef __cplusplus
@@ -108,9 +136,6 @@ const upb_msgdef *upb_fielddef_msgsubdef(const upb_fielddef *f);
 const upb_enumdef *upb_fielddef_enumsubdef(const upb_fielddef *f);
 const upb_msglayout_field *upb_fielddef_layout(const upb_fielddef *f);
 
-/* Internal only. */
-uint32_t upb_fielddef_selectorbase(const upb_fielddef *f);
-
 /* upb_oneofdef ***************************************************************/
 
 typedef upb_inttable_iter upb_oneof_iter;
@@ -194,10 +219,6 @@ UPB_INLINE const upb_fielddef *upb_msgdef_ntofz(const upb_msgdef *m,
                                                 const char *name) {
   return upb_msgdef_ntof(m, name, strlen(name));
 }
-
-/* Internal-only. */
-size_t upb_msgdef_selectorcount(const upb_msgdef *m);
-uint32_t upb_msgdef_submsgfieldcount(const upb_msgdef *m);
 
 /* Lookup of either field or oneof by name.  Returns whether either was found.
  * If the return is true, then the found def will be set, and the non-found
@@ -295,6 +316,7 @@ const upb_filedef *upb_symtab_addfile(
     upb_symtab *s, const google_protobuf_FileDescriptorProto *file,
     upb_status *status);
 size_t _upb_symtab_bytesloaded(const upb_symtab *s);
+upb_arena *_upb_symtab_arena(const upb_symtab *s);
 
 /* For generated code only: loads a generated descriptor. */
 typedef struct upb_def_init {
