@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H_
 #define ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -51,13 +51,19 @@ UPB_INLINE envoy_config_route_v3_RouteConfiguration *envoy_config_route_v3_Route
 UPB_INLINE envoy_config_route_v3_RouteConfiguration *envoy_config_route_v3_RouteConfiguration_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_route_v3_RouteConfiguration *ret = envoy_config_route_v3_RouteConfiguration_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_RouteConfiguration_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_route_v3_RouteConfiguration_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_route_v3_RouteConfiguration *envoy_config_route_v3_RouteConfiguration_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_route_v3_RouteConfiguration *ret = envoy_config_route_v3_RouteConfiguration_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_RouteConfiguration_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_route_v3_RouteConfiguration_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_route_v3_RouteConfiguration_serialize(const envoy_config_route_v3_RouteConfiguration *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_route_v3_RouteConfiguration_msginit, arena, len);
@@ -219,13 +225,19 @@ UPB_INLINE envoy_config_route_v3_ClusterSpecifierPlugin *envoy_config_route_v3_C
 UPB_INLINE envoy_config_route_v3_ClusterSpecifierPlugin *envoy_config_route_v3_ClusterSpecifierPlugin_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_route_v3_ClusterSpecifierPlugin *ret = envoy_config_route_v3_ClusterSpecifierPlugin_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_ClusterSpecifierPlugin_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_route_v3_ClusterSpecifierPlugin_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_route_v3_ClusterSpecifierPlugin *envoy_config_route_v3_ClusterSpecifierPlugin_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_route_v3_ClusterSpecifierPlugin *ret = envoy_config_route_v3_ClusterSpecifierPlugin_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_ClusterSpecifierPlugin_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_route_v3_ClusterSpecifierPlugin_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_route_v3_ClusterSpecifierPlugin_serialize(const envoy_config_route_v3_ClusterSpecifierPlugin *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_route_v3_ClusterSpecifierPlugin_msginit, arena, len);
@@ -256,13 +268,19 @@ UPB_INLINE envoy_config_route_v3_Vhds *envoy_config_route_v3_Vhds_new(upb_arena 
 UPB_INLINE envoy_config_route_v3_Vhds *envoy_config_route_v3_Vhds_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_route_v3_Vhds *ret = envoy_config_route_v3_Vhds_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_Vhds_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_route_v3_Vhds_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_route_v3_Vhds *envoy_config_route_v3_Vhds_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_route_v3_Vhds *ret = envoy_config_route_v3_Vhds_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_Vhds_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_route_v3_Vhds_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_route_v3_Vhds_serialize(const envoy_config_route_v3_Vhds *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_route_v3_Vhds_msginit, arena, len);

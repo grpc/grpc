@@ -68,6 +68,7 @@ class ABSL_LOCKABLE Mutex {
   bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     return gpr_mu_trylock(&mu_) != 0;
   }
+  void AssertHeld() ABSL_ASSERT_EXCLUSIVE_LOCK() {}
 
  private:
   gpr_mu mu_;

@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/type/matcher/v3/path.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -21,13 +21,13 @@ static const upb_msglayout *const envoy_type_matcher_v3_PathMatcher_submsgs[1] =
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_PathMatcher__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, 1},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_matcher_v3_PathMatcher_msginit = {
   &envoy_type_matcher_v3_PathMatcher_submsgs[0],
   &envoy_type_matcher_v3_PathMatcher__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 1, 255,
 };
 
 #include "upb/port_undef.inc"

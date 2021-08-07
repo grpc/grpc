@@ -241,16 +241,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Health Checks
         self.td.create_health_check()
         # Backend Services
-        #
-        # The backend services are created with HTTP2 instead of GRPC (the
-        # default) to disable validate-for-proxyless, because the affinity
-        # settings are not accepted by RCTH yet.
-        #
-        # TODO: delete _BackendHTTP2 from the parameters, to use the default
-        # GRPC.
-        self.td.create_backend_service(_BackendHTTP2)
-        self.td.create_alternative_backend_service(_BackendHTTP2)
-        self.td.create_affinity_backend_service(_BackendHTTP2)
+        self.td.create_backend_service()
+        self.td.create_alternative_backend_service()
+        self.td.create_affinity_backend_service()
         # Construct UrlMap from test classes
         aggregator = _UrlMapChangeAggregator(
             url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
