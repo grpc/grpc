@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "xds/core/v3/resource_name.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "xds/core/v3/context_params.upb.h"
@@ -20,16 +20,16 @@ static const upb_msglayout *const xds_core_v3_ResourceName_submsgs[1] = {
 };
 
 static const upb_msglayout_field xds_core_v3_ResourceName__fields[4] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {3, UPB_SIZE(20, 40), 0, 0, 9, 1},
-  {4, UPB_SIZE(28, 56), 1, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(28, 56), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout xds_core_v3_ResourceName_msginit = {
   &xds_core_v3_ResourceName_submsgs[0],
   &xds_core_v3_ResourceName__fields[0],
-  UPB_SIZE(32, 64), 4, false, 255,
+  UPB_SIZE(32, 64), 4, false, 4, 255,
 };
 
 #include "upb/port_undef.inc"

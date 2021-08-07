@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "google/protobuf/empty.upb.h"
 
 #include "upb/port_def.inc"
@@ -15,7 +15,7 @@
 const upb_msglayout google_protobuf_Empty_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"

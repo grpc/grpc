@@ -709,11 +709,18 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
+        "construct_destruct",
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "construct_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
 )
 
 grpc_cc_library(
@@ -872,6 +879,19 @@ grpc_cc_library(
         "gpr_platform",
         "poll",
     ],
+)
+
+grpc_cc_library(
+    name = "promise_status",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/status.h",
+    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
