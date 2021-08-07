@@ -41,7 +41,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:map", "//:promise"],
+    deps = [
+        "//:map",
+        "//:promise",
+    ],
 )
-
-
