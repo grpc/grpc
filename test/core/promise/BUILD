@@ -34,4 +34,3 @@ grpc_cc_test(
     uses_polling = False,
     deps = ["//:promise"],
 )
-
