@@ -53,6 +53,12 @@ jobs:
             if (need.size == 0) {
               return;
             }
-            console.log("not yet mergeable... waiting for: ", need);
-            core.setFailed("Not yet mergeable, waiting for: " + need);
+            var error = "Waiting for: ";
+            var first = true;
+            for (let status in need) {
+              if (!first) error += ", ";
+              error += status;
+              first = false;
+            }
+            core.setFailed(error);
 
