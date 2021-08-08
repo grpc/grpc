@@ -26,7 +26,11 @@ jobs:
         uses: actions/github-script@v4
         with:
           script: |
-            let pull = await github.pulls.get("grpc", "grpc", ${{ github.event.number }});
+            let pull = await github.pulls.get({
+              owner: "grpc",
+              repo: "grpc",
+              pull_number: ${{ github.event.number }}
+            });
             for (let label in pull.labels) {
               if (label.name == "force-merge") {
                 console.log("Saw force-merge label");
