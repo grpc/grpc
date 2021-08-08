@@ -18,8 +18,6 @@
 
 /* Test of gpr thread local storage support. */
 
-#include "src/core/lib/gpr/tls.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,18 +29,18 @@
 
 #define NUM_THREADS 100
 
-GPR_TLS_DECL(test_var);
+static thread_local intptr_t test_var;
 
 static void thd_body(void* /*arg*/) {
   intptr_t i;
 
-  GPR_ASSERT(gpr_tls_get(&test_var) == 0);
+  GPR_ASSERT(test_var == 0);
 
   for (i = 0; i < 100000; i++) {
-    gpr_tls_set(&test_var, i);
-    GPR_ASSERT(gpr_tls_get(&test_var) == i);
+    test_var = i;
+    GPR_ASSERT(test_var == i);
   }
-  gpr_tls_set(&test_var, 0);
+  test_var = 0;
 }
 
 /* ------------------------------------------------- */
@@ -52,8 +50,6 @@ int main(int argc, char* argv[]) {
 
   grpc::testing::TestEnvironment env(argc, argv);
 
-  gpr_tls_init(&test_var);
-
   for (auto& th : threads) {
     th = grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
     th.Start();
@@ -61,8 +57,6 @@ int main(int argc, char* argv[]) {
   for (auto& th : threads) {
     th.Join();
   }
-
-  gpr_tls_destroy(&test_var);
 
   return 0;
 }
