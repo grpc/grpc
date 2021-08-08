@@ -37,7 +37,11 @@ jobs:
                 return;
               }
             }
-            let statuses = await github.listCommitStatusesForRef("grpc", "grpc", ${{ github.event.ref }});
+            let statuses = await github.repos.listCommitStatusesForRef({
+              owner: "grpc",
+              repo: "grpc",
+              ref: ${{ github.event.ref }}
+            });
             need = new Set();
             need.add("Bazel Basic build for C/C++");
             need.add("Portability Tests Linux [Build Only] (internal CI)");
