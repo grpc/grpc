@@ -1,5 +1,7 @@
 name: Happy Pancakes
-on: check_run
+on:
+  - check_run
+  - status
 jobs:
   check_status:
     name: Check Status
