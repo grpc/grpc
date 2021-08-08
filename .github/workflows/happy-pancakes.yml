@@ -1,0 +1,33 @@
+name: Happy Pancakes
+on: status
+jobs:
+  check_status:
+    name: Check Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Status
+        uses: actions/github-script@v4
+        with:
+          script: |
+            let pull = await github.pulls.get("grpc", "grpc", ${{ github.event.number }});
+            for (let label in pull.labels) {
+              if (label.name == "force-merge") {
+                console.log("Saw force-merge label");
+                return;
+              }
+            }
+            let statuses = await github.listCommitStatusesForRef("grpc", "grpc", ${{ github.event.ref }});
+            need = new Set();
+            need.add("Bazel Basic build for C/C++");
+            need.add("Portability Tests Linux [Build Only] (internal CI)");
+            for (let status in statuses) {
+              if (status.state == "success") {
+                need.delete(status.context);
+              }
+            }
+            if (need.size == 0) {
+              return;
+            }
+            console.log("not yet mergeable... waiting for: ", need);
+            core.setFailed("Not yet mergeable, waiting for: " + need);
+
