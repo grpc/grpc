@@ -40,7 +40,7 @@ jobs:
             let statuses = await github.repos.listCommitStatusesForRef({
               owner: "grpc",
               repo: "grpc",
-              ref: ${{ github.ref }}
+              ref: "${{ github.ref }}"
             });
             need = new Set();
             need.add("Bazel Basic build for C/C++");
