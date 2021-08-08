@@ -48,6 +48,7 @@ option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+option(gRPC_INSTALL_PLUGINS "Install protobuf plugins (disable e.g. when building for a pure cross-compilation environment" ON)
 
 set(gRPC_INSTALL_default ON)
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -3793,7 +3794,7 @@ foreach(_hdr
 endforeach()
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11105,7 +11106,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11144,7 +11145,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11183,7 +11184,7 @@ target_link_libraries(grpc_node_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11222,7 +11223,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11261,7 +11262,7 @@ target_link_libraries(grpc_php_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11300,7 +11301,7 @@ target_link_libraries(grpc_python_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11339,7 +11340,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL AND gRPC_INSTALL_PLUGINS)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
