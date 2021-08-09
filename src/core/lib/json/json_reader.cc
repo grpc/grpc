@@ -277,13 +277,8 @@ JsonReader::Status JsonReader::Run() {
     switch (c) {
       /* Let's process the error case first. */
       case GRPC_JSON_READ_CHAR_EOF:
-        if (IsComplete()) {
-          return Status::GRPC_JSON_DONE;
-        } else {
-          return Status::GRPC_JSON_PARSE_ERROR;
-        }
-        break;
-
+        return IsComplete() ? Status::GRPC_JSON_DONE
+                            : Status::GRPC_JSON_PARSE_ERROR;
       /* Processing whitespaces. */
       case ' ':
       case '\t':
@@ -340,7 +335,6 @@ JsonReader::Status JsonReader::Run() {
               return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == '}' &&
                        stack_.back()->type() != Json::Type::OBJECT) {
-              return Status::GRPC_JSON_PARSE_ERROR;
               return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
               return Status::GRPC_JSON_PARSE_ERROR;

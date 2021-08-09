@@ -48,6 +48,8 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
+    # Required for chrome's build
+    "-Wunreachable-code-aggressive",
 ]
 
 GRPC_DEFAULT_COPTS = select({
