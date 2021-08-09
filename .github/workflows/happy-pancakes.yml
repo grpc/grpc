@@ -1,4 +1,4 @@
-name: Happy Pancakes
+name: Ignore: Experimental
 on:
   pull_request:
     types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
