@@ -1,25 +1,52 @@
 /*
-* This is where we define macros used across upb.
-*
-* All of these macros are undef'd in port_undef.inc to avoid leaking them to
-* users.
-*
-* The correct usage is:
-*
-*   #include "upb/foobar.h"
-*   #include "upb/baz.h"
-*
-*   // MUST be last included header.
-*   #include "upb/port_def.inc"
-*
-*   // Code for this file.
-*   // <...>
-*
-*   // Can be omitted for .c files, required for .h.
-*   #include "upb/port_undef.inc"
-*
-* This file is private and must not be included by users!
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * This is where we define macros used across upb.
+ *
+ * All of these macros are undef'd in port_undef.inc to avoid leaking them to
+ * users.
+ *
+ * The correct usage is:
+ *
+ *   #include "upb/foobar.h"
+ *   #include "upb/baz.h"
+ *
+ *   // MUST be last included header.
+ *   #include "upb/port_def.inc"
+ *
+ *   // Code for this file.
+ *   // <...>
+ *
+ *   // Can be omitted for .c files, required for .h.
+ *   #include "upb/port_undef.inc"
+ *
+ * This file is private and must not be included by users!
+ */
 
 #if !((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
       (defined(__cplusplus) && __cplusplus >= 201103L) ||           \
@@ -80,14 +107,17 @@
 #define UPB_FORCEINLINE __inline__ __attribute__((always_inline))
 #define UPB_NOINLINE __attribute__((noinline))
 #define UPB_NORETURN __attribute__((__noreturn__))
+#define UPB_PRINTF(str, first_vararg) __attribute__((format (printf, str, first_vararg)))
 #elif defined(_MSC_VER)
 #define UPB_NOINLINE
 #define UPB_FORCEINLINE
 #define UPB_NORETURN __declspec(noreturn)
+#define UPB_PRINTF(str, first_vararg)
 #else  /* !defined(__GNUC__) */
 #define UPB_FORCEINLINE
 #define UPB_NOINLINE
 #define UPB_NORETURN
+#define UPB_PRINTF(str, first_vararg)
 #endif
 
 #define UPB_MAX(x, y) ((x) > (y) ? (x) : (y))
@@ -132,9 +162,40 @@
 #define UPB_LONGJMP(buf, val) longjmp(buf, val)
 #endif
 
+/* UPB_PTRADD(ptr, ofs): add pointer while avoiding "NULL + 0" UB */
+#define UPB_PTRADD(ptr, ofs) ((ofs) ? (ptr) + (ofs) : (ptr))
+
 /* Configure whether fasttable is switched on or not. *************************/
 
-#if defined(__x86_64__) && defined(__GNUC__)
+#ifdef __has_attribute
+#define UPB_HAS_ATTRIBUTE(x) __has_attribute(x)
+#else
+#define UPB_HAS_ATTRIBUTE(x) 0
+#endif
+
+#if UPB_HAS_ATTRIBUTE(musttail)
+#define UPB_MUSTTAIL __attribute__((musttail))
+#else
+#define UPB_MUSTTAIL
+#endif
+
+#undef UPB_HAS_ATTRIBUTE
+
+/* This check is not fully robust: it does not require that we have "musttail"
+ * support available. We need tail calls to avoid consuming arbitrary amounts
+ * of stack space.
+ *
+ * GCC/Clang can mostly be trusted to generate tail calls as long as
+ * optimization is enabled, but, debug builds will not generate tail calls
+ * unless "musttail" is available.
+ *
+ * We should probably either:
+ *   1. require that the compiler supports musttail.
+ *   2. add some fallback code for when musttail isn't available (ie. return
+ *      instead of tail calling). This is safe and portable, but this comes at
+ *      a CPU cost.
+ */
+#if (defined(__x86_64__) || defined(__aarch64__)) && defined(__GNUC__)
 #define UPB_FASTTABLE_SUPPORTED 1
 #else
 #define UPB_FASTTABLE_SUPPORTED 0
@@ -145,7 +206,7 @@
  * for example for testing or benchmarking. */
 #if defined(UPB_ENABLE_FASTTABLE)
 #if !UPB_FASTTABLE_SUPPORTED
-#error fasttable is x86-64 + Clang/GCC only
+#error fasttable is x86-64/ARM64 only and requires GCC or Clang.
 #endif
 #define UPB_FASTTABLE 1
 /* Define UPB_TRY_ENABLE_FASTTABLE to use fasttable if possible.
@@ -189,4 +250,4 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
   ((void)(addr), (void)(size))
 #define UPB_UNPOISON_MEMORY_REGION(addr, size) \
   ((void)(addr), (void)(size))
-#endif 
+#endif

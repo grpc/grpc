@@ -316,6 +316,7 @@ libs:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -512,6 +513,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -1743,6 +1745,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -5272,6 +5275,17 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: flow_control_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/flow_control_test.cc
+  deps:
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5993,6 +6007,26 @@ targets:
   - test/core/transport/pid_controller_test.cc
   deps:
   - grpc_test_util
+- name: poll_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/poll_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
+- name: popularity_count_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
+  src:
+  - test/core/transport/chttp2/popularity_count_test.cc
+  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test

@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -38,13 +38,19 @@ UPB_INLINE envoy_config_core_v3_DnsResolverOptions *envoy_config_core_v3_DnsReso
 UPB_INLINE envoy_config_core_v3_DnsResolverOptions *envoy_config_core_v3_DnsResolverOptions_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_DnsResolverOptions *ret = envoy_config_core_v3_DnsResolverOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolverOptions_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolverOptions_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_DnsResolverOptions *envoy_config_core_v3_DnsResolverOptions_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_DnsResolverOptions *ret = envoy_config_core_v3_DnsResolverOptions_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolverOptions_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolverOptions_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_DnsResolverOptions_serialize(const envoy_config_core_v3_DnsResolverOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, arena, len);
@@ -68,13 +74,19 @@ UPB_INLINE envoy_config_core_v3_DnsResolutionConfig *envoy_config_core_v3_DnsRes
 UPB_INLINE envoy_config_core_v3_DnsResolutionConfig *envoy_config_core_v3_DnsResolutionConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_DnsResolutionConfig *ret = envoy_config_core_v3_DnsResolutionConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolutionConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolutionConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_DnsResolutionConfig *envoy_config_core_v3_DnsResolutionConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_DnsResolutionConfig *ret = envoy_config_core_v3_DnsResolutionConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolutionConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_DnsResolutionConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_DnsResolutionConfig_serialize(const envoy_config_core_v3_DnsResolutionConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, arena, len);

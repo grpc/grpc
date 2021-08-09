@@ -68,11 +68,7 @@ namespace {
 /* don't consider adding anything bigger than this to the hpack table */
 constexpr size_t kMaxDecoderSpaceUsage = 512;
 constexpr size_t kDataFrameHeaderSize = 9;
-constexpr uint8_t kMaxFilterValue = 255;
 
-/* if the probability of this item being seen again is < 1/x then don't add
-   it to the table */
-#define ONE_ON_ADD_PROBABILITY (GRPC_CHTTP2_HPACKC_NUM_VALUES >> 1)
 /* The hpack index we encode over the wire. Meaningful to the hpack encoder and
    parser on the remote end as well as HTTP2. *Not* the same as
    HpackEncoderSlotHash, which is only meaningful to the hpack encoder
@@ -223,40 +219,6 @@ static void UpdateAddOrEvict(Hashtable hashtable, const ValueType& value,
 #endif
 }
 
-/* halve all counts because an element reached max */
-static void HalveFilter(uint8_t /*idx*/, uint32_t* sum, uint8_t* elems) {
-  *sum = 0;
-  for (int i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
-    elems[i] /= 2;
-    (*sum) += elems[i];
-  }
-}
-
-/* increment a filter count, halve all counts if one element reaches max */
-static void IncrementFilter(uint8_t idx, uint32_t* sum, uint8_t* elems) {
-  elems[idx]++;
-  if (GPR_LIKELY(elems[idx] < kMaxFilterValue)) {
-    (*sum)++;
-  } else {
-    HalveFilter(idx, sum, elems);
-  }
-}
-
-static uint32_t UpdateHashtablePopularity(
-    grpc_chttp2_hpack_compressor* hpack_compressor, uint32_t elem_hash) {
-  const uint32_t popularity_hash = HASH_FRAGMENT_1(elem_hash);
-  IncrementFilter(popularity_hash, &hpack_compressor->filter_elems_sum,
-                  hpack_compressor->filter_elems);
-  return popularity_hash;
-}
-
-static bool CanAddToHashtable(grpc_chttp2_hpack_compressor* hpack_compressor,
-                              uint32_t popularity_hash) {
-  const bool can_add =
-      hpack_compressor->filter_elems[popularity_hash] >=
-      hpack_compressor->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
-  return can_add;
-}
 } /* namespace */
 
 struct framer_state {
@@ -647,8 +609,9 @@ static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
                 ->hash()
           : reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(elem))
                 ->hash();
-  /* Update filter to see if we can perhaps add this elem. */
-  const uint32_t popularity_hash = UpdateHashtablePopularity(c, elem_hash);
+  // Update filter to see if we can perhaps add this elem.
+  bool can_add_to_hashtable =
+      c->filter_elems.AddElement(HASH_FRAGMENT_1(elem_hash));
   /* is this elem currently in the decoders table? */
   HpackEncoderIndex indices_key;
   if (GetMatchingIndex<MetadataComparator>(c->elem_table.entries, elem,
@@ -658,8 +621,7 @@ static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
     return EmitIndexedStatus(elem_hash, true, false);
   }
   /* Didn't hit either cuckoo index, so no emit. */
-  return EmitIndexedStatus(elem_hash, false,
-                           CanAddToHashtable(c, popularity_hash));
+  return EmitIndexedStatus(elem_hash, false, can_add_to_hashtable);
 }
 
 static void emit_maybe_add(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,

@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H_
 #define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -67,13 +67,19 @@ UPB_INLINE envoy_config_overload_v3_ResourceMonitor *envoy_config_overload_v3_Re
 UPB_INLINE envoy_config_overload_v3_ResourceMonitor *envoy_config_overload_v3_ResourceMonitor_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_ResourceMonitor *ret = envoy_config_overload_v3_ResourceMonitor_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_ResourceMonitor_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_ResourceMonitor_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_ResourceMonitor *envoy_config_overload_v3_ResourceMonitor_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_ResourceMonitor *ret = envoy_config_overload_v3_ResourceMonitor_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_ResourceMonitor_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_ResourceMonitor_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_ResourceMonitor_serialize(const envoy_config_overload_v3_ResourceMonitor *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_ResourceMonitor_msginit, arena, len);
@@ -113,13 +119,19 @@ UPB_INLINE envoy_config_overload_v3_ThresholdTrigger *envoy_config_overload_v3_T
 UPB_INLINE envoy_config_overload_v3_ThresholdTrigger *envoy_config_overload_v3_ThresholdTrigger_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_ThresholdTrigger *ret = envoy_config_overload_v3_ThresholdTrigger_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_ThresholdTrigger_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_ThresholdTrigger_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_ThresholdTrigger *envoy_config_overload_v3_ThresholdTrigger_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_ThresholdTrigger *ret = envoy_config_overload_v3_ThresholdTrigger_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_ThresholdTrigger_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_ThresholdTrigger_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_ThresholdTrigger_serialize(const envoy_config_overload_v3_ThresholdTrigger *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_ThresholdTrigger_msginit, arena, len);
@@ -139,13 +151,19 @@ UPB_INLINE envoy_config_overload_v3_ScaledTrigger *envoy_config_overload_v3_Scal
 UPB_INLINE envoy_config_overload_v3_ScaledTrigger *envoy_config_overload_v3_ScaledTrigger_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_ScaledTrigger *ret = envoy_config_overload_v3_ScaledTrigger_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaledTrigger_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaledTrigger_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_ScaledTrigger *envoy_config_overload_v3_ScaledTrigger_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_ScaledTrigger *ret = envoy_config_overload_v3_ScaledTrigger_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaledTrigger_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaledTrigger_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_ScaledTrigger_serialize(const envoy_config_overload_v3_ScaledTrigger *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_ScaledTrigger_msginit, arena, len);
@@ -169,13 +187,19 @@ UPB_INLINE envoy_config_overload_v3_Trigger *envoy_config_overload_v3_Trigger_ne
 UPB_INLINE envoy_config_overload_v3_Trigger *envoy_config_overload_v3_Trigger_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_Trigger *ret = envoy_config_overload_v3_Trigger_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_Trigger_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_Trigger_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_Trigger *envoy_config_overload_v3_Trigger_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_Trigger *ret = envoy_config_overload_v3_Trigger_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_Trigger_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_Trigger_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_Trigger_serialize(const envoy_config_overload_v3_Trigger *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_Trigger_msginit, arena, len);
@@ -230,13 +254,19 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig *envoy_confi
 UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig *ret = envoy_config_overload_v3_ScaleTimersOverloadActionConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig *ret = envoy_config_overload_v3_ScaleTimersOverloadActionConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, arena, len);
@@ -267,13 +297,19 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *
 UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *ret = envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *ret = envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, arena, len);
@@ -328,13 +364,19 @@ UPB_INLINE envoy_config_overload_v3_OverloadAction *envoy_config_overload_v3_Ove
 UPB_INLINE envoy_config_overload_v3_OverloadAction *envoy_config_overload_v3_OverloadAction_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_OverloadAction *ret = envoy_config_overload_v3_OverloadAction_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadAction_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadAction_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_OverloadAction *envoy_config_overload_v3_OverloadAction_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_OverloadAction *ret = envoy_config_overload_v3_OverloadAction_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadAction_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadAction_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_OverloadAction_serialize(const envoy_config_overload_v3_OverloadAction *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_OverloadAction_msginit, arena, len);
@@ -384,13 +426,19 @@ UPB_INLINE envoy_config_overload_v3_OverloadManager *envoy_config_overload_v3_Ov
 UPB_INLINE envoy_config_overload_v3_OverloadManager *envoy_config_overload_v3_OverloadManager_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_overload_v3_OverloadManager *ret = envoy_config_overload_v3_OverloadManager_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadManager_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadManager_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_overload_v3_OverloadManager *envoy_config_overload_v3_OverloadManager_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_overload_v3_OverloadManager *ret = envoy_config_overload_v3_OverloadManager_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadManager_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_overload_v3_OverloadManager_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_overload_v3_OverloadManager_serialize(const envoy_config_overload_v3_OverloadManager *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_overload_v3_OverloadManager_msginit, arena, len);

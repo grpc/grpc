@@ -9,7 +9,7 @@
 #ifndef ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H_
 #define ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE envoy_annotations_ResourceAnnotation *envoy_annotations_ResourceAnnot
 UPB_INLINE envoy_annotations_ResourceAnnotation *envoy_annotations_ResourceAnnotation_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_annotations_ResourceAnnotation *ret = envoy_annotations_ResourceAnnotation_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_annotations_ResourceAnnotation_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_annotations_ResourceAnnotation_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_annotations_ResourceAnnotation *envoy_annotations_ResourceAnnotation_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_annotations_ResourceAnnotation *ret = envoy_annotations_ResourceAnnotation_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_annotations_ResourceAnnotation_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_annotations_ResourceAnnotation_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_annotations_ResourceAnnotation_serialize(const envoy_annotations_ResourceAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_annotations_ResourceAnnotation_msginit, arena, len);
