@@ -156,69 +156,68 @@ TEST(
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyPrivateKey){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      /*private_key=*/"", cert_chain_.c_str());
-  EXPECT_FALSE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  std::string error_message = matched.error_details;
-  EXPECT_EQ("Private key string is empty.", error_message);
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      /*private_key=*/"", cert_chain_.c_str(), &error_details);
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ("Private key string is empty.", std::string(error_details));
+  gpr_free(const_cast<char*>(error_details));
 }
 
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyCertificate){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      private_key_.c_str(), /*cert_chain=*/"");
-  std::string error_message = matched.error_details;
-  EXPECT_FALSE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ("Certificate string is empty.", error_message);
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      private_key_.c_str(), /*cert_chain=*/"", &error_details);
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ("Certificate string is empty.", std::string(error_details));
+  gpr_free(const_cast<char*>(error_details));
 }
 
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidCertFormat){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      private_key_.c_str(), "invalid_certificate");
-  std::string error_message = matched.error_details;
-  EXPECT_FALSE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ("Conversion from PEM string to X509 failed.", error_message);
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      private_key_.c_str(), "invalid_certificate", &error_details);
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ("Conversion from PEM string to X509 failed.", std::string(error_details));
+  gpr_free(const_cast<char*>(error_details));
 }
 
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidKeyFormat){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      "invalid_private_key", cert_chain_2_.c_str());
-  std::string error_message = matched.error_details;
-  EXPECT_FALSE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ("Conversion from PEM string to EVP_PKEY failed.", error_message);
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      "invalid_private_key", cert_chain_2_.c_str(), &error_details);
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ("Conversion from PEM string to EVP_PKEY failed.", std::string(error_details));
+  gpr_free(const_cast<char*>(error_details));
 }
 
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForSuccessfulKeyCertMatch){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      private_key_2_.c_str(), cert_chain_2_.c_str());
-  EXPECT_TRUE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      private_key_2_.c_str(), cert_chain_2_.c_str(), &error_details);
+  EXPECT_EQ("", std::string(error_details));
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kOk));
 }
 
 TEST_F(
     GrpcTlsCertificateKeyMatchTest,
     APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidPair){
-  grpc_tls_status_or_bool matched = grpc_tls_certificate_key_match(
-      private_key_2_.c_str(), cert_chain_.c_str());
-  EXPECT_FALSE(matched.matched_or);
-  EXPECT_EQ(matched.code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
-  grpc_tls_certificate_key_match_release(&matched);
+  const char* error_details;
+  grpc_status_code matched = grpc_tls_certificate_key_match(
+      private_key_2_.c_str(), cert_chain_.c_str(), &error_details);
+  gpr_log(GPR_ERROR,
+          "CODE REACHED: %s",
+          error_details);
+  EXPECT_EQ("Certificate-key mismatch", std::string(error_details));
+  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace

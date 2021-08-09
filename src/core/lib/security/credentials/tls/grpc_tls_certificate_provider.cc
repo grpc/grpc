@@ -474,26 +474,19 @@ void grpc_tls_certificate_provider_release(
   if (provider != nullptr) provider->Unref();
 }
 
-grpc_tls_status_or_bool grpc_tls_certificate_key_match(
-    const char* private_key, const char* cert_chain){
+grpc_status_code grpc_tls_certificate_key_match(
+    const char* private_key, const char* cert_chain, const char** error_details){
   grpc_core::ExecCtx exec_ctx;
+  grpc_status_code code;
   absl::Status match_status = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).status();
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details = nullptr;
-  bool match_bool;
-  if (!match_status.ok()){
+  if (!match_status.ok()) {
     code = static_cast<grpc_status_code>(match_status.code());
-    error_details = gpr_strdup(std::string(match_status.message()).c_str());
-    match_bool = false;
-  } else {
-    match_bool = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value();
+    *error_details = gpr_strdup(std::string(match_status.message()).c_str());
+  }else {
+    code = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value() ?
+             GRPC_STATUS_OK : static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
+    *error_details = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value() ?
+                         "" : "Certificate-key mismatch";
   }
-  grpc_tls_status_or_bool result = {code, error_details, match_bool};
-  return result;
-}
-
-void grpc_tls_certificate_key_match_release(grpc_tls_status_or_bool* message){
-  if (message->error_details != nullptr){
-    gpr_free(const_cast<char*>(message->error_details));
-  }
+  return code;
 }
