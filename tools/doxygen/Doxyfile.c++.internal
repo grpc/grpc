@@ -1237,6 +1237,7 @@ src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
 src/core/ext/transport/chttp2/transport/incoming_metadata.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
+src/core/ext/transport/chttp2/transport/popularity_count.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/stream_map.cc \
 src/core/ext/transport/chttp2/transport/stream_map.h \

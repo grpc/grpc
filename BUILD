@@ -2517,6 +2517,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "popularity_count",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/popularity_count.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2583,6 +2594,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "popularity_count",
     ],
 )
 
