@@ -37,8 +37,8 @@ jobs:
             need.add("Bazel Basic build for C/C++");
             need.add("Portability Tests Linux [Build Only] (internal CI)");
             console.log(statuses);
-            for (var i = 0; i < statuses.length; i++) {
-              let status = statuses[i];
+            for (var i = 0; i < statuses.data.length; i++) {
+              let status = statuses.data[i];
               if (status.state == "success") {
                 need.delete(status.context);
               }
