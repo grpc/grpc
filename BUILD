@@ -2615,6 +2615,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "match",
         "popularity_count",
     ],
 )
