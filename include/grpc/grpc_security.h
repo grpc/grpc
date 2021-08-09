@@ -767,12 +767,6 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
  */
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
-/* Status generated while performing TLS handshakes. */
-typedef struct grpc_tls_status {
-  grpc_status_code status;
-  const char* error_details;
-} grpc_tls_status;
-
 /**
  * A struct that stores the credential data presented to the peer in handshake
  * to show local identity. It is used for experimental purpose for now and
@@ -865,26 +859,20 @@ GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
 /* Sets |root_certificate| to the grpc_tls_certificate_provider, while
- * allocating memory to the returned object's `error_details` field.
+ * allocating memory to the passed `error_details`.
  */
-GRPCAPI grpc_tls_status
+GRPCAPI grpc_status_code
 gprc_tls_certificate_provider_data_watcher_set_root_cert(
-    grpc_tls_certificate_provider* provider, const char* root_certificate);
+    grpc_tls_certificate_provider* provider, const char* root_certificate,
+    char** error_details);
 
 /* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider, while
- * allocating memory to the returned object's `error_details` field.
+ * allocating memory to the passed `error_details`.
  */
-GRPCAPI grpc_tls_status
+GRPCAPI grpc_status_code
 gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
     grpc_tls_certificate_provider* provider,
-    grpc_tls_identity_pairs* pem_key_cert_pairs);
-
-/* Releases the allocated fields in a `grpc_tls_status`. Note that the
- * `error_details` field is allocated memory in
- * `gprc_tls_certificate_provider_data_watcher_set_root_cert` and
- * `gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs`.
- */
-GRPCAPI void grpc_tls_status_release(grpc_tls_status status);
+    grpc_tls_identity_pairs* pem_key_cert_pairs, char** error_details);
 
 /**
  * Creates an grpc_tls_credentials_options.

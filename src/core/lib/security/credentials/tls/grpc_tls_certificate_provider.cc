@@ -551,31 +551,28 @@ grpc_tls_certificate_provider_data_watcher_create(
       ConvertToCoreObject(pem_key_cert_pairs));
 }
 
-grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_root_cert(
-    grpc_tls_certificate_provider* provider, const char* root_certificate) {
+grpc_status_code gprc_tls_certificate_provider_data_watcher_set_root_cert(
+    grpc_tls_certificate_provider* provider, const char* root_certificate,
+    char** error_details) {
   GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status =
       data_watcher->SetRootCertificate(ConvertToCoreObject(root_certificate));
-  return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
-                         gpr_strdup(std::string(status.message()).c_str())};
+  *error_details = gpr_strdup(std::string(status.message()).c_str());
+  return static_cast<grpc_status_code>(status.code());
 }
 
-grpc_tls_status gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
+grpc_status_code gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
     grpc_tls_certificate_provider* provider,
-    grpc_tls_identity_pairs* pem_key_cert_pairs) {
+    grpc_tls_identity_pairs* pem_key_cert_pairs, char** error_details) {
   GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
   grpc_core::DataWatcherCertificateProvider* data_watcher =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(provider);
   absl::Status status = data_watcher->SetKeyCertificatePairs(
       ConvertToCoreObject(pem_key_cert_pairs));
-  return grpc_tls_status{static_cast<grpc_status_code>(status.code()),
-                         gpr_strdup(std::string(status.message()).c_str())};
-}
-
-void grpc_tls_status_release(grpc_tls_status status) {
-  gpr_free(const_cast<char*>(status.error_details));
+  *error_details = gpr_strdup(std::string(status.message()).c_str());
+  return static_cast<grpc_status_code>(status.code());
 }
 
 grpc_tls_certificate_provider*

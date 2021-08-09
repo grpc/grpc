@@ -62,12 +62,13 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
     const string& root_certificate) {
   grpc_core::MutexLock lock(&mu_);
-  grpc_tls_status status =
+  char* error_details = nullptr;
+  grpc_status_code status_code =
       gprc_tls_certificate_provider_data_watcher_set_root_cert(
-          c_provider_, root_certificate.c_str());
-  grpc_tls_status_release(status);
-  return grpc::Status(static_cast<grpc::StatusCode>(status.status),
-                      status.error_details);
+          c_provider_, root_certificate.c_str(), &error_details);
+  std::string error_string(error_details);
+  gpr_free(error_details);
+  return grpc::Status(static_cast<grpc::StatusCode>(status_code), error_string);
   ;
 }
 
@@ -79,12 +80,13 @@ grpc::Status DataWatcherCertificateProvider::SetKeyCertificatePairs(
                                      pair.certificate_chain.c_str());
   }
   grpc_core::MutexLock lock(&mu_);
-  grpc_tls_status status =
-      gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(c_provider_,
-                                                                    pairs_core);
-  grpc_tls_status_release(status);
-  return grpc::Status(static_cast<grpc::StatusCode>(status.status),
-                      status.error_details);
+  char* error_details = nullptr;
+  grpc_status_code status_code =
+      gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
+          c_provider_, pairs_core, &error_details);
+  std::string error_string(error_details);
+  gpr_free(error_details);
+  return grpc::Status(static_cast<grpc::StatusCode>(status_code), error_string);
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
