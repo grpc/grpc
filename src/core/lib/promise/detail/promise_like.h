@@ -22,10 +22,27 @@
 #include <utility>
 #include "src/core/lib/promise/poll.h"
 
-// PromiseLike helps us deal with functors that return immediately.
-// PromiseLike<F> if F returns Poll<T> is basically a no-op, where-as if F
-// returns anything else, PromiseLike wraps the return of F to return a ready
-// value immediately.
+// A Promise is a callable object that returns Poll<T> for some T.
+// Often when we're writing code that uses promises, we end up wanting to also
+// deal with code that completes instantaneously - that is, it returns some T
+// where T is not Poll.
+// PromiseLike wraps any callable that takes no parameters and implements the
+// Promise interface. For things that already return Poll, this wrapping does
+// nothing. For things that do not return Poll, we wrap the return type in Poll.
+// This allows us to write things like:
+//   Seq(
+//     [] { return 42; },
+//     ...)
+// in preference to things like:
+//   Seq(
+//     [] { return Poll<int>(42); },
+//     ...)
+// or:
+//   Seq(
+//     [] -> Poll<int> { return 42; },
+//     ...)
+// leading to slightly more concise code and eliminating some rules that in
+// practice people find hard to deal with.
 
 namespace grpc_core {
 namespace promise_detail {
