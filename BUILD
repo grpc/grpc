@@ -67,7 +67,6 @@ selects.config_setting_group(
         # likely to be needed and where reducing the binary size is more
         # important.
         ":android",
-        ":ios",
     ],
 )
 
