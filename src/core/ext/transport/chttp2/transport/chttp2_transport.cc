@@ -773,7 +773,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   if (t->resource_user != nullptr &&
       !grpc_resource_user_safe_alloc(t->resource_user,
                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
-    gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
+    gpr_log(GPR_INFO, "Memory exhausted, rejecting the stream.");
     grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
                                              nullptr);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
