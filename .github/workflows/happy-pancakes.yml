@@ -31,7 +31,7 @@ jobs:
             let statuses = await github.repos.listCommitStatusesForRef({
               owner: "grpc",
               repo: "grpc",
-              ref: "${{ github.sha }}"
+              ref: "${{ github.event.pull_request.head.sha }}"
             });
             need = new Set();
             need.add("Bazel Basic build for C/C++");
