@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex -o igncr || set -ex
+set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+readonly GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
 readonly GKE_CLUSTER_ZONE="us-central1-a"
-readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
 readonly SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
 ## xDS test client Docker images
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
