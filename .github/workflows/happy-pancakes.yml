@@ -2,20 +2,26 @@ name: Ignore - Experimental
 on:
   pull_request:
     types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
-  status: {}
-  check_run:
-    types: [created, completed]
-  check_suite: 
-    types: [created, completed]
 jobs:
   check_status:
     name: Check Status
     runs-on: ubuntu-latest
     steps:
+      # Cancel current runs if they're still running
+      # (saves processing on fast pushes)
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      # Wait until our required statuses are ready or failed
+      # Unless force-merge is present, and then just be good.
       - name: Check Status
         uses: actions/github-script@v4
         with:
           script: |
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
             let pull = await github.pulls.get({
               owner: "grpc",
               repo: "grpc",
@@ -28,24 +34,34 @@ jobs:
                 return;
               }
             }
-            let statuses = await github.repos.listCommitStatusesForRef({
-              owner: "grpc",
-              repo: "grpc",
-              ref: "${{ github.event.pull_request.head.sha }}"
-            });
-            need = new Set();
+            var need = new Set();
             need.add("Bazel Basic build for C/C++");
             need.add("Portability Tests Linux [Build Only] (internal CI)");
-            console.log(statuses);
-            for (var i = 0; i < statuses.data.length; i++) {
-              let status = statuses.data[i];
-              if (status.state == "success") {
-                need.delete(status.context);
+            while (true) {
+              let statuses = await github.repos.listCommitStatusesForRef({
+                owner: "grpc",
+                repo: "grpc",
+                ref: "${{ github.event.pull_request.head.sha }}"
+              });
+              console.log(statuses);
+              var have = 0;
+              for (var i = 0; i < statuses.data.length; i++) {
+                let status = statuses.data[i];
+                if (need.has(status.context)) {
+                  if (status.state == "success") {
+                    have++;
+                  } else if (status.state == "pending") {
+                    // do nothing
+                  } else {
+                    core.setFailed("Required status failed: " + status.context);
+                    return;
+                  }
+                }
               }
+              if (have == need.size) {
+                return;
+              }
+              // Sleep 5 minutes between polls
+              await sleep(5 * 60 * 1000);
             }
-            if (need.size == 0) {
-              return;
-            }
-            console.log(need);
-            core.setFailed("Waiting for: " + [...need].join(', '));
 
