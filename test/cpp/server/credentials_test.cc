@@ -32,12 +32,12 @@
 #include "test/core/util/tls_utils.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
-#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define CA_CERT_PATH_1 "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-#define CA_CERT_PATH_2 "src/core/tsi/test_creds/multi-domain.pem"
-#define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
-#define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
+#define CA_CERT_PATH_0 "src/core/tsi/test_creds/multi-domain.pem"
+#define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
+#define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
 
 namespace {
 
