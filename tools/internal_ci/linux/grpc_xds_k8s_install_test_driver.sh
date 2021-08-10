@@ -363,8 +363,6 @@ local_setup_test_driver() {
 
 #######################################
 # Tag and push the given Docker image
-# Globals:
-#   INITIATOR: the initiator of this test script
 # Arguments:
 #   The Docker image name
 #   The Docker image original tag name
