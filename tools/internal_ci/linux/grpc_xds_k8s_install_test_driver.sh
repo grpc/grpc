@@ -361,3 +361,20 @@ local_setup_test_driver() {
   mkdir -p "${TEST_XML_OUTPUT_DIR}"
 }
 
+#######################################
+# Tag and push the given Docker image
+# Arguments:
+#   The Docker image name
+#   The Docker image original tag name
+#   The Docker image new tag name
+# Outputs:
+#   Writes the output to stdout, stderr, files
+#######################################
+tag_and_push_docker_image() {
+  local image_name="$1"
+  local from_tag="$2"
+  local to_tag="$3"
+
+  docker tag "${image_name}:${from_tag}" "${image_name}:${to_tag}"
+  docker push "${image_name}:${to_tag}"
+}
