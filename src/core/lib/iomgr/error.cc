@@ -231,7 +231,7 @@ static const char* error_time_name(grpc_error_times key) {
 #ifndef NDEBUG
 grpc_error_handle grpc_error_do_ref(grpc_error_handle err, const char* file,
                                     int line) {
-  grpc_trace_error_refcount.log(
+  grpc_trace_error_refcount.Log(
       GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
       gpr_atm_no_barrier_load(&err->atomics.refs.count),
       gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
@@ -278,7 +278,7 @@ static void error_destroy(grpc_error_handle err) {
 
 #ifndef NDEBUG
 void grpc_error_do_unref(grpc_error_handle err, const char* file, int line) {
-  grpc_trace_error_refcount.log(
+  grpc_trace_error_refcount.Log(
       GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
       gpr_atm_no_barrier_load(&err->atomics.refs.count),
       gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line);
@@ -303,16 +303,12 @@ static uint8_t get_placement(grpc_error_handle* err, size_t size) {
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
-#ifndef NDEBUG
     grpc_error_handle orig = *err;
-#endif
     *err = static_cast<grpc_error_handle>(gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t)));
-#ifndef NDEBUG
     if (*err != orig) {
-      grpc_trace_error_refcount.log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
+      grpc_trace_error_refcount.Log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
     }
-#endif
   }
   uint8_t placement = (*err)->arena_size;
   (*err)->arena_size = static_cast<uint8_t>((*err)->arena_size + slots);
@@ -430,7 +426,7 @@ grpc_error_handle grpc_error_create(const char* file, int line,
             file, line);
     abort();
   }
-  grpc_trace_error_refcount.log(GPR_DEBUG, "%p create [%s:%d]", err, file,
+  grpc_trace_error_refcount.Log(GPR_DEBUG, "%p create [%s:%d]", err, file,
                                 line);
 #endif
 
@@ -512,9 +508,7 @@ static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
     }
     out = static_cast<grpc_error_handle>(
         gpr_malloc(sizeof(*in) + new_arena_capacity * sizeof(intptr_t)));
-#ifndef NDEBUG
-    grpc_trace_error_refcount.log(GPR_DEBUG, "%p create copying %p", out, in);
-#endif
+    grpc_trace_error_refcount.Log(GPR_DEBUG, "%p create copying %p", out, in);
     // bulk memcpy of the rest of the struct.
     // NOLINTNEXTLINE(bugprone-sizeof-expression)
     size_t skip = sizeof(&out->atomics);

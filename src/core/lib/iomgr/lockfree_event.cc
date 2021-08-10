@@ -95,7 +95,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
      * sure that the shutdown error has been initialized properly before us
      * referencing it. */
     gpr_atm curr = gpr_atm_acq_load(&state_);
-    grpc_polling_trace.log(
+    grpc_polling_trace.Log(
         GPR_DEBUG, "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p",
         this, curr, closure);
     switch (curr) {
@@ -162,7 +162,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    grpc_polling_trace.log(
+    grpc_polling_trace.Log(
         GPR_DEBUG, "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
         &state_, curr, grpc_error_std_string(shutdown_error).c_str());
     switch (curr) {
@@ -210,7 +210,7 @@ void LockfreeEvent::SetReady() {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
-    grpc_polling_trace.log(
+    grpc_polling_trace.Log(
         GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_, curr);
 
     switch (curr) {

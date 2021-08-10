@@ -1085,10 +1085,11 @@ class HPackParser::Parser {
     // Allow higher code to just pass in failures ... simplifies things a bit.
     if (GRPC_MDISNULL(md)) return false;
     // Log if desired
-    // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
+#ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
       LogHeader(md);
     }
+#endif  // NDEBUG
     // Add to the hpack table if needed
     if (action == TableAction::kAddToTable) {
       GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
@@ -1181,7 +1182,7 @@ class HPackParser::Parser {
           false);
     }
     (*dynamic_table_updates_allowed_)--;
-    grpc_trace_chttp2_hpack_parser.log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
+    grpc_trace_chttp2_hpack_parser.Log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
     grpc_error_handle err = table_->SetCurrentTableSize(*size);
     if (err != GRPC_ERROR_NONE) {
       input_->SetError(err);

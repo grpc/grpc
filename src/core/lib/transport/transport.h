@@ -81,7 +81,7 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  grpc_trace_stream_refcount.log(GPR_DEBUG, "%s %p:%p REF %s",
+  grpc_trace_stream_refcount.Log(GPR_DEBUG, "%s %p:%p REF %s",
 
                                  refcount->object_type, refcount,
                                  refcount->destroy.cb_arg, reason);
@@ -98,7 +98,7 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  grpc_trace_stream_refcount.log(GPR_DEBUG, "%s %p:%p UNREF %s",
+  grpc_trace_stream_refcount.Log(GPR_DEBUG, "%s %p:%p UNREF %s",
 
                                  refcount->object_type, refcount,
                                  refcount->destroy.cb_arg, reason);

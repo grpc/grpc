@@ -168,7 +168,7 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    grpc_call_combiner_trace.log(
+    grpc_call_combiner_trace.Log(
         GPR_INFO,
         "CallCombinerClosureList executing closure while already "
         "holding call_combiner %p: closure=%p error=%s reason=%s",

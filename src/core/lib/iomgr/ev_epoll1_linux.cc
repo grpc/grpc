@@ -355,11 +355,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   std::string fd_name = absl::StrCat(name, " fd=", fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
-#ifndef NDEBUG
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name.c_str());
-  }
-#endif
+  grpc_trace_fd_refcount.Log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd,
+                             fd_name.c_str());
 
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);

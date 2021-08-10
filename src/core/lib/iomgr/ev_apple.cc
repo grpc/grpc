@@ -43,7 +43,7 @@ grpc_core::DebugOnlyTraceFlag grpc_apple_polling_trace(false, "apple_polling");
 
 #ifndef NDEBUG
 #define GRPC_POLLING_TRACE(format, ...) \
-  grpc_apple_polling_trace.log(GPR_DEBUG, "(polling) " format, __VA_ARGS__);
+  grpc_apple_polling_trace.Log(GPR_DEBUG, "(polling) " format, __VA_ARGS__);
 #else
 #define GRPC_POLLING_TRACE(...)
 #endif  // NDEBUG

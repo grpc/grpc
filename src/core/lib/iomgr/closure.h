@@ -235,7 +235,7 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    grpc_trace_closure.log(
+    grpc_trace_closure.Log(
         GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]", closure,
         closure->file_created, closure->line_created, location.file(),
         location.line());
@@ -243,7 +243,7 @@ class Closure {
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    grpc_trace_closure.log(GPR_DEBUG, "closure %p finished", closure);
+    grpc_trace_closure.Log(GPR_DEBUG, "closure %p finished", closure);
 #endif
     GRPC_ERROR_UNREF(error);
   }

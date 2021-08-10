@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-extern grpc_core::TraceFlag grpc_trace_auth_context_refcount;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
 /* --- grpc_auth_context ---
 
@@ -54,9 +54,8 @@ struct grpc_auth_context
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
                               grpc_core::NonPolymorphicRefCount>(
-            GRPC_TRACE_FLAG_ENABLED(grpc_trace_auth_context_refcount)
-                ? "auth_context_refcount"
-                : nullptr),
+            grpc_trace_auth_context_refcount.IfEnabled("auth_context_refcount",
+                                                       nullptr)),
         chained_(std::move(chained)) {
     if (chained_ != nullptr) {
       peer_identity_property_name_ = chained_->peer_identity_property_name_;

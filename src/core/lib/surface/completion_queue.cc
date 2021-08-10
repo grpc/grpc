@@ -947,7 +947,6 @@ class ExecCtxNext : public grpc_core::ExecCtx {
 
 #ifndef NDEBUG
 static void dump_pending_tags(grpc_completion_queue* cq) {
-  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (!GRPC_TRACE_FLAG_ENABLED(grpc_trace_pending_tags)) return;
   std::vector<std::string> parts;
   parts.push_back("PENDING TAGS:");
@@ -1216,7 +1215,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   grpc_pollset_worker* worker = nullptr;
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
+#ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace)) {
     GRPC_API_TRACE(
         "grpc_completion_queue_pluck("
@@ -1228,6 +1227,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
         (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
          reserved));
   }
+#endif  // NDEBUG
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cq);

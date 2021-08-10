@@ -89,34 +89,16 @@ class TraceFlag {
   bool enabled() { return false; }
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
-  //   /// Executes \a fn if the trace is enabled.
-  //   template <typename F>
-  //   void TraceIfEnabled(F fn) {
-  // #ifdef GRPC_USE_TRACERS
-  //     if (enabled()) {
-  //       fn();
-  //     }
-  // #else
-  //     (void)fn;
-  // #endif  // GRPC_USE_TRACERS
-  //   }
-
-  template <typename T>
-  T IfEnabled(T arg_true, T arg_false) {
-    return enabled() ? arg_true : arg_false;
+  const char* IfEnabled(const char* arg_true, const char* arg_false) {
+    return GPR_UNLIKELY(enabled()) ? arg_true : arg_false;
   }
 
-  template <typename T>
-  T* IfEnabled(T* arg_true, std::nullptr_t) {
-    return IfEnabled(arg_true, static_cast<T*>(nullptr));
-  }
-
-  void log(const char* file, int line, gpr_log_severity severity,
+  void Log(const char* file, int line, gpr_log_severity severity,
            const char* format, ...) {
-    if (enabled()) {
+    if (GPR_UNLIKELY(enabled())) {
       va_list args;
       va_start(args, format);
-      vgpr_log(file, line, severity, format, args);
+      gpr_vlog(file, line, severity, format, args);
       va_end(args);
     }
   }
@@ -153,13 +135,8 @@ class DebugOnlyTraceFlag {
   }
   constexpr bool enabled() const { return false; }
   constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
-  template <typename T>
-  T IfEnabled(T, T arg_false) {
+  const char* IfEnabled(const char*, const char* arg_false) {
     return arg_false;
-  }
-  template <typename T>
-  constexpr T* const IfEnabled(T*, std::nullptr_t) {
-    return static_cast<T*>(nullptr);
   }
   void log(const char*, int, gpr_log_severity, const char*, ...) {}
 

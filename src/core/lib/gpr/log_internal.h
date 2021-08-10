@@ -20,7 +20,7 @@
 
 /// Log a message, accepting a variadic argument list. See also \a gpr_log.
 // TODO(hork): look into vprintf format checking
-void vgpr_log(const char* file, int line, gpr_log_severity severity,
+void gpr_vlog(const char* file, int line, gpr_log_severity severity,
               const char* format, va_list args);
 
 #endif  // GRPC_CORE_LIB_GPR_LOG_INTERNAL_H

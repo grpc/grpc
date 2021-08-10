@@ -47,11 +47,11 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   }
   va_list args;
   va_start(args, format);
-  vgpr_log(file, line, severity, format, args);
+  gpr_vlog(file, line, severity, format, args);
   va_end(args);
 }
 
-void vgpr_log(const char* file, int line, gpr_log_severity severity,
+void gpr_vlog(const char* file, int line, gpr_log_severity severity,
               const char* format, va_list args) {
   char buf[64];
   char* allocated = nullptr;
