@@ -381,7 +381,7 @@
 #define GPR_MUSL_LIBC_COMPAT 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_PTHREAD_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_ENV 1

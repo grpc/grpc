@@ -65,7 +65,7 @@ static void test_vector(grpc_core::HPackParser* parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(parser->Parse(slices[i]) == GRPC_ERROR_NONE);
+    GPR_ASSERT(parser->Parse(slices[i], i == nslices - 1) == GRPC_ERROR_NONE);
   }
 
   for (i = 0; i < nslices; i++) {
@@ -158,8 +158,8 @@ static void test_vectors(grpc_slice_split_mode mode) {
 
   {
     grpc_core::HPackParser parser;
-    grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
-    grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
+    parser.hpack_table()->SetMaxBytes(256);
+    parser.hpack_table()->SetCurrentTableSize(256);
     /* D.5.1 */
     test_vector(&parser, mode,
                 "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -199,8 +199,8 @@ static void test_vectors(grpc_slice_split_mode mode) {
 
   {
     grpc_core::HPackParser parser;
-    grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
-    grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
+    parser.hpack_table()->SetMaxBytes(256);
+    parser.hpack_table()->SetCurrentTableSize(256);
     /* D.6.1 */
     test_vector(&parser, mode,
                 "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
