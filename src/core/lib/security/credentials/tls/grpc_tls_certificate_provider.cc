@@ -420,6 +420,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   return result;
 }
 
+//Performs the certificate-key check for all pairs in the list
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     const PemKeyCertPairList& pair_list) {
   for (size_t i = 0; i < pair_list.size(); ++i) {
@@ -488,7 +489,8 @@ grpc_status_code grpc_tls_certificate_key_match(
       *error_details = "";
     } else {
       code = static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
-      *error_details = "Certificate-key mismatch";
+      *error_details =
+          "The private key doesn't match the public key on the first certificate of the certificate chain.";
     }
   }
   return code;

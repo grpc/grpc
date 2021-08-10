@@ -32,12 +32,13 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-#define CA_CERT_PATH_1 "src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 #define CA_CERT_PATH_0 "src/core/tsi/test_creds/multi-domain.pem"
 #define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
+#define CA_CERT_PATH_1 "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
+
 
 namespace {
 
@@ -61,23 +62,23 @@ namespace {
 class CredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_1);
-    cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_1);
-    private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_1);
-    root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_0);
-    cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_0);
-    private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_0);
+    root_cert_0_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_0);
+    cert_chain_0_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_0);
+    private_key_0_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_0);
+    root_cert_1_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_1);
+    cert_chain_1_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_1);
+    private_key_1_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_1);
     key_cert_pair.private_key = kIdentityCertPrivateKey;
     key_cert_pair.certificate_chain = kIdentityCertContents;
   }
 
   experimental::IdentityKeyCertPair key_cert_pair;
-  std::string root_cert_;
-  std::string private_key_;
-  std::string cert_chain_;
-  std::string root_cert_2_;
-  std::string private_key_2_;
-  std::string cert_chain_2_;
+  std::string root_cert_0_;
+  std::string private_key_0_;
+  std::string cert_chain_0_;
+  std::string root_cert_1_;
+  std::string private_key_1_;
+  std::string cert_chain_1_;
 };
 
 TEST_F(
@@ -209,7 +210,8 @@ TEST_F(
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_.c_str(), &error_details);
-  EXPECT_EQ("Certificate-key mismatch", std::string(error_details));
+  EXPECT_EQ("he private key doesn't match the public key on the first certificate of the certificate chain.",
+            std::string(error_details));
   EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
 }
 

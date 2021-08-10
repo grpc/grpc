@@ -850,8 +850,8 @@ GRPCAPI void grpc_tls_certificate_provider_release(
 
 /**
  * Checks if the private key matches the public key on the first certificate in the certificate chain.
- * Returns a not-OK status on failure, with a corresponding error meessage (error_details),
- * and returns an OkStatus on success.
+ * If it fails, returns a kInvalidArgument and populate |error_details|.
+ * Otherwise, returns an OKStatus and populate |error_details| with an empty string
  * The ownership of |error_details| is transferred to the caller
  * and the caller is responsible for calling gpr_free() on |error_details| after its use.
  */
