@@ -421,6 +421,7 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -512,6 +513,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -742,7 +744,9 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
@@ -1513,6 +1517,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/status:statusor
+  - absl/types:variant
   - gpr
   - libssl
   - address_sorting
@@ -1651,6 +1656,7 @@ libs:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1739,6 +1745,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -1777,7 +1784,9 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
@@ -2193,6 +2202,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/status:statusor
+  - absl/types:variant
   - gpr
   - address_sorting
   baselib: true
@@ -5265,6 +5275,17 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: flow_control_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/flow_control_test.cc
+  deps:
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5997,6 +6018,15 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
+- name: popularity_count_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
+  src:
+  - test/core/transport/chttp2/popularity_count_test.cc
+  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test
