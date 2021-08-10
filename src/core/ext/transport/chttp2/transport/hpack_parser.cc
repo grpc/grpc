@@ -1084,7 +1084,7 @@ class HPackParser::Parser {
   bool FinishHeader(grpc_mdelem md) {
     // Allow higher code to just pass in failures ... simplifies things a bit.
     if (GRPC_MDISNULL(md)) return false;
-    // Log if desired
+      // Log if desired
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
       LogHeader(md);
