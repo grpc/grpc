@@ -22,6 +22,15 @@ TEST(CaptureTest, Capture) {
   f();
 }
 
+TEST(CaptureTest, WithArgsAndReturn) {
+  int captured = 1;
+  auto f = Capture([captured](int* p, int arg) {
+    return (captured + *p) * arg;
+  }, 2);
+  EXPECT_EQ(f(2), 6);
+  EXPECT_EQ(f(3), 9);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
