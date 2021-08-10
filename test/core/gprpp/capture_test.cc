@@ -18,9 +18,7 @@
 namespace grpc_core {
 
 TEST(CaptureTest, Capture) {
-  auto f = Capture([](int* p) {
-    EXPECT_EQ(*p, 42);
-  }, 42);
+  auto f = Capture([](int* p) { EXPECT_EQ(*p, 42); }, 42);
   f();
 }
 
