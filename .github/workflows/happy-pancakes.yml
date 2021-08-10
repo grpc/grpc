@@ -43,11 +43,10 @@ jobs:
                 repo: "grpc",
                 ref: "${{ github.event.pull_request.head.sha }}"
               });
-              console.log(statuses);
               for (var i = 0; i < statuses.data.length; i++) {
                 let status = statuses.data[i];
+                console.log(status.context, status.state, need);
                 if (need.has(status.context)) {
-                  console.log(status.context, status.state);
                   if (status.state == "success") {
                     need.delete(status.context);
                   } else if (status.state == "pending") {
