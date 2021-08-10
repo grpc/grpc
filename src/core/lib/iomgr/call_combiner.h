@@ -168,12 +168,12 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    grpc_call_combiner_trace.log(GPR_INFO,
-              "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%p error=%s reason=%s",
-              call_combiner, closures_[0].closure,
-              grpc_error_std_string(closures_[0].error).c_str(),
-              closures_[0].reason);
+    grpc_call_combiner_trace.log(
+        GPR_INFO,
+        "CallCombinerClosureList executing closure while already "
+        "holding call_combiner %p: closure=%p error=%s reason=%s",
+        call_combiner, closures_[0].closure,
+        grpc_error_std_string(closures_[0].error).c_str(), closures_[0].reason);
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);
     closures_.clear();

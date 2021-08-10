@@ -116,9 +116,9 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
       grpc_work_serializer_trace.log(GPR_INFO,
                                      "  Queue returned nullptr, trying again");
     }
-    grpc_work_serializer_trace.log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
-              cb_wrapper, cb_wrapper->location.file(),
-              cb_wrapper->location.line());
+    grpc_work_serializer_trace.log(
+        GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
+        cb_wrapper, cb_wrapper->location.file(), cb_wrapper->location.line());
     cb_wrapper->callback();
     delete cb_wrapper;
   }

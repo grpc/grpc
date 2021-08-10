@@ -82,9 +82,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
   grpc_trace_stream_refcount.log(GPR_DEBUG, "%s %p:%p REF %s",
-                                
+
                                  refcount->object_type, refcount,
-                                                      refcount->destroy.cb_arg, reason);
+                                 refcount->destroy.cb_arg, reason);
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
@@ -99,9 +99,9 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
   grpc_trace_stream_refcount.log(GPR_DEBUG, "%s %p:%p UNREF %s",
-                                
+
                                  refcount->object_type, refcount,
-                                                      refcount->destroy.cb_arg, reason);
+                                 refcount->destroy.cb_arg, reason);
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);
   }
