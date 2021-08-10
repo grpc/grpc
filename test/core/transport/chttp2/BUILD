@@ -210,3 +210,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "popularity_count_test",
+    srcs = ["popularity_count_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:popularity_count",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

@@ -855,6 +855,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_like",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_like.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_status",
     external_deps = [
         "absl/status",
@@ -863,6 +875,15 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/detail/status.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/switch.h",
     ],
     deps = ["gpr_platform"],
 )
@@ -2518,6 +2539,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "popularity_count",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/popularity_count.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2584,6 +2616,8 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "match",
+        "popularity_count",
     ],
 )
 
