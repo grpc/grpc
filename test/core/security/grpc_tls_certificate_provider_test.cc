@@ -496,6 +496,29 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithInvalidCertificateKeyPairOnInitialization) {
+  // Create temporary files and copy cert data into them.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_2_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // Expect to see error sent to watcher since certificate-key pair will be empty.
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::Contains(ErrorInfo("", kIdentityError)));
+  // Expect to see no identity certificate or key data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs("", ""))));
+  // Clean up.
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithInvalidCertificateKeyPairOnRefresh) {
   // Create temporary files and copy cert data into them.
   TmpFile tmp_root_cert(root_cert_);
@@ -528,29 +551,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
               ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                  cert_chain_.c_str()))));
-  // Clean up.
-  CancelWatch(watcher_state_1);
-}
-
-TEST_F(GrpcTlsCertificateProviderTest,
-       FileWatcherCertificateProviderWithInvalidCertificateKeyPairOnInitialization) {
-  // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert(root_cert_);
-  TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert(cert_chain_2_);
-  // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
-                                          tmp_identity_cert.name(),
-                                          tmp_root_cert.name(), 1);
-  WatcherState* watcher_state_1 =
-      MakeWatcher(provider.distributor(), kCertName, kCertName);
-  // Expect to see error sent to watcher since certificate-key pair will be empty.
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              ::testing::Contains(ErrorInfo("", kIdentityError)));
-  // Expect to see no identity certificate or key data.
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs("", ""))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }

@@ -209,7 +209,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }else{
         gpr_log(GPR_ERROR,
-              "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %d",
+              "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %s",
               matched_or.status().message());
       }
     } else {
@@ -478,15 +478,18 @@ grpc_status_code grpc_tls_certificate_key_match(
     const char* private_key, const char* cert_chain, const char** error_details){
   grpc_core::ExecCtx exec_ctx;
   grpc_status_code code;
-  absl::Status match_status = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).status();
-  if (!match_status.ok()) {
-    code = static_cast<grpc_status_code>(match_status.code());
-    *error_details = gpr_strdup(std::string(match_status.message()).c_str());
-  }else {
-    code = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value() ?
-             GRPC_STATUS_OK : static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
-    *error_details = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain).value() ?
-                         "" : "Certificate-key mismatch";
+  absl::StatusOr<bool> match_or = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain);
+  if (!match_or.status().ok()) {
+    code = static_cast<grpc_status_code>(match_or.status().code());
+    *error_details = gpr_strdup(std::string(match_or.status().message()).c_str());
+  } else {
+    if (match_or.value()) {
+      code = GRPC_STATUS_OK;
+      *error_details = "";
+    } else {
+      code = static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
+      *error_details = "Certificate-key mismatch";
+    }
   }
   return code;
 }

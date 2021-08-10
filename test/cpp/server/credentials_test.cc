@@ -213,9 +213,6 @@ TEST_F(
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_.c_str(), &error_details);
-  gpr_log(GPR_ERROR,
-          "CODE REACHED: %s",
-          error_details);
   EXPECT_EQ("Certificate-key mismatch", std::string(error_details));
   EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
 }
