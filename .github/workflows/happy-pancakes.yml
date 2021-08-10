@@ -34,23 +34,22 @@ jobs:
                 return;
               }
             }
-            var need = new Set();
-            need.add("Bazel Basic build for C/C++");
-            need.add("Portability Tests Linux [Build Only] (internal CI)");
             while (true) {
+              var need = new Set();
+              need.add("Bazel Basic build for C/C++");
+              need.add("Portability Tests Linux [Build Only] (internal CI)");
               let statuses = await github.repos.listCommitStatusesForRef({
                 owner: "grpc",
                 repo: "grpc",
                 ref: "${{ github.event.pull_request.head.sha }}"
               });
               console.log(statuses);
-              var have = 0;
               for (var i = 0; i < statuses.data.length; i++) {
                 let status = statuses.data[i];
                 if (need.has(status.context)) {
                   console.log(status.context, status.state);
                   if (status.state == "success") {
-                    have++;
+                    need.delete(status.context);
                   } else if (status.state == "pending") {
                     // do nothing
                   } else {
@@ -59,8 +58,7 @@ jobs:
                   }
                 }
               }
-              console.log(have, need.size);
-              if (have == need.size) {
+              if (need.size == 0) {
                 return;
               }
               // Sleep 15 minutes between polls
