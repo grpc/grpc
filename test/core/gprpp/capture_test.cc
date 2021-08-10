@@ -24,9 +24,8 @@ TEST(CaptureTest, Capture) {
 
 TEST(CaptureTest, WithArgsAndReturn) {
   int captured = 1;
-  auto f = Capture([captured](int* p, int arg) {
-    return (captured + *p) * arg;
-  }, 2);
+  auto f =
+      Capture([captured](int* p, int arg) { return (captured + *p) * arg; }, 2);
   EXPECT_EQ(f(2), 6);
   EXPECT_EQ(f(3), 9);
 }
