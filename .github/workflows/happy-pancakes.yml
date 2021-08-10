@@ -48,6 +48,7 @@ jobs:
               for (var i = 0; i < statuses.data.length; i++) {
                 let status = statuses.data[i];
                 if (need.has(status.context)) {
+                  console.log(status.context, status.state);
                   if (status.state == "success") {
                     have++;
                   } else if (status.state == "pending") {
@@ -58,10 +59,11 @@ jobs:
                   }
                 }
               }
+              console.log(have, need.size);
               if (have == need.size) {
                 return;
               }
-              // Sleep 5 minutes between polls
-              await sleep(5 * 60 * 1000);
+              // Sleep 15 minutes between polls
+              await sleep(15 * 60 * 1000);
             }
 
