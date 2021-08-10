@@ -24,6 +24,7 @@
 #include <grpc/support/atm.h>
 #include <stdbool.h>
 
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/global_config.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
@@ -88,6 +89,38 @@ class TraceFlag {
   bool enabled() { return false; }
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
+  //   /// Executes \a fn if the trace is enabled.
+  //   template <typename F>
+  //   void TraceIfEnabled(F fn) {
+  // #ifdef GRPC_USE_TRACERS
+  //     if (enabled()) {
+  //       fn();
+  //     }
+  // #else
+  //     (void)fn;
+  // #endif  // GRPC_USE_TRACERS
+  //   }
+
+  template <typename T>
+  T IfEnabled(T arg_true, T arg_false) {
+    return enabled() ? arg_true : arg_false;
+  }
+
+  template <typename T>
+  T* IfEnabled(T* arg_true, std::nullptr_t) {
+    return IfEnabled(arg_true, static_cast<T*>(nullptr));
+  }
+
+  void log(const char* file, int line, gpr_log_severity severity,
+           const char* format, ...) {
+    if (enabled()) {
+      va_list args;
+      va_start(args, format);
+      vgpr_log(file, line, severity, format, args);
+      va_end(args);
+    }
+  }
+
  private:
   friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
   friend class TraceFlagList;
@@ -120,6 +153,16 @@ class DebugOnlyTraceFlag {
   }
   constexpr bool enabled() const { return false; }
   constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
+  template <typename T>
+  T IfEnabled(T, T arg_false) {
+    return arg_false;
+  }
+  template <typename T>
+  T* IfEnabled(T*, std::nullptr_t) {
+    return static_cast<T*>(nullptr);
+  }
+  void log(const char* file, int line, gpr_log_severity severity,
+           const char* format, ...) {}
 
  private:
   void set_enabled(bool /*enabled*/) {}

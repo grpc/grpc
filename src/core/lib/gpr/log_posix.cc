@@ -32,6 +32,7 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
@@ -44,23 +45,25 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   if (gpr_should_log(severity) == 0) {
     return;
   }
-  char buf[64];
-  char* allocated = nullptr;
-  char* message = nullptr;
-  int ret;
   va_list args;
   va_start(args, format);
-  ret = vsnprintf(buf, sizeof(buf), format, args);
+  vgpr_log(file, line, severity, format, args);
   va_end(args);
+}
+
+void vgpr_log(const char* file, int line, gpr_log_severity severity,
+              const char* format, va_list args) {
+  char buf[64];
+  char* allocated = nullptr;
+  char* message;
+  int ret = vsnprintf(buf, sizeof(buf), format, args);
   if (ret < 0) {
     message = nullptr;
   } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
     message = allocated = (char*)gpr_malloc((size_t)ret + 1);
-    va_start(args, format);
     vsnprintf(message, (size_t)(ret + 1), format, args);
-    va_end(args);
   }
   gpr_log_message(file, line, severity, message);
   gpr_free(allocated);

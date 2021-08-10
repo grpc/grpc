@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
+extern grpc_core::TraceFlag grpc_trace_auth_context_refcount;
 
 /* --- grpc_auth_context ---
 

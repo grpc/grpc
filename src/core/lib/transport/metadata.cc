@@ -64,6 +64,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
 void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
                            const grpc_slice& value, intptr_t refcnt,
                            const char* file, int line) {
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
@@ -78,6 +79,7 @@ void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
 void grpc_mdelem_trace_unref(void* md, const grpc_slice& key,
                              const grpc_slice& value, intptr_t refcnt,
                              const char* file, int line) {
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
@@ -155,6 +157,7 @@ AllocatedMetadata::~AllocatedMetadata() {
 
 #ifndef NDEBUG
 void grpc_core::RefcountedMdBase::TraceAtStart(const char* tag) {
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key());
     char* value_str = grpc_slice_to_c_string(value());
@@ -287,6 +290,7 @@ static int is_mdelem_static(grpc_mdelem e) {
 
 void InternedMetadata::RefWithShardLocked(mdtab_shard* shard) {
 #ifndef NDEBUG
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key());
     char* value_str = grpc_slice_to_c_string(value());

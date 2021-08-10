@@ -490,6 +490,7 @@ void GPR_ATTRIBUTE_NOINLINE HPackParser::LogHeader(grpc_mdelem md) {
 /* emission helpers */
 template <HPackParser::TableAction action>
 grpc_error_handle HPackParser::FinishHeader(grpc_mdelem md) {
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     LogHeader(md);
   }
@@ -948,6 +949,7 @@ grpc_error_handle HPackParser::parse_lithdr_nvridx_v(const uint8_t* cur,
 /* finish parsing a max table size change */
 grpc_error_handle HPackParser::finish_max_tbl_size(const uint8_t* cur,
                                                    const uint8_t* end) {
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", index_);
   }

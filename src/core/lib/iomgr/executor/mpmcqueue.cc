@@ -32,6 +32,7 @@ inline void* InfLenFIFOQueue::PopFront() {
   count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
 
   // Updates Stats when trace flag turned on.
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     gpr_timespec wait_time =
         gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
@@ -123,6 +124,7 @@ void InfLenFIFOQueue::Put(void* elem) {
   queue_tail_->content = static_cast<void*>(elem);
 
   // Updates Stats info
+  // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
     gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
@@ -145,6 +147,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
 
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     gpr_timespec start_time;
+    // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       start_time = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -156,6 +159,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
       self.cv.Wait(&mu_);
     } while (count_.Load(MemoryOrder::RELAXED) == 0);
     RemoveWaiter(&self);
+    // DO NOT SUBMIT(hork): trace.exec(callable) or skip warning
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
