@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/tsi/openssl_utils.h"
+
 #include <openssl/bio.h>
 #include <openssl/pem.h>
-
-#include "src/core/tsi/openssl_utils.h"
 
 namespace grpc_core {
 
