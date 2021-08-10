@@ -158,11 +158,10 @@ class DebugOnlyTraceFlag {
     return arg_false;
   }
   template <typename T>
-  constexpr T* IfEnabled(T*, std::nullptr_t) {
+  constexpr T* const IfEnabled(T*, std::nullptr_t) {
     return static_cast<T*>(nullptr);
   }
-  void log(const char* file, int line, gpr_log_severity severity,
-           const char* format, ...) {}
+  void log(const char*, int, gpr_log_severity, const char*, ...) {}
 
  private:
   void set_enabled(bool /*enabled*/) {}
