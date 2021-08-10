@@ -377,10 +377,6 @@ tag_and_push_docker_image() {
   local from_tag="$2"
   local to_tag="$3"
 
-  if [[ ${INITIATOR} == "kokoro" ]]; then
-    docker tag "${image_name}:${from_tag}" "${image_name}:${to_tag}"
-    docker push "${image_name}:${to_tag}"
-  else
-    echo "Skipping tag and push from ${image_name}:${from_tag} to ${image_name}:${to_tag}"
-  fi
+  docker tag "${image_name}:${from_tag}" "${image_name}:${to_tag}"
+  docker push "${image_name}:${to_tag}"
 }
