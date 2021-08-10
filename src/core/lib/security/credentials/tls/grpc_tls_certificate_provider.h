@@ -155,9 +155,9 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
 
-//  Checks if the private key and leaf cert for all pairs in the list match.
-//  Returns an OK status if so or if the list is empty and an error status
-//  otherwise.
+//  Checks if the private key and the certificate chain for all pairs in the
+//  list match. Returns an OK status if matched, or |pair_list| is empty.
+//  Otherwise, an error status is returned.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     const PemKeyCertPairList& pair_list);
 

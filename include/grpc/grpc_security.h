@@ -858,16 +858,18 @@ grpc_tls_certificate_provider_data_watcher_create(
 GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
-/* Sets |root_certificate| to the grpc_tls_certificate_provider, while
- * allocating memory to the passed `error_details`.
+/* Sets |root_certificate| to the grpc_tls_certificate_provider. The ownership
+ * of |error_details| is transferred to the caller and the caller is responsible
+ * for calling gpr_free() on |error_details| after its use.
  */
 GRPCAPI grpc_status_code
 gprc_tls_certificate_provider_data_watcher_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate,
     char** error_details);
 
-/* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider, while
- * allocating memory to the passed `error_details`.
+/* Sets |pem_key_cert_pairs| to the grpc_tls_certificate_provider. The ownership
+ * of |error_details| is transferred to the caller and the caller is responsible
+ * for calling gpr_free() on |error_details| after its use.
  */
 GRPCAPI grpc_status_code
 gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs(

@@ -60,7 +60,7 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 }
 
 grpc::Status DataWatcherCertificateProvider::SetRootCertificate(
-    const string& root_certificate) {
+    const std::string& root_certificate) {
   grpc_core::MutexLock lock(&mu_);
   char* error_details = nullptr;
   grpc_status_code status_code =
