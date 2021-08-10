@@ -49,16 +49,12 @@ namespace promise_detail {
 
 template <typename T>
 struct PollWrapper {
-  static Poll<T> Wrap(T&& x) {
-      return Poll<T>(std::forward<T>(x));
-  }
+  static Poll<T> Wrap(T&& x) { return Poll<T>(std::forward<T>(x)); }
 };
 
 template <typename T>
 struct PollWrapper<Poll<T>> {
-  static Poll<T> Wrap(Poll<T>&& x) {
-      return x;
-  }
+  static Poll<T> Wrap(Poll<T>&& x) { return x; }
 };
 
 template <typename T>
@@ -73,9 +69,7 @@ class PromiseLike {
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  auto operator()() -> decltype(WrapInPoll(f_())) {
-    return WrapInPoll(f_());
-  }
+  auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 
