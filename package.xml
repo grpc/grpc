@@ -1272,6 +1272,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/batch.c" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/batch.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
@@ -1285,6 +1286,7 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/metadata_array.c" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/metadata_array.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php7_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.h" role="src" />

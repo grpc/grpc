@@ -62,7 +62,8 @@ abstract class AbstractCall
             $method,
             $deadline,
             null,
-            is_array($options["async_callbacks"])
+            array_key_exists('async_callbacks', $options) &&
+                is_array($options['async_callbacks'])
         );
         $this->deserialize = $deserialize;
         $this->metadata = null;

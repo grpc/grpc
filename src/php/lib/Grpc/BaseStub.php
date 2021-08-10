@@ -292,7 +292,10 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            if (is_array($options["async_callbacks"])) {
+            if (
+                array_key_exists('async_callbacks', $options) &&
+                is_array($options["async_callbacks"])
+            ) {
                 $call->startAsync(
                     $options["async_callbacks"],
                     $argument,
@@ -337,7 +340,10 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            if (is_array($options["async_callbacks"])) {
+            if (
+                array_key_exists('async_callbacks', $options) &&
+                is_array($options["async_callbacks"])
+            ) {
                 $call->startAsync($options["async_callbacks"], $metadata);
             } else {
                 $call->start($metadata);
@@ -378,7 +384,10 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            if (is_array($options["async_callbacks"])) {
+            if (
+                array_key_exists('async_callbacks', $options) &&
+                is_array($options["async_callbacks"])
+            ) {
                 $call->startAsync(
                     $options["async_callbacks"],
                     $argument,
@@ -423,7 +432,10 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            if (is_array($options["async_callbacks"])) {
+            if (
+                array_key_exists('async_callbacks', $options) &&
+                is_array($options["async_callbacks"])
+            ) {
                 $call->startAsync($options["async_callbacks"], $metadata);
             } else {
                 $call->start($metadata);
