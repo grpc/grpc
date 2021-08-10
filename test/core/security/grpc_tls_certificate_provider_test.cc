@@ -45,7 +45,8 @@ namespace grpc_core {
 namespace testing {
 
 constexpr const char* kCertName = "cert_name";
-constexpr const char* kRootError = "Root Certificates are watched, while their contents are empty.";
+constexpr const char* kRootError =
+    "Root Certificates are watched, while their contents are empty.";
 constexpr const char* kIdentityError =
     "Identity Certificates are watched, while their contents are empty.";
 constexpr const char* kInvalidIdentityError = "Invalid Key-Cert pair list.";
