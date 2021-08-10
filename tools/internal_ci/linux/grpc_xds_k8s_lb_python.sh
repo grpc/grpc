@@ -99,7 +99,6 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
-  set -x
   python -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
@@ -107,7 +106,6 @@ run_test() {
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --flagfile="config/url-map.cfg"
-  set +x
 }
 
 #######################################
@@ -145,10 +143,14 @@ main() {
   build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  run_test change_backend_service_test
-  run_test failover_test
-  run_test remove_neg_test
-  run_test round_robin_test
+    local test_failed=false
+  run_test change_backend_service_test || test_failed=true
+  run_test failover_test || test_failed=true
+  run_test remove_neg_test || test_failed=true
+  run_test round_robin_test || test_failed=true
+  if [ "$test_failed" = true ]; then
+    exit 1
+  fi
 }
 
 main "$@"
