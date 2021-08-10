@@ -849,9 +849,11 @@ GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
 /**
- * Checks if the private key matches the certificate's public key.
- * Returns a not-OK status on failure, or a bool indicating
- * whether the key/cert pair matches.
+ * Checks if the private key matches the public key on the first certificate in the certificate chain.
+ * Returns a not-OK status on failure, with a corresponding error meessage (error_details),
+ * and returns an OkStatus on success.
+ * The ownership of |error_details| is transferred to the caller
+ * and the caller is responsible for calling gpr_free() on |error_details| after its use.
  */
 GRPCAPI grpc_status_code grpc_tls_certificate_key_match(const char* private_key, const char* cert_chain, const char** error_details);
 

@@ -25,16 +25,16 @@
 
 #include <memory>
 
+#include "include/grpc/grpc_security.h"
+
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "include/grpc/grpc_security.h"
 #include "test/core/util/tls_utils.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #define CA_CERT_PATH_1 "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 #define CA_CERT_PATH_0 "src/core/tsi/test_creds/multi-domain.pem"
 #define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
@@ -51,7 +51,6 @@ constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
-//using ::testing::Test::GrpcTlsCertificateProviderTest;
 
 }  // namespace
 
@@ -59,17 +58,20 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class GrpcTlsCertificateKeyMatchTest : public ::testing::Test {
+class CredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-    cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
-    private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
-    root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_2);
-    cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_2);
-    private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_2);
+    root_cert_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_1);
+    cert_chain_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_1);
+    private_key_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_1);
+    root_cert_2_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_0);
+    cert_chain_2_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_0);
+    private_key_2_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_0);
+    key_cert_pair.private_key = kIdentityCertPrivateKey;
+    key_cert_pair.certificate_chain = kIdentityCertContents;
   }
 
+  experimental::IdentityKeyCertPair key_cert_pair;
   std::string root_cert_;
   std::string private_key_;
   std::string cert_chain_;
@@ -78,12 +80,9 @@ class GrpcTlsCertificateKeyMatchTest : public ::testing::Test {
   std::string cert_chain_2_;
 };
 
-TEST(
+TEST_F(
     CredentialsTest,
     TlsServerCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
-  experimental::IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = kIdentityCertPrivateKey;
-  key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
@@ -101,11 +100,8 @@ TEST(
 
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
-TEST(CredentialsTest,
+TEST_F(CredentialsTest,
      TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
-  experimental::IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = kIdentityCertPrivateKey;
-  key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   // Adding two key_cert_pair(s) should still work.
   identity_key_cert_pairs.emplace_back(key_cert_pair);
@@ -121,11 +117,11 @@ TEST(CredentialsTest,
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
-TEST(
+TEST_F(
     CredentialsTest,
     TlsServerCredentialsWithFileWatcherCertificateProviderLoadingRootAndIdentity) {
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+      SERVER_KEY_PATH_1, SERVER_CERT_PATH_1, CA_CERT_PATH_1, 1);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
@@ -139,11 +135,11 @@ TEST(
 
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
-TEST(
+TEST_F(
     CredentialsTest,
     TlsServerCredentialsWithFileWatcherCertificateProviderLoadingIdentityOnly) {
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
+      SERVER_KEY_PATH_1, SERVER_CERT_PATH_1, 1);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name(kIdentityCertName);
@@ -154,8 +150,8 @@ TEST(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyPrivateKey){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchFailedOnEmptyKey){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       /*private_key=*/"", cert_chain_.c_str(), &error_details);
@@ -165,8 +161,8 @@ TEST_F(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnEmptyCertificate){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchFailedOnEmptyCertificate){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), /*cert_chain=*/"", &error_details);
@@ -176,8 +172,8 @@ TEST_F(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidCertFormat){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchFailedOnInvalidCertificate){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_.c_str(), "invalid_certificate", &error_details);
@@ -187,8 +183,8 @@ TEST_F(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidKeyFormat){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchFailedOnInvalidKey){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       "invalid_private_key", cert_chain_2_.c_str(), &error_details);
@@ -198,8 +194,8 @@ TEST_F(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForSuccessfulKeyCertMatch){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchSucceeded){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_2_.c_str(), &error_details);
@@ -208,8 +204,8 @@ TEST_F(
 }
 
 TEST_F(
-    GrpcTlsCertificateKeyMatchTest,
-    APIWrapperForPrivateKeyAndCertificateMatchForFailedKeyCertMatchOnInvalidPair){
+    CredentialsTest,
+    CoreAPICertificateKeyMatchFailedOnInvalidPair){
   const char* error_details;
   grpc_status_code matched = grpc_tls_certificate_key_match(
       private_key_2_.c_str(), cert_chain_.c_str(), &error_details);
