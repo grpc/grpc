@@ -148,8 +148,8 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
   MutexLock l(&mu_);
 
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
-    gpr_timespec start_time;
 #ifndef NDEBUG
+    gpr_timespec start_time;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       start_time = gpr_now(GPR_CLOCK_MONOTONIC);
