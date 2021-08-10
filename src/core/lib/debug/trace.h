@@ -138,7 +138,7 @@ class DebugOnlyTraceFlag {
   const char* IfEnabled(const char*, const char* arg_false) {
     return arg_false;
   }
-  void log(const char*, int, gpr_log_severity, const char*, ...) {}
+  void Log(const char*, int, gpr_log_severity, const char*, ...) {}
 
  private:
   void set_enabled(bool /*enabled*/) {}
