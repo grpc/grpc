@@ -264,6 +264,8 @@ struct ThreadArgument {
       global_binder_pairs;
   std::vector<std::vector<int>>* global_cnts;
   int tx_code;
+  int num_pairs_per_thread;
+  int num_transactions_per_pair;
   grpc_core::Mutex* mu;
 };
 
@@ -294,7 +296,7 @@ TEST_P(FakeBinderTest, StressTest) {
     std::vector<std::pair<std::unique_ptr<Binder>,
                           std::unique_ptr<TransactionReceiver>>>
         binder_pairs;
-    for (int p = 0; p < kNumPairsPerThread; ++p) {
+    for (int p = 0; p < th_arg->num_pairs_per_thread; ++p) {
       std::unique_ptr<Binder> binder;
       std::unique_ptr<TransactionReceiver> tx_receiver;
       int expected_tx_code = th_arg->tx_code;
@@ -317,22 +319,23 @@ TEST_P(FakeBinderTest, StressTest) {
       binder_pairs.emplace_back(std::move(binder), std::move(tx_receiver));
     }
     std::vector<int> order;
-    for (int i = 0; i < kNumPairsPerThread; ++i) {
-      for (int j = 0; j < kNumTransactionsPerPair; ++j) {
+    for (int i = 0; i < th_arg->num_pairs_per_thread; ++i) {
+      for (int j = 0; j < th_arg->num_transactions_per_pair; ++j) {
         order.emplace_back(i);
       }
     }
     std::mt19937 rng(tid);
     std::shuffle(order.begin(), order.end(), rng);
-    std::vector<int> tx_cnt(kNumPairsPerThread);
+    std::vector<int> tx_cnt(th_arg->num_pairs_per_thread);
     for (int p : order) {
       EXPECT_TRUE(binder_pairs[p].first->PrepareTransaction().ok());
       WritableParcel* parcel = binder_pairs[p].first->GetWritableParcel();
       EXPECT_TRUE(parcel->WriteInt32(th_arg->tid).ok());
       EXPECT_TRUE(parcel->WriteInt32(p).ok());
       EXPECT_TRUE(parcel->WriteInt32(tx_cnt[p]++).ok());
-      EXPECT_TRUE(
-          binder_pairs[p].first->Transact(BinderTransportTxCode(kTxCode)).ok());
+      EXPECT_TRUE(binder_pairs[p]
+                      .first->Transact(BinderTransportTxCode(th_arg->tx_code))
+                      .ok());
     }
     th_arg->mu->Lock();
     (*th_arg->global_binder_pairs)[tid] = std::move(binder_pairs);
@@ -346,6 +349,8 @@ TEST_P(FakeBinderTest, StressTest) {
     args[i].global_binder_pairs = &global_binder_pairs;
     args[i].global_cnts = &global_cnts;
     args[i].tx_code = kTxCode;
+    args[i].num_pairs_per_thread = kNumPairsPerThread;
+    args[i].num_transactions_per_pair = kNumTransactionsPerPair;
     args[i].mu = &mu;
     thr_names[i] = absl::StrFormat("thread-%d", i);
     thrs[i] = grpc_core::Thread(thr_names[i].c_str(), th_function, &args[i]);
