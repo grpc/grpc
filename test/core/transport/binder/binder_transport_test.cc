@@ -329,7 +329,7 @@ TEST_F(BinderTransportTest, SeqNumIncrement) {
   grpc_binder_stream* gbs = InitNewBinderStream();
   EXPECT_EQ(gbs->t, GetBinderTransport());
   EXPECT_EQ(gbs->tx_code, kFirstCallId);
-  // Dummy batch that contains only "send_initial_metadata"
+  // A simple batch that contains only "send_initial_metadata"
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;

@@ -26,7 +26,7 @@ const absl::string_view EchoServer::kCancelledText = "cancel";
 const absl::string_view EchoServer::kTimeoutText = "timeout";
 const size_t EchoServer::kServerStreamingCounts = 100;
 
-grpc::Status EchoServer::EchoUnaryCall(grpc::ServerContext* context,
+grpc::Status EchoServer::EchoUnaryCall(grpc::ServerContext* /*context*/,
                                        const EchoRequest* request,
                                        EchoResponse* response) {
   const std::string& data = request->text();
@@ -41,7 +41,7 @@ grpc::Status EchoServer::EchoUnaryCall(grpc::ServerContext* context,
 }
 
 grpc::Status EchoServer::EchoServerStreamingCall(
-    grpc::ServerContext* context, const EchoRequest* request,
+    grpc::ServerContext* /*context*/, const EchoRequest* request,
     grpc::ServerWriter<EchoResponse>* writer) {
   const std::string& data = request->text();
   if (data == kTimeoutText) {
@@ -56,7 +56,7 @@ grpc::Status EchoServer::EchoServerStreamingCall(
 }
 
 grpc::Status EchoServer::EchoClientStreamingCall(
-    grpc::ServerContext* context, grpc::ServerReader<EchoRequest>* reader,
+    grpc::ServerContext* /*context*/, grpc::ServerReader<EchoRequest>* reader,
     EchoResponse* response) {
   EchoRequest request;
   std::string result = "";
@@ -68,7 +68,7 @@ grpc::Status EchoServer::EchoClientStreamingCall(
 }
 
 grpc::Status EchoServer::EchoBiDirStreamingCall(
-    grpc::ServerContext* context,
+    grpc::ServerContext* /*context*/,
     grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
   EchoRequest request;
   while (stream->Read(&request)) {

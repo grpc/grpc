@@ -30,7 +30,7 @@ namespace {
 // TODO(waynetu): These are hacks to make callbacks aware of their stream IDs
 // and sequence numbers. Remove/Refactor these hacks when possible.
 template <typename T>
-std::pair<StreamIdentifier, int> Decode(const T& data) {
+std::pair<StreamIdentifier, int> Decode(const T& /*data*/) {
   assert(false && "This should not be called");
   return {};
 }
@@ -53,7 +53,7 @@ std::pair<StreamIdentifier, int> Decode<Metadata>(const Metadata& data) {
 }
 
 template <typename T>
-T Encode(StreamIdentifier id, int seq_num) {
+T Encode(StreamIdentifier /*id*/, int /*seq_num*/) {
   assert(false && "This should not be called");
   return {};
 }
