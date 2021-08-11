@@ -38,26 +38,26 @@ absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
 
 absl::Status FakeWritableParcel::WriteInt32(int32_t data) {
   data_[data_position_] = data;
-  GPR_ASSERT(SetDataPosition(data_position_ + 1).ok());
+  SetDataPosition(data_position_ + 1).IgnoreError();
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteBinder(HasRawBinder* binder) {
   data_[data_position_] = binder->GetRawBinder();
-  GPR_ASSERT(SetDataPosition(data_position_ + 1).ok());
+  SetDataPosition(data_position_ + 1).IgnoreError();
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteString(absl::string_view s) {
   data_[data_position_] = std::string(s);
-  GPR_ASSERT(SetDataPosition(data_position_ + 1).ok());
+  SetDataPosition(data_position_ + 1).IgnoreError();
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteByteArray(const int8_t* buffer,
                                                 int32_t length) {
   data_[data_position_] = std::vector<int8_t>(buffer, buffer + length);
-  GPR_ASSERT(SetDataPosition(data_position_ + 1).ok());
+  SetDataPosition(data_position_ + 1).IgnoreError();
   return absl::OkStatus();
 }
 
