@@ -1630,6 +1630,7 @@
       'target_name': 'grpc_plugin_support',
       'type': 'static_library',
       'dependencies': [
+        'absl/strings:strings',
       ],
       'sources': [
         'src/compiler/cpp_generator.cc',

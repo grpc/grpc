@@ -2851,7 +2851,8 @@ libs:
   - src/compiler/php_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
-  deps: []
+  deps:
+  - absl/strings:strings
 - name: grpcpp_channelz
   build: all
   language: c++
