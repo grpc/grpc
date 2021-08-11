@@ -24,6 +24,7 @@
 #include "absl/time/time.h"
 
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -229,10 +230,34 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   }
 }
 
+bool ValidateUrl(URI url) {
+  absl::string_view scheme(url.scheme());
+  auto string_matcher_scheme =
+      StringMatcher::Create(StringMatcher::Type::kExact, "https");
+  if (!string_matcher_scheme->Match(scheme)) {
+    return false;
+  }
+  std::vector<std::string> v = absl::StrSplit(url.authority(), ':');
+  absl::string_view host = v[0];
+  auto string_matcher_host_sts =
+      StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                            "^(([a-zA-Z0-9_]+\.sts)|(sts)|(sts\.[a-zA-Z0-9_]+)|"
+                            "([a-zA-Z0-9_]+-sts))\.googleapis\.com$");
+  auto string_matcher_host_iam = StringMatcher::Create(
+      StringMatcher::Type::kSafeRegex,
+      "^(([a-zA-Z0-9_]+\.iamcredentials)|(iamcredentials)|(iamcredentials\.[a-"
+      "zA-Z0-9_]+)|([a-zA-Z0-9_]+-iamcredentials))\.googleapis\.com$");
+  if (!string_matcher_host_sts->Match(host) &&
+      !string_matcher_host_iam->Match(host)) {
+    return false;
+  }
+  return true;
+}
+
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
   absl::StatusOr<URI> uri = URI::Parse(options_.token_url);
-  if (!uri.ok()) {
+  if (!uri.ok() || !ValidateUrl(*uri)) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
                         uri.status().ToString())
@@ -354,7 +379,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   std::string access_token = it->second.string_value();
   absl::StatusOr<URI> uri =
       URI::Parse(options_.service_account_impersonation_url);
-  if (!uri.ok()) {
+  if (!uri.ok() || !ValidateUrl(*uri)) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat(
             "Invalid service account impersonation url: %s. Error: %s",

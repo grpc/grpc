@@ -2396,6 +2396,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_lb_xds_channel_args",
+        "grpc_matchers",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "ref_counted",
