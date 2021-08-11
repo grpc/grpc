@@ -87,8 +87,10 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
-    : RefCounted<ConnectedSubchannel>(grpc_trace_subchannel_refcount.IfEnabled(
-          "ConnectedSubchannel", nullptr)),
+    : RefCounted<ConnectedSubchannel>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
+              ? "ConnectedSubchannel"
+              : nullptr),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
@@ -650,7 +652,8 @@ Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
     : DualRefCounted<Subchannel>(
-          grpc_trace_subchannel_refcount.IfEnabled("Subchannel", nullptr)),
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
+                                                                  : nullptr),
       key_(std::move(key)),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {

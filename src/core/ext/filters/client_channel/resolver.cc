@@ -30,8 +30,9 @@ namespace grpc_core {
 //
 
 Resolver::Resolver()
-    : InternallyRefCounted(
-          grpc_trace_resolver_refcount.IfEnabled("Resolver", nullptr)) {}
+    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
+                               ? "Resolver"
+                               : nullptr) {}
 
 //
 // Resolver::Result

@@ -89,10 +89,6 @@ class TraceFlag {
   bool enabled() { return false; }
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
-  const char* IfEnabled(const char* arg_true, const char* arg_false) {
-    return GPR_UNLIKELY(enabled()) ? arg_true : arg_false;
-  }
-
   void Log(const char* file, int line, gpr_log_severity severity,
            const char* format, ...) {
     if (GPR_UNLIKELY(enabled())) {
@@ -135,9 +131,6 @@ class DebugOnlyTraceFlag {
   }
   constexpr bool enabled() const { return false; }
   constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
-  const char* IfEnabled(const char*, const char* arg_false) {
-    return arg_false;
-  }
   void Log(const char*, int, gpr_log_severity, const char*, ...) {}
 
  private:

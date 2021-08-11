@@ -586,7 +586,9 @@ static grpc_error_handle pollable_create(pollable_type type, pollable** p) {
 
   (*p)->type = type;
   new (&(*p)->refs) grpc_core::RefCount(
-      1, grpc_trace_pollable_refcount.IfEnabled("pollable_refcount", nullptr));
+      1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_pollable_refcount)
+             ? "pollable_refcount"
+             : nullptr);
   gpr_mu_init(&(*p)->mu);
   (*p)->epfd = epfd;
   (*p)->owner_fd = nullptr;
