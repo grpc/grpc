@@ -29,7 +29,7 @@ FakeWritableParcel::FakeWritableParcel() : data_(1) {}
 int32_t FakeWritableParcel::GetDataPosition() const { return data_position_; }
 
 absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
-  if (data_.size() < pos + 1) {
+  if (data_.size() < static_cast<size_t>(pos) + 1) {
     data_.resize(pos + 1);
   }
   data_position_ = pos;
