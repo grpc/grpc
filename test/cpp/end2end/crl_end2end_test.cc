@@ -174,7 +174,7 @@ TEST_F(CrlTest, ValidTraffic) {
 TEST_F(CrlTest, RevokedTraffic) {
   TestServerWrapper wrapper;
   wrapper.Start();
-  CallEchoRPC(wrapper_.server_address_, true, false);
+  CallEchoRPC(wrapper.server_address_, true, false);
 }
 
 }  // namespace
