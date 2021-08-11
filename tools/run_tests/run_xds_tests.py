@@ -3153,8 +3153,11 @@ try:
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
-        extra_backend_service = get_backend_service(gcp, extra_backend_service_name, record_error=False)
-        more_extra_backend_service = get_backend_service(gcp, more_extra_backend_service_name, record_error=False)
+        extra_backend_service = get_backend_service(gcp,
+                                                    extra_backend_service_name,
+                                                    record_error=False)
+        more_extra_backend_service = get_backend_service(
+            gcp, more_extra_backend_service_name, record_error=False)
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
