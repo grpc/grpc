@@ -22,6 +22,8 @@
 
 #include <sstream>
 
+#include "absl/strings/str_replace.h"
+
 namespace grpc_cpp_generator {
 namespace {
 
@@ -93,7 +95,10 @@ std::string GetHeaderPrologue(grpc_generator::File* file,
 
     vars["filename"] = file->filename();
     vars["filename_identifier"] = FilenameIdentifier(file->filename());
-    vars["filename_base"] = file->filename_without_ext();
+    // Protoc hackery: the generated *.pb.h lives in a different virtual folder
+    vars["filename_base"] =
+        absl::StrReplaceAll(file->filename_without_ext(),
+                            {{"/_virtual_imports/", "/_virtual_includes/"}});
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
                                      : params.message_header_extension;
@@ -1623,6 +1628,10 @@ std::string GetSourcePrologue(grpc_generator::File* file,
 
     vars["filename"] = file->filename();
     vars["filename_base"] = file->filename_without_ext();
+    // Protoc hackery: the generated *.pb.h lives in a different virtual folder
+    vars["message_filename_base"] =
+        absl::StrReplaceAll(file->filename_without_ext(),
+                            {{"/_virtual_imports/", "/_virtual_includes/"}});
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
                                      : params.message_header_extension;
@@ -1633,7 +1642,8 @@ std::string GetSourcePrologue(grpc_generator::File* file,
                    "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n\n");
 
-    printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
+    printer->Print(
+        vars, "#include \"$message_filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
     printer->Print(vars, "\n");
   }

@@ -70,6 +70,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "protobuf_clib",
+        "absl/strings",
     ],
     language = "c++",
     deps = [
