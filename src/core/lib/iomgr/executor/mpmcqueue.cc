@@ -32,7 +32,6 @@ inline void* InfLenFIFOQueue::PopFront() {
   count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
 
   // Updates Stats when trace flag turned on.
-#ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     gpr_timespec wait_time =
         gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
@@ -55,7 +54,6 @@ inline void* InfLenFIFOQueue::PopFront() {
             gpr_timespec_to_micros(stats_.max_queue_time),
             gpr_timespec_to_micros(stats_.busy_queue_time));
   }
-#endif  // NDEBUG
 
   queue_head_ = queue_head_->next;
   // Signal waiting thread
@@ -125,7 +123,6 @@ void InfLenFIFOQueue::Put(void* elem) {
   queue_tail_->content = static_cast<void*>(elem);
 
   // Updates Stats info
-#ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
     gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
@@ -136,7 +133,6 @@ void InfLenFIFOQueue::Put(void* elem) {
     }
     queue_tail_->insert_time = current_time;
   }
-#endif  // NDEBUG
 
   count_.Store(curr_count + 1, MemoryOrder::RELAXED);
   queue_tail_ = queue_tail_->next;
@@ -148,27 +144,21 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
   MutexLock l(&mu_);
 
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
-#ifndef NDEBUG
     gpr_timespec start_time;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       start_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
-#else
-    (void)wait_time;
-#endif  // NDEBUG
     Waiter self;
     PushWaiter(&self);
     do {
       self.cv.Wait(&mu_);
     } while (count_.Load(MemoryOrder::RELAXED) == 0);
     RemoveWaiter(&self);
-#ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
     }
-#endif  // NDEBUG
   }
   GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
   return PopFront();

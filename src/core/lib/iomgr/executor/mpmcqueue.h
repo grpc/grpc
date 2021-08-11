@@ -160,10 +160,8 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   Atomic<int> count_{0};        // Number of elements in queue
   int num_nodes_ = 0;           // Number of nodes allocated
 
-  Stats stats_;  // Stats info
-#ifndef NDEBUG
+  Stats stats_;            // Stats info
   gpr_timespec busy_time;  // Start time of busy queue
-#endif                     // NDEBUG
 
   // Internal Helper.
   // Allocates an array of nodes of size "num", links all nodes together except
