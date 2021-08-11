@@ -154,9 +154,9 @@ TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchFailedOnEmptyKey){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       /*private_key=*/"", cert_chain_0_.c_str(), &error_details);
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ("Private key string is empty.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -165,9 +165,9 @@ TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchFailedOnEmptyCertificate){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_0_.c_str(), /*cert_chain=*/"", &error_details);
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ("Certificate string is empty.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -176,9 +176,9 @@ TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchFailedOnInvalidCertificate){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), "invalid_certificate", &error_details);
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ("Conversion from PEM string to X509 failed.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -187,9 +187,9 @@ TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchFailedOnInvalidKey){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       "invalid_private_key", cert_chain_1_.c_str(), &error_details);
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ("Conversion from PEM string to EVP_PKEY failed.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -198,21 +198,21 @@ TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchSucceeded){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), cert_chain_1_.c_str(), &error_details);
   EXPECT_EQ("", std::string(error_details));
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kOk));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
 }
 
 TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchFailedOnInvalidPair){
   const char* error_details;
-  grpc_status_code matched = grpc_tls_certificate_key_match(
+  grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), cert_chain_0_.c_str(), &error_details);
   EXPECT_EQ("he private key doesn't match the public key on the first certificate of the certificate chain.",
             std::string(error_details));
-  EXPECT_EQ(matched, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace
