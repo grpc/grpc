@@ -121,25 +121,6 @@ class TestServerWrapper {
              std::string key_file = absl::StrCat(kCredentialsDir, "/valid.key"),
              std::string ca_bundle_file = absl::StrCat(kCredentialsDir,
                                                        "/ca.pem")) {
-    std::string certificate_pem = ReadFile(certificate_file.c_str());
-    GPR_ASSERT(!certificate_pem.empty());
-    std::string key_pem = ReadFile(key_file.c_str());
-    GPR_ASSERT(!key_pem.empty());
-    std::string ca_bundle_pem = ReadFile(ca_bundle_file.c_str());
-    GPR_ASSERT(!ca_bundle_pem.empty());
-    InitializeAndStartServer(certificate_pem, key_pem, ca_bundle_pem);
-  }
-
-  ~TestServerWrapper() { server_->Shutdown(); }
-
-  const std::string server_address_;
-  TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
-
- private:
-  void InitializeAndStartServer(const std::string& certificate_file,
-                                const std::string& key_file,
-                                const std::string& ca_bundle_file) {
     auto certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
             key_file, certificate_file, ca_bundle_file,
@@ -158,6 +139,12 @@ class TestServerWrapper {
     server_ = builder.BuildAndStart();
     std::cout << "Server listening at " << server_address_.c_str() << std::endl;
   }
+
+  ~TestServerWrapper() { server_->Shutdown(); }
+
+  const std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
 };
 
 class CrlTest : public ::testing::Test {
