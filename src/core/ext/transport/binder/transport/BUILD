@@ -21,22 +21,28 @@ package(
 )
 
 grpc_cc_library(
-    name = "transport_stream_receiver",
+    name = "transport",
     srcs = [
-        "transport_stream_receiver_impl.cc",
+        "binder_transport.cc",
     ],
     hdrs = [
-        "transport_stream_receiver.h",
-        "transport_stream_receiver_impl.h",
+        "binder_stream.h",
+        "binder_transport.h",
     ],
     external_deps = [
-        "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
+        "absl/memory",
     ],
     deps = [
         "//:gpr",
         "//:gpr_base",
-        "//src/core/ext/transport/binder/wire_format:transaction",
+        "//:grpc",
+        "//:grpc_base",
+        "//:grpc_base_c",
+        "//:grpc_codegen",
+        "//src/core/ext/transport/binder/utils:transport_stream_receiver",
+        "//src/core/ext/transport/binder/wire_format:binder",
+        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//src/core/ext/transport/binder/wire_format:wire_writer",
     ],
 )

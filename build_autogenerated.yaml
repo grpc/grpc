@@ -309,10 +309,6 @@ libs:
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tls_gcc.h
-  - src/core/lib/gpr/tls_msvc.h
-  - src/core/lib/gpr/tls_pthread.h
-  - src/core/lib/gpr/tls_stdcpp.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
@@ -374,7 +370,6 @@ libs:
   - src/core/lib/gpr/time_posix.cc
   - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tls_pthread.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
@@ -4784,6 +4779,17 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: capture_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  src:
+  - test/core/gprpp/capture_test.cc
+  deps:
+  - absl/utility:utility
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -6042,6 +6048,20 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/promise_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test

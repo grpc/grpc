@@ -53,6 +53,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:orphanable",
     ],
 )
 
@@ -70,6 +71,7 @@ grpc_cc_library(
     ],
     deps = [
         ":binder",
+        ":wire_reader",
     ],
 )
 
@@ -80,7 +82,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         ":binder",
         ":transaction",
@@ -106,6 +107,7 @@ grpc_cc_library(
         ":binder",
         ":wire_writer",
         "//:gpr",
+        "//:orphanable",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
     ],
 )

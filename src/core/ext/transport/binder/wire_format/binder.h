@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_binder {
 
@@ -80,6 +81,8 @@ class TransactionReceiver : public HasRawBinder {
   ~TransactionReceiver() override = default;
 };
 
+class WireReader;
+
 class Binder : public HasRawBinder {
  public:
   ~Binder() override = default;
@@ -93,6 +96,7 @@ class Binder : public HasRawBinder {
 
   // TODO(waynetu): Can we decouple the receiver from the binder?
   virtual std::unique_ptr<TransactionReceiver> ConstructTxReceiver(
+      grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
       TransactionReceiver::OnTransactCb transact_cb) const = 0;
 };
 
