@@ -4778,6 +4778,17 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: capture_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  src:
+  - test/core/gprpp/capture_test.cc
+  deps:
+  - absl/utility:utility
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test

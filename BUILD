@@ -713,6 +713,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "capture",
+    external_deps = ["absl/utility"],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/capture.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
