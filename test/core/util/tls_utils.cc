@@ -82,45 +82,34 @@ absl::Status CheckPrivateKeyFormat(absl::string_view private_key) {
   if (!private_evp_pkey.get_p_key()) {
     return absl::InvalidArgumentError("Invalid private key string.");
   }
-  int pkey_type = EVP_PKEY_id(private_evp_pkey.get_p_key());
-  switch (pkey_type) {
-    case EVP_PKEY_NONE:
-      return absl::InvalidArgumentError("Undefined key type.");
-    case EVP_PKEY_RSA:
-    case EVP_PKEY_RSA_PSS:
-      // The cases that lead here represent currently supported key types.
-      break;
-    default:
-      gpr_log(GPR_ERROR, "Key type currently not supported.");
-  }
-  OpenSslConnectionConfig connection_config(TLS_method());
-  return SSL_CTX_use_PrivateKey(connection_config.get_config(),
+  OpenSslConnectionConfig ssl_context(TLS_method());
+  return SSL_CTX_use_PrivateKey(ssl_context.get_context(),
                                 private_evp_pkey.get_p_key())
              ? absl::OkStatus()
              : absl::InvalidArgumentError("Invalid private key.");
 }
 
-absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
+absl::Status CheckCertificateListFormat(absl::string_view cert_chain) {
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate chain string is empty.");
   }
   OpenSslX509InfoStack cert_stack(cert_chain);
-  int num_certs = sk_X509_INFO_num(cert_stack.get_stack());
+  size_t num_certs = sk_X509_INFO_num(cert_stack.get_stack());
   const char* bad_format_string =
       "Certificate chain contains cert with bad format";
   if (num_certs == 0) {
     return absl::InvalidArgumentError(bad_format_string);
   }
-  OpenSslConnectionConfig connection_config(TLS_method());
-  for (int i = 0; i < num_certs; i++) {
+  OpenSslContext ssl_context(TLS_method());
+  for (size_t i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get_stack(), i);
     if (i == 0) {
-      if (!SSL_CTX_use_certificate(connection_config.get_config(),
+      if (!SSL_CTX_use_certificate(ssl_context.get_context(),
                                    cert_info->x509)) {
         return absl::InvalidArgumentError(bad_format_string);
       }
     } else {
-      if (!SSL_CTX_add1_chain_cert(connection_config.get_config(),
+      if (!SSL_CTX_add1_chain_cert(ssl_context.get_context(),
                                    cert_info->x509)) {
         return absl::InvalidArgumentError(bad_format_string);
       }

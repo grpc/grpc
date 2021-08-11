@@ -62,8 +62,6 @@ class OpenSslX509InfoStack {
  public:
   explicit OpenSslX509InfoStack(absl::string_view cert_chain);
 
-  explicit OpenSslX509InfoStack(STACK_OF(X509_INFO) * sk) { info_stack_ = sk; }
-
   ~OpenSslX509InfoStack() {
     sk_X509_INFO_pop_free(info_stack_, X509_INFO_free);
   }
@@ -75,18 +73,18 @@ class OpenSslX509InfoStack {
 };
 
 // A class for managing openssl `SSL_CTX` structures.
-class OpenSslConnectionConfig {
+class OpenSslContext {
  public:
-  explicit OpenSslConnectionConfig(const SSL_METHOD* method) {
-    config = SSL_CTX_new(method);
+  explicit OpenSslContext(const SSL_METHOD* method) {
+    context = SSL_CTX_new(method);
   }
 
-  ~OpenSslConnectionConfig() { SSL_CTX_free(config); }
+  ~OpenSslContext() { SSL_CTX_free(context); }
 
-  SSL_CTX* get_config() { return config; }
+  SSL_CTX* get_context() { return context; }
 
  private:
-  SSL_CTX* config = nullptr;
+  SSL_CTX* context = nullptr;
 };
 
 }  // namespace grpc_core
