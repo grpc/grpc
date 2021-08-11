@@ -97,6 +97,7 @@ TEST_P(FakeBinderTest, SendString) {
       [&](transaction_code_t tx_code, const ReadableParcel* parcel) {
         EXPECT_EQ(tx_code, kTxCode);
         char value[111];
+        memset(value, 0, sizeof(value));
         EXPECT_TRUE(parcel->ReadString(value).ok());
         EXPECT_STREQ(value, kValue);
         called++;
@@ -158,6 +159,7 @@ TEST_P(FakeBinderTest, SendMultipleItems) {
         EXPECT_TRUE(parcel->ReadByteArray(&byte_array_result).ok());
         EXPECT_EQ(byte_array_result, kByteArray);
         char string_result[111];
+        memset(string_result, 0, sizeof(string_result));
         EXPECT_TRUE(parcel->ReadString(string_result).ok());
         EXPECT_STREQ(string_result, kString);
         called++;
