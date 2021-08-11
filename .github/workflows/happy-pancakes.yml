@@ -38,24 +38,31 @@ jobs:
               var need = new Set();
               need.add("Bazel Basic build for C/C++");
               need.add("Portability Tests Linux [Build Only] (internal CI)");
-              let statuses = await github.repos.listCommitStatusesForRef({
-                owner: "grpc",
-                repo: "grpc",
-                ref: "${{ github.event.pull_request.head.sha }}",
-                per_page: 100
-              });
-              for (var i = 0; i < statuses.data.length; i++) {
-                let status = statuses.data[i];
-                console.log(status.context, status.state, need);
-                if (need.has(status.context)) {
-                  if (status.state == "success") {
-                    need.delete(status.context);
-                  } else if (status.state == "pending") {
-                    // do nothing
-                  } else {
-                    core.setFailed("Required status failed: " + status.context);
-                    return;
+              for (var page=0;; page++) {
+                console.log("***** page " + page);
+                let statuses = await github.repos.listCommitStatusesForRef({
+                  owner: "grpc",
+                  repo: "grpc",
+                  ref: "${{ github.event.pull_request.head.sha }}",
+                  per_page: 100,
+                  page: page
+                });
+                for (var i = 0; i < statuses.data.length; i++) {
+                  let status = statuses.data[i];
+                  console.log(status.context, status.state, need);
+                  if (need.has(status.context)) {
+                    if (status.state == "success") {
+                      need.delete(status.context);
+                    } else if (status.state == "pending") {
+                      // do nothing
+                    } else {
+                      core.setFailed("Required status failed: " + status.context);
+                      return;
+                    }
                   }
+                }
+                if (statuses.data.length < 100) {
+                  break;
                 }
               }
               if (need.size == 0) {
