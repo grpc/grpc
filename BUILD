@@ -857,6 +857,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/promise.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_like",
     language = "c++",
     public_hdrs = [
