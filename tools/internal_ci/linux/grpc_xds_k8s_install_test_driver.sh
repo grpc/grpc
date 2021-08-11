@@ -87,6 +87,7 @@ gcloud_update() {
 #   GKE_CLUSTER_NAME
 #   GKE_CLUSTER_ZONE
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   None
 # Outputs:
@@ -94,6 +95,12 @@ gcloud_update() {
 #   Writes authorization info $HOME/.kube/config
 #######################################
 gcloud_get_cluster_credentials() {
+  if [[ -n "${SECONDARY_GKE_CLUSTER_NAME}" && -n "${SECONDARY_GKE_CLUSTER_ZONE}" ]]; then
+    gcloud container clusters get-credentials "${SECONDARY_GKE_CLUSTER_NAME}" --zone "${SECONDARY_GKE_CLUSTER_ZONE}"
+    readonly SECONDARY_KUBE_CONTEXT="$(kubectl config current-context)"
+  else
+    readonly SECONDARY_KUBE_CONTEXT=""
+  fi
   gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --zone "${GKE_CLUSTER_ZONE}"
   readonly KUBE_CONTEXT="$(kubectl config current-context)"
 }
@@ -292,6 +299,7 @@ kokoro_setup_python_virtual_environment() {
 #   TEST_DRIVER_FLAGFILE: Populated with relative path to test driver flagfile
 #   TEST_XML_OUTPUT_DIR: Populated with the path to test xUnit XML report
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 #   GIT_ORIGIN_URL: Populated with the origin URL of git repo used for the build
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
 #   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
@@ -341,6 +349,7 @@ kokoro_setup_test_driver() {
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
 #   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   The path to the folder containing the build script
 # Outputs:
@@ -351,6 +360,7 @@ local_setup_test_driver() {
   readonly SRC_DIR="$(git -C "${script_dir}" rev-parse --show-toplevel)"
   parse_src_repo_git_info SRC_DIR
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
+  readonly SECONDARY_KUBE_CONTEXT="${SECONDARY_KUBE_CONTEXT}"
   local test_driver_repo_dir
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   test_driver_install "${test_driver_repo_dir}"
