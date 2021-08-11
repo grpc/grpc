@@ -46,8 +46,6 @@ constexpr const char* kRootCertName = "root_cert_name";
 constexpr const char* kRootCertContents = "root_cert_contents";
 constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
-constexpr const char* kIdentityCertName2 = "identity_cert_name_2";
-constexpr const char* kIdentityCertPrivateKey2 = "identity_private_key_2";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
