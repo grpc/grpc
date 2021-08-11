@@ -38,7 +38,7 @@ jobs:
               var need = new Set();
               need.add("Bazel Basic build for C/C++");
               need.add("Portability Tests Linux [Build Only] (internal CI)");
-              for (var page=0;; page++) {
+              for (var page=1;; page++) {
                 console.log("***** page " + page);
                 let statuses = await github.repos.listCommitStatusesForRef({
                   owner: "grpc",
