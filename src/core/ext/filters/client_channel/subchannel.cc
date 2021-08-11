@@ -716,7 +716,6 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
-
   // grpc_shutdown is called here because grpc_init is called in the ctor.
   grpc_shutdown();
 }
