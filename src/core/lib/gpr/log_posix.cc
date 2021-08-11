@@ -55,8 +55,11 @@ void gpr_vlog(const char* file, int line, gpr_log_severity severity,
               const char* format, va_list args) {
   char buf[64];
   char* allocated = nullptr;
-  char* message;
-  int ret = vsnprintf(buf, sizeof(buf), format, args);
+  char* message = nullptr;
+  // a va_list cannot be used twice.
+  va_list args_copy;
+  va_copy(args_copy, args);
+  int ret = vsnprintf(buf, sizeof(buf), format, args_copy);
   if (ret < 0) {
     message = nullptr;
   } else if ((size_t)ret <= sizeof(buf) - 1) {
