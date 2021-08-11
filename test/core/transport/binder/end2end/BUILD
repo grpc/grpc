@@ -82,7 +82,7 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
-      ":echo_grpc_proto",
+        ":echo_grpc_proto",
     ],
 )
 
