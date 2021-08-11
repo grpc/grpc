@@ -65,24 +65,22 @@ class TestTlsServerAuthorizationCheck
 
 void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
                  bool revoked_server_certs) {
-  // std::string certificate_file;
-  // std::string key_file;
-  // if (revoked_client_certs) {
-  //   certificate_file = absl::StrCat(kCredentialsDir, "/revoked.pem");
-  //   key_file = absl::StrCat(kCredentialsDir, "/revoked.key");
-  // } else {
-  //   certificate_file = absl::StrCat(kCredentialsDir, "/valid.pem");
-  //   key_file = absl::StrCat(kCredentialsDir, "/valid.key");
-  // }
-  // const std::string ca_bundle_file = absl::StrCat(kCredentialsDir,
-  // "/ca.pem");
+  std::string certificate_file;
+  std::string key_file;
+  if (revoked_client_certs) {
+    certificate_file = absl::StrCat(kCredentialsDir, "/revoked.pem");
+    key_file = absl::StrCat(kCredentialsDir, "/revoked.key");
+  } else {
+    certificate_file = absl::StrCat(kCredentialsDir, "/valid.pem");
+    key_file = absl::StrCat(kCredentialsDir, "/valid.key");
+  }
+  const std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
 
-  // auto certificate_provider =
-  // std::make_shared<FileWatcherCertificateProvider>(
-  //     key_file, certificate_file, ca_bundle_file,
-  //    /*refresh_interval_sec=*/10);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      key_file, certificate_file, ca_bundle_file,
+      /*refresh_interval_sec=*/10);
   TlsChannelCredentialsOptions options;
-  // options.set_certificate_provider(certificate_provider);
+  options.set_certificate_provider(certificate_provider);
   // options.watch_root_certs();
   // options.watch_identity_key_cert_pairs();
   // options.set_server_verification_option(GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
