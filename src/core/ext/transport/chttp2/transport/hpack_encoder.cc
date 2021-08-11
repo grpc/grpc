@@ -246,7 +246,7 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
 static void AddKeyWithIndex(grpc_chttp2_hpack_compressor* c,
                             grpc_slice_refcount* key_ref, uint32_t new_index,
                             uint32_t key_hash) {
-  c->key_table->UpdateAddOrEvict(
+  c->key_table->Insert(
       grpc_chttp2_hpack_compressor::KeySliceRef(key_ref, key_hash), new_index);
 }
 
@@ -255,7 +255,7 @@ static void AddElemWithIndex(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                              uint32_t new_index, uint32_t elem_hash,
                              uint32_t key_hash) {
   GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
-  c->elem_table->UpdateAddOrEvict(
+  c->elem_table->Insert(
       grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash), new_index);
   AddKeyWithIndex(c, GRPC_MDKEY(elem).refcount, new_index, key_hash);
 }

@@ -2554,6 +2554,9 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
     ],
     language = "c++",
+    external_deps = [
+        "absl/types:optional",
+    ],
     deps = [
         "gpr_platform",
     ],

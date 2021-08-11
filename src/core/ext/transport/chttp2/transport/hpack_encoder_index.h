@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
 
+#include "absl/types/optional.h"
+
 namespace grpc_core {
 
 // A fixed size mapping of a key to a chronologically ordered index
@@ -26,7 +28,7 @@ using Index = uint32_t;
  // If key exists in the table, update it to a new index.
  // If it does not and there is an empty slot, add it to the index.
  // Finally, if it does not and there is no empty slot, evict the oldest conflicting member.
-  void UpdateAddOrEvict(const Key& key, Index new_index) {
+  void Insert(const Key& key, Index new_index) {
     auto* const cuckoo_first = first_slot(key);
     if (cuckoo_first->UpdateOrAdd(key, new_index)) return;
     auto* const cuckoo_second = second_slot(key);
