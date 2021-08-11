@@ -92,12 +92,12 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
   options.set_server_authorization_check_config(
       server_authorization_check_config);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
-  grpc::ChannelArguments args;
-  if (revoked_server_certs) {
-    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "revoked");
-  } else {
-    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
-  }
+  // grpc::ChannelArguments args;
+  // if (revoked_server_certs) {
+  //   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "revoked");
+  // } else {
+  //   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
+  // }
   auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
   std::unique_ptr<EchoTestService::Stub> stub =
       EchoTestService::NewStub(channel);
@@ -145,10 +145,10 @@ class TestServerWrapper {
             key_file, certificate_file, ca_bundle_file,
             /*refresh_interval_sec=*/10);
     TlsServerCredentialsOptions options(certificate_provider);
-    // options.watch_root_certs();
+    options.watch_root_certs();
     options.watch_identity_key_cert_pairs();
-    // options.set_cert_request_type(
-    //     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     // options.set_crl_directory("");
     auto creds = grpc::experimental::TlsServerCredentials(options);
     ServerBuilder builder;
@@ -174,7 +174,7 @@ TEST_F(CrlTest, ValidTraffic) {
 TEST_F(CrlTest, RevokedTraffic) {
   TestServerWrapper wrapper;
   wrapper.Start();
-  CallEchoRPC(wrapper.server_address_, true, false);
+  CallEchoRPC(wrapper_.server_address_, true, false);
 }
 
 }  // namespace
