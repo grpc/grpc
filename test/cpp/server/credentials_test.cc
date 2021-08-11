@@ -210,7 +210,7 @@ TEST_F(
   const char* error_details;
   grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), cert_chain_0_.c_str(), &error_details);
-  EXPECT_EQ("he private key doesn't match the public key on the first certificate of the certificate chain.",
+  EXPECT_EQ("The private key doesn't match the public key on the first certificate of the certificate chain.",
             std::string(error_details));
   EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
 }

@@ -209,8 +209,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }else{
         gpr_log(GPR_ERROR,
-              "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %s",
-              matched_or.status().message());
+              "PrivateKeyAndCertificateMatch failed, skip the update.");
       }
     } else {
       pem_key_cert_pairs_ = {};
