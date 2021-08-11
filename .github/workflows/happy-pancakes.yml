@@ -41,7 +41,8 @@ jobs:
               let statuses = await github.repos.listCommitStatusesForRef({
                 owner: "grpc",
                 repo: "grpc",
-                ref: "${{ github.event.pull_request.head.sha }}"
+                ref: "${{ github.event.pull_request.head.sha }}",
+                per_page: 100
               });
               for (var i = 0; i < statuses.data.length; i++) {
                 let status = statuses.data[i];
