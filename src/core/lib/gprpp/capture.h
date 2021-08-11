@@ -17,6 +17,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <tuple>
 #include <utility>
 #include "absl/utility/utility.h"
 
@@ -60,6 +61,10 @@ class Capture {
 // captures the original value of big_thing by move. Each call, a pointer to
 // each captured thing is inserted into the argument list at the beginning so it
 // can be manipulated.
+//
+// Captured values are mutable, and it's the users responsibility to ensure,
+// should this callable be invoked from different threads, that proper locking
+// is implemented.
 template <typename F, typename... Captures>
 detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
   return detail::Capture<F, Captures...>(std::move(f), std::move(captures)...);
