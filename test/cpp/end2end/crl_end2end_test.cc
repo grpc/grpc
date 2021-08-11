@@ -72,9 +72,9 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
       /*refresh_interval_sec=*/10);
   TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
-  // options.watch_root_certs();
-  // options.watch_identity_key_cert_pairs();
-  // options.set_server_verification_option(GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  options.set_server_verification_option(GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
   std::shared_ptr<TestTlsServerAuthorizationCheck>
       test_server_authorization_check(new TestTlsServerAuthorizationCheck());
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
@@ -117,10 +117,10 @@ class TestServerWrapper {
             key_file, certificate_file, ca_bundle_file,
             /*refresh_interval_sec=*/10);
     TlsServerCredentialsOptions options(certificate_provider);
-    // options.watch_root_certs();
-    // options.watch_identity_key_cert_pairs();
-    // options.set_cert_request_type(
-    //     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    options.watch_root_certs();
+    options.watch_identity_key_cert_pairs();
+    options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     // options.set_crl_directory("");
     auto creds = grpc::experimental::TlsServerCredentials(options);
     ServerBuilder builder;
