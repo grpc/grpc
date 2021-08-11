@@ -2553,10 +2553,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
     ],
-    language = "c++",
     external_deps = [
         "absl/types:optional",
     ],
+    language = "c++",
     deps = [
         "gpr_platform",
     ],
@@ -2629,9 +2629,9 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_encoder_index",
         "match",
         "popularity_count",
-        "hpack_encoder_index",
     ],
 )
 
