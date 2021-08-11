@@ -1,5 +1,4 @@
-// Copyright 2021 gRPC authors.
-//
+// Copyright 2021 gRPC authorsabsl::string_view//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -26,7 +25,7 @@ namespace grpc_binder {
 
 class MockWritableParcel : public WritableParcel {
  public:
-  MOCK_METHOD(int32_t, GetDataPosition, (), (const override));
+  MOCK_METHOD(int32_t, GetDataPosition, (), (const, override));
   MOCK_METHOD(absl::Status, SetDataPosition, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteInt32, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteBinder, (HasRawBinder*), (override));
@@ -39,11 +38,11 @@ class MockWritableParcel : public WritableParcel {
 
 class MockReadableParcel : public ReadableParcel {
  public:
-  MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (const override));
+  MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (const, override));
   MOCK_METHOD(absl::Status, ReadBinder, (std::unique_ptr<Binder>*),
-              (const override));
-  MOCK_METHOD(absl::Status, ReadByteArray, (std::string*), (const override));
-  MOCK_METHOD(absl::Status, ReadString, (char[111]), (const override));
+              (const, override));
+  MOCK_METHOD(absl::Status, ReadByteArray, (std::string*), (const, override));
+  MOCK_METHOD(absl::Status, ReadString, (char[111]), (const, override));
 
   MockReadableParcel();
 };
@@ -53,12 +52,12 @@ class MockBinder : public Binder {
   MOCK_METHOD(void, Initialize, (), (override));
   MOCK_METHOD(absl::Status, PrepareTransaction, (), (override));
   MOCK_METHOD(absl::Status, Transact, (BinderTransportTxCode), (override));
-  MOCK_METHOD(WritableParcel*, GetWritableParcel, (), (const override));
-  MOCK_METHOD(ReadableParcel*, GetReadableParcel, (), (const override));
+  MOCK_METHOD(WritableParcel*, GetWritableParcel, (), (const, override));
+  MOCK_METHOD(ReadableParcel*, GetReadableParcel, (), (const, override));
   MOCK_METHOD(std::unique_ptr<TransactionReceiver>, ConstructTxReceiver,
               (grpc_core::RefCountedPtr<WireReader>,
                TransactionReceiver::OnTransactCb),
-              (const override));
+              (const, override));
   MOCK_METHOD(void*, GetRawBinder, (), (override));
 
   MockBinder();
