@@ -42,6 +42,17 @@ namespace grpc {
 namespace testing {
 namespace {
 
+class EchoServiceImpl final : public echo::Echo::Service {
+  grpc::Status Echo(grpc::ServerContext* context,
+                    const echo::EchoRequest* request,
+                    echo::EchoResponse* reply) override {
+    std::cout << "Server: received message: " << request->message()
+              << std::endl;
+    reply->set_message(request->message());
+    return Status::OK;
+  }
+};
+
 constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
 
 class TestTlsServerAuthorizationCheck
@@ -134,7 +145,7 @@ class TestServerWrapper {
   ~TestServerWrapper() { server_->Shutdown(); }
 
   const std::string server_address_;
-  TestServiceImpl service_;
+  EchoServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
 
