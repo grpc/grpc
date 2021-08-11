@@ -42,10 +42,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class EchoServiceImpl final : public echo::Echo::Service {
-  grpc::Status Echo(grpc::ServerContext* context,
-                    const echo::EchoRequest* request,
-                    echo::EchoResponse* reply) override {
+class EchoServiceImpl final : public grpc::testing::EchoTestService {
+  grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
+                    EchoResponse* reply) override {
     std::cout << "Server: received message: " << request->message()
               << std::endl;
     reply->set_message(request->message());

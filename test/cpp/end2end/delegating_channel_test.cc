@@ -43,17 +43,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class EchoServiceImpl final : public echo::Echo::Service {
-  grpc::Status Echo(grpc::ServerContext* context,
-                    const echo::EchoRequest* request,
-                    echo::EchoResponse* reply) override {
-    std::cout << "Server: received message: " << request->message()
-              << std::endl;
-    reply->set_message(request->message());
-    return Status::OK;
-  }
-};
-
 class TestChannel : public experimental::DelegatingChannel {
  public:
   explicit TestChannel(
@@ -79,7 +68,7 @@ class DelegatingChannelTest : public ::testing::Test {
   ~DelegatingChannelTest() override { server_->Shutdown(); }
 
   std::string server_address_;
-  EchoServiceImpl service_;
+  TestServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
 
