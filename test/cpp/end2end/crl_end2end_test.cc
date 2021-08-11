@@ -20,6 +20,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 #include <gtest/gtest.h>
 
@@ -40,16 +41,6 @@ using grpc::testing::EchoTestService;
 namespace grpc {
 namespace testing {
 namespace {
-
-class EchoServiceImpl final : public grpc::testing::EchoTestService {
-  grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
-                    EchoResponse* reply) override {
-    std::cout << "Server: received message: " << request->message()
-              << std::endl;
-    reply->set_message(request->message());
-    return Status::OK;
-  }
-};
 
 constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
 
@@ -143,7 +134,7 @@ class TestServerWrapper {
   ~TestServerWrapper() { server_->Shutdown(); }
 
   const std::string server_address_;
-  EchoServiceImpl service_;
+  TestServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
 
