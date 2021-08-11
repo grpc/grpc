@@ -241,8 +241,6 @@ TEST_P(FakeBinderTest, SendTransactionAfterDestruction) {
     WritableParcel* parcel = sender->GetWritableParcel();
     EXPECT_TRUE(parcel->WriteInt32(kValue).ok());
     EXPECT_TRUE(sender->Transact(BinderTransportTxCode(kTxCode)).ok());
-
-    g_transaction_processor->Flush();
   }
   // tx_receiver gets destructed here. This additional transaction should
   // *still* be received.
