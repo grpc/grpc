@@ -22,9 +22,9 @@
 
 #include <map>
 
-#include "src/core/lib/gprpp/sync.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_binder {
 namespace {
