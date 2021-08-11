@@ -98,7 +98,7 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
   // } else {
   //   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "valid");
   // }
-  auto channel = grpc::CreateCustomChannel(server_addr, channel_creds, args);
+  auto channel = grpc::CreateCustomChannel(server_addr, channel_creds);
   std::unique_ptr<EchoTestService::Stub> stub =
       EchoTestService::NewStub(channel);
   EchoRequest request;
