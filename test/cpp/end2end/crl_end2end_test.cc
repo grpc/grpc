@@ -149,14 +149,13 @@ class TestServerWrapper {
     options.watch_identity_key_cert_pairs();
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-    options.set_crl_directory("");
+    // options.set_crl_directory("");
     auto creds = grpc::experimental::TlsServerCredentials(options);
     ServerBuilder builder;
     builder.AddListeningPort(server_address_, creds);
     TestServiceImpl service;
     builder.RegisterService(&service);
     server_ = builder.BuildAndStart();
-
     std::cout << "Server listening at " << server_address_.c_str() << std::endl;
   }
 };
@@ -164,17 +163,17 @@ class TestServerWrapper {
 class CrlTest : public ::testing::Test {
  protected:
   CrlTest() {}
-
-  TestServerWrapper wrapper_;
 };
 
 TEST_F(CrlTest, ValidTraffic) {
-  wrapper_.Start();
-  CallEchoRPC(wrapper_.server_address_, false, false);
+  TestServerWrapper wrapper;
+  wrapper.Start();
+  CallEchoRPC(wrapper.server_address_, false, false);
 }
 
 TEST_F(CrlTest, RevokedTraffic) {
-  wrapper_.Start();
+  TestServerWrapper wrapper;
+  wrapper.Start();
   CallEchoRPC(wrapper_.server_address_, true, false);
 }
 
