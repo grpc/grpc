@@ -1,10 +1,10 @@
-name: Ignore - Experimental
+name: Happy Pancakes
 on:
   pull_request:
     types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
 jobs:
   check_status:
-    name: Check Status
+    name: Check Required Status or force-merge label
     runs-on: ubuntu-latest
     steps:
       # Cancel current runs if they're still running
