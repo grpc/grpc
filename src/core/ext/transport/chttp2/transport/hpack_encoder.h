@@ -68,7 +68,7 @@ struct grpc_chttp2_hpack_compressor {
     class Stored {
      public:
       Stored() : elem_(GRPC_MDNULL) {}
-      Stored(grpc_mdelem elem) : elem_(GRPC_MDELEM_REF(elem)) {}
+      explicit Stored(grpc_mdelem elem) : elem_(GRPC_MDELEM_REF(elem)) {}
       Stored(const Stored& other) : elem_(GRPC_MDELEM_REF(other.elem_)) {}
       Stored& operator=(Stored other) {
         std::swap(elem_, other.elem_);
@@ -138,11 +138,11 @@ struct grpc_chttp2_hpack_compressor {
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
-  grpc_core::ManualConstructor<grpc_core::HPackEncoderIndex<
-      KeyElem, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+  grpc_core::ManualConstructor<
+      grpc_core::HPackEncoderIndex<KeyElem, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
       elem_table;
-  grpc_core::ManualConstructor<grpc_core::HPackEncoderIndex<
-      KeySliceRef, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+  grpc_core::ManualConstructor<
+      grpc_core::HPackEncoderIndex<KeySliceRef, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
       key_table;
 };
 

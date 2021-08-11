@@ -19,39 +19,37 @@
 #include "include/grpc/impl/codegen/port_platform.h"
 
 #include <gtest/gtest.h>
-#include <unordered_map>
 #include <random>
+#include <unordered_map>
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {
 namespace testing {
 
 struct TestKey {
-    using Stored = uint32_t;
-    uint32_t value;
-    uint32_t stored() const { return value; }
-    uint32_t hash() const { return value; }
-    bool operator==(uint32_t other) const {
-        return other == value;
-    }
+  using Stored = uint32_t;
+  uint32_t value;
+  uint32_t stored() const { return value; }
+  uint32_t hash() const { return value; }
+  bool operator==(uint32_t other) const { return other == value; }
 };
 
 TEST(HPackEncoderIndexTest, SetAndGet) {
-    HPackEncoderIndex<TestKey, 64> index;
-    std::random_device rng;
-    std::unordered_map<uint32_t, uint32_t> last_index;
-    for (uint32_t i=0; i<10000; i++) {
-         uint32_t key = rng();
-        index.Insert({key}, i);
-        EXPECT_EQ(index.Lookup({key}), i);
-        last_index[key] = i;
+  HPackEncoderIndex<TestKey, 64> index;
+  std::random_device rng;
+  std::unordered_map<uint32_t, uint32_t> last_index;
+  for (uint32_t i = 0; i < 10000; i++) {
+    uint32_t key = rng();
+    index.Insert({key}, i);
+    EXPECT_EQ(index.Lookup({key}), i);
+    last_index[key] = i;
+  }
+  for (auto p : last_index) {
+    auto r = index.Lookup({p.first});
+    if (r.has_value()) {
+      EXPECT_EQ(*r, p.second);
     }
-    for (auto p: last_index) {
-        auto r = index.Lookup({p.first});
-        if (r.has_value()) {
-            EXPECT_EQ(*r, p.second);
-        }
-    }
+  }
 }
 
 }  // namespace testing
