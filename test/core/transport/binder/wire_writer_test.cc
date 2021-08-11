@@ -39,7 +39,7 @@ TEST(WireWriterTest, RpcCall) {
       .WillByDefault(Return(&mock_writable_parcel));
   WireWriterImpl wire_writer(std::move(mock_binder));
 
-  auto ExpectWriteByteArray = [&](std::string target) {
+  auto ExpectWriteByteArray = [&](const std::string& target) {
     // length
     EXPECT_CALL(mock_writable_parcel, WriteInt32(target.size()));
     if (!target.empty()) {
@@ -73,7 +73,7 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_writable_parcel, WriteInt32(sequence_number));
 
     EXPECT_CALL(mock_writable_parcel,
-                WriteString(::testing::StrEq("/example/method/ref")));
+                WriteString(absl::string_view("/example/method/ref")));
 
     const std::vector<std::pair<std::string, std::string>> kMetadata = {
         {"", ""},
@@ -136,7 +136,7 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_writable_parcel, WriteInt32(sequence_number));
 
     EXPECT_CALL(mock_writable_parcel,
-                WriteString(::testing::StrEq("/example/method/ref")));
+                WriteString(absl::string_view("/example/method/ref")));
 
     const std::vector<std::pair<std::string, std::string>> kMetadata = {
         {"", ""},

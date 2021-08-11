@@ -277,7 +277,6 @@ TEST_P(FakeBinderTest, StressTest) {
   constexpr int kNumThreads = 16;
   constexpr int kNumPairsPerThread = 128;
   constexpr int kNumTransactionsPerPair = 128;
-  std::vector<grpc_core::Thread> thrs;
   std::vector<ThreadArgument> args(kNumThreads);
 
   grpc_core::Mutex mu;
@@ -338,14 +337,16 @@ TEST_P(FakeBinderTest, StressTest) {
     th_arg->mu->Unlock();
   };
 
+  std::vector<grpc_core::Thread> thrs(kNumThreads);
+  std::vector<std::string> thr_names(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     args[i].tid = i;
     args[i].global_binder_pairs = &global_binder_pairs;
     args[i].global_cnts = &global_cnts;
     args[i].tx_code = kTxCode;
     args[i].mu = &mu;
-    thrs.emplace_back(absl::StrFormat("thread-%d", i).c_str(), th_function,
-                      &args[i]);
+    thr_names[i] = absl::StrFormat("thread-%d", i);
+    thrs[i] = grpc_core::Thread(thr_names[i].c_str(), th_function, &args[i]);
   }
   for (auto& th : thrs) th.Start();
   for (auto& th : thrs) th.Join();
