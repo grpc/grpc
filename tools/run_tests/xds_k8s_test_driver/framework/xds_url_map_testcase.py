@@ -61,8 +61,8 @@ RpcTypeUnaryCall = 'UNARY_CALL'
 RpcTypeEmptyCall = 'EMPTY_CALL'
 
 # All client languages
-ClientLangs = ('cpp', 'java', 'go', 'python')
-ServerLangs = ClientLangs
+_CLIENT_LANGUAGES = ('cpp', 'java', 'go', 'python')
+_SERVER_LANGUAGES = _CLIENT_LANGUAGES
 
 
 def _split_camel(s: str, delimiter: str = '-') -> str:
@@ -237,7 +237,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         Returns:
           A tuple of strings contains the supported languages for this test.
         """
-        return ClientLangs
+        return _CLIENT_LANGUAGES
 
     @staticmethod
     def supported_servers() -> Tuple[str]:
@@ -246,7 +246,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         Returns:
           A tuple of strings contains the supported languages for this test.
         """
-        return ServerLangs
+        return _SERVER_LANGUAGES
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
