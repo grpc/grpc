@@ -23,12 +23,6 @@ TEST(MapTest, Works) {
   EXPECT_EQ(x(), Poll<int>(21));
 }
 
-TEST(MapTest, JustElem0) {
-  Promise<int> x =
-      Map([]() { return std::make_tuple(1, 2, 3); }, JustElem<0>());
-  EXPECT_EQ(x(), Poll<int>(1));
-}
-
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

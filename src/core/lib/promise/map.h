@@ -56,15 +56,6 @@ promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
-// Map functor to take the N-th element of a tuple
-template <size_t N>
-struct JustElem {
-  template <typename... Types>
-  auto operator()(std::tuple<Types...>&& t) -> decltype(std::get<N>(t)) {
-    return std::get<N>(t);
-  }
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_MAP_H
