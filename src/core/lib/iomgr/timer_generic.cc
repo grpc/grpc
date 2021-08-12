@@ -270,7 +270,7 @@ static void timer_list_init() {
   g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
 
 #if GPR_ARCH_64
-  gpr_tls_init(g_last_seen_min_timer);
+
   g_last_seen_min_timer = 0;
 #endif
 
@@ -303,7 +303,7 @@ static void timer_list_shutdown() {
   gpr_mu_destroy(&g_shared_mutables.mu);
 
 #if GPR_ARCH_64
-  gpr_tls_destroy(g_last_seen_min_timer);
+
 #endif
 
   gpr_free(g_shards);

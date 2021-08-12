@@ -28,12 +28,6 @@
    Usage is the same as C++ thread_local. Declaring a thread local:
      static GPR_THREAD_LOCAL(uint32_t) foo;
 
-   Initializing a thread local (must be done at library initialization time):
-     gpr_tls_init(foo);
-
-   Destroying a thread local:
-     gpr_tls_destroy(foo);
-
    ALL functions here may be implemented as macros. */
 
 namespace grpc_core {
@@ -67,13 +61,43 @@ namespace grpc_core {
 template <typename T>
 class PthreadTlsImpl : TlsTypeConstrainer<T> {
  public:
-  PthreadTlsImpl() = default;
   PthreadTlsImpl(const PthreadTlsImpl&) = delete;
   PthreadTlsImpl& operator=(const PthreadTlsImpl&) = delete;
 
-  void Init() { GPR_ASSERT(0 == pthread_key_create(&key_, nullptr)); }
-
-  void Destroy() { GPR_ASSERT(0 == pthread_key_delete(key_)); }
+  // Achtung! This class emulates C++ `thread_local` using pthread keys. Each
+  // instance of this class is a stand in for a C++ `thread_local`. Think of
+  // each `thread_local` as a *global* pthread_key_t and a type tag. An
+  // important consequence of this is that the lifetime of a `pthread_key_t`
+  // is precisely the lifetime of an instance of this class. To understand why
+  // this is, consider the following scenario given a fictional implementation
+  // of this class which creates and destroys its `pthread_key_t` each time
+  // a given block of code runs (all actions take place on a single thread):
+  //
+  // - instance 1 (type tag = T*) is initialized, is assigned `pthread_key_t` 1
+  // - instance 2 (type tag = int) is initialized, is assigned `pthread_key_t` 2
+  // - instances 1 and 2 store and retrieve values; all is well
+  // - instances 1 and 2 are de-initialized; their keys are released to the pool
+  //
+  // - another run commences
+  // - instance 1 receives key 2
+  // - a value is read from instance 1, it observes a value of type int, but
+  //   interprets it as T*; undefined behavior, kaboom
+  //
+  // To properly ensure these invariants are upheld the `pthread_key_t` must be
+  // `const`, which means it can only be released in the destructor. This is a
+  // a violation of the style guide, since these objects are always static (see
+  // footnote) but this code is used in sufficiently narrow circumstances to
+  // justify the deviation.
+  //
+  // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
+  PthreadTlsImpl()
+      : key_([]() {
+          pthread_key_t key;
+          GPR_ASSERT(0 == pthread_key_create(&key, nullptr));
+          return key;
+        }()) {}
+  PthreadTlsImpl(T t) : PthreadTlsImpl() { *this = t; }
+  ~PthreadTlsImpl() { GPR_ASSERT(0 == pthread_key_delete(key_)); }
 
   operator T() const { return Cast<T>(pthread_getspecific(key_)); }
 
@@ -110,45 +134,17 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
     return reinterpret_cast<void*>(uintptr_t(t));
   }
 
-  pthread_key_t key_;
-};
-
-// This class is never instantiated. It exists to statically ensure that all
-// TLS usage is compatible with the most restrictive implementation, allowing
-// developers to write correct code regardless of the platform they develop on.
-template <typename T>
-class TriviallyDestructibleAsserter {
-  // This type is often used as a global; since the type itself is hidden by the
-  // macros, enforce compliance with the style guide here rather than at the
-  // caller. See
-  // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables.
-  static_assert(std::is_trivially_destructible<T>::value,
-                "TLS wrapper must be trivially destructible");
-
- public:
-  using Type = T;
+  const pthread_key_t key_;
 };
 
 }  // namespace grpc_core
 
-#define GPR_THREAD_LOCAL(type)              \
-  grpc_core::TriviallyDestructibleAsserter< \
-      grpc_core::PthreadTlsImpl<type>>::Type
-
-#define gpr_tls_init(tls) (tls).Init()
-#define gpr_tls_destroy(tls) (tls).Destroy()
+#define GPR_THREAD_LOCAL(type) grpc_core::PthreadTlsImpl<type>
 
 #else
 
 #define GPR_THREAD_LOCAL(type) \
   thread_local grpc_core::TlsTypeConstrainer<type>::Type
-
-#define gpr_tls_init(tls) \
-  do {                    \
-  } while (0)
-#define gpr_tls_destroy(tls) \
-  do {                       \
-  } while (0)
 
 #endif
 

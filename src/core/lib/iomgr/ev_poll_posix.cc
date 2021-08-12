@@ -831,16 +831,9 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
 
 /* global state management */
 
-static grpc_error_handle pollset_global_init(void) {
-  gpr_tls_init(g_current_thread_poller);
-  gpr_tls_init(g_current_thread_worker);
-  return GRPC_ERROR_NONE;
-}
+static grpc_error_handle pollset_global_init(void) { return GRPC_ERROR_NONE; }
 
-static void pollset_global_shutdown(void) {
-  gpr_tls_destroy(g_current_thread_poller);
-  gpr_tls_destroy(g_current_thread_worker);
-}
+static void pollset_global_shutdown(void) {}
 
 /* main interface */
 
