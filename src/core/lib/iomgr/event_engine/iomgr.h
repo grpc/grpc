@@ -17,8 +17,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-/// This can be called anywhere in the EE-based iomgr impl where we need to
-/// access the global EE instance.
+/// This can be called anywhere in the EventEngine-based iomgr impl where we
+/// need to access the global EventEngine instance.
 grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine();
 
 namespace grpc_core {
