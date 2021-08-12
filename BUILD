@@ -859,6 +859,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/promise/map.h"],
     deps = [
         "gpr_platform",
+        "promise_like",
         "poll",
     ],
 )

@@ -14,18 +14,19 @@
 
 #include <gtest/gtest.h>
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/map.h"
 
 namespace grpc_core {
 
 TEST(MapTest, Works) {
-  Promise<int> x = Map([]() { return ready(42); }, [](int i) { return i / 2; });
-  EXPECT_EQ(x().take(), 21);
+  Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
+  EXPECT_EQ(x(), Poll<int>(21));
 }
 
 TEST(MapTest, JustElem0) {
   Promise<int> x =
-      Map([]() { return ready(std::make_tuple(1, 2, 3)); }, JustElem<0>());
-  EXPECT_EQ(x().take(), 1);
+      Map([]() { return std::make_tuple(1, 2, 3); }, JustElem<0>());
+  EXPECT_EQ(x(), Poll<int>(1));
 }
 
 }  // namespace grpc_core

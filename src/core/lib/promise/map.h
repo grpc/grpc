@@ -19,10 +19,11 @@
 
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 
 namespace grpc_core {
 
-namespace map_detail {
+namespace promise_detail {
 
 template <typename Promise, typename Fn>
 class Map {
@@ -30,10 +31,7 @@ class Map {
   Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  using PromiseResult =
-      typename PollTraits<decltype(std::declval<Promise>()())>::Type;
-  using Result = absl::remove_reference_t<decltype(
-      std::declval<Fn>()(std::declval<PromiseResult>()))>;
+  using Result = typename PromiseLike<Promise>::Result;
 
   Poll<Result> operator()() {
     auto r = promise_();
@@ -44,18 +42,18 @@ class Map {
   }
 
  private:
-  Promise promise_;
+  PromiseLike<Promise> promise_;
   Fn fn_;
 };
 
-}  // namespace map_detail
+}  // namespace promise_detail
 
 // Mapping combinator.
 // Takes a promise, and a synchronous function to mutate it's result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-map_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
-  return map_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
+promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
+  return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
 // Map functor to take the N-th element of a tuple
