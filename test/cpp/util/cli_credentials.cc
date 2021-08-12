@@ -42,6 +42,8 @@ ABSL_FLAG(
 ABSL_FLAG(std::string, ssl_client_key, "",
           "If not empty, load this PEM formatted private key. Requires use of "
           "--ssl_client_cert");
+ABSL_FLAG(std::string, ssl_ca_cert, "",
+          "If not empty, load this PEM formatted CA certificate file.");
 ABSL_FLAG(
     std::string, local_connect_type, "local_tcp",
     "The type of local connections for which local channel credentials will "
@@ -111,6 +113,15 @@ CliCredentials::GetChannelCredentials() const {
           grpc::StringFromCopiedSlice(key_slice);
       grpc_slice_unref(key_slice);
     }
+    if (!absl::GetFlag(FLAGS_ssl_ca_cert).empty()) {
+      grpc_slice ca_cert_slice = grpc_empty_slice();
+      GRPC_LOG_IF_ERROR(
+          "load_file", grpc_load_file(absl::GetFlag(FLAGS_ssl_ca_cert).c_str(),
+                                      1, &ca_cert_slice));
+      ssl_creds_options.pem_root_certs =
+          grpc::StringFromCopiedSlice(ca_cert_slice);
+      grpc_slice_unref(ca_cert_slice);
+    }
     return grpc::SslCredentials(ssl_creds_options);
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "gdc") {
     return grpc::GoogleDefaultCredentials();
@@ -173,6 +184,7 @@ std::string CliCredentials::GetCredentialUsage() const {
   return "    --ssl_target             ; Set server host for ssl validation\n"
          "    --ssl_client_cert        ; Client cert for ssl\n"
          "    --ssl_client_key         ; Client private key for ssl\n"
+         "    --ssl_ca_cert            ; CA certs for ssl\n"
          "    --local_connect_type     ; Set to local_tcp or uds\n"
          "    --channel_creds_type     ; Set to insecure, ssl, gdc, alts, or "
          "local\n"
