@@ -425,7 +425,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   for (size_t i = 0; i < pair_list.size(); ++i) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
-    if (!(matched_or.ok() && *matched_or)) {
+    if (!matched_or.ok() || !*matched_or) {
       return matched_or;
     }
   }
@@ -485,11 +485,10 @@ grpc_status_code grpc_tls_certificate_key_match(
   } else {
     if (match_or.value()) {
       code = GRPC_STATUS_OK;
-      *error_details = "";
     } else {
       code = static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
-      *error_details =
-          "The private key doesn't match the public key on the first certificate of the certificate chain.";
+      *error_details = gpr_strdup(
+          "The private key doesn't match the public key on the first certificate of the certificate chain.");
     }
   }
   return code;

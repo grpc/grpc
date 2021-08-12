@@ -23,10 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <memory>
-
-#include "include/grpc/grpc_security.h"
-
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -66,11 +62,11 @@ class CredentialsTest : public ::testing::Test {
     root_cert_1_ = grpc_core::testing::GetFileContents(CA_CERT_PATH_1);
     cert_chain_1_ = grpc_core::testing::GetFileContents(SERVER_CERT_PATH_1);
     private_key_1_ = grpc_core::testing::GetFileContents(SERVER_KEY_PATH_1);
-    key_cert_pair.private_key = kIdentityCertPrivateKey;
-    key_cert_pair.certificate_chain = kIdentityCertContents;
+    key_cert_pair_.private_key = kIdentityCertPrivateKey;
+    key_cert_pair_.certificate_chain = kIdentityCertContents;
   }
 
-  experimental::IdentityKeyCertPair key_cert_pair;
+  experimental::IdentityKeyCertPair key_cert_pair_;
   std::string root_cert_0_;
   std::string private_key_0_;
   std::string cert_chain_0_;
@@ -83,7 +79,7 @@ TEST_F(
     CredentialsTest,
     TlsServerCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
-  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  identity_key_cert_pairs.emplace_back(key_cert_pair_);
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       kRootCertContents, identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
@@ -103,8 +99,8 @@ TEST_F(CredentialsTest,
      TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   // Adding two key_cert_pair(s) should still work.
-  identity_key_cert_pairs.emplace_back(key_cert_pair);
-  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  identity_key_cert_pairs.emplace_back(key_cert_pair_);
+  identity_key_cert_pairs.emplace_back(key_cert_pair_);
   auto certificate_provider =
       std::make_shared<StaticDataCertificateProvider>(identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
@@ -165,7 +161,7 @@ TEST_F(
   const char* error_details;
   grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_0_.c_str(), /*cert_chain=*/"", &error_details);
-  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ("Certificate string is empty.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -176,7 +172,7 @@ TEST_F(
   const char* error_details;
   grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), "invalid_certificate", &error_details);
-  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ("Conversion from PEM string to X509 failed.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -187,7 +183,7 @@ TEST_F(
   const char* error_details;
   grpc_status_code code = grpc_tls_certificate_key_match(
       "invalid_private_key", cert_chain_1_.c_str(), &error_details);
-  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_EQ(code, GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ("Conversion from PEM string to EVP_PKEY failed.", std::string(error_details));
   gpr_free(const_cast<char*>(error_details));
 }
@@ -195,11 +191,11 @@ TEST_F(
 TEST_F(
     CredentialsTest,
     CoreAPICertificateKeyMatchSucceeded){
-  const char* error_details;
+  const char* error_details = nullptr;
   grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), cert_chain_1_.c_str(), &error_details);
-  EXPECT_EQ("", std::string(error_details));
-  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kOk));
+  EXPECT_EQ(nullptr, error_details);
+  EXPECT_EQ(code, GRPC_STATUS_OK);
 }
 
 TEST_F(
@@ -208,9 +204,10 @@ TEST_F(
   const char* error_details;
   grpc_status_code code = grpc_tls_certificate_key_match(
       private_key_1_.c_str(), cert_chain_0_.c_str(), &error_details);
-  EXPECT_EQ("The private key doesn't match the public key on the first certificate of the certificate chain.",
-            std::string(error_details));
-  EXPECT_EQ(code, static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument));
+  EXPECT_STREQ("The private key doesn't match the public key on the first certificate of the certificate chain.",
+            error_details);
+  EXPECT_EQ(code, GRPC_STATUS_INVALID_ARGUMENT);
+  gpr_free(const_cast<char*>(error_details));
 }
 
 }  // namespace
