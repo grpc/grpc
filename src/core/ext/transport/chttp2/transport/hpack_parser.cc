@@ -854,6 +854,10 @@ class HPackParser::String {
   // Main loop for Unbase64
   static absl::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t* cur,
                                                            const uint8_t* end) {
+    while (cur != end && end[-1] == '=') {
+      --end;
+    }
+
     std::vector<uint8_t> out;
     out.reserve(3 * (end - cur) / 4 + 3);
 
