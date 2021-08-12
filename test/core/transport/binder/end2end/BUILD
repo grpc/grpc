@@ -95,7 +95,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_polling = False,
     deps = [
         ":echo_service",
         ":end2end_binder_channel",
