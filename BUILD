@@ -665,7 +665,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
-        "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
@@ -709,7 +708,14 @@ grpc_cc_library(
         "google_api_upb",
         "gpr_codegen",
         "grpc_codegen",
+        "gpr_tls",
     ],
+)
+
+grpc_cc_library(
+    name = "gpr_tls",
+    hdrs = ["src/core/lib/gpr/tls.h"],
+    deps = ["gpr_platform"]
 )
 
 grpc_cc_library(
@@ -862,7 +868,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/context.h",
     ],
-    deps = ["gpr_platform"],
+    deps = ["gpr_platform", "gpr_tls"],
 )
 
 

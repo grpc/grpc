@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPR_TLS_H
 #define GRPC_CORE_LIB_GPR_TLS_H
 
-#include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #include <type_traits>
 
@@ -59,7 +59,7 @@ class TlsTypeConstrainer {
 
 #ifdef GPR_STDCPP_TLS
 #define GPR_THREAD_LOCAL(type) \
-  thread_local grpc_core::TlsTypeConstrainer<type>::Type
+  thread_local typename grpc_core::TlsTypeConstrainer<type>::Type
 #endif
 
 #ifdef GPR_GCC_TLS
