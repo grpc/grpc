@@ -707,15 +707,15 @@ grpc_cc_library(
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
-        "grpc_codegen",
         "gpr_tls",
+        "grpc_codegen",
     ],
 )
 
 grpc_cc_library(
     name = "gpr_tls",
     hdrs = ["src/core/lib/gpr/tls.h"],
-    deps = ["gpr_platform"]
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -868,9 +868,11 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/context.h",
     ],
-    deps = ["gpr_platform", "gpr_tls"],
+    deps = [
+        "gpr_platform",
+        "gpr_tls",
+    ],
 )
-
 
 grpc_cc_library(
     name = "promise",
@@ -1303,12 +1305,12 @@ grpc_cc_library(
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "gpr_tls",
     ],
 )
 
