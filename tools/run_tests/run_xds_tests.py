@@ -3094,9 +3094,8 @@ class GcpState(object):
 logging.debug(
     "script start time: %s",
     datetime.datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z"))
-logging.debug(
-    "logging local timezone: %s",
-    datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
+logging.debug("logging local timezone: %s",
+              datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
 alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
