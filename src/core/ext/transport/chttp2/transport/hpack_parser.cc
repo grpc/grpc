@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -51,20 +52,6 @@
 namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
-
-/* How parsing works:
-
-   The parser object keeps track of a function pointer which represents the
-   current parse state.
-
-   Each time new bytes are presented, we call into the current state, which
-   recursively parses until all bytes in the given chunk are exhausted.
-
-   The parse state that terminates then saves its function pointer to be the
-   current state so that it can resume when more bytes are available.
-
-   It's expected that most optimizing compilers will turn this code into
-   a set of indirect jumps, and so not waste stack space. */
 
 /* state table for huffman decoding: given a state, gives an index/16 into
    next_sub_tbl. Taking that index and adding the value of the nibble being
@@ -464,1120 +451,874 @@ struct Base64InverseTable {
 static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 }  // namespace
 
-void HPackParser::FinishFrame() {
-  sink_ = Sink();
-  dynamic_table_updates_allowed_ = 2;
-}
+// Input tracks the current byte through the input data and provides it
+// via a simple stream interface.
+class HPackParser::Input {
+ public:
+  Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
+        const uint8_t* end)
+      : current_slice_refcount_(current_slice_refcount),
+        begin_(begin),
+        end_(end),
+        frontier_(begin) {}
 
-void GPR_ATTRIBUTE_NOINLINE HPackParser::LogHeader(grpc_mdelem md) {
-  char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-  char* v = nullptr;
-  if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
-    v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
-  } else {
-    v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-  }
-  gpr_log(
-      GPR_INFO,
-      "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
-      k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
-      grpc_slice_is_interned(GRPC_MDKEY(md)),
-      grpc_slice_is_interned(GRPC_MDVALUE(md)));
-  gpr_free(k);
-  gpr_free(v);
-}
+  // If input is backed by a slice, retrieve its refcount. If not, return
+  // nullptr.
+  grpc_slice_refcount* slice_refcount() { return current_slice_refcount_; }
 
-/* emission helpers */
-template <HPackParser::TableAction action>
-grpc_error_handle HPackParser::FinishHeader(grpc_mdelem md) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-    LogHeader(md);
-  }
-  if (action == TableAction::kAddToTable) {
-    GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
-                     GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
-    grpc_error_handle err = grpc_chttp2_hptbl_add(&table_, md);
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
-  }
-  return sink_(md);
-}
+  // Have we reached the end of input?
+  bool end_of_stream() const { return begin_ == end_; }
+  // How many bytes until end of input
+  size_t remaining() const { return end_ - begin_; }
+  // Current position, as a pointer
+  const uint8_t* cur_ptr() const { return begin_; }
+  // End position, as a pointer
+  const uint8_t* end_ptr() const { return end_; }
+  // Move read position forward by n, unchecked
+  void Advance(size_t n) { begin_ += n; }
 
-UnmanagedMemorySlice HPackParser::String::TakeExtern() {
-  UnmanagedMemorySlice s;
-  if (!copied_) {
-    GPR_DEBUG_ASSERT(!grpc_slice_is_interned(data_.referenced));
-    s = static_cast<UnmanagedMemorySlice&>(data_.referenced);
-    copied_ = true;
-    data_.referenced = UnmanagedMemorySlice();
-  } else {
-    s = UnmanagedMemorySlice(data_.copied.str, data_.copied.length);
-  }
-  data_.copied.length = 0;
-  return s;
-}
-
-ManagedMemorySlice HPackParser::String::TakeIntern() {
-  ManagedMemorySlice s;
-  if (!copied_) {
-    s = ManagedMemorySlice(&data_.referenced);
-    grpc_slice_unref_internal(data_.referenced);
-    copied_ = true;
-    data_.referenced = grpc_empty_slice();
-  } else {
-    s = ManagedMemorySlice(data_.copied.str, data_.copied.length);
-  }
-  data_.copied.length = 0;
-  return s;
-}
-
-grpc_error_handle HPackParser::parse_next(const uint8_t* cur,
-                                          const uint8_t* end) {
-  state_ = *next_state_++;
-  return (this->*state_)(cur, end);
-}
-
-/* begin parsing a header: all functionality is encoded into lookup tables
-   above */
-grpc_error_handle HPackParser::parse_begin(const uint8_t* cur,
-                                           const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_begin;
-    return GRPC_ERROR_NONE;
+  // Retrieve the current character, or nullopt if end of stream
+  // Do not advance
+  absl::optional<uint8_t> peek() const {
+    if (end_of_stream()) {
+      return {};
+    }
+    return *begin_;
   }
 
-  switch (*cur >> 4) {
-      // Literal header not indexed.
-      // First byte format: 0000xxxx
-      // Where xxxx:
-      //   0000  - literal key
-      //   1111  - indexed key, varint encoded index
-      //   other - indexed key, inline encoded index
-    case 0:
-      switch (*cur & 0xf) {
-        case 0:  // literal key
-          return parse_lithdr_notidx_v(cur, end);
-        case 0xf:  // varint encoded key index
-          return parse_lithdr_notidx_x(cur, end);
-        default:  // inline encoded key index
-          return parse_lithdr_notidx(cur, end);
-      }
-      // Literal header never indexed.
-      // First byte format: 0001xxxx
-      // Where xxxx:
-      //   0000  - literal key
-      //   1111  - indexed key, varint encoded index
-      //   other - indexed key, inline encoded index
-    case 1:
-      switch (*cur & 0xf) {
-        case 0:  // literal key
-          return parse_lithdr_nvridx_v(cur, end);
-        case 0xf:  // varint encoded key index
-          return parse_lithdr_nvridx_x(cur, end);
-        default:  // inline encoded key index
-          return parse_lithdr_nvridx(cur, end);
-      }
-      // Update max table size.
-      // First byte format: 001xxxxx
-      // Where xxxxx:
-      //   11111 - max size is varint encoded
-      //   other - max size is stored inline
-    case 2:
-      // inline encoded max table size
-      return parse_max_tbl_size(cur, end);
-    case 3:
-      if (*cur == 0x3f) {
-        // varint encoded max table size
-        return parse_max_tbl_size_x(cur, end);
-      } else {
-        // inline encoded max table size
-        return parse_max_tbl_size(cur, end);
-      }
-      // Literal header with incremental indexing.
-      // First byte format: 01xxxxxx
-      // Where xxxxxx:
-      //   000000 - literal key
-      //   111111 - indexed key, varint encoded index
-      //   other  - indexed key, inline encoded index
-    case 4:
-      if (*cur == 0x40) {
-        // literal key
-        return parse_lithdr_incidx_v(cur, end);
-      }
-      ABSL_FALLTHROUGH_INTENDED;
-    case 5:
-    case 6:
-      // inline encoded key index
-      return parse_lithdr_incidx(cur, end);
-    case 7:
-      if (*cur == 0x7f) {
-        // varint encoded key index
-        return parse_lithdr_incidx_x(cur, end);
-      } else {
-        // inline encoded key index
-        return parse_lithdr_incidx(cur, end);
-      }
-      // Indexed Header Field Representation
-      // First byte format: 1xxxxxxx
-      // Where xxxxxxx:
-      //   0000000 - illegal
-      //   1111111 - varint encoded field index
-      //   other   - inline encoded field index
-    case 8:
-      if (*cur == 0x80) {
-        // illegal value.
-        return parse_illegal_op(cur, end);
-      }
-      ABSL_FALLTHROUGH_INTENDED;
-    case 9:
-    case 10:
-    case 11:
-    case 12:
-    case 13:
-    case 14:
-      // inline encoded field index
-      return parse_indexed_field(cur, end);
-    case 15:
-      if (*cur == 0xff) {
-        // varint encoded field index
-        return parse_indexed_field_x(cur, end);
-      } else {
-        // inline encoded field index
-        return parse_indexed_field(cur, end);
-      }
-  }
-  GPR_UNREACHABLE_CODE(abort());
-}
-
-/* stream dependency and prioritization data: we just skip it */
-grpc_error_handle HPackParser::parse_stream_weight(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_stream_weight;
-    return GRPC_ERROR_NONE;
+  // Retrieve and advance past the current character, or return nullopt if end
+  // of stream
+  absl::optional<uint8_t> Next() {
+    if (end_of_stream()) {
+      return UnexpectedEOF(absl::optional<uint8_t>());
+    }
+    return *begin_++;
   }
 
-  return (this->*after_prioritization_)(cur + 1, end);
-}
+  // Helper to parse a varint delta on top of value, return nullopt on failure
+  // (setting error)
+  absl::optional<uint32_t> ParseVarint(uint32_t value) {
+    // TODO(ctiller): break out a variant of this when we know there are at
+    // least 5 bytes in input_
+    auto cur = Next();
+    if (!cur) return {};
+    value += *cur & 0x7f;
+    if ((*cur & 0x80) == 0) return value;
 
-grpc_error_handle HPackParser::parse_stream_dep3(const uint8_t* cur,
-                                                 const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_stream_dep3;
-    return GRPC_ERROR_NONE;
+    cur = Next();
+    if (!cur) return {};
+    value += (*cur & 0x7f) << 7;
+    if ((*cur & 0x80) == 0) return value;
+
+    cur = Next();
+    if (!cur) return {};
+    value += (*cur & 0x7f) << 14;
+    if ((*cur & 0x80) == 0) return value;
+
+    cur = Next();
+    if (!cur) return {};
+    value += (*cur & 0x7f) << 21;
+    if ((*cur & 0x80) == 0) return value;
+
+    cur = Next();
+    if (!cur) return {};
+    uint32_t c = (*cur) & 0x7f;
+    // We might overflow here, so we need to be a little careful about the
+    // addition
+    if (c > 0xf) return ParseVarintOutOfRange(value, *cur);
+    const uint32_t add = c << 28;
+    if (add > 0xffffffffu - value) {
+      return ParseVarintOutOfRange(value, *cur);
+    }
+    value += add;
+    if ((*cur & 0x80) == 0) return value;
+
+    // Spec weirdness: we can add an infinite stream of 0x80 at the end of a
+    // varint and still end up with a correctly encoded varint.
+    do {
+      cur = Next();
+      if (!cur.has_value()) return {};
+    } while (*cur == 0x80);
+
+    // BUT... the last byte needs to be 0x00 or we'll overflow dramatically!
+    if (*cur == 0) return value;
+    return ParseVarintOutOfRange(value, *cur);
   }
 
-  return parse_stream_weight(cur + 1, end);
-}
+  // Prefix for a string
+  struct StringPrefix {
+    // Number of bytes in input for string
+    uint32_t length;
+    // Is it huffman compressed
+    bool huff;
+  };
 
-grpc_error_handle HPackParser::parse_stream_dep2(const uint8_t* cur,
-                                                 const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_stream_dep2;
-    return GRPC_ERROR_NONE;
+  // Parse a string prefix
+  absl::optional<StringPrefix> ParseStringPrefix() {
+    auto cur = Next();
+    if (!cur.has_value()) return {};
+    // Huffman if the top bit is 1
+    const bool huff = (*cur & 0x80) != 0;
+    // String length
+    uint32_t strlen = (*cur & 0x7f);
+    if (strlen == 0x7f) {
+      // all ones ==> varint string length
+      auto v = ParseVarint(0x7f);
+      if (!v.has_value()) return {};
+      strlen = *v;
+    }
+    return StringPrefix{strlen, huff};
   }
 
-  return parse_stream_dep3(cur + 1, end);
-}
+  // Check if we saw an EOF.. must be verified before looking at TakeError
+  bool eof_error() const { return eof_error_; }
 
-grpc_error_handle HPackParser::parse_stream_dep1(const uint8_t* cur,
-                                                 const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_stream_dep1;
-    return GRPC_ERROR_NONE;
+  // Extract the parse error, leaving the current error as NONE.
+  grpc_error_handle TakeError() {
+    grpc_error_handle out = error_;
+    error_ = GRPC_ERROR_NONE;
+    return out;
   }
 
-  return parse_stream_dep2(cur + 1, end);
-}
-
-grpc_error_handle HPackParser::parse_stream_dep0(const uint8_t* cur,
-                                                 const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_stream_dep0;
-    return GRPC_ERROR_NONE;
+  // Set the current error - allows the rest of the code not to need to pass
+  // around StatusOr<> which would be prohibitive here.
+  GPR_ATTRIBUTE_NOINLINE void SetError(grpc_error_handle error) {
+    if (error_ != GRPC_ERROR_NONE || eof_error_) {
+      GRPC_ERROR_UNREF(error);
+      return;
+    }
+    error_ = error;
+    begin_ = end_;
   }
 
-  return parse_stream_dep1(cur + 1, end);
-}
-
-grpc_error_handle HPackParser::InvalidHPackIndexError() {
-  return grpc_error_set_int(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid HPACK index received"),
-          GRPC_ERROR_INT_INDEX, static_cast<intptr_t>(index_)),
-      GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(table_.num_ents));
-}
-
-/* emit an indexed field; jumps to begin the next field on completion */
-grpc_error_handle HPackParser::finish_indexed_field(const uint8_t* cur,
-                                                    const uint8_t* end) {
-  grpc_mdelem md = grpc_chttp2_hptbl_lookup<true>(&table_, index_);
-  if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
-    return InvalidHPackIndexError();
-  }
-  GRPC_STATS_INC_HPACK_RECV_INDEXED();
-  grpc_error_handle err = FinishHeader<TableAction::kOmitFromTable>(md);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
-  return parse_begin(cur, end);
-}
-
-/* parse an indexed field with index < 127 */
-grpc_error_handle HPackParser::parse_indexed_field(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  dynamic_table_updates_allowed_ = 0;
-  index_ = (*cur) & 0x7f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  return finish_indexed_field(cur + 1, end);
-}
-
-/* parse an indexed field with index >= 127 */
-grpc_error_handle HPackParser::parse_indexed_field_x(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {&HPackParser::finish_indexed_field};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = 0x7f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  parsing_.value = &index_;
-  return parse_value0(cur + 1, end);
-}
-
-/* When finishing with a header, get the cached md element for this index.
-   This is set in parse_value_string(). We ensure (in debug mode) that the
-   cached metadata corresponds with the index we are examining. */
-grpc_mdelem HPackParser::GetPrecomputedMDForIndex() {
-  GPR_DEBUG_ASSERT(md_for_index_.payload != 0);
-  GPR_DEBUG_ASSERT(static_cast<int64_t>(index_) == precomputed_md_index_);
-  grpc_mdelem md = md_for_index_;
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-#ifndef NDEBUG
-  precomputed_md_index_ = -1;
-#endif
-  return md;
-}
-
-static const grpc_core::ManagedMemorySlice& get_indexed_key(grpc_mdelem md) {
-  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(md));
-  return static_cast<const grpc_core::ManagedMemorySlice&>(
-      grpc_slice_ref_internal(GRPC_MDKEY(md)));
-}
-
-/* finish a literal header with incremental indexing */
-grpc_error_handle HPackParser::finish_lithdr_incidx(const uint8_t* cur,
-                                                    const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX();
-  grpc_mdelem md = GetPrecomputedMDForIndex();
-  grpc_error_handle err = FinishHeader<TableAction::kAddToTable>(
-      grpc_mdelem_from_slices(get_indexed_key(md), value_.TakeIntern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* finish a literal header with incremental indexing with no index */
-grpc_error_handle HPackParser::finish_lithdr_incidx_v(const uint8_t* cur,
-                                                      const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX_V();
-  grpc_error_handle err = FinishHeader<TableAction::kAddToTable>(
-      grpc_mdelem_from_slices(key_.TakeIntern(), value_.TakeIntern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* parse a literal header with incremental indexing; index < 63 */
-grpc_error_handle HPackParser::parse_lithdr_incidx(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_incidx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = (*cur) & 0x3f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* parse a literal header with incremental indexing; index >= 63 */
-grpc_error_handle HPackParser::parse_lithdr_incidx_x(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_incidx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = 0x3f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  parsing_.value = &index_;
-  return parse_value0(cur + 1, end);
-}
-
-/* parse a literal header with incremental indexing; index = 0 */
-grpc_error_handle HPackParser::parse_lithdr_incidx_v(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_key_string, &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_literal_key,
-      &HPackParser::finish_lithdr_incidx_v};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* finish a literal header without incremental indexing */
-grpc_error_handle HPackParser::finish_lithdr_notidx(const uint8_t* cur,
-                                                    const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX();
-  grpc_mdelem md = GetPrecomputedMDForIndex();
-  grpc_error_handle err = FinishHeader<TableAction::kOmitFromTable>(
-      grpc_mdelem_from_slices(get_indexed_key(md), value_.TakeExtern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* finish a literal header without incremental indexing with index = 0 */
-grpc_error_handle HPackParser::finish_lithdr_notidx_v(const uint8_t* cur,
-                                                      const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX_V();
-  grpc_error_handle err = FinishHeader<TableAction::kOmitFromTable>(
-      grpc_mdelem_from_slices(key_.TakeIntern(), value_.TakeExtern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* parse a literal header without incremental indexing; index < 15 */
-grpc_error_handle HPackParser::parse_lithdr_notidx(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_notidx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = (*cur) & 0xf;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* parse a literal header without incremental indexing; index >= 15 */
-grpc_error_handle HPackParser::parse_lithdr_notidx_x(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_notidx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = 0xf;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  parsing_.value = &index_;
-  return parse_value0(cur + 1, end);
-}
-
-/* parse a literal header without incremental indexing; index == 0 */
-grpc_error_handle HPackParser::parse_lithdr_notidx_v(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_key_string, &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_literal_key,
-      &HPackParser::finish_lithdr_notidx_v};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* finish a literal header that is never indexed */
-grpc_error_handle HPackParser::finish_lithdr_nvridx(const uint8_t* cur,
-                                                    const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX();
-  grpc_mdelem md = GetPrecomputedMDForIndex();
-  grpc_error_handle err = FinishHeader<TableAction::kOmitFromTable>(
-      grpc_mdelem_from_slices(get_indexed_key(md), value_.TakeExtern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* finish a literal header that is never indexed with an extra value */
-grpc_error_handle HPackParser::finish_lithdr_nvridx_v(const uint8_t* cur,
-                                                      const uint8_t* end) {
-  GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX_V();
-  grpc_error_handle err = FinishHeader<TableAction::kOmitFromTable>(
-      grpc_mdelem_from_slices(key_.TakeIntern(), value_.TakeExtern()));
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* parse a literal header that is never indexed; index < 15 */
-grpc_error_handle HPackParser::parse_lithdr_nvridx(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_nvridx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = (*cur) & 0xf;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* parse a literal header that is never indexed; index >= 15 */
-grpc_error_handle HPackParser::parse_lithdr_nvridx_x(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_indexed_key,
-      &HPackParser::finish_lithdr_nvridx};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  index_ = 0xf;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  parsing_.value = &index_;
-  return parse_value0(cur + 1, end);
-}
-
-/* parse a literal header that is never indexed; index == 0 */
-grpc_error_handle HPackParser::parse_lithdr_nvridx_v(const uint8_t* cur,
-                                                     const uint8_t* end) {
-  static const State and_then[] = {
-      &HPackParser::parse_key_string, &HPackParser::parse_string_prefix,
-      &HPackParser::parse_value_string_with_literal_key,
-      &HPackParser::finish_lithdr_nvridx_v};
-  dynamic_table_updates_allowed_ = 0;
-  next_state_ = and_then;
-  return parse_string_prefix(cur + 1, end);
-}
-
-/* finish parsing a max table size change */
-grpc_error_handle HPackParser::finish_max_tbl_size(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-    gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", index_);
-  }
-  grpc_error_handle err =
-      grpc_chttp2_hptbl_set_current_table_size(&table_, index_);
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_begin(cur, end);
-}
-
-/* parse a max table size change, max size < 15 */
-grpc_error_handle HPackParser::parse_max_tbl_size(const uint8_t* cur,
-                                                  const uint8_t* end) {
-  if (dynamic_table_updates_allowed_ == 0) {
-    return parse_error(
-        cur, end,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "More than two max table size changes in a single frame"));
-  }
-  dynamic_table_updates_allowed_--;
-  index_ = (*cur) & 0x1f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  return finish_max_tbl_size(cur + 1, end);
-}
-
-/* parse a max table size change, max size >= 15 */
-grpc_error_handle HPackParser::parse_max_tbl_size_x(const uint8_t* cur,
-                                                    const uint8_t* end) {
-  static const State and_then[] = {&HPackParser::finish_max_tbl_size};
-  if (dynamic_table_updates_allowed_ == 0) {
-    return parse_error(
-        cur, end,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "More than two max table size changes in a single frame"));
-  }
-  dynamic_table_updates_allowed_--;
-  next_state_ = and_then;
-  index_ = 0x1f;
-  md_for_index_.payload = 0; /* Invalidate cached md when index changes. */
-  parsing_.value = &index_;
-  return parse_value0(cur + 1, end);
-}
-
-/* a parse error: jam the parse state into parse_error, and return error */
-grpc_error_handle HPackParser::parse_error(const uint8_t* /*cur*/,
-                                           const uint8_t* /*end*/,
-                                           grpc_error_handle err) {
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  if (last_error_ == GRPC_ERROR_NONE) {
-    last_error_ = GRPC_ERROR_REF(err);
-  }
-  state_ = &HPackParser::still_parse_error;
-  return err;
-}
-
-grpc_error_handle HPackParser::still_parse_error(const uint8_t* /*cur*/,
-                                                 const uint8_t* /*end*/) {
-  return GRPC_ERROR_REF(last_error_);
-}
-
-grpc_error_handle HPackParser::parse_illegal_op(const uint8_t* cur,
-                                                const uint8_t* end) {
-  GPR_ASSERT(cur != end);
-  grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("Illegal hpack op code ", *cur).c_str());
-  return parse_error(cur, end, err);
-}
-
-/* parse the 1st byte of a varint into parsing_.value
-   no overflow is possible */
-grpc_error_handle HPackParser::parse_value0(const uint8_t* cur,
-                                            const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_value0;
-    return GRPC_ERROR_NONE;
+  // If no error is set, set it to the value produced by error_factory.
+  // Return return_value unchanged.
+  template <typename F, typename T>
+  GPR_ATTRIBUTE_NOINLINE T MaybeSetErrorAndReturn(F error_factory,
+                                                  T return_value) {
+    if (error_ != GRPC_ERROR_NONE || eof_error_) return return_value;
+    error_ = error_factory();
+    begin_ = end_;
+    return return_value;
   }
 
-  *parsing_.value += (*cur) & 0x7f;
-
-  if ((*cur) & 0x80) {
-    return parse_value1(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-}
-
-/* parse the 2nd byte of a varint into parsing_.value
-   no overflow is possible */
-grpc_error_handle HPackParser::parse_value1(const uint8_t* cur,
-                                            const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_value1;
-    return GRPC_ERROR_NONE;
+  // Set the error to an unexpected eof, and return result (code golfed as this
+  // is a common case)
+  template <typename T>
+  T UnexpectedEOF(T return_value) {
+    if (error_ != GRPC_ERROR_NONE) return return_value;
+    eof_error_ = true;
+    return return_value;
   }
 
-  *parsing_.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 7;
+  // Update the frontier - signifies we've successfully parsed another element
+  void UpdateFrontier() { frontier_ = begin_; }
 
-  if ((*cur) & 0x80) {
-    return parse_value2(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-}
+  // Get the frontier - for buffering should we fail due to eof
+  const uint8_t* frontier() const { return frontier_; }
 
-/* parse the 3rd byte of a varint into parsing_.value
-   no overflow is possible */
-grpc_error_handle HPackParser::parse_value2(const uint8_t* cur,
-                                            const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_value2;
-    return GRPC_ERROR_NONE;
-  }
-
-  *parsing_.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 14;
-
-  if ((*cur) & 0x80) {
-    return parse_value3(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-}
-
-/* parse the 4th byte of a varint into parsing_.value
-   no overflow is possible */
-grpc_error_handle HPackParser::parse_value3(const uint8_t* cur,
-                                            const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_value3;
-    return GRPC_ERROR_NONE;
+ private:
+  // Helper to set the error to out of range for ParseVarint
+  absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
+                                                 uint8_t last_byte) {
+    return MaybeSetErrorAndReturn(
+        [value, last_byte] {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrFormat(
+                  "integer overflow in hpack integer decoding: have 0x%08x, "
+                  "got byte 0x%02x on byte 5",
+                  value, last_byte)
+                  .c_str());
+        },
+        absl::optional<uint32_t>());
   }
 
-  *parsing_.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 21;
+  // Refcount if we are backed by a slice
+  grpc_slice_refcount* current_slice_refcount_;
+  // Current input point
+  const uint8_t* begin_;
+  // End of stream point
+  const uint8_t* const end_;
+  // Frontier denotes the first byte past successfully processed input
+  const uint8_t* frontier_;
+  // Current error
+  grpc_error_handle error_ = GRPC_ERROR_NONE;
+  // If the error was EOF, we flag it here..
+  bool eof_error_ = false;
+};
 
-  if ((*cur) & 0x80) {
-    return parse_value4(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-}
+// Helper to parse a string and turn it into a slice with appropriate memory
+// management characteristics
+class HPackParser::String {
+ public:
+  // Helper to specify a string should be internalized
+  struct Intern {};
+  // Helper to specify a string should be externalized
+  struct Extern {};
 
-/* parse the 5th byte of a varint into parsing_.value
-   depending on the byte, we may overflow, and care must be taken */
-grpc_error_handle HPackParser::parse_value4(const uint8_t* cur,
-                                            const uint8_t* end) {
-  uint8_t c;
-  uint32_t cur_value;
-  uint32_t add_value;
+ private:
+  // Forward declare take functions... we'll need them in the public interface
+  UnmanagedMemorySlice Take(Extern);
+  ManagedMemorySlice Take(Intern);
 
-  if (cur == end) {
-    state_ = &HPackParser::parse_value4;
-    return GRPC_ERROR_NONE;
-  }
-
-  c = (*cur) & 0x7f;
-  if (c > 0xf) {
-    goto error;
-  }
-
-  cur_value = *parsing_.value;
-  add_value = (static_cast<uint32_t>(c)) << 28;
-  if (add_value > 0xffffffffu - cur_value) {
-    goto error;
-  }
-
-  *parsing_.value = cur_value + add_value;
-
-  if ((*cur) & 0x80) {
-    return parse_value5up(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-
-error:
-  grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrFormat(
-          "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x on byte 5",
-          *parsing_.value, *cur)
-          .c_str());
-  return parse_error(cur, end, err);
-}
-
-/* parse any trailing bytes in a varint: it's possible to append an arbitrary
-   number of 0x80's and not affect the value - a zero will terminate - and
-   anything else will overflow */
-grpc_error_handle HPackParser::parse_value5up(const uint8_t* cur,
-                                              const uint8_t* end) {
-  while (cur != end && *cur == 0x80) {
-    ++cur;
-  }
-
-  if (cur == end) {
-    state_ = &HPackParser::parse_value5up;
-    return GRPC_ERROR_NONE;
-  }
-
-  if (*cur == 0) {
-    return parse_next(cur + 1, end);
-  }
-
-  grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrFormat(
-          "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x sometime after byte 5",
-          *parsing_.value, *cur)
-          .c_str());
-  return parse_error(cur, end, err);
-}
-
-/* parse a string prefix */
-grpc_error_handle HPackParser::parse_string_prefix(const uint8_t* cur,
-                                                   const uint8_t* end) {
-  if (cur == end) {
-    state_ = &HPackParser::parse_string_prefix;
-    return GRPC_ERROR_NONE;
-  }
-
-  strlen_ = (*cur) & 0x7f;
-  huff_ = (*cur) >> 7;
-  if (strlen_ == 0x7f) {
-    parsing_.value = &strlen_;
-    return parse_value0(cur + 1, end);
-  } else {
-    return parse_next(cur + 1, end);
-  }
-}
-
-/* append some bytes to a string */
-void HPackParser::String::AppendBytes(const uint8_t* data, size_t length) {
-  if (length == 0) return;
-  if (length + data_.copied.length > data_.copied.capacity) {
-    GPR_ASSERT(data_.copied.length + length <= UINT32_MAX);
-    data_.copied.capacity = static_cast<uint32_t>(data_.copied.length + length);
-    data_.copied.str = static_cast<char*>(
-        gpr_realloc(data_.copied.str, data_.copied.capacity));
-  }
-  memcpy(data_.copied.str + data_.copied.length, data, length);
-  GPR_ASSERT(length <= UINT32_MAX - data_.copied.length);
-  data_.copied.length += static_cast<uint32_t>(length);
-}
-
-grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
-                                            const uint8_t* end) {
-  String* str = parsing_.str;
-  uint32_t bits;
-  uint8_t decoded[3];
-  switch (binary_) {
-    case BinaryState::kNotBinary:
-      str->AppendBytes(cur, static_cast<size_t>(end - cur));
-      return GRPC_ERROR_NONE;
-    case BinaryState::kBinaryBegin:
-      if (cur == end) {
-        binary_ = BinaryState::kBinaryBegin;
-        return GRPC_ERROR_NONE;
-      }
-      if (*cur == 0) {
-        /* 'true-binary' case */
-        ++cur;
-        binary_ = BinaryState::kNotBinary;
-        GRPC_STATS_INC_HPACK_RECV_BINARY();
-        str->AppendBytes(cur, static_cast<size_t>(end - cur));
-        return GRPC_ERROR_NONE;
-      }
-      GRPC_STATS_INC_HPACK_RECV_BINARY_BASE64();
-    b64_byte0:
-      ABSL_FALLTHROUGH_INTENDED;
-    case BinaryState::kBase64Byte0:
-      if (cur == end) {
-        binary_ = BinaryState::kBase64Byte0;
-        return GRPC_ERROR_NONE;
-      }
-      bits = kBase64InverseTable.table[*cur];
-      ++cur;
-      if (bits == 255) {
-        return parse_error(
-            cur, end,
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      } else if (bits == 64) {
-        goto b64_byte0;
-      }
-      base64_buffer_ = bits << 18;
-    b64_byte1:
-      ABSL_FALLTHROUGH_INTENDED;
-    case BinaryState::kBase64Byte1:
-      if (cur == end) {
-        binary_ = BinaryState::kBase64Byte1;
-        return GRPC_ERROR_NONE;
-      }
-      bits = kBase64InverseTable.table[*cur];
-      ++cur;
-      if (bits == 255) {
-        return parse_error(
-            cur, end,
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      } else if (bits == 64) {
-        goto b64_byte1;
-      }
-      base64_buffer_ |= bits << 12;
-    b64_byte2:
-      ABSL_FALLTHROUGH_INTENDED;
-    case BinaryState::kBase64Byte2:
-      if (cur == end) {
-        binary_ = BinaryState::kBase64Byte2;
-        return GRPC_ERROR_NONE;
-      }
-      bits = kBase64InverseTable.table[*cur];
-      ++cur;
-      if (bits == 255) {
-        return parse_error(
-            cur, end,
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      } else if (bits == 64) {
-        goto b64_byte2;
-      }
-      base64_buffer_ |= bits << 6;
-    b64_byte3:
-      ABSL_FALLTHROUGH_INTENDED;
-    case BinaryState::kBase64Byte3:
-      if (cur == end) {
-        binary_ = BinaryState::kBase64Byte3;
-        return GRPC_ERROR_NONE;
-      }
-      bits = kBase64InverseTable.table[*cur];
-      ++cur;
-      if (bits == 255) {
-        return parse_error(
-            cur, end,
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      } else if (bits == 64) {
-        goto b64_byte3;
-      }
-      base64_buffer_ |= bits;
-      bits = base64_buffer_;
-      decoded[0] = static_cast<uint8_t>(bits >> 16);
-      decoded[1] = static_cast<uint8_t>(bits >> 8);
-      decoded[2] = static_cast<uint8_t>(bits);
-      str->AppendBytes(decoded, 3);
-      goto b64_byte0;
-  }
-  GPR_UNREACHABLE_CODE(return parse_error(
-      cur, end,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here")));
-}
-
-grpc_error_handle HPackParser::finish_str(const uint8_t* cur,
-                                          const uint8_t* end) {
-  uint8_t decoded[2];
-  uint32_t bits;
-  String* str = parsing_.str;
-  switch (binary_) {
-    case BinaryState::kNotBinary:
-      break;
-    case BinaryState::kBinaryBegin:
-      break;
-    case BinaryState::kBase64Byte0:
-      break;
-    case BinaryState::kBase64Byte1:
-      return parse_error(cur, end,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "illegal base64 encoding")); /* illegal encoding */
-    case BinaryState::kBase64Byte2:
-      bits = base64_buffer_;
-      if (bits & 0xffff) {
-        grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("trailing bits in base64 encoding: 0x%04x",
-                            bits & 0xffff)
-                .c_str());
-        return parse_error(cur, end, err);
-      }
-      decoded[0] = static_cast<uint8_t>(bits >> 16);
-      str->AppendBytes(decoded, 1);
-      break;
-    case BinaryState::kBase64Byte3:
-      bits = base64_buffer_;
-      if (bits & 0xff) {
-        grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("trailing bits in base64 encoding: 0x%02x",
-                            bits & 0xff)
-                .c_str());
-        return parse_error(cur, end, err);
-      }
-      decoded[0] = static_cast<uint8_t>(bits >> 16);
-      decoded[1] = static_cast<uint8_t>(bits >> 8);
-      str->AppendBytes(decoded, 2);
-      break;
-  }
-  return GRPC_ERROR_NONE;
-}
-
-/* decode a nibble from a huffman encoded stream */
-grpc_error_handle HPackParser::AppendHuffNibble(uint8_t nibble) {
-  int16_t emit = emit_sub_tbl[16 * emit_tbl[huff_state_] + nibble];
-  int16_t next = next_sub_tbl[16 * next_tbl[huff_state_] + nibble];
-  if (emit != -1) {
-    if (emit >= 0 && emit < 256) {
-      uint8_t c = static_cast<uint8_t>(emit);
-      grpc_error_handle err = AppendString(&c, (&c) + 1);
-      if (err != GRPC_ERROR_NONE) return err;
-    } else {
-      assert(emit == 256);
+ public:
+  // If a String is a Slice then unref
+  ~String() {
+    if (auto* p = absl::get_if<grpc_slice>(&value_)) {
+      grpc_slice_unref_internal(*p);
     }
   }
-  huff_state_ = next;
-  return GRPC_ERROR_NONE;
-}
 
-/* decode full bytes from a huffman encoded stream */
-grpc_error_handle HPackParser::AppendHuffBytes(const uint8_t* cur,
-                                               const uint8_t* end) {
-  for (; cur != end; ++cur) {
-    grpc_error_handle err = AppendHuffNibble(*cur >> 4);
-    if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-    err = AppendHuffNibble(*cur & 0xf);
-    if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
+  // Take the value and leave this empty
+  // Use Intern/Extern to choose memory management
+  template <typename T>
+  auto Take() -> decltype(this->Take(T())) {
+    return Take(T());
   }
-  return GRPC_ERROR_NONE;
-}
 
-/* decode some string bytes based on the current decoding mode
-   (huffman or not) */
-grpc_error_handle HPackParser::AppendStrBytes(const uint8_t* cur,
-                                              const uint8_t* end) {
-  if (huff_) {
-    return AppendHuffBytes(cur, end);
-  } else {
-    return AppendString(cur, end);
+  String(const String&) = delete;
+  String& operator=(const String&) = delete;
+  String(String&& other) noexcept : value_(std::move(other.value_)) {
+    other.value_ = absl::Span<const uint8_t>();
   }
-}
+  String& operator=(String&& other) noexcept {
+    value_ = std::move(other.value_);
+    other.value_ = absl::Span<const uint8_t>();
+    return *this;
+  }
 
-/* parse a string - tries to do large chunks at a time */
-grpc_error_handle HPackParser::parse_string(const uint8_t* cur,
-                                            const uint8_t* end) {
-  size_t remaining = strlen_ - strgot_;
-  size_t given = static_cast<size_t>(end - cur);
-  if (remaining <= given) {
-    grpc_error_handle err = AppendStrBytes(cur, cur + remaining);
-    if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-    err = finish_str(cur + remaining, end);
-    if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-    return parse_next(cur + remaining, end);
-  } else {
-    grpc_error_handle err = AppendStrBytes(cur, cur + given);
-    if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-    GPR_ASSERT(given <= UINT32_MAX - strgot_);
-    strgot_ += static_cast<uint32_t>(given);
-    state_ = &HPackParser::parse_string;
-    return GRPC_ERROR_NONE;
+  // Parse a non-binary string
+  static absl::optional<String> Parse(Input* input) {
+    auto pfx = input->ParseStringPrefix();
+    if (!pfx.has_value()) return {};
+    if (pfx->huff) {
+      // Huffman coded
+      std::vector<uint8_t> output;
+      auto v = ParseHuff(input, pfx->length,
+                         [&output](uint8_t c) { output.push_back(c); });
+      if (!v) return {};
+      return String(std::move(output));
+    }
+    return ParseUncompressed(input, pfx->length);
   }
-}
 
-/* begin parsing a string - performs setup, calls parse_string */
-grpc_error_handle HPackParser::begin_parse_string(const uint8_t* cur,
-                                                  const uint8_t* end,
-                                                  BinaryState binary,
-                                                  HPackParser::String* str) {
-  if (!huff_ && binary == BinaryState::kNotBinary &&
-      static_cast<uint32_t>(end - cur) >= strlen_ &&
-      current_slice_refcount_ != nullptr) {
-    GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
-    str->copied_ = false;
-    str->data_.referenced.refcount = current_slice_refcount_;
-    str->data_.referenced.data.refcounted.bytes = const_cast<uint8_t*>(cur);
-    str->data_.referenced.data.refcounted.length = strlen_;
-    grpc_slice_ref_internal(str->data_.referenced);
-    return parse_next(cur + strlen_, end);
-  }
-  strgot_ = 0;
-  str->copied_ = true;
-  str->data_.copied.length = 0;
-  parsing_.str = str;
-  huff_state_ = 0;
-  binary_ = binary;
-  switch (binary_) {
-    case BinaryState::kNotBinary:
-      if (huff_) {
-        GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
-      } else {
-        GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
+  // Parse a binary string
+  static absl::optional<String> ParseBinary(Input* input) {
+    auto pfx = input->ParseStringPrefix();
+    if (!pfx.has_value()) return {};
+    if (!pfx->huff) {
+      if (pfx->length > 0 && input->peek() == 0) {
+        // 'true-binary'
+        input->Advance(1);
+        return ParseUncompressed(input, pfx->length - 1);
       }
-      break;
-    case BinaryState::kBinaryBegin:
-      /* stats incremented later: don't know true binary or not */
-      break;
-    default:
-      abort();
+      // Base64 encoded... pull out the string, then unbase64 it
+      auto base64 = ParseUncompressed(input, pfx->length);
+      if (!base64.has_value()) return {};
+      return Unbase64(input, std::move(*base64));
+    } else {
+      // Huffman encoded...
+      std::vector<uint8_t> decompressed;
+      // State here says either we don't know if it's base64 or binary, or we do
+      // and what is it.
+      enum class State { kUnsure, kBinary, kBase64 };
+      State state = State::kUnsure;
+      auto decompressed_ok =
+          ParseHuff(input, pfx->length, [&state, &decompressed](uint8_t c) {
+            if (state == State::kUnsure) {
+              // First byte... if it's zero it's binary
+              if (c == 0) {
+                // Save the type, and skip the zero
+                state = State::kBinary;
+                return;
+              } else {
+                // Flag base64, store this value
+                state = State::kBase64;
+              }
+            }
+            // Non-first byte, or base64 first byte
+            decompressed.push_back(c);
+          });
+      if (!decompressed_ok) return {};
+      switch (state) {
+        case State::kUnsure:
+          // No bytes, empty span
+          return String(absl::Span<const uint8_t>());
+        case State::kBinary:
+          // Binary, we're done
+          return String(std::move(decompressed));
+        case State::kBase64:
+          // Base64 - unpack it
+          return Unbase64(input, String(std::move(decompressed)));
+      }
+      GPR_UNREACHABLE_CODE(abort(););
+    }
   }
-  return parse_string(cur, end);
-}
 
-/* parse the key string */
-grpc_error_handle HPackParser::parse_key_string(const uint8_t* cur,
-                                                const uint8_t* end) {
-  return begin_parse_string(cur, end, BinaryState::kNotBinary, &key_);
-}
+ private:
+  void AppendBytes(const uint8_t* data, size_t length);
+  explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
+  explicit String(absl::Span<const uint8_t> v) : value_(v) {}
+  String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
+      : value_(MakeSlice(r, begin, end)) {}
 
-/* check if a key represents a binary header or not */
-
-bool HPackParser::IsBinaryLiteralHeader() {
-  /* We know that either argument here is a reference counter slice.
-   * 1. If it is a grpc_core::StaticSlice, the refcount is set to kNoopRefcount.
-   * 2. If it's key_.data.referenced, then key_.copied was set to false,
-   *    which occurs in begin_parse_string() - where the refcount is set to
-   *    current_slice_refcount_, which is not null. */
-  return grpc_is_refcounted_slice_binary_header(
-      key_.copied_ ? grpc_core::ExternallyManagedSlice(key_.data_.copied.str,
-                                                       key_.data_.copied.length)
-                   : key_.data_.referenced);
-}
-
-/* Cache the metadata for the given index during initial parsing. This avoids a
-   pointless recomputation of the metadata when finishing a header. We read the
-   cached value in get_precomputed_md_for_idx(). */
-void HPackParser::SetPrecomputedMDIndex(grpc_mdelem md) {
-  GPR_DEBUG_ASSERT(md_for_index_.payload == 0);
-  GPR_DEBUG_ASSERT(precomputed_md_index_ == -1);
-  md_for_index_ = md;
-#ifndef NDEBUG
-  precomputed_md_index_ = index_;
-#endif
-}
-
-/* Determines if a metadata element key associated with the current parser index
-   is a binary indexed header during string parsing. We'll need to revisit this
-   metadata when we're done parsing, so we cache the metadata for this index
-   here using set_precomputed_md_idx(). */
-grpc_error_handle HPackParser::IsBinaryIndexedHeader(bool* is) {
-  grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&table_, index_);
-  if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
-    return InvalidHPackIndexError();
+  // Given a refcount and a byte range, make a slice
+  static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
+                              const uint8_t* end) {
+    grpc_slice out;
+    out.refcount = r;
+    r->Ref();
+    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
+    out.data.refcounted.length = end - begin;
+    return out;
   }
-  /* We know that GRPC_MDKEY(elem) points to a reference counted slice since:
-   * 1. elem was a result of grpc_chttp2_hptbl_lookup
-   * 2. An item in this table is either static (see entries with
-   *    index < GRPC_CHTTP2_LAST_STATIC_ENTRY or added via
-   *    grpc_chttp2_hptbl_add).
-   * 3. If added via grpc_chttp2_hptbl_add, the entry is either static or
-   *    interned.
-   * 4. Both static and interned element slices have non-null refcounts. */
-  *is = grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem));
-  SetPrecomputedMDIndex(elem);
-  return GRPC_ERROR_NONE;
+
+  // Parse some huffman encoded bytes, using output(uint8_t b) to emit each
+  // decoded byte.
+  template <typename Out>
+  static bool ParseHuff(Input* input, uint32_t length, Out output) {
+    GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
+    int16_t state = 0;
+    // Parse one half byte... we leverage some lookup tables to keep the logic
+    // here really simple.
+    auto nibble = [&output, &state](uint8_t nibble) {
+      int16_t emit = emit_sub_tbl[16 * emit_tbl[state] + nibble];
+      int16_t next = next_sub_tbl[16 * next_tbl[state] + nibble];
+      if (emit != -1) {
+        if (emit >= 0 && emit < 256) {
+          output(static_cast<uint8_t>(emit));
+        } else {
+          assert(emit == 256);
+        }
+      }
+      state = next;
+    };
+    // If there's insufficient bytes remaining, return now.
+    if (input->remaining() < length) {
+      return input->UnexpectedEOF(false);
+    }
+    // Grab the byte range, and iterate through it.
+    const uint8_t* p = input->cur_ptr();
+    input->Advance(length);
+    for (uint32_t i = 0; i < length; i++) {
+      nibble(p[i] >> 4);
+      nibble(p[i] & 0xf);
+    }
+    return true;
+  }
+
+  // Parse some uncompressed string bytes.
+  static absl::optional<String> ParseUncompressed(Input* input,
+                                                  uint32_t length) {
+    GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
+    // Check there's enough bytes
+    if (input->remaining() < length) {
+      return input->UnexpectedEOF(absl::optional<String>());
+    }
+    auto* refcount = input->slice_refcount();
+    auto* p = input->cur_ptr();
+    input->Advance(length);
+    if (refcount != nullptr) {
+      return String(refcount, p, p + length);
+    } else {
+      return String(absl::Span<const uint8_t>(p, length));
+    }
+  }
+
+  // Turn base64 encoded bytes into not base64 encoded bytes.
+  // Only takes input to set an error on failure.
+  static absl::optional<String> Unbase64(Input* input, String s) {
+    auto v = Match(
+        s.value_,
+        [](const grpc_slice& slice) {
+          return Unbase64Loop(GRPC_SLICE_START_PTR(slice),
+                              GRPC_SLICE_END_PTR(slice));
+        },
+        [](absl::Span<const uint8_t> span) {
+          return Unbase64Loop(span.begin(), span.end());
+        },
+        [](const std::vector<uint8_t>& vec) {
+          return Unbase64Loop(vec.data(), vec.data() + vec.size());
+        });
+    if (!v.has_value()) {
+      return input->MaybeSetErrorAndReturn(
+          [] {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "illegal base64 encoding");
+          },
+          absl::optional<String>());
+    }
+    return String(std::move(*v));
+  }
+
+  // Main loop for Unbase64
+  static absl::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t* cur,
+                                                           const uint8_t* end) {
+    std::vector<uint8_t> out;
+    out.reserve(3 * (end - cur) / 4 + 3);
+
+    // Decode 4 bytes at a time while we can
+    while (end - cur >= 4) {
+      uint32_t bits = kBase64InverseTable.table[*cur];
+      if (bits > 63) return {};
+      uint32_t buffer = bits << 18;
+      ++cur;
+
+      bits = kBase64InverseTable.table[*cur];
+      if (bits > 63) return {};
+      buffer |= bits << 12;
+      ++cur;
+
+      bits = kBase64InverseTable.table[*cur];
+      if (bits > 63) return {};
+      buffer |= bits << 6;
+      ++cur;
+
+      bits = kBase64InverseTable.table[*cur];
+      if (bits > 63) return {};
+      buffer |= bits;
+      ++cur;
+
+      out.insert(out.end(), {static_cast<uint8_t>(buffer >> 16),
+                             static_cast<uint8_t>(buffer >> 8),
+                             static_cast<uint8_t>(buffer)});
+    }
+    // Deal with the last 0, 1, 2, or 3 bytes.
+    switch (end - cur) {
+      case 0:
+        return out;
+      case 1:
+        return {};
+      case 2: {
+        uint32_t bits = kBase64InverseTable.table[*cur];
+        if (bits > 63) return {};
+        uint32_t buffer = bits << 18;
+
+        ++cur;
+        bits = kBase64InverseTable.table[*cur];
+        if (bits > 63) return {};
+        buffer |= bits << 12;
+
+        if (buffer & 0xffff) return {};
+        out.push_back(static_cast<uint8_t>(buffer >> 16));
+        return out;
+      }
+      case 3: {
+        uint32_t bits = kBase64InverseTable.table[*cur];
+        if (bits > 63) return {};
+        uint32_t buffer = bits << 18;
+
+        ++cur;
+        bits = kBase64InverseTable.table[*cur];
+        if (bits > 63) return {};
+        buffer |= bits << 12;
+
+        ++cur;
+        bits = kBase64InverseTable.table[*cur];
+        if (bits > 63) return {};
+        buffer |= bits << 6;
+
+        ++cur;
+        if (buffer & 0xff) return {};
+        out.push_back(static_cast<uint8_t>(buffer >> 16));
+        out.push_back(static_cast<uint8_t>(buffer >> 8));
+        return out;
+      }
+    }
+
+    GPR_UNREACHABLE_CODE(return out;);
+  }
+
+  absl::variant<grpc_slice, absl::Span<const uint8_t>, std::vector<uint8_t>>
+      value_;
+};
+
+// Parser parses one frame + continuations worth of headers.
+class HPackParser::Parser {
+ public:
+  Parser(Input* input, HPackParser::Sink* sink, HPackTable* table,
+         uint8_t* dynamic_table_updates_allowed)
+      : input_(input),
+        sink_(sink),
+        table_(table),
+        dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
+
+  // Skip any priority bits, or return false on failure
+  bool SkipPriority() {
+    if (input_->remaining() < 5) return input_->UnexpectedEOF(false);
+    input_->Advance(5);
+    return true;
+  }
+
+  bool Parse() {
+    auto cur = *input_->Next();
+    switch (cur >> 4) {
+        // Literal header not indexed - First byte format: 0000xxxx
+        // Literal header never indexed - First byte format: 0001xxxx
+        // Where xxxx:
+        //   0000  - literal key
+        //   1111  - indexed key, varint encoded index
+        //   other - indexed key, inline encoded index
+      case 0:
+      case 1:
+        switch (cur & 0xf) {
+          case 0:  // literal key
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseLiteralKey<String::Extern>());
+          case 0xf:  // varint encoded key index
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseVarIdxKey<String::Extern>(0xf));
+          default:  // inline encoded key index
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseIdxKey<String::Extern>(cur & 0xf));
+        }
+        // Update max table size.
+        // First byte format: 001xxxxx
+        // Where xxxxx:
+        //   11111 - max size is varint encoded
+        //   other - max size is stored inline
+      case 2:
+        // inline encoded max table size
+        return FinishMaxTableSize(cur & 0x1f);
+      case 3:
+        if (cur == 0x3f) {
+          // varint encoded max table size
+          return FinishMaxTableSize(input_->ParseVarint(0x1f));
+        } else {
+          // inline encoded max table size
+          return FinishMaxTableSize(cur & 0x1f);
+        }
+        // Literal header with incremental indexing.
+        // First byte format: 01xxxxxx
+        // Where xxxxxx:
+        //   000000 - literal key
+        //   111111 - indexed key, varint encoded index
+        //   other  - indexed key, inline encoded index
+      case 4:
+        if (cur == 0x40) {
+          // literal key
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseLiteralKey<String::Intern>());
+        }
+        ABSL_FALLTHROUGH_INTENDED;
+      case 5:
+      case 6:
+        // inline encoded key index
+        return FinishHeader<TableAction::kAddToTable>(
+            ParseIdxKey<String::Intern>(cur & 0x3f));
+      case 7:
+        if (cur == 0x7f) {
+          // varint encoded key index
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseVarIdxKey<String::Intern>(0x3f));
+        } else {
+          // inline encoded key index
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseIdxKey<String::Intern>(cur & 0x3f));
+        }
+        // Indexed Header Field Representation
+        // First byte format: 1xxxxxxx
+        // Where xxxxxxx:
+        //   0000000 - illegal
+        //   1111111 - varint encoded field index
+        //   other   - inline encoded field index
+      case 8:
+        if (cur == 0x80) {
+          // illegal value.
+          return input_->MaybeSetErrorAndReturn(
+              [] {
+                return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "Illegal hpack op code");
+              },
+              false);
+        }
+        ABSL_FALLTHROUGH_INTENDED;
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+        // inline encoded field index
+        return FinishIndexed(cur & 0x7f);
+      case 15:
+        if (cur == 0xff) {
+          // varint encoded field index
+          return FinishIndexed(input_->ParseVarint(0x7f));
+        } else {
+          // inline encoded field index
+          return FinishIndexed(cur & 0x7f);
+        }
+    }
+    GPR_UNREACHABLE_CODE(abort());
+  }
+
+ private:
+  void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
+    char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char* v = nullptr;
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
+      v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
+    } else {
+      v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    }
+    gpr_log(
+        GPR_INFO,
+        "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+        k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
+        grpc_slice_is_interned(GRPC_MDKEY(md)),
+        grpc_slice_is_interned(GRPC_MDVALUE(md)));
+    gpr_free(k);
+    gpr_free(v);
+  }
+
+  // During FinishHeader, how should the header be treated in the hpack table
+  enum class TableAction {
+    // Add to the table
+    kAddToTable,
+    // Do not add to the table
+    kOmitFromTable,
+  };
+
+  template <TableAction action>
+  bool FinishHeader(grpc_mdelem md) {
+    // Allow higher code to just pass in failures ... simplifies things a bit.
+    if (GRPC_MDISNULL(md)) return false;
+    // Log if desired
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+      LogHeader(md);
+    }
+    // Add to the hpack table if needed
+    if (action == TableAction::kAddToTable) {
+      GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
+                           GRPC_MDELEM_STORAGE_INTERNED ||
+                       GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
+      grpc_error_handle err = table_->Add(md);
+      if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+        input_->SetError(err);
+        return false;
+      };
+    }
+    // Pass up to the transport
+    grpc_error_handle err = (*sink_)(md);
+    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+      input_->SetError(err);
+      return false;
+    }
+    return true;
+  }
+
+  // Parse a string encoded key and a string encoded value
+  template <typename TakeValueType>
+  grpc_mdelem ParseLiteralKey() {
+    auto key = String::Parse(input_);
+    if (!key.has_value()) return GRPC_MDNULL;
+    auto key_slice = key->Take<String::Intern>();
+    auto value = ParseValueString(key_slice);
+    if (GPR_UNLIKELY(!value.has_value())) {
+      grpc_slice_unref_internal(key_slice);
+      return GRPC_MDNULL;
+    }
+    return grpc_mdelem_from_slices(key_slice, value->Take<TakeValueType>());
+  }
+
+  // Parse an index encoded key and a string encoded value
+  template <typename TakeValueType>
+  grpc_mdelem ParseIdxKey(uint32_t index) {
+    auto elem = table_->Peek(index);
+    if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
+      return InvalidHPackIndexError(index, elem);
+    }
+    GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
+    auto value = ParseValueString(GRPC_MDKEY(elem));
+    if (GPR_UNLIKELY(!value.has_value())) return GRPC_MDNULL;
+    return grpc_mdelem_from_slices(
+        static_cast<const ManagedMemorySlice&>(
+            grpc_slice_ref_internal(GRPC_MDKEY(elem))),
+        value->Take<TakeValueType>());
+  }
+
+  // Parse a varint index encoded key and a string encoded value
+  template <typename TakeValueType>
+  grpc_mdelem ParseVarIdxKey(uint32_t offset) {
+    auto index = input_->ParseVarint(offset);
+    if (GPR_UNLIKELY(!index.has_value())) return GRPC_MDNULL;
+    return ParseIdxKey<TakeValueType>(*index);
+  }
+
+  // Parse a string, figuring out if it's binary or not by the key name.
+  template <typename SliceType>
+  absl::optional<String> ParseValueString(const SliceType& key) {
+    if (grpc_is_refcounted_slice_binary_header(key)) {
+      return String::ParseBinary(input_);
+    } else {
+      return String::Parse(input_);
+    }
+  }
+
+  // Emit an indexed field
+  bool FinishIndexed(absl::optional<uint32_t> index) {
+    *dynamic_table_updates_allowed_ = 0;
+    if (!index.has_value()) return false;
+    grpc_mdelem md = table_->Fetch(*index);
+    if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
+      return InvalidHPackIndexError(*index, false);
+    }
+    GRPC_STATS_INC_HPACK_RECV_INDEXED();
+    return FinishHeader<TableAction::kOmitFromTable>(md);
+  }
+
+  // finish parsing a max table size change
+  bool FinishMaxTableSize(absl::optional<uint32_t> size) {
+    if (!size.has_value()) return false;
+    if (*dynamic_table_updates_allowed_ == 0) {
+      return input_->MaybeSetErrorAndReturn(
+          [] {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "More than two max table size changes in a single frame");
+          },
+          false);
+    }
+    (*dynamic_table_updates_allowed_)--;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+      gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
+    }
+    grpc_error_handle err = table_->SetCurrentTableSize(*size);
+    if (err != GRPC_ERROR_NONE) {
+      input_->SetError(err);
+      return false;
+    }
+    return true;
+  }
+
+  // Set an invalid hpack index error if no error has been set. Returns result
+  // unmodified.
+  template <typename R>
+  R InvalidHPackIndexError(uint32_t index, R result) {
+    return input_->MaybeSetErrorAndReturn(
+        [this, index] {
+          return grpc_error_set_int(
+              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "Invalid HPACK index received"),
+                                 GRPC_ERROR_INT_INDEX,
+                                 static_cast<intptr_t>(index)),
+              GRPC_ERROR_INT_SIZE,
+              static_cast<intptr_t>(this->table_->num_entries()));
+        },
+        result);
+  }
+
+  Input* input_;
+  HPackParser::Sink* sink_;
+  HPackTable* const table_;
+  uint8_t* dynamic_table_updates_allowed_;
+};
+
+UnmanagedMemorySlice HPackParser::String::Take(Extern) {
+  auto s = Match(
+      value_,
+      [](const grpc_slice& slice) {
+        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
+        return static_cast<const UnmanagedMemorySlice&>(slice);
+      },
+      [](absl::Span<const uint8_t> span) {
+        return UnmanagedMemorySlice(
+            reinterpret_cast<char*>(const_cast<uint8_t*>(span.begin())),
+            span.size());
+      },
+      [](const std::vector<uint8_t>& v) {
+        return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+                                    v.size());
+      });
+  value_ = absl::Span<const uint8_t>();
+  return s;
 }
 
-/* parse the value string */
-grpc_error_handle HPackParser::parse_value_string(const uint8_t* cur,
-                                                  const uint8_t* end,
-                                                  bool is_binary) {
-  return begin_parse_string(
-      cur, end, is_binary ? BinaryState::kBinaryBegin : BinaryState::kNotBinary,
-      &value_);
-}
-
-grpc_error_handle HPackParser::parse_value_string_with_indexed_key(
-    const uint8_t* cur, const uint8_t* end) {
-  bool is_binary = false;
-  grpc_error_handle err = IsBinaryIndexedHeader(&is_binary);
-  if (err != GRPC_ERROR_NONE) return parse_error(cur, end, err);
-  return parse_value_string(cur, end, is_binary);
-}
-
-grpc_error_handle HPackParser::parse_value_string_with_literal_key(
-    const uint8_t* cur, const uint8_t* end) {
-  return parse_value_string(cur, end, IsBinaryLiteralHeader());
+ManagedMemorySlice HPackParser::String::Take(Intern) {
+  auto s = Match(
+      value_,
+      [](const grpc_slice& slice) {
+        ManagedMemorySlice s(&slice);
+        grpc_slice_unref_internal(slice);
+        return s;
+      },
+      [](absl::Span<const uint8_t> span) {
+        return ManagedMemorySlice(
+            reinterpret_cast<char*>(const_cast<uint8_t*>(span.data())),
+            span.size());
+      },
+      [](const std::vector<uint8_t>& v) {
+        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+                                  v.size());
+      });
+  value_ = absl::Span<const uint8_t>();
+  return s;
 }
 
 /* PUBLIC INTERFACE */
 
-HPackParser::HPackParser() {
-  state_ = &HPackParser::parse_begin;
-  key_.data_.referenced = grpc_empty_slice();
-  key_.data_.copied.str = nullptr;
-  key_.data_.copied.capacity = 0;
-  key_.data_.copied.length = 0;
-  value_.data_.referenced = grpc_empty_slice();
-  value_.data_.copied.str = nullptr;
-  value_.data_.copied.capacity = 0;
-  value_.data_.copied.length = 0;
-  /* Cached metadata for the current index the parser is handling. This is set
-     to 0 initially, invalidated when the index changes, and invalidated when it
-     is read (by get_precomputed_md_for_idx()). It is set during string parsing,
-     by set_precomputed_md_idx() - which is called by parse_value_string().
-     The goal here is to avoid recomputing the metadata for the index when
-     finishing with a header as well as the initial parse. */
-  md_for_index_.payload = 0;
-#ifndef NDEBUG
-  /* In debug mode, this ensures that the cached metadata we're reading is in
-   * fact correct for the index we are examining. */
-  precomputed_md_index_ = -1;
-#endif
-  dynamic_table_updates_allowed_ = 2;
-  last_error_ = GRPC_ERROR_NONE;
-}
+HPackParser::HPackParser() = default;
+
+HPackParser::~HPackParser() = default;
 
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);
   boundary_ = boundary;
-  switch (priority) {
-    case Priority::Included:
-      after_prioritization_ = state_;
-      state_ = &HPackParser::parse_stream_dep0;
-      break;
+  priority_ = priority;
+  dynamic_table_updates_allowed_ = 2;
+}
+
+grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
+  if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
+    std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
+    buffer.insert(buffer.end(), GRPC_SLICE_START_PTR(slice),
+                  GRPC_SLICE_END_PTR(slice));
+    return ParseInput(
+        Input(nullptr, buffer.data(), buffer.data() + buffer.size()), is_last);
+  }
+  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
+                          GRPC_SLICE_END_PTR(slice)),
+                    is_last);
+}
+
+grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
+  if (ParseInputInner(&input)) {
+    return GRPC_ERROR_NONE;
+  }
+  if (input.eof_error()) {
+    if (GPR_UNLIKELY(is_last && is_boundary())) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Incomplete header at the end of a header/continuation sequence");
+    }
+    unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
+    return GRPC_ERROR_NONE;
+  }
+  return input.TakeError();
+}
+
+bool HPackParser::ParseInputInner(Input* input) {
+  switch (priority_) {
     case Priority::None:
       break;
+    case Priority::Included: {
+      if (input->remaining() < 5) return input->UnexpectedEOF(false);
+      input->Advance(5);
+      input->UpdateFrontier();
+      priority_ = Priority::None;
+    }
   }
+  while (!input->end_of_stream()) {
+    if (GPR_UNLIKELY(
+            !Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_)
+                 .Parse())) {
+      return false;
+    }
+    input->UpdateFrontier();
+  }
+  return true;
 }
 
-HPackParser::~HPackParser() {
-  grpc_chttp2_hptbl_destroy(&table_);
-  GRPC_ERROR_UNREF(last_error_);
-  grpc_slice_unref_internal(key_.data_.referenced);
-  grpc_slice_unref_internal(value_.data_.referenced);
-  gpr_free(key_.data_.copied.str);
-  gpr_free(value_.data_.copied.str);
-}
-
-grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
-/* max number of bytes to parse at a time... limits call stack depth on
- * compilers without TCO */
-#define MAX_PARSE_LENGTH 1024
-  current_slice_refcount_ = slice.refcount;
-  const uint8_t* start = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  while (start != end && error == GRPC_ERROR_NONE) {
-    const uint8_t* target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
-    error = (this->*state_)(start, target);
-    start = target;
-  }
-  current_slice_refcount_ = nullptr;
-  return error;
-}
+void HPackParser::FinishFrame() { sink_ = Sink(); }
 
 }  // namespace grpc_core
 
@@ -1630,15 +1371,11 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
-  grpc_error_handle error = parser->Parse(slice);
+  grpc_error_handle error = parser->Parse(slice, is_last != 0);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
   if (is_last) {
-    if (parser->is_boundary() && !parser->is_in_begin_state()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "end of header frame not aligned with a hpack record boundary");
-    }
     /* need to check for null stream: this can occur if we receive an invalid
        stream id on a header */
     if (s != nullptr) {
