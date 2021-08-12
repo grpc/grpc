@@ -38,6 +38,7 @@ ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
 
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
+_NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
 EndpointPolicy = gcp.network_services.EndpointPolicy
 
 # Testing metadata consts
@@ -537,6 +538,8 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     GRPC_ROUTE_NAME = "grpc-route"
     ROUTER_NAME = "router"
 
+    netsvc: _NetworkServicesV1Alpha1
+
     def __init__(self,
                  gcp_api_manager: gcp.api.GcpApiManager,
                  project: str,
@@ -627,11 +630,13 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):
-    netsec: Optional[_NetworkSecurityV1Alpha1]
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
     ENDPOINT_POLICY = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
+
+    netsec: _NetworkSecurityV1Alpha1
+    netsvc: _NetworkServicesV1Beta1
 
     def __init__(
         self,
@@ -650,7 +655,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
         # API
         self.netsec = _NetworkSecurityV1Alpha1(gcp_api_manager, project)
-        self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
+        self.netsvc = _NetworkServicesV1Beta1(gcp_api_manager, project)
 
         # Managed resources
         self.server_tls_policy: Optional[ServerTlsPolicy] = None
@@ -734,7 +739,6 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         }
         config = {
             "type": "GRPC_SERVER",
-            "httpFilters": {},
             "trafficPortSelector": port_selector,
             "endpointMatcher": {
                 "metadataLabelMatcher": label_matcher_all,
