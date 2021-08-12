@@ -23,7 +23,17 @@ grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine();
 
 namespace grpc_core {
 
-/// Set the default EventEngine. This engine is shut down along with iomgr.
+/// Set the default \a EventEngine.
+///
+/// The iomgr interfaces conceptually expose a global singleton iomgr instance
+/// that is shared throughout gRPC. To accomodate an EventEngine-based iomgr
+/// implementation, this method sets the default EventEngine that will be used.
+/// The default EventEngine can only be set once during the lifetime of gRPC.
+/// This method must be called before \a grpc_init() (truly, before
+/// \a grpc_iomgr_init()). This engine is shut down along with iomgr.
+///
+/// This is an internal method, not intended for public use. Public APIs are
+/// being planned.
 void SetDefaultEventEngine(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
 
