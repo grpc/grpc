@@ -56,11 +56,34 @@ grpc_error_handle CensusClientCallData::Init(
 // OpenCensusCallTracer::OpenCensusCallAttemptTracer
 //
 
+namespace {
+
+CensusContext CreateCensusContextForCallAttempt(
+    absl::string_view method, const CensusContext& parent_context) {
+  GPR_DEBUG_ASSERT(parent_context.Context().IsValid());
+  return CensusContext(absl::StrCat("Attempt.", method), &parent_context.Span(),
+                       parent_context.tags());
+}
+
+}  // namespace
+
+OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
+    OpenCensusCallTracer* parent, uint64_t attempt_num,
+    bool is_transparent_retry, bool arena_allocated)
+    : parent_(parent),
+      arena_allocated_(arena_allocated),
+      context_(CreateCensusContextForCallAttempt(parent_->method_,
+                                                 parent_->context_)),
+      start_time_(absl::Now()) {
+  context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
+  context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
+  memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
+  memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
+}
+
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
                               uint32_t /* flags */) {
-  GenerateClientContextFromParentWithTags(parent_->qualified_method_, &context_,
-                                          parent_->context_);
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
@@ -173,11 +196,10 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : path_(grpc_slice_ref_internal(args->path)),
       method_(GetMethod(&path_)),
-      qualified_method_(absl::StrCat("Sent.", method_)),
       arena_(args->arena) {
   auto* parent_context = reinterpret_cast<CensusContext*>(
       args->context[GRPC_CONTEXT_TRACING].value);
-  GenerateClientContext(qualified_method_, &context_,
+  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);
 }
 
@@ -199,6 +221,7 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   // the heap, so that in the common case we don't require a heap allocation,
   // nor do we unnecessarily grow the arena.
   bool is_first_attempt = true;
+  uint64_t attempt_num;
   {
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
@@ -207,6 +230,7 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
       }
     }
+    attempt_num = retries_;
     if (is_transparent_retry) {
       ++transparent_retries_;
     } else {
@@ -215,10 +239,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     ++num_active_rpcs_;
   }
   if (is_first_attempt) {
-    return arena_->New<OpenCensusCallAttemptTracer>(this,
-                                                    true /* arena_allocated */);
+    return arena_->New<OpenCensusCallAttemptTracer>(
+        this, attempt_num, is_transparent_retry, true /* arena_allocated */);
   }
-  return new OpenCensusCallAttemptTracer(this, false /* arena_allocated */);
+  return new OpenCensusCallAttemptTracer(
+      this, attempt_num, is_transparent_retry, false /* arena_allocated */);
 }
 
 }  // namespace grpc

@@ -30,14 +30,9 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    explicit OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
-                                         bool arena_allocated)
-        : parent_(parent),
-          arena_allocated_(arena_allocated),
-          start_time_(absl::Now()) {
-      memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
-      memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
-    }
+    OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
+                                uint64_t attempt_num, bool is_transparent_retry,
+                                bool arena_allocated);
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override;
@@ -95,7 +90,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   // Client method.
   grpc_slice path_;
   absl::string_view method_;
-  std::string qualified_method_;
   CensusContext context_;
   grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
@@ -106,7 +100,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   // Retry delay
   absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
   absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
-  uint32_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
+  uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 
 };  // namespace grpc

@@ -1110,9 +1110,9 @@ void Server::UnrefAndWaitLocked() {
     shutdown_done_ = true;
     return;  // no need to wait on CV since done condition already set
   }
-  grpc::internal::WaitUntil(
-      &shutdown_done_cv_, &mu_,
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
+  while (!shutdown_done_) {
+    shutdown_done_cv_.Wait(&mu_);
+  }
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {

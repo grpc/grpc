@@ -25,12 +25,6 @@ RESOURCE_PREFIX = flags.DEFINE_string(
     help=("(required) The prefix used to name GCP resources.\n"
           "Together with `resource_suffix` used to create unique "
           "resource names."))
-# TODO(sergiitk): remove after all migration to --resource_prefix completed.
-#   Known migration work: url map, staging flagfiles.
-NAMESPACE = flags.DEFINE_string(
-    "namespace",
-    default=None,
-    help="Deprecated. Use --resource_prefix instead.")
 RESOURCE_SUFFIX = flags.DEFINE_string(
     "resource_suffix",
     default=None,
@@ -119,6 +113,5 @@ flags.adopt_module_key_flags(highlighter)
 
 flags.mark_flags_as_required([
     "project",
-    # TODO(sergiitk): Make required when --namespace is removed.
-    # "resource_prefix",
+    "resource_prefix",
 ])

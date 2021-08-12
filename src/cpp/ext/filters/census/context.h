@@ -64,6 +64,11 @@ class CensusContext {
             name, parent_ctxt)),
         tags_({}) {}
 
+  void AddSpanAttribute(absl::string_view key,
+                        opencensus::trace::AttributeValueRef attribute) {
+    span_.AddAttribute(key, attribute);
+  }
+
   const ::opencensus::trace::Span& Span() const { return span_; }
   const ::opencensus::tags::TagMap& tags() const { return tags_; }
 
@@ -105,12 +110,6 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
 // blank CensusContext as it overwrites it.
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
                            CensusContext* parent_ctx);
-
-// Creates a new client context with \a parent_ctxt as the parent and propagates
-// the tags as well.
-void GenerateClientContextFromParentWithTags(absl::string_view method,
-                                             CensusContext* ctxt,
-                                             const CensusContext& parent_ctxt);
 
 // Returns the incoming data size from the grpc call final info.
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);

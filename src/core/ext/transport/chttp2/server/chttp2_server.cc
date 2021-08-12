@@ -784,7 +784,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       if (!grpc_resource_user_safe_alloc(channel_resource_user,
                                          GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
         gpr_log(
-            GPR_ERROR,
+            GPR_INFO,
             "Memory quota exhausted, rejecting connection, no handshaking.");
       } else {
         // This ref needs to be taken in the critical region after having made
