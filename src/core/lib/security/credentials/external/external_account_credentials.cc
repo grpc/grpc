@@ -233,7 +233,7 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 bool ValidateUrl(URI url) {
   absl::string_view scheme(url.scheme());
   auto string_matcher_scheme =
-      StringMatcher::Create(StringMatcher::Type::kExact, "https");
+      StringMatcher::Create(StringMatcher::Type::kExact, "https", false);
   if (!string_matcher_scheme->Match(scheme)) {
     return false;
   }
