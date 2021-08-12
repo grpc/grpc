@@ -586,7 +586,7 @@ static void GPR_ATTRIBUTE_NOINLINE hpack_enc_log(grpc_mdelem elem) {
 }
 
 static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
-  return 1 + grpc_core::HPackTable::kLastStaticEntry + c->tail_remote_index +
+  return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
          c->table_elems - elem_index;
 }
 
@@ -833,7 +833,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index =
              reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
-                 ->StaticIndex()) < grpc_core::HPackTable::kLastStaticEntry) {
+                 ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
@@ -847,8 +847,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
                             GRPC_MDELEM_DATA(l->md))
-                            ->StaticIndex()) <
-            grpc_core::HPackTable::kLastStaticEntry) {
+                            ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);
