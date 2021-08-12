@@ -64,12 +64,12 @@ class TlsTypeConstrainer {
 
 #ifdef GPR_GCC_TLS
 #define GPR_THREAD_LOCAL(type) \
-  __thread grpc_core::TlsTypeConstrainer<type>::Type
+  __thread typename grpc_core::TlsTypeConstrainer<type>::Type
 #endif
 
 #ifdef GPR_MSVC_TLS
 #define GPR_THREAD_LOCAL(type) \
-  __declspec(thread) grpc_core::TlsTypeConstrainer<type>::Type
+  __declspec(thread) typename grpc_core::TlsTypeConstrainer<type>::Type
 #endif
 
 #ifdef GPR_PTHREAD_TLS
