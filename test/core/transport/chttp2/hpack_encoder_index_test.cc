@@ -36,7 +36,7 @@ struct TestKey {
 
 TEST(HPackEncoderIndexTest, SetAndGet) {
   HPackEncoderIndex<TestKey, 64> index;
-  std::random_device rng;
+  std::default_random_engine rng;
   std::unordered_map<uint32_t, uint32_t> last_index;
   for (uint32_t i = 0; i < 10000; i++) {
     uint32_t key = rng();
@@ -59,4 +59,4 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-#
+

@@ -27,6 +27,8 @@ class HPackEncoderIndex {
  public:
   using Index = uint32_t;
 
+  HPackEncoderIndex() : entries_{} {}
+
   // If key exists in the table, update it to a new index.
   // If it does not and there is an empty slot, add it to the index.
   // Finally, if it does not and there is no empty slot, evict the oldest
@@ -53,6 +55,8 @@ class HPackEncoderIndex {
 
   // One entry in the index
   struct Entry {
+    Entry() = default;
+
     StoredKey key;
     Index index;
 
