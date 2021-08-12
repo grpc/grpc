@@ -6047,6 +6047,24 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: promise_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/promise_factory_test.cc
+  deps:
+  - absl/functional:bind_front
+  - absl/types:optional
+  - absl/types:variant
+  - absl/utility:utility
+  uses_polling: false
 - name: promise_test
   gtest: true
   build: test
