@@ -38,7 +38,9 @@ class HPackEncoderIndex {
     if (cuckoo_first->UpdateOrAdd(key, new_index)) return;
     auto* const cuckoo_second = second_slot(key);
     if (cuckoo_second->UpdateOrAdd(key, new_index)) return;
-    *Older(cuckoo_first, cuckoo_second) = {key.stored(), new_index};
+    auto* const clobber = Older(cuckoo_first, cuckoo_second);
+    clobber->key = key.stored();
+    clobber->index = new_index;
   }
 
   // Lookup key and return its index, or return empty if it's not in this table.
@@ -55,7 +57,7 @@ class HPackEncoderIndex {
 
   // One entry in the index
   struct Entry {
-    Entry() = default;
+    Entry() : key{}, index{} {};
 
     StoredKey key;
     Index index;
