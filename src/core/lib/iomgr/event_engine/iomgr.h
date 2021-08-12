@@ -17,8 +17,16 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-// This can be called anywhere in the EE-based iomgr impl where we need to
-// access the global EE instance.
+/// This can be called anywhere in the EE-based iomgr impl where we need to
+/// access the global EE instance.
 grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine();
+
+namespace grpc_core {
+
+/// Set the default EventEngine. This engine is shut down along with iomgr.
+void SetDefaultEventEngine(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_H
