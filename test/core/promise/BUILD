@@ -55,6 +55,6 @@ grpc_cc_test(
         "//:capture",
         "//:promise",
         "//:promise_factory",
+        "//test/core/util:grpc_suppressions",
     ],
 )
-
