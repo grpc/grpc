@@ -32,8 +32,10 @@ namespace grpc_binder {
 // Routes the data received from transport to corresponding streams
 class TransportStreamReceiverImpl : public TransportStreamReceiver {
  public:
-  explicit TransportStreamReceiverImpl(bool is_client)
-      : is_client_(is_client) {}
+  explicit TransportStreamReceiverImpl(
+      bool is_client, std::function<void()> accept_stream_callback = nullptr)
+      : is_client_(is_client),
+        accept_stream_callback_(accept_stream_callback) {}
   void RegisterRecvInitialMetadata(StreamIdentifier id,
                                    InitialMetadataCallbackType cb) override;
   void RegisterRecvMessage(StreamIdentifier id,
@@ -92,6 +94,9 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
   std::set<StreamIdentifier> recv_message_cancelled_ ABSL_GUARDED_BY(m_);
 
   bool is_client_;
+  // Called when receiving initial metadata to inform the server about a new
+  // stream.
+  std::function<void()> accept_stream_callback_;
 };
 }  // namespace grpc_binder
 
