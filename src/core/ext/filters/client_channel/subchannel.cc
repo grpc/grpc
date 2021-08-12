@@ -657,15 +657,6 @@ Subchannel::Subchannel(SubchannelKey key,
       key_(std::move(key)),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
-  // A grpc_init is added here to ensure that grpc_shutdown does not happen
-  // until the subchannel is destroyed. Subchannels can persist longer than
-  // channels because they maybe reused/shared among multiple channels. As a
-  // result the subchannel destruction happens asynchronously to channel
-  // destruction. If the last channel destruction triggers a grpc_shutdown
-  // before the last subchannel destruction, then there maybe race conditions
-  // triggering segmentation faults. To prevent this issue, we call a grpc_init
-  // here and a grpc_shutdown in the subchannel destructor.
-  grpc_init();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   pollset_set_ = grpc_pollset_set_create();
   grpc_resolved_address* addr =
@@ -716,8 +707,6 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
-  // grpc_shutdown is called here because grpc_init is called in the ctor.
-  grpc_shutdown();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
