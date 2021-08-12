@@ -422,9 +422,9 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 //Performs the certificate-key check for all pairs in the list
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     const PemKeyCertPairList& pair_list) {
-  for (size_t i = 0; i < pair_list.size(); ++i) {
+  for (const auto& pair : pair_list) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
-        pair_list[i].private_key(), pair_list[i].cert_chain());
+      pair.private_key(), pair.cert_chain());
     if (!matched_or.ok() || !*matched_or) {
       return matched_or;
     }
