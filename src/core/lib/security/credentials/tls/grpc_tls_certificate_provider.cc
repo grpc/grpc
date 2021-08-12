@@ -477,19 +477,14 @@ void grpc_tls_certificate_provider_release(
 grpc_status_code grpc_tls_certificate_key_match(
     const char* private_key, const char* cert_chain, const char** error_details){
   grpc_core::ExecCtx exec_ctx;
-  grpc_status_code code;
   absl::StatusOr<bool> match_or = grpc_core::PrivateKeyAndCertificateMatch(private_key, cert_chain);
-  if (!match_or.status().ok()) {
-    code = static_cast<grpc_status_code>(match_or.status().code());
+  if (!match_or.ok()) {
     *error_details = gpr_strdup(std::string(match_or.status().message()).c_str());
-  } else {
-    if (match_or.value()) {
-      code = GRPC_STATUS_OK;
-    } else {
-      code = static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
-      *error_details = gpr_strdup(
-          "The private key doesn't match the public key on the first certificate of the certificate chain.");
-    }
+    return static_cast<grpc_status_code>(match_or.status().code());
   }
-  return code;
+  if (!*match_or) {
+    *error_details = gpr_strdup("The private key doesn't match the public key on the first certificate of the certificate chain.");
+    return static_cast<grpc_status_code>(absl::StatusCode::kInvalidArgument);
+  }
+  return GRPC_STATUS_OK;
 }
