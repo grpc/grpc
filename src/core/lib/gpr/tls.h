@@ -131,7 +131,7 @@ class TriviallyDestructibleAsserter {
 
 }  // namespace grpc_core
 
-#define GPR_THREAD_LOCAL(type)              \
+#define GPR_THREAD_LOCAL(type)                       \
   typename grpc_core::TriviallyDestructibleAsserter< \
       grpc_core::PthreadTlsImpl<type>>::Type
 
