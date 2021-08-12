@@ -119,7 +119,7 @@ PromiseFactoryImpl(F&& f, A&& arg) {
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
 absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<RemoveCVRef<F>>>
-PromiseFactoryImpl(F f, A&& arg) {
+PromiseFactoryImpl(F f, A&&) {
   return PromiseLike<F>(std::move(f));
 }
 
