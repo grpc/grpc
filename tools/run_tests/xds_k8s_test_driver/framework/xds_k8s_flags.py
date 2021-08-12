@@ -31,7 +31,7 @@ TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
     help="Traffic Director gRPC Bootstrap Docker image")
 
 # Test app
-SERVER_IMAGE = flags.DEFINE_string("server_image",
+SERVER_IMAGE = flags.DEFINE_list("server_image",
                                    default=None,
                                    help="Server Docker image name")
 CLIENT_IMAGE = flags.DEFINE_string("client_image",
