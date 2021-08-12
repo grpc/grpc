@@ -239,16 +239,19 @@ bool ValidateUrl(URI url) {
   }
   std::vector<std::string> v = absl::StrSplit(url.authority(), ':');
   absl::string_view host = v[0];
-  auto string_matcher_host_sts =
+  auto string_matcher_host =
       StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                            "^(([a-zA-Z0-9_]+\.sts)|(sts)|(sts\.[a-zA-Z0-9_]+)|"
-                            "([a-zA-Z0-9_]+-sts))\.googleapis\.com$");
-  auto string_matcher_host_iam = StringMatcher::Create(
-      StringMatcher::Type::kSafeRegex,
-      "^(([a-zA-Z0-9_]+\.iamcredentials)|(iamcredentials)|(iamcredentials\.[a-"
-      "zA-Z0-9_]+)|([a-zA-Z0-9_]+-iamcredentials))\.googleapis\.com$");
-  if (!string_matcher_host_sts->Match(host) &&
-      !string_matcher_host_iam->Match(host)) {
+                            "^("
+                            "([^\\.\\s\\/\\\\]+\\.sts)|"
+                            "(sts)|"
+                            "(sts\\.[^\\.\\s\\/\\\\]+)|"
+                            "([^\\.\\s\\/\\\\]+-sts)|"
+                            "([^\\.\\s\\/\\\\]+\\.iamcredentials)|"
+                            "(iamcredentials)|"
+                            "(iamcredentials\\.[^\\.\\s\\/\\\\]+)|"
+                            "([^\\.\\s\\/\\\\]+-iamcredentials)"
+                            ")\\.googleapis\\.com$");
+  if (!string_matcher_host->Match(host)) {
     return false;
   }
   return true;
