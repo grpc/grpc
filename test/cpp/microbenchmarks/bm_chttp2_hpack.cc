@@ -461,11 +461,11 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None);
   for (auto slice : init_slices) {
-    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
+    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice));
   }
   while (state.KeepRunning()) {
     for (auto slice : benchmark_slices) {
-      GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
+      GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
