@@ -20,6 +20,8 @@
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
+#include "absl/meta/type_traits.h"
+
 // PromiseFactory is an adaptor class.
 //
 // Where a Promise is a thing that's polled periodically, a PromiseFactory
@@ -68,134 +70,125 @@ constexpr bool IsVoidCallable() {
 
 // Given F(A,B,C,...), what's the return type?
 template <typename T, typename Ignored = void>
+struct ResultOfTInner;
+template <typename F, typename... Args>
+struct ResultOfTInner<F(Args...), absl::void_t<decltype(std::declval<F>()(
+                                      std::declval<Args>()...))>> {
+  using T = decltype(std::declval<F>()(std::declval<Args>()...));
+};
+
+template <typename T>
 struct ResultOfT;
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...), absl::void_t<decltype(
-                                 std::declval<F>()(std::declval<Args>()...))>> {
-  using T = decltype(std::declval<F>()(std::declval<Args>()...));
+struct ResultOfT<F(Args...)> {
+  using FP = absl::remove_cv_t<absl::remove_reference_t<F>>;
+  using T = typename ResultOfTInner<FP(Args...)>::T;
 };
 
 template <typename T>
 using ResultOf = typename ResultOfT<T>::T;
 
-// Error case - we don't know what the heck to do.
-// Also defines arguments:
-//  A - the argument type for the PromiseFactory.
-//  F - the callable that we're promoting to a PromiseFactory.
-//  Ignored - must be void, here to make the enable_if machinery work.
-template <typename A, typename F, typename Ignored = void>
-class PromiseFactory;
+// Captures the promise functor and the argument passed.
+// Provides the interface of a promise.
+template <typename F, typename Arg>
+class Curried {
+ public:
+  Curried(F&& f, Arg&& arg)
+      : f_(std::forward<F>(f)), arg_(std::forward<Arg>(arg)) {}
+  using Result = decltype(std::declval<F>()(std::declval<Arg>()));
+  Result operator()() { return f_(arg_); }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS Arg arg_;
+};
 
 // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
 // capturing A.
 template <typename A, typename F>
-class PromiseFactory<A, F,
-                     absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>()>> {
- public:
-  using Arg = A;
-
- private:
-  // Captures the promise functor and the argument passed.
-  // Provides the interface of a promise.
-  class Curried {
-   public:
-    Curried(F f, Arg arg) : f_(std::move(f)), arg_(std::move(arg)) {}
-    using Result = decltype(std::declval<F>()(std::declval<Arg>()));
-    Result operator()() { return f_(arg_); }
-
-   private:
-    GPR_NO_UNIQUE_ADDRESS F f_;
-    GPR_NO_UNIQUE_ADDRESS Arg arg_;
-  };
-
- public:
-  using Promise = PromiseLike<Curried>;
-
-  Promise Once(Arg arg) {
-    return Promise(Curried(std::move(f_), std::move(arg)));
-  }
-  Promise Repeated(Arg arg) { return Promise(Curried(f_, std::move(arg))); }
-
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
-
- private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
-};
+absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>(), PromiseLike<Curried<A, F>>>
+PromiseFactoryImpl(F&& f, A&& arg) {
+  return Curried<A, F>(std::forward<F>(f), std::forward<A>(arg));
+}
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
-class PromiseFactory<A, F,
-                     absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>()>> {
- public:
-  using Promise = PromiseLike<F>;
-  using Arg = A;
-  Promise Once(Arg) { return std::move(f_); }
-  Promise Repeated(Arg) { return f_; }
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
-
- private:
-  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
-};
+absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<F>>
+PromiseFactoryImpl(F&& f, A&& arg) {
+  return std::forward<F>(f);
+}
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
 template <typename F>
-class PromiseFactory<void, F,
-                     absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>()>> {
- public:
-  using Arg = void;
-  using Promise = PromiseLike<F>;
-  Promise Once() { return std::move(f_); }
-  Promise Repeated() { return f_; }
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
-
- private:
-  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
-};
+absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<F>>
+PromiseFactoryImpl(F&& f) {
+  return std::forward<F>(f);
+}
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
 template <typename A, typename F>
-class PromiseFactory<A, F,
-                     absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>()>> {
- public:
-  using Arg = A;
-  using Promise = PromiseLike<decltype(std::declval<F>()(std::declval<Arg>()))>;
-  Promise Once(Arg arg) { return Promise(f_(std::move(arg))); }
-  Promise Repeated(Arg arg) { return Promise(f_(std::move(arg))); }
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
-
- private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
-};
+absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>(),
+                  PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
+PromiseFactoryImpl(F&& f, A&& arg) {
+  return f(std::move(arg));
+}
 
 // Given a callable() -> Promise<T>, promote it to a
 // PromiseFactory(A) -> Promise<T> by dropping the first argument.
 template <typename A, typename F>
-class PromiseFactory<A, F, absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
- public:
-  using Arg = A;
-  using Promise = PromiseLike<decltype(std::declval<F>()())>;
-  Promise Once(Arg) { return Promise(f_()); }
-  Promise Repeated(Arg) { return Promise(f_()); }
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
-
- private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
-};
+absl::enable_if_t<IsVoidCallable<ResultOf<F()>>(),
+                  PromiseLike<decltype(std::declval<F>()())>>
+PromiseFactoryImpl(F&& f, A&&) {
+  return f();
+}
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
 template <typename F>
-class PromiseFactory<void, F,
-                     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
- public:
-  using Arg = void;
-  using Promise = PromiseLike<decltype(std::declval<F>()())>;
-  Promise Once() { return Promise(f_()); }
-  Promise Repeated() { return Promise(f_()); }
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
+absl::enable_if_t<IsVoidCallable<ResultOf<F()>>(),
+                  PromiseLike<decltype(std::declval<F>()())>>
+PromiseFactoryImpl(F&& f) {
+  return f();
+};
 
+template <typename A, typename F>
+class PromiseFactory {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
+
+ public:
+  using Arg = A;
+
+  PromiseFactory(F f) : f_(std::move(f)) {}
+
+  auto Once(Arg&& a)
+      -> decltype(PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a))) {
+    return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a));
+  }
+
+  auto Repeated(Arg&& a) const
+      -> decltype(PromiseFactoryImpl(f_, std::forward<Arg>(a))) {
+    return PromiseFactoryImpl(f_, std::forward<Arg>(a));
+  }
+};
+
+template <typename F>
+class PromiseFactory<void, F> {
+ private:
+  GPR_NO_UNIQUE_ADDRESS F f_;
+
+ public:
+  using Arg = void;
+
+  PromiseFactory(F f) : f_(std::move(f)) {}
+
+  auto Once() -> decltype(PromiseFactoryImpl(std::move(f_))) {
+    return PromiseFactoryImpl(std::move(f_));
+  }
+
+  auto Repeated() const -> decltype(PromiseFactoryImpl(f_)) {
+    return PromiseFactoryImpl(f_);
+  }
 };
 
 }  // namespace promise_detail
