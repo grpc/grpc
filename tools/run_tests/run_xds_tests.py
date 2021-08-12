@@ -1288,7 +1288,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type,
                 'boot': True,
                 'initializeParams': {
                     'sourceImage': source_image
-                }
+                },
+                'autoDelete': True
             }],
             'metadata': {
                 'items': [{
