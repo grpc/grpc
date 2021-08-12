@@ -943,7 +943,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
     src/core/lib/gpr/time_windows.cc \
-    src/core/lib/gpr/tls_pthread.cc \
     src/core/lib/gpr/tmpfile_msys.cc \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
@@ -1629,6 +1628,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/codegen/port_platform.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2034,6 +2034,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/codegen/port_platform.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \

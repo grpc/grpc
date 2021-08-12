@@ -30,6 +30,10 @@ TEST(PromiseTest, WithResult) {
   // Fails to compile: WithResult<int>(Immediate(42.9));
 }
 
+TEST(PromiseTest, NowOrNever) {
+  EXPECT_EQ(NowOrNever(Immediate(42)), absl::optional<int>(42));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

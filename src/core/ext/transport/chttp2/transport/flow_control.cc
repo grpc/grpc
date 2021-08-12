@@ -43,6 +43,8 @@ namespace chttp2 {
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
 
+bool g_test_only_transport_flow_control_window_check;
+
 namespace {
 
 static constexpr const int kTracePadding = 30;
@@ -264,6 +266,23 @@ grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
+  // If a recently sent settings frame caused the stream's flow control window
+  // to go in the negative (or < GRPC_HEADER_SIZE_IN_BYTES), update the delta if
+  // one of the following conditions is satisfied -
+  // 1) There is a pending byte_stream and higher layers have expressed interest
+  // in reading additional data through the invokation of `Next()` where the
+  // bytes are to be available asynchronously. 2) There is a pending
+  // recv_message op.
+  // In these cases, we want to make sure that bytes are still flowing.
+  if (local_window_delta_ < GRPC_HEADER_SIZE_IN_BYTES) {
+    if (s_->on_next != nullptr) {
+      GPR_DEBUG_ASSERT(s_->pending_byte_stream);
+      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES, 0);
+    } else if (s_->recv_message != nullptr) {
+      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
+                               s_->frame_storage.length);
+    }
+  }
   if (local_window_delta_ > announced_window_delta_) {
     uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
         local_window_delta_ - announced_window_delta_, 0, kMaxWindowUpdateSize);
@@ -277,13 +296,10 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
                                                  size_t have_already) {
   FlowControlTrace trace("app st recv", tfc_, this);
   uint32_t max_recv_bytes;
-  uint32_t sent_init_window =
-      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= kMaxWindowUpdateSize - sent_init_window) {
-    max_recv_bytes = kMaxWindowUpdateSize - sent_init_window;
+  if (max_size_hint >= kMaxWindowDelta) {
+    max_recv_bytes = kMaxWindowDelta;
   } else {
     max_recv_bytes = static_cast<uint32_t>(max_size_hint);
   }
@@ -296,7 +312,12 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(max_recv_bytes <= kMaxWindowUpdateSize - sent_init_window);
+  GPR_DEBUG_ASSERT(
+      max_recv_bytes <=
+      kMaxWindowUpdateSize -
+          tfc_->transport()
+              ->settings[GRPC_SENT_SETTINGS]
+                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
   if (local_window_delta_ < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
@@ -365,10 +386,10 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                    ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
                        target_initial_window_size_ /* current target */);
     }
-    // Though initial window 'could' drop to 0, we keep the floor at 128
-    target_initial_window_size_ =
-        static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);
-
+    // Though initial window 'could' drop to 0, we keep the floor at
+    // kMinInitialWindowSize
+    target_initial_window_size_ = static_cast<int32_t> GPR_CLAMP(
+        target, kMinInitialWindowSize, kMaxInitialWindowSize);
     action.set_send_initial_window_update(
         DeltaUrgency(target_initial_window_size_,
                      GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),

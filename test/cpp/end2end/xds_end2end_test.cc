@@ -8885,7 +8885,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
@@ -8909,7 +8908,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
@@ -8940,7 +8938,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       "grpc.testing.unsupported_http_filter");
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
@@ -8975,10 +8972,6 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -9008,10 +9001,6 @@ TEST_P(XdsEnabledServerTest,
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -9025,17 +9014,13 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
+      "192.168.1.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  WaitForBackend(0);
-  // Set a different listening address in the LDS update
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      "192.168.1.1");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -9047,7 +9032,6 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(

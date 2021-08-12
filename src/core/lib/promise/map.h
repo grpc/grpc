@@ -18,8 +18,8 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 

@@ -24,6 +24,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -59,8 +60,7 @@ struct grpc_chttp2_hpack_compressor {
      a new literal should be added to the compression table or not.
      They track a single integer that counts how often a particular value has
      been seen. When that count reaches max (255), all values are halved. */
-  uint32_t filter_elems_sum;
-  uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_core::PopularityCount<GRPC_CHTTP2_HPACKC_NUM_VALUES> filter_elems;
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */

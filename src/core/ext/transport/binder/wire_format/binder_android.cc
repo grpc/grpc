@@ -26,16 +26,30 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/gprpp/sync.h"
 
+namespace grpc_binder {
 namespace {
 
-struct AtomicCallback {
-  explicit AtomicCallback(void* callback) : mu{}, callback(callback) {}
-  grpc_core::Mutex mu;
-  void* callback ABSL_GUARDED_BY(mu);
+struct BinderUserData {
+  explicit BinderUserData(grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
+                          TransactionReceiver::OnTransactCb* callback)
+      : wire_reader_ref(wire_reader_ref), callback(callback) {}
+  grpc_core::RefCountedPtr<WireReader> wire_reader_ref;
+  TransactionReceiver::OnTransactCb* callback;
 };
 
-void* f_onCreate_with_mutex(void* callback) {
-  return new AtomicCallback(callback);
+struct OnCreateArgs {
+  grpc_core::RefCountedPtr<WireReader> wire_reader_ref;
+  TransactionReceiver::OnTransactCb* callback;
+};
+
+void* f_onCreate_userdata(void* data) {
+  auto* args = static_cast<OnCreateArgs*>(data);
+  return new BinderUserData(args->wire_reader_ref, args->callback);
+}
+
+void f_onDestroy_delete(void* data) {
+  auto* user_data = static_cast<BinderUserData*>(data);
+  delete user_data;
 }
 
 void* f_onCreate_noop(void* args) { return nullptr; }
@@ -46,59 +60,50 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
                              const AParcel* in, AParcel* out) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
-  auto* user_data =
-      reinterpret_cast<AtomicCallback*>(AIBinder_getUserData(binder));
-  grpc_core::MutexLock lock(&user_data->mu);
 
-  // TODO(waynetu): What should be returned here?
-  if (!user_data->callback) return STATUS_OK;
-
-  auto* callback =
-      reinterpret_cast<grpc_binder::TransactionReceiver::OnTransactCb*>(
-          user_data->callback);
+  auto* user_data = static_cast<BinderUserData*>(AIBinder_getUserData(binder));
+  TransactionReceiver::OnTransactCb* callback = user_data->callback;
   // Wrap the parcel in a ReadableParcel.
-  std::unique_ptr<grpc_binder::ReadableParcel> output =
-      absl::make_unique<grpc_binder::ReadableParcelAndroid>(in);
+  std::unique_ptr<ReadableParcel> output =
+      absl::make_unique<ReadableParcelAndroid>(in);
   // The lock should be released "after" the callback finishes.
   absl::Status status = (*callback)(code, output.get());
   return status.ok() ? STATUS_OK : STATUS_UNKNOWN_ERROR;
 }
 }  // namespace
 
-namespace grpc_binder {
-
 ndk::SpAIBinder FromJavaBinder(JNIEnv* jni_env, jobject binder) {
   return ndk::SpAIBinder(AIBinder_fromJavaBinder(jni_env, binder));
 }
 
-TransactionReceiverAndroid::TransactionReceiverAndroid(OnTransactCb transact_cb)
+TransactionReceiverAndroid::TransactionReceiverAndroid(
+    grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
+    OnTransactCb transact_cb)
     : transact_cb_(transact_cb) {
   // TODO(mingcl): For now interface descriptor is always empty, figure out if
   // we want it to be something more meaningful (we can probably manually change
   // interface descriptor by modifying Java code's reply to
   // os.IBinder.INTERFACE_TRANSACTION)
   AIBinder_Class* aibinder_class = AIBinder_Class_define(
-      /*interfaceDescriptor=*/"", f_onCreate_with_mutex, f_onDestroy_noop,
+      /*interfaceDescriptor=*/"", f_onCreate_userdata, f_onDestroy_delete,
       f_onTransact);
 
   // Pass the on-transact callback to the on-create function of the binder. The
   // on-create function equips the callback with a mutex and gives it to the
   // user data stored in the binder which can be retrieved later.
-  binder_ = AIBinder_new(aibinder_class, &transact_cb_);
+  // Also Ref() (called implicitly by the copy constructor of RefCountedPtr) the
+  // wire reader so that it would not be destructed during the callback
+  // invocation.
+  OnCreateArgs args;
+  args.wire_reader_ref = wire_reader_ref;
+  args.callback = &transact_cb_;
+  binder_ = AIBinder_new(aibinder_class, &args);
   GPR_ASSERT(binder_);
   gpr_log(GPR_INFO, "AIBinder_associateClass = %d",
           static_cast<int>(AIBinder_associateClass(binder_, aibinder_class)));
 }
 
 TransactionReceiverAndroid::~TransactionReceiverAndroid() {
-  auto* user_data =
-      reinterpret_cast<AtomicCallback*>(AIBinder_getUserData(binder_));
-  {
-    grpc_core::MutexLock lock(&user_data->mu);
-    // Set the callback to null so that future calls to on-trasact are awared
-    // that the transaction receiver had been deallocated.
-    user_data->callback = nullptr;
-  }
   // Release the binder.
   AIBinder_decStrong(binder_);
 }
@@ -143,8 +148,10 @@ absl::Status BinderAndroid::Transact(BinderTransportTxCode tx_code) {
 }
 
 std::unique_ptr<TransactionReceiver> BinderAndroid::ConstructTxReceiver(
+    grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb transact_cb) const {
-  return absl::make_unique<TransactionReceiverAndroid>(transact_cb);
+  return absl::make_unique<TransactionReceiverAndroid>(wire_reader_ref,
+                                                       transact_cb);
 }
 
 int32_t WritableParcelAndroid::GetDataPosition() const {

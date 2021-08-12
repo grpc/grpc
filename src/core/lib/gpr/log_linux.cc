@@ -42,6 +42,7 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
@@ -74,7 +75,7 @@ void gpr_default_log(gpr_log_func_args* args) {
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
-  static __thread long tid = 0;
+  static GPR_THREAD_LOCAL(long) tid = 0;
   if (tid == 0) tid = sys_gettid();
 
   timer = static_cast<time_t>(now.tv_sec);
