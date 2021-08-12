@@ -192,7 +192,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
-    ss.dependency 'abseil/types/variant', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
@@ -929,12 +928,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/host_port.cc',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
-                      'src/core/lib/gprpp/match.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/orphanable.h',
-                      'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/stat.h',
@@ -1803,11 +1800,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
-                              'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/orphanable.h',
-                              'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',
