@@ -47,31 +47,30 @@
 namespace grpc_core {
 namespace promise_detail {
 
-template <typename T, typename Ignored = void>
-class PromiseLike;
-
-template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<PollTraits<decltype(
-                         std::declval<F>()())>::is_poll()>> {
- private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
-
- public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = typename PollTraits<decltype(f_())>::Type;
-  Poll<Result> operator()() { return f_(); }
+template <typename T>
+struct PollWrapper {
+  static Poll<T> Wrap(T&& x) { return Poll<T>(std::forward<T>(x)); }
 };
 
+template <typename T>
+struct PollWrapper<Poll<T>> {
+  static Poll<T> Wrap(Poll<T>&& x) { return x; }
+};
+
+template <typename T>
+auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
+  return PollWrapper<T>::Wrap(std::forward<T>(x));
+}
+
 template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<!PollTraits<decltype(
-                         std::declval<F>()())>::is_poll()>> {
+class PromiseLike {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = decltype(f_());
-  Poll<Result> operator()() { return f_(); }
+  auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
+  using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 
 }  // namespace promise_detail

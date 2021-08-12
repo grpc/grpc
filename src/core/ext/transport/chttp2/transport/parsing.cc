@@ -767,8 +767,7 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
   if (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
     memcpy(t->settings[GRPC_ACKED_SETTINGS], t->settings[GRPC_SENT_SETTINGS],
            GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
-    grpc_chttp2_hptbl_set_max_bytes(
-        t->hpack_parser.hpack_table(),
+    t->hpack_parser.hpack_table()->SetMaxBytes(
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
     t->sent_local_settings = false;
