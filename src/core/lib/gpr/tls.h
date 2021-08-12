@@ -57,22 +57,8 @@ class TlsTypeConstrainer {
 
 }  // namespace grpc_core
 
-#ifdef GPR_STDCPP_TLS
-#define GPR_THREAD_LOCAL(type) \
-  thread_local typename grpc_core::TlsTypeConstrainer<type>::Type
-#endif
+#if defined(GPR_PTHREAD_TLS)
 
-#ifdef GPR_GCC_TLS
-#define GPR_THREAD_LOCAL(type) \
-  __thread typename grpc_core::TlsTypeConstrainer<type>::Type
-#endif
-
-#ifdef GPR_MSVC_TLS
-#define GPR_THREAD_LOCAL(type) \
-  __declspec(thread) typename grpc_core::TlsTypeConstrainer<type>::Type
-#endif
-
-#ifdef GPR_PTHREAD_TLS
 #include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
 
@@ -146,18 +132,24 @@ class TriviallyDestructibleAsserter {
 }  // namespace grpc_core
 
 #define GPR_THREAD_LOCAL(type)              \
-  grpc_core::TriviallyDestructibleAsserter< \
+  typename grpc_core::TriviallyDestructibleAsserter< \
       grpc_core::PthreadTlsImpl<type>>::Type
 
 #define gpr_tls_init(tls) (tls).Init()
 #define gpr_tls_destroy(tls) (tls).Destroy()
+
 #else
+
+#define GPR_THREAD_LOCAL(type) \
+  thread_local typename grpc_core::TlsTypeConstrainer<type>::Type
+
 #define gpr_tls_init(tls) \
   do {                    \
   } while (0)
 #define gpr_tls_destroy(tls) \
   do {                       \
   } while (0)
+
 #endif
 
 #endif /* GRPC_CORE_LIB_GPR_TLS_H */
