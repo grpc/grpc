@@ -24,8 +24,8 @@ from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
 
-_ComputeV1 = gcp.compute.ComputeV1
-GcpResource = _ComputeV1.GcpResource
+# Type aliases
+GcpResource = gcp.compute.ComputeV1.GcpResource
 
 
 @dataclasses.dataclass(frozen=True)

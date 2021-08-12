@@ -14,7 +14,7 @@
 import functools
 import logging
 import random
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -32,9 +32,9 @@ _BackendGRPC = BackendServiceProtocol.GRPC
 _HealthCheckGRPC = HealthCheckProtocol.GRPC
 
 # Network Security
-_NetworkSecurityV1Alpha1 = gcp.network_security.NetworkSecurityV1Alpha1
-ServerTlsPolicy = _NetworkSecurityV1Alpha1.ServerTlsPolicy
-ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
+_NetworkSecurityV1Beta1 = gcp.network_security.NetworkSecurityV1Beta1
+ServerTlsPolicy = gcp.network_security.ServerTlsPolicy
+ClientTlsPolicy = gcp.network_security.ClientTlsPolicy
 
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
@@ -635,7 +635,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     ENDPOINT_POLICY = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
-    netsec: _NetworkSecurityV1Alpha1
+    netsec: _NetworkSecurityV1Beta1
     netsvc: _NetworkServicesV1Beta1
 
     def __init__(
@@ -654,7 +654,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                          network=network)
 
         # API
-        self.netsec = _NetworkSecurityV1Alpha1(gcp_api_manager, project)
+        self.netsec = _NetworkSecurityV1Beta1(gcp_api_manager, project)
         self.netsvc = _NetworkServicesV1Beta1(gcp_api_manager, project)
 
         # Managed resources
