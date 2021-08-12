@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
 
 namespace grpc_binder {
@@ -31,29 +32,47 @@ class TransportStreamReceiver {
  public:
   virtual ~TransportStreamReceiver() = default;
 
+  using InitialMetadataCallbackType =
+      std::function<void(absl::StatusOr<Metadata>)>;
+  using MessageDataCallbackType =
+      std::function<void(absl::StatusOr<std::string>)>;
+  using TrailingMetadataCallbackType =
+      std::function<void(absl::StatusOr<Metadata>, int)>;
+
   // Only handles single time invocation. Callback object will be deleted.
   // The callback should be valid until invocation or unregister.
-  virtual void RegisterRecvInitialMetadata(
-      StreamIdentifier id, std::function<void(const Metadata&)> cb) = 0;
-  // TODO(mingcl): Use string_view
-  virtual void RegisterRecvMessage(
-      StreamIdentifier id, std::function<void(const std::string&)> cb) = 0;
+  virtual void RegisterRecvInitialMetadata(StreamIdentifier id,
+                                           InitialMetadataCallbackType cb) = 0;
+  virtual void RegisterRecvMessage(StreamIdentifier id,
+                                   MessageDataCallbackType cb) = 0;
   virtual void RegisterRecvTrailingMetadata(
-      StreamIdentifier id, std::function<void(const Metadata&, int)> cb) = 0;
+      StreamIdentifier id, TrailingMetadataCallbackType cb) = 0;
 
-  // TODO(mingcl): Provide a way to unregister callback?
-
-  // TODO(mingcl): Figure out how to handle the case where there is no callback
-  // registered for the stream. For now, I don't see this case happening in
-  // unary calls. So we would probably just crash the program for now.
-  // For streaming calls it does happen, for now we simply queue them.
-  virtual void NotifyRecvInitialMetadata(StreamIdentifier id,
-                                         const Metadata& initial_metadata) = 0;
+  // For the following functions, the second arguments are the transaction
+  // result received from the lower level. If it is None, that means there's
+  // something wrong when receiving the corresponding transaction. In such case,
+  // we should cancel the gRPC callback as well.
+  virtual void NotifyRecvInitialMetadata(
+      StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) = 0;
   virtual void NotifyRecvMessage(StreamIdentifier id,
-                                 const std::string& message) = 0;
-  virtual void NotifyRecvTrailingMetadata(StreamIdentifier id,
-                                          const Metadata& trailing_metadata,
-                                          int status) = 0;
+                                 absl::StatusOr<std::string> message) = 0;
+  virtual void NotifyRecvTrailingMetadata(
+      StreamIdentifier id, absl::StatusOr<Metadata> trailing_metadata,
+      int status) = 0;
+
+  // Trailing metadata marks the end of one-side of the stream. Thus, after
+  // receiving trailing metadata from the other-end, we know that there will
+  // never be in-coming message data anymore, and all recv_message callbacks
+  // registered will never be satisfied. This function cancels all such
+  // callbacks gracefully (with GRPC_ERROR_NONE) to avoid being blocked waiting
+  // for them.
+  virtual void CancelRecvMessageCallbacksDueToTrailingMetadata(
+      StreamIdentifier id) = 0;
+  // Remove all entries associated with stream number `id`.
+  virtual void Clear(StreamIdentifier id) = 0;
+  virtual void CancelStream(StreamIdentifier id, absl::Status error) = 0;
+
+  static const absl::string_view kGrpcBinderTransportCancelledGracefully;
 };
 
 }  // namespace grpc_binder

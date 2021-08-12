@@ -280,6 +280,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/popularity_count.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
@@ -797,11 +798,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_gcc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_msvc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_stdcpp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_msys.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
@@ -826,10 +822,12 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/match.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
