@@ -114,7 +114,6 @@
 #else
 #define GPR_WINDOWS_ATOMIC 1
 #endif
-#define GPR_STDCPP_TLS 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -129,7 +128,6 @@
 #endif /* _LP64 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
-#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STAT 1
@@ -155,7 +153,6 @@
 #include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_STDCPP_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
@@ -183,7 +180,6 @@
 #elif defined(__ASYLO__)
 #define GPR_ARCH_64 1
 #define GPR_CPU_POSIX 1
-#define GPR_GCC_TLS 1
 #define GPR_PLATFORM_STRING "asylo"
 #define GPR_GCC_SYNC 1
 #define GPR_POSIX_SYNC 1
@@ -217,12 +213,7 @@
 #define GPR_CPU_POSIX 1
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
-#ifdef __has_feature
-#if __has_feature(cxx_thread_local)
-#define GPR_STDCPP_TLS 1
-#endif
-#endif
-#ifndef GPR_STDCPP_TLS
+#if !(defined(__has_feature) && __has_feature(cxx_thread_local))
 #define GPR_PTHREAD_TLS 1
 #endif
 #define GPR_APPLE 1
@@ -253,7 +244,6 @@
 #define GPR_FREEBSD 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -278,7 +268,6 @@
 #define GPR_OPENBSD 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -300,7 +289,6 @@
 #define GPR_SOLARIS 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -324,7 +312,6 @@
 #define GPR_AIX 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -354,7 +341,6 @@
 #define GPR_NACL 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -381,7 +367,6 @@
 #define GPR_MUSL_LIBC_COMPAT 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_ENV 1
@@ -496,12 +481,6 @@ typedef unsigned __int64 uint64_t;
         defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \
     1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
-#endif
-
-#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
-        defined(GPR_STDCPP_TLS) + defined(GPR_CUSTOM_TLS) !=                  \
-    1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_STDCPP_TLS, GPR_CUSTOM_TLS
 #endif
 
 /* maximum alignment needed for any type on this platform, rounded up to a
