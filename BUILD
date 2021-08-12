@@ -885,6 +885,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_factory",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_factory.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_status",
     external_deps = [
         "absl/status",
