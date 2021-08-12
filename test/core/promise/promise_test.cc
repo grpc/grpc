@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/capture.h"
+#include "src/core/lib/promise/promise.h"
 #include <gtest/gtest.h>
 
 namespace grpc_core {
 
-TEST(CaptureTest, Capture) {
-  auto f = Capture([](int* p) { EXPECT_EQ(*p, 42); }, 42);
-  f();
+TEST(PromiseTest, Works) {
+  Promise<int> x = []() { return 42; };
+  EXPECT_EQ(x(), Poll<int>(42));
 }
 
-TEST(CaptureTest, WithArgsAndReturn) {
-  int captured = 1;
-  auto f =
-      Capture([captured](int* p, int arg) { return (captured + *p) * arg; }, 2);
-  EXPECT_EQ(f(2), 6);
-  EXPECT_EQ(f(3), 9);
+TEST(PromiseTest, Immediate) { EXPECT_EQ(Immediate(42)(), Poll<int>(42)); }
+
+TEST(PromiseTest, WithResult) {
+  EXPECT_EQ(WithResult<int>(Immediate(42))(), Poll<int>(42));
+  // Fails to compile: WithResult<int>(Immediate(std::string("hello")));
+  // Fails to compile: WithResult<int>(Immediate(42.9));
+}
+
+TEST(PromiseTest, NowOrNever) {
+  EXPECT_EQ(NowOrNever(Immediate(42)), absl::optional<int>(42));
 }
 
 }  // namespace grpc_core

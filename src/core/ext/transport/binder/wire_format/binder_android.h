@@ -29,6 +29,7 @@
 
 #include "absl/memory/memory.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
+#include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 
 // TODO(b/192208764): move this check to somewhere else
 #if __ANDROID_API__ < 29
@@ -102,6 +103,7 @@ class BinderAndroid final : public Binder {
   };
 
   std::unique_ptr<TransactionReceiver> ConstructTxReceiver(
+      grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
       TransactionReceiver::OnTransactCb transact_cb) const override;
 
  private:
@@ -112,7 +114,9 @@ class BinderAndroid final : public Binder {
 
 class TransactionReceiverAndroid final : public TransactionReceiver {
  public:
-  explicit TransactionReceiverAndroid(OnTransactCb transaction_cb);
+  TransactionReceiverAndroid(
+      grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
+      OnTransactCb transaction_cb);
   ~TransactionReceiverAndroid() override;
   void* GetRawBinder() override { return binder_; }
 

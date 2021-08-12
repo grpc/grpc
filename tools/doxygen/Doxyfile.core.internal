@@ -1589,11 +1589,6 @@ src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
 src/core/lib/gpr/tls.h \
-src/core/lib/gpr/tls_gcc.h \
-src/core/lib/gpr/tls_msvc.h \
-src/core/lib/gpr/tls_pthread.cc \
-src/core/lib/gpr/tls_pthread.h \
-src/core/lib/gpr/tls_stdcpp.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
