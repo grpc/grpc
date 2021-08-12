@@ -564,31 +564,32 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       CheckCertChainFormatFailsWithEmptyCertificateChain) {
-  absl::Status status = CheckCertChainFormat("");
+       CheckCertificateListFormatFailsWithEmptyCertificateChain) {
+  absl::Status status = CheckCertificateListFormat("");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), "Certificate chain string is empty.");
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       CheckCertChainFormatFailsWithInvalidCertificateChain) {
-  absl::Status status = CheckCertChainFormat("invalid_certificate_chain");
+       CheckCertificateListFormatFailsWithInvalidCertificateChain) {
+  absl::Status status = CheckCertificateListFormat("invalid_certificate_chain");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "Certificate chain contains cert with bad format");
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       CheckCertChainFormatPassesWithValidCertificateChain) {
-  absl::Status status = CheckCertChainFormat(cert_chain_);
+       CheckCertificateListFormatPassesWithValidCertificateChain) {
+  absl::Status status = CheckCertificateListFormat(cert_chain_);
   EXPECT_TRUE(status.ok());
 }
 
-TEST_F(GrpcTlsCertificateProviderTest,
-       CheckCertChainFormatPassesWithValidCertificateChainWithMultipleCerts) {
+TEST_F(
+    GrpcTlsCertificateProviderTest,
+    CheckCertificateListFormatPassesWithValidCertificateChainWithMultipleCerts) {
   //  Adding "noise" string to reinforce that its presence does not lead to a
   //  not-OK status.
-  absl::Status status = CheckCertChainFormat(
+  absl::Status status = CheckCertificateListFormat(
       cert_chain_ + "invalid_certificate_chain\n" + cert_chain_2_);
   EXPECT_TRUE(status.ok());
 }

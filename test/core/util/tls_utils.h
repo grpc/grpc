@@ -50,7 +50,7 @@ absl::Status CheckPrivateKeyFormat(absl::string_view private_key);
 //  Checks that the string `cert_chain` is that of a certificate chain
 //  containing PEM-encoded X.509 certificates.
 //  Returns an OK status if so or a not-OK status otherwise.
-absl::Status CheckCertChainFormat(absl::string_view cert_chain);
+absl::Status CheckCertificateListFormat(absl::string_view cert_chain);
 
 }  // namespace testing
 

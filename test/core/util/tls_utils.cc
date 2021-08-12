@@ -82,7 +82,7 @@ absl::Status CheckPrivateKeyFormat(absl::string_view private_key) {
   if (!private_evp_pkey.get_p_key()) {
     return absl::InvalidArgumentError("Invalid private key string.");
   }
-  OpenSslConnectionConfig ssl_context(TLS_method());
+  OpenSslContext ssl_context(TLS_method());
   return SSL_CTX_use_PrivateKey(ssl_context.get_context(),
                                 private_evp_pkey.get_p_key())
              ? absl::OkStatus()
