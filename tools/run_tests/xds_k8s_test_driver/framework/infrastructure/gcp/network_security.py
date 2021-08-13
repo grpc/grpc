@@ -70,6 +70,7 @@ class ClientTlsPolicy:
 
 class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
                            metaclass=abc.ABCMeta):
+    """Base class for NetworkSecurity APIs."""
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networksecurity(self.api_version), project)
@@ -98,6 +99,8 @@ class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
 
 
 class NetworkSecurityV1Beta1(_NetworkSecurityBase):
+    """NetworkSecurity API v1beta1."""
+
     SERVER_TLS_POLICIES = 'serverTlsPolicies'
     CLIENT_TLS_POLICIES = 'clientTlsPolicies'
 
@@ -141,6 +144,12 @@ class NetworkSecurityV1Beta1(_NetworkSecurityBase):
 
 
 class NetworkSecurityV1Alpha1(NetworkSecurityV1Beta1):
+    """NetworkSecurity API v1alpha1.
+
+    Note: extending v1beta1 class presumes that v1beta1 is just a v1alpha1 API
+    graduated into a more stable version. This is true in most cases. However,
+    v1alpha1 class can always override and reimplement incompatible methods.
+    """
 
     @property
     def api_version(self) -> str:

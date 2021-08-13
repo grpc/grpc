@@ -177,6 +177,7 @@ class GrpcRoute:
 
 class _NetworkServicesBase(gcp.api.GcpStandardCloudApiResource,
                            metaclass=abc.ABCMeta):
+    """Base class for NetworkServices APIs."""
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networkservices(self.api_version), project)
@@ -205,6 +206,7 @@ class _NetworkServicesBase(gcp.api.GcpStandardCloudApiResource,
 
 
 class NetworkServicesV1Beta1(_NetworkServicesBase):
+    """NetworkServices API v1beta1."""
     ENDPOINT_POLICIES = 'endpointPolicies'
 
     @property
@@ -230,6 +232,13 @@ class NetworkServicesV1Beta1(_NetworkServicesBase):
 
 
 class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
+    """NetworkServices API v1alpha1.
+
+    Note: extending v1beta1 class presumes that v1beta1 is just a v1alpha1 API
+    graduated into a more stable version. This is true in most cases. However,
+    v1alpha1 class can always override and reimplement incompatible methods.
+    """
+
     GRPC_ROUTES = 'grpcRoutes'
     ROUTERS = 'routers'
 
