@@ -445,7 +445,6 @@
         'src/core/lib/gpr/time_posix.cc',
         'src/core/lib/gpr/time_precise.cc',
         'src/core/lib/gpr/time_windows.cc',
-        'src/core/lib/gpr/tls_pthread.cc',
         'src/core/lib/gpr/tmpfile_msys.cc',
         'src/core/lib/gpr/tmpfile_posix.cc',
         'src/core/lib/gpr/tmpfile_windows.cc',

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import datetime
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Iterable, Mapping, Optional, Tuple, Union
@@ -59,11 +60,19 @@ JsonType = Any
 RpcTypeUnaryCall = 'UNARY_CALL'
 RpcTypeEmptyCall = 'EMPTY_CALL'
 
+# All client languages
+_CLIENT_LANGUAGES = ('cpp', 'java', 'go', 'python')
+_SERVER_LANGUAGES = _CLIENT_LANGUAGES
+
 
 def _split_camel(s: str, delimiter: str = '-') -> str:
     """Turn camel case name to snake-case-like name."""
     return ''.join(delimiter + c.lower() if c.isupper() else c
                    for c in s).lstrip(delimiter)
+
+
+def _get_lang(image_name: str) -> str:
+    return re.search(r'/(\w+)-(client|server):', image_name).group(1)
 
 
 class DumpedXdsConfig(dict):
@@ -222,6 +231,24 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
+    def supported_clients() -> Tuple[str]:
+        """Declare supported languages of clients.
+
+        Returns:
+          A tuple of strings contains the supported languages for this test.
+        """
+        return _CLIENT_LANGUAGES
+
+    @staticmethod
+    def supported_servers() -> Tuple[str]:
+        """Declare supported languages of servers.
+
+        Returns:
+          A tuple of strings contains the supported languages for this test.
+        """
+        return _SERVER_LANGUAGES
+
+    @staticmethod
     def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
         """Updates the initial RPC configs for this test case.
 
@@ -302,6 +329,22 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
+        # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
+        # cannot be used in the built-in test-skipping decorators. See the
+        # official FAQs:
+        # https://abseil.io/docs/python/guides/flags#faqs
+        client_lang = _get_lang(GcpResourceManager().client_image)
+        server_lang = _get_lang(GcpResourceManager().server_image)
+        if client_lang not in cls.supported_clients():
+            cls.skip_reason = (f'Unsupported client language {client_lang} '
+                               f'not in {cls.supported_clients()}')
+            return
+        elif server_lang not in cls.supported_servers():
+            cls.skip_reason = (f'Unsupported server language {server_lang} '
+                               f'not in {cls.supported_servers()}')
+            return
+        else:
+            cls.skip_reason = None
         # TODO(lidiz) concurrency is possible, pending multiple-instance change
         GcpResourceManager().test_client_runner.cleanup(force=True)
         # Start the client, and allow the test to override the initial RPC config.
@@ -316,7 +359,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        GcpResourceManager().test_client_runner.cleanup(force=True)
+        if cls.skip_reason is not None:
+            GcpResourceManager().test_client_runner.cleanup(force=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
@@ -355,6 +399,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             super().run(result)
 
     def test_client_config(self):
+        if self.skip_reason:
+            logging.info('Skipping: %s', self.skip_reason)
+            self.skipTest(self.skip_reason)
         self._last_xds_config_exception = None
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
@@ -371,6 +418,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
+        if self.skip_reason:
+            logging.info('Skipping: %s', self.skip_reason)
+            self.skipTest(self.skip_reason)
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod

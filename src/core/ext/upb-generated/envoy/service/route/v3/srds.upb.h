@@ -9,7 +9,7 @@
 #ifndef ENVOY_SERVICE_ROUTE_V3_SRDS_PROTO_UPB_H_
 #define ENVOY_SERVICE_ROUTE_V3_SRDS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE envoy_service_route_v3_SrdsDummy *envoy_service_route_v3_SrdsDummy_ne
 UPB_INLINE envoy_service_route_v3_SrdsDummy *envoy_service_route_v3_SrdsDummy_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_route_v3_SrdsDummy *ret = envoy_service_route_v3_SrdsDummy_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_route_v3_SrdsDummy_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_route_v3_SrdsDummy_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_route_v3_SrdsDummy *envoy_service_route_v3_SrdsDummy_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_route_v3_SrdsDummy *ret = envoy_service_route_v3_SrdsDummy_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_route_v3_SrdsDummy_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_route_v3_SrdsDummy_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_route_v3_SrdsDummy_serialize(const envoy_service_route_v3_SrdsDummy *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_route_v3_SrdsDummy_msginit, arena, len);

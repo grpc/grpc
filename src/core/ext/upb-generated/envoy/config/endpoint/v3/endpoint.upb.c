@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -26,16 +26,16 @@ static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_ClusterLoadAssignment__fields[4] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(16, 32), 0, 2, 11, 3},
-  {4, UPB_SIZE(12, 24), 1, 1, 11, 1},
-  {5, UPB_SIZE(20, 40), 0, 0, 11, _UPB_LABEL_MAP},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(16, 32), 0, 2, 11, _UPB_MODE_ARRAY},
+  {4, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(20, 40), 0, 0, 11, _UPB_MODE_MAP},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields[0],
-  UPB_SIZE(24, 48), 4, false, 255,
+  UPB_SIZE(24, 48), 4, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[3] = {
@@ -45,15 +45,15 @@ static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[3] = {
-  {2, UPB_SIZE(12, 24), 0, 0, 11, 3},
-  {3, UPB_SIZE(4, 8), 1, 2, 11, 1},
-  {4, UPB_SIZE(8, 16), 2, 1, 11, 1},
+  {2, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY},
+  {3, UPB_SIZE(4, 8), 1, 2, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(16, 32), 3, false, 0, 255,
 };
 
 static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[1] = {
@@ -61,14 +61,14 @@ static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[1] = {
@@ -76,14 +76,14 @@ static const upb_msglayout *const envoy_config_endpoint_v3_ClusterLoadAssignment
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 #include "upb/port_undef.inc"

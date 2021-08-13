@@ -30,9 +30,9 @@ grpc_cc_library(
         "transport_stream_receiver_impl.h",
     ],
     external_deps = [
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
     ],
     deps = [
         "//:gpr",

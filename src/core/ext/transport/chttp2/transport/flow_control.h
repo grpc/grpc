@@ -47,9 +47,15 @@ static constexpr uint32_t kDefaultWindow = 65535;
 static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
 // TODO(ncteisen): Tune this
 static constexpr uint32_t kFrameSize = 1024 * 1024;
+static constexpr const uint32_t kMinInitialWindowSize = 128;
+static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
+// The maximum per-stream flow control window delta to advertise.
+static constexpr const uint32_t kMaxWindowDelta = (1u << 10);
 
 class TransportFlowControl;
 class StreamFlowControl;
+
+extern bool g_test_only_transport_flow_control_window_check;
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -373,9 +379,9 @@ class StreamFlowControlBase {
   virtual void TestOnlyForceHugeWindow() {}
 
   // Getters
-  int64_t remote_window_delta() { return remote_window_delta_; }
-  int64_t local_window_delta() { return local_window_delta_; }
-  int64_t announced_window_delta() { return announced_window_delta_; }
+  int64_t remote_window_delta() const { return remote_window_delta_; }
+  int64_t local_window_delta() const { return local_window_delta_; }
+  int64_t announced_window_delta() const { return announced_window_delta_; }
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;
