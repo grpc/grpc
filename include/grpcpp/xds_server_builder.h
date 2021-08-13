@@ -24,6 +24,7 @@
 #include <grpcpp/server_builder.h>
 
 namespace grpc {
+namespace experimental {
 
 class XdsServerServingStatusNotifierInterface {
  public:
@@ -73,17 +74,6 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
 };
 
-namespace experimental {
-// TODO(yashykt): Delete this after the 1.41 release.
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerServingStatusNotifierInterface instead. The "
-    "experimental version will be deleted after the 1.41 release.")
-typedef grpc::XdsServerServingStatusNotifierInterface
-    XdsServerServingStatusNotifierInterface;
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerBuilder instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-typedef grpc::XdsServerBuilder XdsServerBuilder;
 }  // namespace experimental
 }  // namespace grpc
 

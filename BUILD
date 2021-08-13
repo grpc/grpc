@@ -638,7 +638,6 @@ grpc_cc_library(
         "src/core/lib/gpr/time_posix.cc",
         "src/core/lib/gpr/time_precise.cc",
         "src/core/lib/gpr/time_windows.cc",
-        "src/core/lib/gpr/tls_pthread.cc",
         "src/core/lib/gpr/tmpfile_msys.cc",
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
@@ -667,10 +666,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tls.h",
-        "src/core/lib/gpr/tls_gcc.h",
-        "src/core/lib/gpr/tls_msvc.h",
-        "src/core/lib/gpr/tls_pthread.h",
-        "src/core/lib/gpr/tls_stdcpp.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
@@ -709,11 +704,26 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
+        "construct_destruct",
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "capture",
+    external_deps = ["absl/utility"],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/capture.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "construct_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
 )
 
 grpc_cc_library(
@@ -847,6 +857,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/promise.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_like",
     language = "c++",
     public_hdrs = [
@@ -883,6 +909,28 @@ grpc_cc_library(
         "poll",
         "promise_factory",
     ],
+)
+
+grpc_cc_library(
+    name = "promise_status",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/status.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/switch.h",
+    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2536,6 +2584,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "popularity_count",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/popularity_count.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2602,6 +2661,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "popularity_count",
     ],
 )
 

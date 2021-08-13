@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
+
+grpc_package(name = "test/core/promise")
 
 grpc_cc_test(
     name = "poll_test",
@@ -20,7 +24,22 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:poll"],
+    deps = [
+        "//:poll",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "promise_test",
+    srcs = ["promise_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
 )
 
 grpc_cc_test(
@@ -36,15 +55,18 @@ grpc_cc_test(
         "//:capture",
         "//:promise",
         "//:promise_factory",
+        "//test/core/util:grpc_suppressions",
     ],
 )
-
 grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:if"],
+    deps = ["//:if",
+        "//test/core/util:grpc_suppressions",
+            
+            ],
 )
 
