@@ -648,15 +648,11 @@ static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
 
 /* Global state management */
 static grpc_error_handle pollset_global_init(void) {
-  gpr_tls_init(g_current_thread_pollset);
-  gpr_tls_init(g_current_thread_worker);
   return pollable_create(PO_EMPTY, &g_empty_pollable);
 }
 
 static void pollset_global_shutdown(void) {
   POLLABLE_UNREF(g_empty_pollable, "g_empty_pollable");
-  gpr_tls_destroy(g_current_thread_pollset);
-  gpr_tls_destroy(g_current_thread_worker);
 }
 
 /* pollset->mu must be held while calling this function */
