@@ -22,8 +22,12 @@
 
 namespace grpc_core {
 
+// Special type - signals to loop to take another iteration, instead of
+// finishing
 struct Continue {};
 
+// Result of polling a loop promise - either Continue looping, or return a value
+// T
 template <typename T>
 using LoopCtl = absl::variant<Continue, T>;
 
