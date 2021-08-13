@@ -439,10 +439,7 @@ grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
 
-void grpc_cq_global_init() {
-  gpr_tls_init(g_cached_event);
-  gpr_tls_init(g_cached_cq);
-}
+void grpc_cq_global_init() {}
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
   if (g_cached_cq == nullptr) {

@@ -515,8 +515,6 @@ static size_t choose_neighborhood(void) {
 }
 
 static grpc_error_handle pollset_global_init(void) {
-  gpr_tls_init(g_current_thread_pollset);
-  gpr_tls_init(g_current_thread_worker);
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
   grpc_error_handle err = grpc_wakeup_fd_init(&global_wakeup_fd);
@@ -538,8 +536,6 @@ static grpc_error_handle pollset_global_init(void) {
 }
 
 static void pollset_global_shutdown(void) {
-  gpr_tls_destroy(g_current_thread_pollset);
-  gpr_tls_destroy(g_current_thread_worker);
   if (global_wakeup_fd.read_fd != -1) grpc_wakeup_fd_destroy(&global_wakeup_fd);
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_destroy(&g_neighborhoods[i].mu);

@@ -52,8 +52,6 @@ int main(int argc, char* argv[]) {
 
   grpc::testing::TestEnvironment env(argc, argv);
 
-  gpr_tls_init(test_var);
-
   for (auto& th : threads) {
     th = grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
     th.Start();
@@ -61,8 +59,6 @@ int main(int argc, char* argv[]) {
   for (auto& th : threads) {
     th.Join();
   }
-
-  gpr_tls_destroy(test_var);
 
   return 0;
 }
