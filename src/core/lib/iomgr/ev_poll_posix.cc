@@ -706,8 +706,8 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
  * pollset_posix.c
  */
 
-GPR_TLS_DECL(g_current_thread_poller);
-GPR_TLS_DECL(g_current_thread_worker);
+static GPR_THREAD_LOCAL(grpc_pollset*) g_current_thread_poller;
+static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
 
 static void remove_worker(grpc_pollset* /*p*/, grpc_pollset_worker* worker) {
   worker->prev->next = worker->next;
@@ -776,8 +776,7 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
             &error, grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
       }
       p->kicked_without_pollers = true;
-    } else if (gpr_tls_get(&g_current_thread_worker) !=
-               reinterpret_cast<intptr_t>(specific_worker)) {
+    } else if (g_current_thread_worker != specific_worker) {
       GPR_TIMER_MARK("different_thread_worker", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
@@ -794,20 +793,17 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
       kick_append_error(&error,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     }
-  } else if (gpr_tls_get(&g_current_thread_poller) !=
-             reinterpret_cast<intptr_t>(p)) {
+  } else if (g_current_thread_poller != p) {
     GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
     GPR_TIMER_MARK("kick_anonymous", 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
-      if (gpr_tls_get(&g_current_thread_worker) ==
-          reinterpret_cast<intptr_t>(specific_worker)) {
+      if (g_current_thread_worker == specific_worker) {
         GPR_TIMER_MARK("kick_anonymous_not_self", 0);
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
         if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
-            gpr_tls_get(&g_current_thread_worker) ==
-                reinterpret_cast<intptr_t>(specific_worker)) {
+            g_current_thread_worker == specific_worker) {
           push_back_worker(p, specific_worker);
           specific_worker = nullptr;
         }
@@ -835,16 +831,9 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
 
 /* global state management */
 
-static grpc_error_handle pollset_global_init(void) {
-  gpr_tls_init(&g_current_thread_poller);
-  gpr_tls_init(&g_current_thread_worker);
-  return GRPC_ERROR_NONE;
-}
+static grpc_error_handle pollset_global_init(void) { return GRPC_ERROR_NONE; }
 
-static void pollset_global_shutdown(void) {
-  gpr_tls_destroy(&g_current_thread_poller);
-  gpr_tls_destroy(&g_current_thread_worker);
-}
+static void pollset_global_shutdown(void) {}
 
 /* main interface */
 
@@ -959,7 +948,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
      re-evaluate our pollers (this allows poll() based pollers to
      ensure they don't miss wakeups) */
   keep_polling = 1;
-  gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
+  g_current_thread_poller = pollset;
   while (keep_polling) {
     keep_polling = 0;
     if (!pollset->kicked_without_pollers ||
@@ -967,7 +956,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
-        gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
+        g_current_thread_worker = &worker;
       }
       GPR_TIMER_SCOPE("maybe_work_and_unlock", 0);
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
@@ -1115,10 +1104,10 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       keep_polling = 1;
     }
   }
-  gpr_tls_set(&g_current_thread_poller, 0);
+  g_current_thread_poller = nullptr;
   if (added_worker) {
     remove_worker(pollset, &worker);
-    gpr_tls_set(&g_current_thread_worker, 0);
+    g_current_thread_worker = nullptr;
   }
   /* release wakeup fd to the local pool */
   worker.wakeup_fd->next = pollset->local_wakeup_cache;

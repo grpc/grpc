@@ -29,3 +29,32 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "promise_test",
+    srcs = ["promise_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "promise_factory_test",
+    srcs = ["promise_factory_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/functional:bind_front",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:capture",
+        "//:promise",
+        "//:promise_factory",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
