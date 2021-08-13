@@ -2662,6 +2662,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "hpack_encoder_index",
+        "match",
         "popularity_count",
     ],
 )
