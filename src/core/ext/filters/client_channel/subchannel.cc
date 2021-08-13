@@ -319,13 +319,12 @@ class Subchannel::ConnectedSubchannelStateWatcher
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
       case GRPC_CHANNEL_SHUTDOWN: {
         if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-          if (grpc_trace_subchannel.enabled()) {
-            gpr_log(GPR_INFO,
-                    "Connected subchannel %p of subchannel %p has gone into "
-                    "%s. Attempting to reconnect.",
-                    c->connected_subchannel_.get(), c,
-                    ConnectivityStateName(new_state));
-          }
+          grpc_trace_subchannel.Log(
+              GPR_INFO,
+              "Connected subchannel %p of subchannel %p has gone into "
+              "%s. Attempting to reconnect.",
+              c->connected_subchannel_.get(), c,
+              ConnectivityStateName(new_state));
           c->connected_subchannel_.reset();
           if (c->channelz_node() != nullptr) {
             c->channelz_node()->SetChildSocket(nullptr);
@@ -736,10 +735,9 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
-    if (grpc_trace_subchannel.enabled()) {
-      gpr_log(GPR_INFO, "Subchannel=%p: Throttling keepalive time to %d", this,
-              new_keepalive_time);
-    }
+    grpc_trace_subchannel.Log(GPR_INFO,
+                              "Subchannel=%p: Throttling keepalive time to %d",
+                              this, new_keepalive_time);
     const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), new_keepalive_time);
     const char* arg_to_remove = GRPC_ARG_KEEPALIVE_TIME_MS;
