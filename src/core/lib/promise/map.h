@@ -25,6 +25,9 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// Implementation of mapping combinator - use this via the free function below!
+// Promise is the type of promise to poll on, Fn is a function that takes the
+// result of Promise and maps it to some new type.
 template <typename Promise, typename Fn>
 class Map {
  public:
