@@ -182,6 +182,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             stats_port=self.client_port,
@@ -195,6 +196,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
             network=self.network)
         self.test_server_alternative_runner = server_app.KubernetesServerRunner(
             self.k8s_namespace,
@@ -204,6 +206,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
             network=self.network,
             reuse_namespace=True)
         self.test_server_affinity_runner = server_app.KubernetesServerRunner(
@@ -214,6 +217,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
             network=self.network,
             reuse_namespace=True)
         logging.info('Strategy of GCP resources management: %s', self.strategy)
@@ -241,16 +245,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Health Checks
         self.td.create_health_check()
         # Backend Services
-        #
-        # The backend services are created with HTTP2 instead of GRPC (the
-        # default) to disable validate-for-proxyless, because the affinity
-        # settings are not accepted by RCTH yet.
-        #
-        # TODO: delete _BackendHTTP2 from the parameters, to use the default
-        # GRPC.
-        self.td.create_backend_service(_BackendHTTP2)
-        self.td.create_alternative_backend_service(_BackendHTTP2)
-        self.td.create_affinity_backend_service(_BackendHTTP2)
+        self.td.create_backend_service()
+        self.td.create_alternative_backend_service()
+        self.td.create_affinity_backend_service()
         # Construct UrlMap from test classes
         aggregator = _UrlMapChangeAggregator(
             url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))

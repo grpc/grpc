@@ -12,17 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import contextlib
+import datetime
 import logging
 import pathlib
-from typing import Optional
+from typing import Dict, Optional
+import urllib.parse
 
 import mako.template
 import yaml
 
+import framework.helpers.datetime
+import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 
 logger = logging.getLogger(__name__)
+
+# Type aliases
+_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
+_helper_datetime = framework.helpers.datetime
+timedelta = datetime.timedelta
+
+
+def _logs_explorer_query(query: Dict[str, str]) -> str:
+    return '\n'.join(f'{k}="{v}"' for k, v in query.items())
+
+
+def _logs_explorer_request(req: Dict[str, str]) -> str:
+    return ';'.join(f'{k}={_logs_explorer_quote(v)}' for k, v in req.items())
+
+
+def _logs_explorer_quote(value: str):
+    return urllib.parse.quote_plus(value, safe=':')
 
 
 class RunnerError(Exception):
@@ -38,6 +59,8 @@ class KubernetesBaseRunner:
                  k8s_namespace,
                  namespace_template=None,
                  reuse_namespace=False):
+        self._highlighter = _HighlighterYaml()
+
         # Kubernetes namespaced resources manager
         self.k8s_namespace: k8s.KubernetesNamespace = k8s_namespace
         self.reuse_namespace = reuse_namespace
@@ -88,7 +111,7 @@ class KubernetesBaseRunner:
 
         yaml_doc = self._render_template(template_file, **kwargs)
         logger.info("Rendered template %s/%s:\n%s", self.TEMPLATE_DIR_NAME,
-                    template_name, yaml_doc)
+                    template_name, self._highlighter.highlight(yaml_doc))
 
         manifests = self._manifests_from_str(yaml_doc)
         manifest = next(manifests)
@@ -287,8 +310,35 @@ class KubernetesBaseRunner:
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
 
-    @classmethod
-    def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,
+    @staticmethod
+    def _logs_explorer_link(*,
+                            deployment_name: str,
+                            namespace_name: str,
+                            gcp_project: str,
+                            gcp_ui_url: str,
+                            end_delta: timedelta = None) -> None:
+        """Output the link to test server/client logs in GCP Logs Explorer."""
+        if end_delta is None:
+            end_delta = timedelta(hours=1)
+
+        time_now = _helper_datetime.iso8601_utc_time()
+        time_end = _helper_datetime.iso8601_utc_time(end_delta)
+        query = _logs_explorer_query({
+            'resource.type': 'k8s_container',
+            'resource.labels.project_id': gcp_project,
+            'resource.labels.container_name': deployment_name,
+            'resource.labels.namespace_name': namespace_name,
+        })
+        req = _logs_explorer_request({
+            'query': query,
+            'timeRange': f'{time_now}/{time_end}',
+        })
+
+        link = f'https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}'
+        logger.info("GCP Logs Explorer link to %s:\n%s", deployment_name, link)
+
+    @staticmethod
+    def _make_namespace_name(resource_prefix: str, resource_suffix: str,
                              name: str) -> str:
         """A helper to make consistent test app kubernetes namespace name
         for given resource prefix and suffix."""

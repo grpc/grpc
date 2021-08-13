@@ -85,6 +85,7 @@ libs:
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
@@ -200,6 +201,7 @@ libs:
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
@@ -299,7 +301,6 @@ libs:
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
@@ -307,14 +308,11 @@ libs:
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tls_gcc.h
-  - src/core/lib/gpr/tls_msvc.h
-  - src/core/lib/gpr/tls_pthread.h
-  - src/core/lib/gpr/tls_stdcpp.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -371,7 +369,6 @@ libs:
   - src/core/lib/gpr/time_posix.cc
   - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tls_pthread.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
@@ -392,6 +389,7 @@ libs:
   - src/core/lib/profiling/stap_timers.cc
   deps:
   - absl/base:base
+  - absl/base:core_headers
   - absl/memory:memory
   - absl/status:status
   - absl/strings:cord
@@ -418,6 +416,7 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -509,6 +508,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -532,14 +532,17 @@ libs:
   - src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h
+  - src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h
+  - src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h
+  - src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h
   - src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h
   - src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h
@@ -566,6 +569,7 @@ libs:
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h
+  - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
@@ -619,14 +623,17 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h
@@ -652,6 +659,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h
@@ -1062,14 +1070,17 @@ libs:
   - src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
+  - src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
+  - src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
+  - src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c
   - src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   - src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
   - src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
@@ -1096,6 +1107,7 @@ libs:
   - src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   - src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
+  - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
@@ -1149,14 +1161,17 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
@@ -1182,6 +1197,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
@@ -1633,6 +1649,7 @@ libs:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1721,6 +1738,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -4755,6 +4773,17 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: capture_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  src:
+  - test/core/gprpp/capture_test.cc
+  deps:
+  - absl/utility:utility
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -5246,6 +5275,17 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: flow_control_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/flow_control_test.cc
+  deps:
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5967,6 +6007,26 @@ targets:
   - test/core/transport/pid_controller_test.cc
   deps:
   - grpc_test_util
+- name: poll_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/poll_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
+- name: popularity_count_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/popularity_count.h
+  src:
+  - test/core/transport/chttp2/popularity_count_test.cc
+  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -5981,6 +6041,38 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: promise_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/promise_factory_test.cc
+  deps:
+  - absl/functional:bind_front
+  - absl/types:optional
+  - absl/types:variant
+  - absl/utility:utility
+  uses_polling: false
+- name: promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/promise_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test

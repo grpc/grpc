@@ -274,8 +274,9 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        grpc::internal::WaitUntil(&serverlist_cond_, &mu_,
-                                  [this] { return serverlist_done_; });
+        while (!serverlist_done_) {
+          serverlist_cond_.Wait(&mu_);
+        }
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -304,7 +305,7 @@ class BalancerServiceImpl : public BalancerService {
           // below from firing before its corresponding wait is executed.
           grpc::internal::MutexLock lock(&mu_);
           load_report_queue_.emplace_back(std::move(load_report));
-          if (load_report_cond_ != nullptr) load_report_cond_->Signal();
+          load_report_cond_.Signal();
         }
       }
     }
@@ -332,12 +333,10 @@ class BalancerServiceImpl : public BalancerService {
 
   ClientStats WaitForLoadReport() {
     grpc::internal::MutexLock lock(&mu_);
-    grpc::internal::CondVar cv;
     if (load_report_queue_.empty()) {
-      load_report_cond_ = &cv;
-      grpc::internal::WaitUntil(load_report_cond_, &mu_,
-                                [this] { return !load_report_queue_.empty(); });
-      load_report_cond_ = nullptr;
+      while (load_report_queue_.empty()) {
+        load_report_cond_.Wait(&mu_);
+      }
     }
     ClientStats load_report = std::move(load_report_queue_.front());
     load_report_queue_.pop_front();
@@ -376,9 +375,9 @@ class BalancerServiceImpl : public BalancerService {
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
-  bool serverlist_done_ = false;
-  grpc::internal::CondVar* load_report_cond_ = nullptr;
-  std::deque<ClientStats> load_report_queue_;
+  bool serverlist_done_ ABSL_GUARDED_BY(mu_) = false;
+  grpc::internal::CondVar load_report_cond_;
+  std::deque<ClientStats> load_report_queue_ ABSL_GUARDED_BY(mu_);
 };
 
 class GrpclbEnd2endTest : public ::testing::Test {
@@ -495,7 +494,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == "Call dropped by load balancing policy") {
+      if (status.error_message() == "drop directed by grpclb balancer") {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -1781,7 +1780,7 @@ TEST_F(SingleBalancerTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -1813,7 +1812,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
       0);
   const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 TEST_F(SingleBalancerTest, DropAll) {
@@ -1838,7 +1837,7 @@ TEST_F(SingleBalancerTest, DropAll) {
     status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
@@ -1970,7 +1969,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

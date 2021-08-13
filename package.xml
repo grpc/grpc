@@ -280,6 +280,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/popularity_count.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
@@ -329,10 +330,14 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c" role="src" />
@@ -345,6 +350,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c" role="src" />
@@ -397,6 +404,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c" role="src" />
@@ -527,10 +536,14 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c" role="src" />
@@ -543,6 +556,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c" role="src" />
@@ -593,6 +608,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c" role="src" />
@@ -748,7 +765,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
@@ -782,11 +798,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_gcc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_msvc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tls_stdcpp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_msys.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
@@ -796,6 +807,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
@@ -2097,12 +2109,11 @@
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/record_protocol/s2a_upb_ticket_sender.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/token_manager/single_token_access_token_manager.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/token_manager/single_token_access_token_manager.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/third_party/wyhash/wyhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/decode.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
@@ -2110,18 +2121,20 @@
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/msg_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/reflection.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/table_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text_encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/xxhash/xxhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />

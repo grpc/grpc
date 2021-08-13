@@ -1189,8 +1189,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
                   "Method Params.*referenced_errors.*"
                   "methodConfig.*referenced_errors.*"
                   "retryPolicy.*referenced_errors.*"
-                  "field:retryableStatusCodes error:must be non-empty if "
-                  "perAttemptRecvTimeout not present"));
+                  "field:retryableStatusCodes error:must be non-empty"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1271,7 +1270,10 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
@@ -1285,6 +1287,43 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
   EXPECT_EQ(parsed_config->max_backoff(), 120000);
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
   EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), 1000);
+  EXPECT_TRUE(
+      parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
+}
+
+TEST_F(RetryParserTest,
+       ValidRetryPolicyWithPerAttemptRecvTimeoutIgnoredWhenHedgingDisabled) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"perAttemptRecvTimeout\": \"1s\",\n"
+      "      \"retryableStatusCodes\": [\"ABORTED\"]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
+      grpc_slice_from_static_string("/TestServ/TestMethod"));
+  ASSERT_NE(vector_ptr, nullptr);
+  const auto* parsed_config =
+      static_cast<grpc_core::internal::RetryMethodConfig*>(
+          ((*vector_ptr)[0]).get());
+  ASSERT_NE(parsed_config, nullptr);
+  EXPECT_EQ(parsed_config->max_attempts(), 2);
+  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
+  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
   EXPECT_TRUE(
       parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }
@@ -1307,7 +1346,10 @@ TEST_F(RetryParserTest,
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
@@ -1342,7 +1384,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error.*referenced_errors.*"
@@ -1372,7 +1417,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error.*referenced_errors.*"
@@ -1402,7 +1450,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error.*referenced_errors.*"

@@ -306,8 +306,8 @@ class CountedService : public ServiceType {
 
  private:
   grpc_core::Mutex mu_;
-  size_t request_count_ = 0;
-  size_t response_count_ = 0;
+  size_t request_count_ ABSL_GUARDED_BY(mu_) = 0;
+  size_t response_count_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
 template <typename RpcService>
@@ -360,8 +360,8 @@ class BackendServiceImpl
 
  private:
   grpc_core::Mutex mu_;
-  std::set<std::string> clients_;
-  std::vector<std::string> last_peer_identity_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
+  std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
 };
 
 class ClientStats {
@@ -643,7 +643,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     NotifyDoneWithAdsCallLocked();
   }
 
-  void NotifyDoneWithAdsCallLocked() {
+  void NotifyDoneWithAdsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
     if (!ads_done_) {
       ads_done_ = true;
       ads_cond_.SignalAll();
@@ -792,20 +792,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                   response->DebugString().c_str());
           stream->Write(response.value());
         }
-        // If we didn't find anything to do, delay before the next loop
-        // iteration; otherwise, check whether we should exit and then
-        // immediately continue.
-        gpr_timespec deadline =
-            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
         {
           grpc_core::MutexLock lock(&parent_->ads_mu_);
-          if (!grpc_core::WaitUntilWithDeadline(
-                  &parent_->ads_cond_, &parent_->ads_mu_,
-                  [this] { return parent_->ads_done_; },
-                  grpc_core::ToAbslTime(deadline))) {
+          if (parent_->ads_done_) {
             break;
           }
         }
+        // If we didn't find anything to do, delay before the next loop
+        // iteration; otherwise, check whether we should exit and then
+        // immediately continue.
+        gpr_sleep_until(
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10));
       }
       // Done with main loop.  Clean up before returning.
       // Join reader thread.
@@ -833,6 +830,28 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
    private:
+    // NB: clang's annotalysis is confused by the use of inner template
+    // classes here and *ignores* the exclusive lock annotation on some
+    // functions. See https://bugs.llvm.org/show_bug.cgi?id=51368.
+    //
+    // This class is used for a dual purpose:
+    // - it convinces clang that the lock is held in a given scope
+    // - when used in a function that is annotated to require the inner lock it
+    //   will cause compilation to fail if the upstream bug is fixed!
+    //
+    // If you arrive here because of a compilation failure, that might mean the
+    // clang bug is fixed! Please report that on the ticket.
+    //
+    // Since the buggy compiler will still need to be supported, consider
+    // wrapping this class in a compiler version #if and replace its usage
+    // with a macro whose expansion is conditional on the compiler version. In
+    // time (years? decades?) this code can be deleted altogether.
+    class ABSL_SCOPED_LOCKABLE NoopMutexLock {
+     public:
+      explicit NoopMutexLock(grpc_core::Mutex& mu)
+          ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) {}
+      ~NoopMutexLock() ABSL_UNLOCK_FUNCTION() {}
+    };
     // Processes a response read from the client.
     // Populates response if needed.
     void ProcessRequest(const DiscoveryRequest& request,
@@ -840,7 +859,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                         UpdateQueue* update_queue,
                         SubscriptionMap* subscription_map,
                         SentState* sent_state,
-                        absl::optional<DiscoveryResponse>* response) {
+                        absl::optional<DiscoveryResponse>* response)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
+      NoopMutexLock mu(parent_->ads_mu_);
       // Check the nonce sent by the client, if any.
       // (This will be absent on the first request on a stream.)
       if (request.response_nonce().empty()) {
@@ -939,7 +960,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     void ProcessUpdate(const std::string& resource_type,
                        const std::string& resource_name,
                        SubscriptionMap* subscription_map, SentState* sent_state,
-                       absl::optional<DiscoveryResponse>* response) {
+                       absl::optional<DiscoveryResponse>* response)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
+      NoopMutexLock mu(parent_->ads_mu_);
       const std::string v2_resource_type = TypeUrlToV2(resource_type);
       gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
               resource_type.c_str(), resource_name.c_str());
@@ -999,7 +1022,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         const std::string& resource_type, const std::string& v2_resource_type,
         const int version, const SubscriptionNameMap& subscription_name_map,
         const std::set<std::string>& resources_added_to_response,
-        SentState* sent_state, DiscoveryResponse* response) {
+        SentState* sent_state, DiscoveryResponse* response)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
+      NoopMutexLock mu(parent_->ads_mu_);
       auto& response_state =
           parent_->resource_type_response_state_[resource_type];
       if (response_state.state == ResponseState::NOT_SENT) {
@@ -1143,22 +1168,23 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   std::atomic_bool seen_v3_client_{false};
 
   grpc_core::CondVar ads_cond_;
-  // Protect the members below.
   grpc_core::Mutex ads_mu_;
-  bool ads_done_ = false;
+  bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
   std::map<std::string /* type_url */, ResponseState>
-      resource_type_response_state_;
-  std::set<std::string /*resource_type*/> resource_types_to_ignore_;
-  std::map<std::string /*resource_type*/, int> resource_type_min_versions_;
+      resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
+  std::set<std::string /*resource_type*/> resource_types_to_ignore_
+      ABSL_GUARDED_BY(ads_mu_);
+  std::map<std::string /*resource_type*/, int> resource_type_min_versions_
+      ABSL_GUARDED_BY(ads_mu_);
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:
   // - The resource exists (i.e., has been created by SetResource() and has not
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
-  ResourceMap resource_map_;
+  ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
-  std::set<std::string> clients_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
 };
 
 class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
@@ -1196,9 +1222,15 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     cluster_names_ = cluster_names;
   }
 
-  void Start() {
-    lrs_done_ = false;
-    result_queue_.clear();
+  void Start() ABSL_LOCKS_EXCLUDED(lrs_mu_, load_report_mu_) {
+    {
+      grpc_core::MutexLock lock(&lrs_mu_);
+      lrs_done_ = false;
+    }
+    {
+      grpc_core::MutexLock lock(&load_report_mu_);
+      result_queue_.clear();
+    }
   }
 
   void Shutdown() {
@@ -1214,8 +1246,9 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     grpc_core::CondVar cv;
     if (result_queue_.empty()) {
       load_report_cond_ = &cv;
-      grpc_core::WaitUntil(load_report_cond_, &load_report_mu_,
-                           [this] { return !result_queue_.empty(); });
+      while (result_queue_.empty()) {
+        cv.Wait(&load_report_mu_);
+      }
       load_report_cond_ = nullptr;
     }
     std::vector<ClientStats> result = std::move(result_queue_.front());
@@ -1282,8 +1315,9 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
         }
         // Wait until notified done.
         grpc_core::MutexLock lock(&parent_->lrs_mu_);
-        grpc_core::WaitUntil(&parent_->lrs_cv_, &parent_->lrs_mu_,
-                             [this] { return parent_->lrs_done_; });
+        while (!parent_->lrs_done_) {
+          parent_->lrs_cv_.Wait(&parent_->lrs_mu_);
+        }
       }
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
       return Status::OK;
@@ -1293,7 +1327,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     LrsServiceImpl* parent_;
   };
 
-  void NotifyDoneWithLrsCallLocked() {
+  void NotifyDoneWithLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(lrs_mu_) {
     if (!lrs_done_) {
       lrs_done_ = true;
       lrs_cv_.SignalAll();
@@ -1314,12 +1348,14 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
   std::set<std::string> cluster_names_;
 
   grpc_core::CondVar lrs_cv_;
-  grpc_core::Mutex lrs_mu_;  // Protects lrs_done_.
-  bool lrs_done_ = false;
+  grpc_core::Mutex lrs_mu_;
+  bool lrs_done_ ABSL_GUARDED_BY(lrs_mu_) = false;
 
-  grpc_core::Mutex load_report_mu_;  // Protects the members below.
-  grpc_core::CondVar* load_report_cond_ = nullptr;
-  std::deque<std::vector<ClientStats>> result_queue_;
+  grpc_core::Mutex load_report_mu_;
+  grpc_core::CondVar* load_report_cond_ ABSL_GUARDED_BY(load_report_mu_) =
+      nullptr;
+  std::deque<std::vector<ClientStats>> result_queue_
+      ABSL_GUARDED_BY(load_report_mu_);
 };
 
 class TestType {
@@ -2021,16 +2057,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return true;
   }
 
-  void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops,
-                       const RpcOptions& rpc_options = RpcOptions(),
-                       const char* drop_error_message =
-                           "Call dropped by load balancing policy") {
+  void SendRpcAndCount(
+      int* num_total, int* num_ok, int* num_failure, int* num_drops,
+      const RpcOptions& rpc_options = RpcOptions(),
+      const char* drop_error_message_prefix = "EDS-configured drop: ") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == drop_error_message) {
+      if (absl::StartsWith(status.error_message(), drop_error_message_prefix)) {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -2474,7 +2509,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    private:
     grpc_core::Mutex mu_;
     grpc_core::CondVar cond_;
-    std::map<std::string, grpc::Status> status_map;
+    std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
   };
 
   class ServerThread {
@@ -2509,7 +2544,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
-        XdsServerBuilder builder;
+        experimental::XdsServerBuilder builder;
         if (GetParam().bootstrap_source() ==
             TestType::kBootstrapFromChannelArg) {
           builder.SetOption(
@@ -3211,7 +3246,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // we hit the max concurrent requests limit and got dropped.
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
   status = SendRpc();
@@ -3272,7 +3307,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // we hit the max concurrent requests limit and got dropped.
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
   status = SendRpc();
@@ -8850,7 +8885,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
@@ -8874,7 +8908,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
@@ -8905,7 +8938,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       "grpc.testing.unsupported_http_filter");
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
@@ -8940,10 +8972,6 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8973,10 +9001,6 @@ TEST_P(XdsEnabledServerTest,
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8990,17 +9014,13 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
+      "192.168.1.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  WaitForBackend(0);
-  // Set a different listening address in the LDS update
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      "192.168.1.1");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -9012,7 +9032,6 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
@@ -9269,7 +9288,6 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
@@ -9296,7 +9314,6 @@ TEST_P(
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
@@ -9329,7 +9346,6 @@ TEST_P(XdsServerSecurityTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
@@ -10968,7 +10984,7 @@ TEST_P(DropTest, Vanilla) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11005,7 +11021,7 @@ TEST_P(DropTest, DropPerHundred) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11042,7 +11058,7 @@ TEST_P(DropTest, DropPerTenThousand) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11086,7 +11102,7 @@ TEST_P(DropTest, Update) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11116,7 +11132,7 @@ TEST_P(DropTest, Update) {
     const Status status = SendRpc(RpcOptions(), &response);
     ++num_rpcs;
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11132,7 +11148,7 @@ TEST_P(DropTest, Update) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -11166,7 +11182,8 @@ TEST_P(DropTest, DropAll) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+    EXPECT_THAT(status.error_message(),
+                ::testing::StartsWith("EDS-configured drop: "));
   }
 }
 
@@ -11633,7 +11650,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

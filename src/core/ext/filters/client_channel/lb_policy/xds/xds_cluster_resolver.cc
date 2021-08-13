@@ -1027,15 +1027,12 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
             "config -- "
             "will put channel in TRANSIENT_FAILURE: %s",
             this, grpc_error_std_string(error).c_str());
-    error = grpc_error_set_int(
-        grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                 "xds_cluster_resolver LB policy: error "
-                                 "parsing generated child policy config"),
-                             error),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    absl::Status status = absl::InternalError(
+        "xds_cluster_resolver LB policy: error parsing generated child policy "
+        "config");
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
     return nullptr;
   }
   return config;
