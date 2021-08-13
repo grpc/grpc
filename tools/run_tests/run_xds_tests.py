@@ -3093,7 +3093,8 @@ class GcpState(object):
 
 logging.debug(
     "script start time: %s",
-    datetime.datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z"))
+    datetime.datetime.now(
+        datetime.timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z"))
 logging.debug("logging local timezone: %s",
               datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
 alpha_compute = None
