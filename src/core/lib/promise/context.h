@@ -32,24 +32,7 @@ struct ContextType;
 namespace promise_detail {
 
 template <typename T>
-class ContextSlot {
- public:
-  ContextSlot() { static Initializer initializer; }
-
- protected:
-  static GPR_THREAD_LOCAL(T*) current_;
-
- private:
-  struct Initializer {
-    Initializer() { gpr_tls_init(&current_); }
-    ~Initializer() { gpr_tls_destroy(&current_); }
-  };
-};
-
-template <typename T>
-class Context : public ContextType<T>, public ContextSlot<T> {
-  using ContextSlot<T>::current_;
-
+class Context : public ContextType<T> {
  public:
   explicit Context(T* p) : old_(current_) { current_ = p; }
   ~Context() { current_ = old_; }
@@ -60,11 +43,12 @@ class Context : public ContextType<T>, public ContextSlot<T> {
 
  private:
   T* const old_;
+  static GPR_THREAD_LOCAL(T*) current_;
 };
 
 template <typename T>
 GPR_THREAD_LOCAL(T*)
-ContextSlot<T>::current_;
+Context<T>::current_;
 
 template <typename T, typename F>
 class WithContext {
