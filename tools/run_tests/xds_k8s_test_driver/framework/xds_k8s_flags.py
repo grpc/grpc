@@ -32,8 +32,8 @@ TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
 
 # Test app
 SERVER_IMAGE = flags.DEFINE_list("server_image",
-                                   default=None,
-                                   help="Server Docker image name")
+                                 default=None,
+                                 help="Server Docker image name")
 CLIENT_IMAGE = flags.DEFINE_string("client_image",
                                    default=None,
                                    help="Client Docker image name")
