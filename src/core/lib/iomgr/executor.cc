@@ -53,7 +53,7 @@
 namespace grpc_core {
 namespace {
 
-GPR_TLS_DECL(g_this_thread_state);
+static GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -214,7 +214,7 @@ void Executor::Shutdown() { SetThreading(false); }
 
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
+  g_this_thread_state = ts;
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -248,7 +248,7 @@ void Executor::ThreadMain(void* arg) {
     subtract_depth = RunClosures(ts->name, closures);
   }
 
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
+  g_this_thread_state = nullptr;
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
@@ -283,8 +283,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
       return;
     }
 
-    ThreadState* ts =
-        reinterpret_cast<ThreadState*>(gpr_tls_get(&g_this_thread_state));
+    ThreadState* ts = g_this_thread_state;
     if (ts == nullptr) {
       ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
                                         cur_thread_count)];
@@ -465,6 +464,6 @@ void Executor::SetThreadingDefault(bool enable) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
 
-void grpc_executor_global_init() { gpr_tls_init(&g_this_thread_state); }
+void grpc_executor_global_init() {}
 
 }  // namespace grpc_core

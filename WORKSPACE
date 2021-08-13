@@ -91,6 +91,16 @@ android_ndk_repository(
     # https://github.com/bazelbuild/bazel/issues/13421
 )
 
+# Prevents bazel's '...' expansion from including the following folder.
+# This is required because the BUILD file in the following folder
+# will trigger bazel failure when Android SDK is not configured.
+# The targets in the following folder need to be included in APK and will
+# be invoked by binder transport implementation through JNI.
+local_repository(
+    name = "binder_transport_android_helper",
+    path = "./src/core/ext/transport/binder/java",
+)
+
 # Create msan toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_msan",
