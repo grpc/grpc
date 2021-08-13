@@ -53,10 +53,11 @@ _TEST_METADATA = (
 _ChannelzChannelState = grpc_channelz.ChannelState
 
 
-@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
-                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Affinity is currently only implemented in C++ and Java.')
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        return 'cpp', 'java'
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -116,11 +117,12 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
         )
 
 
-@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
-                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Affinity is currently only implemented in C++ and Java.')
 class TestHeaderBasedAffinityMultipleHeaders(
         xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        return 'cpp', 'java'
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -215,3 +217,6 @@ class TestHeaderBasedAffinityMultipleHeaders(
 # TODO: add more test cases
 # 1. based on the basic test, turn down the backend in use, then verify that all
 #    RPCs are sent to another backend
+
+if __name__ == '__main__':
+    absltest.main()

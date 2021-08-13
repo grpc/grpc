@@ -201,7 +201,6 @@ int main(int argc, char** argv) {
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  gpr_tls_init(g_is_nonblocking_poll);
 
   // Start the nonblocking poll thread-local variable as false because the
   // thread that issues RPCs starts by picking a port (which has non-zero
@@ -209,7 +208,7 @@ int main(int argc, char** argv) {
   g_is_nonblocking_poll = false;
 
   int ret = RUN_ALL_TESTS();
-  gpr_tls_destroy(g_is_nonblocking_poll);
+
   return ret;
 #else   // GRPC_POSIX_SOCKET
   (void)argc;
