@@ -68,7 +68,8 @@ class PromiseLike {
   GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
+  // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
+  PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
   auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };

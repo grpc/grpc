@@ -30,7 +30,7 @@ const absl::string_view
 
 void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
     StreamIdentifier id, InitialMetadataCallbackType cb) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   GPR_ASSERT(initial_metadata_cbs_.count(id) == 0);
   absl::StatusOr<Metadata> initial_metadata{};
   {
@@ -54,7 +54,7 @@ void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
 
 void TransportStreamReceiverImpl::RegisterRecvMessage(
     StreamIdentifier id, MessageDataCallbackType cb) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   GPR_ASSERT(message_cbs_.count(id) == 0);
   absl::StatusOr<std::string> message{};
   {
@@ -88,7 +88,7 @@ void TransportStreamReceiverImpl::RegisterRecvMessage(
 
 void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
     StreamIdentifier id, TrailingMetadataCallbackType cb) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   GPR_ASSERT(trailing_metadata_cbs_.count(id) == 0);
   std::pair<absl::StatusOr<Metadata>, int> trailing_metadata{};
   {
@@ -112,7 +112,10 @@ void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
 
 void TransportStreamReceiverImpl::NotifyRecvInitialMetadata(
     StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
+  if (!is_client_ && accept_stream_callback_) {
+    accept_stream_callback_();
+  }
   InitialMetadataCallbackType cb;
   {
     grpc_core::MutexLock l(&m_);
@@ -130,7 +133,7 @@ void TransportStreamReceiverImpl::NotifyRecvInitialMetadata(
 
 void TransportStreamReceiverImpl::NotifyRecvMessage(
     StreamIdentifier id, absl::StatusOr<std::string> message) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   MessageDataCallbackType cb;
   {
     grpc_core::MutexLock l(&m_);
@@ -153,7 +156,7 @@ void TransportStreamReceiverImpl::NotifyRecvTrailingMetadata(
   // assumes in-order commitments of transactions and that trailing metadata is
   // parsed after message data, we can safely cancel all upcoming callbacks of
   // recv_message.
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   CancelRecvMessageCallbacksDueToTrailingMetadata(id);
   TrailingMetadataCallbackType cb;
   {
@@ -173,7 +176,7 @@ void TransportStreamReceiverImpl::NotifyRecvTrailingMetadata(
 
 void TransportStreamReceiverImpl::
     CancelRecvMessageCallbacksDueToTrailingMetadata(StreamIdentifier id) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   MessageDataCallbackType cb = nullptr;
   {
     grpc_core::MutexLock l(&m_);
@@ -226,7 +229,7 @@ void TransportStreamReceiverImpl::CancelStream(StreamIdentifier id,
 }
 
 void TransportStreamReceiverImpl::Clear(StreamIdentifier id) {
-  gpr_log(GPR_ERROR, "%s id = %d is_client = %d", __func__, id, is_client_);
+  gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   grpc_core::MutexLock l(&m_);
   initial_metadata_cbs_.erase(id);
   message_cbs_.erase(id);
