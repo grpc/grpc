@@ -957,7 +957,7 @@ grpc_cc_library(
         "gpr_platform",
         "promise_status",
     ],
-    )
+)
 
 grpc_cc_library(
     name = "ref_counted",

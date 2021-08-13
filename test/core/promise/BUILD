@@ -65,10 +65,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:join"
-,
+    deps = [
+        "//:join",
         "//test/core/util:grpc_suppressions",
-            ],
+    ],
 )
 
 grpc_cc_test(
@@ -77,9 +77,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:try_join",
-
+    deps = [
+        "//:try_join",
         "//test/core/util:grpc_suppressions",
-            ],
+    ],
 )
-
