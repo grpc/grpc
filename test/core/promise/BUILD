@@ -65,9 +65,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:seq",
+    deps = [
+        "//:seq",
         "//test/core/util:grpc_suppressions",
-            ],
+    ],
 )
 
 grpc_cc_test(
@@ -76,8 +77,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:try_seq",
+    deps = [
+        "//:try_seq",
         "//test/core/util:grpc_suppressions",
-            ],
+    ],
 )
-
