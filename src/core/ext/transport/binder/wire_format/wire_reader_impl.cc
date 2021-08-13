@@ -43,8 +43,11 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
   int num_header;
   RETURN_IF_ERROR(reader->ReadInt32(&num_header));
   gpr_log(GPR_INFO, "num_header = %d", num_header);
+  if (num_header < 0) {
+    return absl::InvalidArgumentError("num_header cannot be negative");
+  }
   std::vector<std::pair<std::string, std::string>> ret;
-  for (int i = 0; i != num_header; i++) {
+  for (int i = 0; i < num_header; i++) {
     int count;
     RETURN_IF_ERROR(reader->ReadInt32(&count));
     gpr_log(GPR_INFO, "count = %d", count);
@@ -65,18 +68,21 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
 
 WireReaderImpl::WireReaderImpl(
     std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-    bool is_client)
+    bool is_client, std::function<void()> on_destruct_callback)
     : transport_stream_receiver_(std::move(transport_stream_receiver)),
-      is_client_(is_client) {}
+      is_client_(is_client),
+      on_destruct_callback_(on_destruct_callback) {}
 
-WireReaderImpl::~WireReaderImpl() = default;
+WireReaderImpl::~WireReaderImpl() {
+  if (on_destruct_callback_) {
+    on_destruct_callback_();
+  }
+}
 
 std::unique_ptr<WireWriter> WireReaderImpl::SetupTransport(
     std::unique_ptr<Binder> binder) {
   gpr_log(GPR_INFO, "Setting up transport");
   if (!is_client_) {
-    gpr_log(GPR_ERROR,
-            "[WARNING] Server-side setup transport is currently test-only");
     SendSetupTransport(binder.get());
     return absl::make_unique<WireWriterImpl>(std::move(binder));
   } else {
@@ -106,7 +112,7 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   // during callback execution. TransactionReceiver should make sure that the
   // callback owns a Ref() when it's being invoked.
   tx_receiver_ = binder->ConstructTxReceiver(
-      Ref(),
+      /*wire_reader_ref=*/Ref(),
       [this](transaction_code_t code, const ReadableParcel* readable_parcel) {
         return this->ProcessTransaction(code, readable_parcel);
       });
@@ -140,7 +146,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                     BinderTransportTxCode::SETUP_TRANSPORT) &&
         code <= static_cast<transaction_code_t>(
                     BinderTransportTxCode::PING_RESPONSE))) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "Received unknown control message. Shutdown transport gracefully.");
     // TODO(waynetu): Shutdown transport gracefully.
     return absl::OkStatus();
@@ -148,6 +154,10 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
+      if (connected_) {
+        return absl::InvalidArgumentError("Already connected");
+      }
+      connected_ = true;
       // int datasize;
       int version;
       // getDataSize not supported until 31
@@ -211,15 +221,15 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
             status.ToString().c_str());
     // Something went wrong when receiving transaction. Cancel failed requests.
     if (cancellation_flags & kFlagPrefix) {
-      gpr_log(GPR_ERROR, "cancelling initial metadata");
+      gpr_log(GPR_INFO, "cancelling initial metadata");
       transport_stream_receiver_->NotifyRecvInitialMetadata(code, status);
     }
     if (cancellation_flags & kFlagMessageData) {
-      gpr_log(GPR_ERROR, "cancelling message data");
+      gpr_log(GPR_INFO, "cancelling message data");
       transport_stream_receiver_->NotifyRecvMessage(code, status);
     }
     if (cancellation_flags & kFlagSuffix) {
-      gpr_log(GPR_ERROR, "cancelling trailing metadata");
+      gpr_log(GPR_INFO, "cancelling trailing metadata");
       transport_stream_receiver_->NotifyRecvTrailingMetadata(code, status, 0);
     }
   }

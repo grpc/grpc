@@ -216,7 +216,7 @@ class ExecCtx {
   static void GlobalInit(void);
 
   /** Global shutdown for ExecCtx. Called by iomgr. */
-  static void GlobalShutdown(void) { gpr_tls_destroy(exec_ctx_); }
+  static void GlobalShutdown(void) {}
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
@@ -357,10 +357,10 @@ class ApplicationCallbackExecCtx {
   }
 
   /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalInit(void) { gpr_tls_init(callback_exec_ctx_); }
+  static void GlobalInit(void) {}
 
   /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalShutdown(void) { gpr_tls_destroy(callback_exec_ctx_); }
+  static void GlobalShutdown(void) {}
 
   static bool Available() { return Get() != nullptr; }
 
