@@ -34,7 +34,7 @@ class Map {
   using Result = typename PromiseLike<Promise>::Result;
 
   Poll<Result> operator()() {
-    auto r = promise_();
+    Poll<Result> r = promise_();
     if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
       return fn_(std::move(*p));
     }
@@ -49,7 +49,7 @@ class Map {
 }  // namespace promise_detail
 
 // Mapping combinator.
-// Takes a promise, and a synchronous function to mutate it's result, and
+// Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
 promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
