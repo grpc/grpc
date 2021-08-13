@@ -65,8 +65,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:loop",
-
+    deps = [
+        "//:loop",
         "//test/core/util:grpc_suppressions",
-            ],
+    ],
 )
