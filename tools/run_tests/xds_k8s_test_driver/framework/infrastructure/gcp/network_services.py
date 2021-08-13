@@ -28,6 +28,19 @@ GcpResource = _ComputeV1.GcpResource
 
 
 @dataclasses.dataclass(frozen=True)
+class EndpointPolicy:
+    url: str
+    name: str
+    type: str
+    server_tls_policy: Optional[str]
+    traffic_port_selector: dict
+    endpoint_matcher: dict
+    http_filters: dict
+    update_time: str
+    create_time: str
+
+
+@dataclasses.dataclass(frozen=True)
 class Router:
 
     name: str
@@ -149,21 +162,9 @@ class GrpcRoute:
 
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
-    ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
+    ENDPOINT_POLICIES = 'endpointPolicies'
     GRPC_ROUTES = 'grpcRoutes'
     ROUTERS = 'routers'
-
-    @dataclasses.dataclass(frozen=True)
-    class EndpointConfigSelector:
-        url: str
-        name: str
-        type: str
-        server_tls_policy: Optional[str]
-        traffic_port_selector: dict
-        endpoint_matcher: dict
-        http_filters: dict
-        update_time: str
-        create_time: str
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networkservices(self.api_version), project)
@@ -178,18 +179,17 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     def api_version(self) -> str:
         return 'v1alpha1'
 
-    def create_endpoint_config_selector(self, name, body: dict):
+    def create_endpoint_policy(self, name, body: dict) -> GcpResource:
         return self._create_resource(
-            self._api_locations.endpointConfigSelectors(),
-            body,
-            endpointConfigSelectorId=name)
+            collection=self._api_locations.endpointPolicies(),
+            body=body,
+            endpointPolicyId=name)
 
-    def get_endpoint_config_selector(self, name: str) -> EndpointConfigSelector:
+    def get_endpoint_policy(self, name: str) -> EndpointPolicy:
         result = self._get_resource(
-            collection=self._api_locations.endpointConfigSelectors(),
-            full_name=self.resource_full_name(name,
-                                              self.ENDPOINT_CONFIG_SELECTORS))
-        return self.EndpointConfigSelector(
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
+        return EndpointPolicy(
             name=name,
             url=result['name'],
             type=result['type'],
@@ -200,11 +200,10 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             update_time=result['updateTime'],
             create_time=result['createTime'])
 
-    def delete_endpoint_config_selector(self, name):
+    def delete_endpoint_policy(self, name):
         return self._delete_resource(
-            collection=self._api_locations.endpointConfigSelectors(),
-            full_name=self.resource_full_name(name,
-                                              self.ENDPOINT_CONFIG_SELECTORS))
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
 
     def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
         # Workaround TD bug: throttled operations are reported as internal.

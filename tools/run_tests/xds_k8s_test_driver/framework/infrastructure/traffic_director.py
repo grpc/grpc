@@ -38,7 +38,7 @@ ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
 
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
-EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
+EndpointPolicy = gcp.network_services.EndpointPolicy
 
 # Testing metadata consts
 TEST_AFFINITY_METADATA_KEY = 'xds_md'
@@ -630,8 +630,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     netsec: Optional[_NetworkSecurityV1Alpha1]
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
-    # TODO(sergiitk): Rename to ENDPOINT_POLICY_NAME when upgraded to v1beta
-    ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-policy"
+    ENDPOINT_POLICY = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
     def __init__(
@@ -655,8 +654,8 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
         # Managed resources
         self.server_tls_policy: Optional[ServerTlsPolicy] = None
-        self.ecs: Optional[EndpointConfigSelector] = None
         self.client_tls_policy: Optional[ClientTlsPolicy] = None
+        self.endpoint_policy: Optional[EndpointPolicy] = None
 
     def setup_server_security(self,
                               *,
@@ -666,9 +665,9 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                               tls=True,
                               mtls=True):
         self.create_server_tls_policy(tls=tls, mtls=mtls)
-        self.create_endpoint_config_selector(server_namespace=server_namespace,
-                                             server_name=server_name,
-                                             server_port=server_port)
+        self.create_endpoint_policy(server_namespace=server_namespace,
+                                    server_name=server_name,
+                                    server_port=server_port)
 
     def setup_client_security(self,
                               *,
@@ -683,7 +682,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
         super().cleanup(force=force)
-        self.delete_endpoint_config_selector(force=force)
+        self.delete_endpoint_policy(force=force)
         self.delete_server_tls_policy(force=force)
         self.delete_client_tls_policy(force=force)
 
@@ -720,10 +719,10 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.netsec.delete_server_tls_policy(name)
         self.server_tls_policy = None
 
-    def create_endpoint_config_selector(self, server_namespace, server_name,
-                                        server_port):
-        name = self.make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
-        logger.info('Creating Endpoint Config Selector %s', name)
+    def create_endpoint_policy(self, *, server_namespace: str, server_name: str,
+                               server_port: int) -> None:
+        name = self.make_resource_name(self.ENDPOINT_POLICY)
+        logger.info('Creating Endpoint Policy %s', name)
         endpoint_matcher_labels = [{
             "labelName": "app",
             "labelValue": f"{server_namespace}-{server_name}"
@@ -731,37 +730,37 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         port_selector = {"ports": [str(server_port)]}
         label_matcher_all = {
             "metadataLabelMatchCriteria": "MATCH_ALL",
-            "metadataLabels": endpoint_matcher_labels
+            "metadataLabels": endpoint_matcher_labels,
         }
         config = {
             "type": "GRPC_SERVER",
             "httpFilters": {},
             "trafficPortSelector": port_selector,
             "endpointMatcher": {
-                "metadataLabelMatcher": label_matcher_all
+                "metadataLabelMatcher": label_matcher_all,
             },
         }
         if self.server_tls_policy:
             config["serverTlsPolicy"] = self.server_tls_policy.name
         else:
             logger.warning(
-                'Creating Endpoint Config Selector %s with '
+                'Creating Endpoint Policy %s with '
                 'no Server TLS policy attached', name)
 
-        self.netsvc.create_endpoint_config_selector(name, config)
-        self.ecs = self.netsvc.get_endpoint_config_selector(name)
-        logger.debug('Loaded Endpoint Config Selector: %r', self.ecs)
+        self.netsvc.create_endpoint_policy(name, config)
+        self.endpoint_policy = self.netsvc.get_endpoint_policy(name)
+        logger.debug('Loaded Endpoint Policy: %r', self.endpoint_policy)
 
-    def delete_endpoint_config_selector(self, force=False):
+    def delete_endpoint_policy(self, force: bool = False) -> None:
         if force:
-            name = self.make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
-        elif self.ecs:
-            name = self.ecs.name
+            name = self.make_resource_name(self.ENDPOINT_POLICY)
+        elif self.endpoint_policy:
+            name = self.endpoint_policy.name
         else:
             return
-        logger.info('Deleting Endpoint Config Selector %s', name)
-        self.netsvc.delete_endpoint_config_selector(name)
-        self.ecs = None
+        logger.info('Deleting Endpoint Policy %s', name)
+        self.netsvc.delete_endpoint_policy(name)
+        self.endpoint_policy = None
 
     def create_client_tls_policy(self, *, tls, mtls):
         name = self.make_resource_name(self.CLIENT_TLS_POLICY_NAME)
