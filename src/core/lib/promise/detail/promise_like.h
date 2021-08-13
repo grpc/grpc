@@ -19,69 +19,59 @@
 
 #include "src/core/lib/promise/poll.h"
 
-// PromiseFactory is an adaptor class.
-//
-// Where a Promise is a thing that's polled periodically, a PromiseFactory
-// creates a Promise. Within this Promise/Activity framework, PromiseFactory's
-// then provide the edges for computation -- invoked at state transition
-// boundaries to provide the new steady state.
-//
-// A PromiseFactory formally is either f(A) -> Promise<T> for some types A & T.
-// This get a bit awkward and inapproprate to write however, and so the type
-// contained herein can adapt various kinds of callable into the correct form.
-// Of course a callable of a single argument returning a Promise will see an
-// identity translation. One taking no arguments and returning a Promise
-// similarly.
-//
-// A Promise passed to a PromiseFactory will yield a PromiseFactory that
-// returns just that Promise.
-//
-// Generalizing slightly, a callable taking a single argument A and returning a
-// Poll<T> will yield a PromiseFactory that captures it's argument A and
-// returns a Poll<T>.
-//
-// Since various consumers of PromiseFactory run either repeatedly through an
-// overarching Promises lifetime, or just once, and we can optimize just once
-// by moving the contents of the PromiseFactory, two factory methods are
-// provided: Once, that can be called just once, and Repeated, that can (wait
-// for it) be called Repeatedly.
-
 #include <utility>
 #include "src/core/lib/promise/poll.h"
 
-// PromiseLike helps us deal with functors that return immediately.
-// PromiseLike<F> if F returns Poll<T> is basically a no-op, where-as if F
-// returns anything else, PromiseLike wraps the return of F to return a ready
-// value immediately.
+// A Promise is a callable object that returns Poll<T> for some T.
+// Often when we're writing code that uses promises, we end up wanting to also
+// deal with code that completes instantaneously - that is, it returns some T
+// where T is not Poll.
+// PromiseLike wraps any callable that takes no parameters and implements the
+// Promise interface. For things that already return Poll, this wrapping does
+// nothing. For things that do not return Poll, we wrap the return type in Poll.
+// This allows us to write things like:
+//   Seq(
+//     [] { return 42; },
+//     ...)
+// in preference to things like:
+//   Seq(
+//     [] { return Poll<int>(42); },
+//     ...)
+// or:
+//   Seq(
+//     [] -> Poll<int> { return 42; },
+//     ...)
+// leading to slightly more concise code and eliminating some rules that in
+// practice people find hard to deal with.
 
 namespace grpc_core {
 namespace promise_detail {
 
-template <typename T, typename Ignored = void>
-class PromiseLike;
-
-template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<PollTraits<decltype(
-                         std::declval<F>()())>::is_poll()>> {
- private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
-
- public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = typename PollTraits<decltype(f_())>::Type;
-  Poll<Result> operator()() { return f_(); }
+template <typename T>
+struct PollWrapper {
+  static Poll<T> Wrap(T&& x) { return Poll<T>(std::forward<T>(x)); }
 };
 
+template <typename T>
+struct PollWrapper<Poll<T>> {
+  static Poll<T> Wrap(Poll<T>&& x) { return std::forward<Poll<T>>(x); }
+};
+
+template <typename T>
+auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
+  return PollWrapper<T>::Wrap(std::forward<T>(x));
+}
+
 template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<!PollTraits<decltype(
-                         std::declval<F>()())>::is_poll()>> {
+class PromiseLike {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = decltype(f_());
-  Poll<Result> operator()() { return f_(); }
+  // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
+  PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
+  auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
+  using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 
 }  // namespace promise_detail

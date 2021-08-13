@@ -271,3 +271,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "capture_test",
+    srcs = ["capture_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:capture",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
