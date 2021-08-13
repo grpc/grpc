@@ -162,7 +162,8 @@ class PromiseFactory {
 
  public:
   using Arg = A;
-  using Promise = decltype(PromiseFactoryImpl(std::move(f_), std::declval<A>()));
+  using Promise =
+      decltype(PromiseFactoryImpl(std::move(f_), std::declval<A>()));
 
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
@@ -186,13 +187,9 @@ class PromiseFactory<void, F> {
 
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
-  Promise Once() {
-    return PromiseFactoryImpl(std::move(f_));
-  }
+  Promise Once() { return PromiseFactoryImpl(std::move(f_)); }
 
-  Promise Repeated() const {
-    return PromiseFactoryImpl(f_);
-  }
+  Promise Repeated() const { return PromiseFactoryImpl(f_); }
 };
 
 }  // namespace promise_detail
