@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import dataclasses
 import logging
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,8 +24,8 @@ from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
 
-_ComputeV1 = gcp.compute.ComputeV1
-GcpResource = _ComputeV1.GcpResource
+# Type aliases
+GcpResource = gcp.compute.ComputeV1.GcpResource
 
 
 @dataclasses.dataclass(frozen=True)
@@ -32,12 +33,25 @@ class EndpointPolicy:
     url: str
     name: str
     type: str
-    server_tls_policy: Optional[str]
     traffic_port_selector: dict
     endpoint_matcher: dict
-    http_filters: dict
     update_time: str
     create_time: str
+    http_filters: Optional[dict] = None
+    server_tls_policy: Optional[str] = None
+
+    @classmethod
+    def from_response(cls, name: str, response: Dict[str,
+                                                     Any]) -> 'EndpointPolicy':
+        return cls(name=name,
+                   url=response['name'],
+                   type=response['type'],
+                   server_tls_policy=response.get('serverTlsPolicy', None),
+                   traffic_port_selector=response['trafficPortSelector'],
+                   endpoint_matcher=response['endpointMatcher'],
+                   http_filters=response.get('httpFilters', None),
+                   update_time=response['updateTime'],
+                   create_time=response['createTime'])
 
 
 @dataclasses.dataclass(frozen=True)
@@ -161,10 +175,9 @@ class GrpcRoute:
         )
 
 
-class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
-    ENDPOINT_POLICIES = 'endpointPolicies'
-    GRPC_ROUTES = 'grpcRoutes'
-    ROUTERS = 'routers'
+class _NetworkServicesBase(gcp.api.GcpStandardCloudApiResource,
+                           metaclass=abc.ABCMeta):
+    """Base class for NetworkServices APIs."""
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networkservices(self.api_version), project)
@@ -174,36 +187,6 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     @property
     def api_name(self) -> str:
         return 'networkservices'
-
-    @property
-    def api_version(self) -> str:
-        return 'v1alpha1'
-
-    def create_endpoint_policy(self, name, body: dict) -> GcpResource:
-        return self._create_resource(
-            collection=self._api_locations.endpointPolicies(),
-            body=body,
-            endpointPolicyId=name)
-
-    def get_endpoint_policy(self, name: str) -> EndpointPolicy:
-        result = self._get_resource(
-            collection=self._api_locations.endpointPolicies(),
-            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
-        return EndpointPolicy(
-            name=name,
-            url=result['name'],
-            type=result['type'],
-            server_tls_policy=result.get('serverTlsPolicy', None),
-            traffic_port_selector=result['trafficPortSelector'],
-            endpoint_matcher=result['endpointMatcher'],
-            http_filters=result['httpFilters'],
-            update_time=result['updateTime'],
-            create_time=result['createTime'])
-
-    def delete_endpoint_policy(self, name):
-        return self._delete_resource(
-            collection=self._api_locations.endpointPolicies(),
-            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
 
     def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
         # Workaround TD bug: throttled operations are reported as internal.
@@ -216,17 +199,62 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             reraise=True)
         retryer(super()._execute, *args, **kwargs)
 
-    def create_router(self, name: str, body: dict) -> GcpResource:
+    @staticmethod
+    def _operation_internal_error(exception):
+        return (isinstance(exception, gcp.api.OperationError) and
+                exception.error.code == code_pb2.INTERNAL)
+
+
+class NetworkServicesV1Beta1(_NetworkServicesBase):
+    """NetworkServices API v1beta1."""
+    ENDPOINT_POLICIES = 'endpointPolicies'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1beta1'
+
+    def create_endpoint_policy(self, name, body: dict) -> GcpResource:
         return self._create_resource(
-            self._api_locations.routers(),
-            body,
-            routerId=name,
-        )
+            collection=self._api_locations.endpointPolicies(),
+            body=body,
+            endpointPolicyId=name)
+
+    def get_endpoint_policy(self, name: str) -> EndpointPolicy:
+        response = self._get_resource(
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
+        return EndpointPolicy.from_response(name, response)
+
+    def delete_endpoint_policy(self, name: str) -> bool:
+        return self._delete_resource(
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
+
+
+class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
+    """NetworkServices API v1alpha1.
+
+    Note: extending v1beta1 class presumes that v1beta1 is just a v1alpha1 API
+    graduated into a more stable version. This is true in most cases. However,
+    v1alpha1 class can always override and reimplement incompatible methods.
+    """
+
+    GRPC_ROUTES = 'grpcRoutes'
+    ROUTERS = 'routers'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1alpha1'
+
+    def create_router(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(collection=self._api_locations.routers(),
+                                     body=body,
+                                     routerId=name)
 
     def get_router(self, name: str) -> Router:
+        full_name = self.resource_full_name(name, self.ROUTERS)
         result = self._get_resource(collection=self._api_locations.routers(),
-                                    full_name=self.resource_full_name(
-                                        name, self.ROUTERS))
+                                    full_name=full_name)
         return Router.from_response(name, result)
 
     def delete_router(self, name: str) -> bool:
@@ -235,22 +263,18 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
                                          name, self.ROUTERS))
 
     def create_grpc_route(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(self._api_locations.grpcRoutes(),
-                                     body,
-                                     grpcRouteId=name)
+        return self._create_resource(
+            collection=self._api_locations.grpcRoutes(),
+            body=body,
+            grpcRouteId=name)
 
     def get_grpc_route(self, name: str) -> GrpcRoute:
+        full_name = self.resource_full_name(name, self.GRPC_ROUTES)
         result = self._get_resource(collection=self._api_locations.grpcRoutes(),
-                                    full_name=self.resource_full_name(
-                                        name, self.GRPC_ROUTES))
+                                    full_name=full_name)
         return GrpcRoute.from_response(name, result)
 
     def delete_grpc_route(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.grpcRoutes(),
             full_name=self.resource_full_name(name, self.GRPC_ROUTES))
-
-    @staticmethod
-    def _operation_internal_error(exception):
-        return (isinstance(exception, gcp.api.OperationError) and
-                exception.error.code == code_pb2.INTERNAL)
