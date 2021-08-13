@@ -826,7 +826,7 @@ static void ru_ref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
   gpr_atm prior = gpr_atm_no_barrier_fetch_add(&resource_user->refs, amount);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "RU '%s' (%p) reffing: %ld -> %ld",
+    gpr_log(GPR_INFO, "RU '%s' (%p) reffing: %" PRIdPTR " -> %" PRIdPTR,
             resource_user->name.c_str(), resource_user, prior, prior + amount);
   }
   GPR_ASSERT(prior != 0);
@@ -837,7 +837,7 @@ static void ru_unref_by(grpc_resource_user* resource_user, gpr_atm amount) {
   gpr_atm old = gpr_atm_full_fetch_add(&resource_user->refs, -amount);
   GPR_ASSERT(old >= amount);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "RU '%s' (%p) unreffing: %ld -> %ld",
+    gpr_log(GPR_INFO, "RU '%s' (%p) unreffing: %" PRIdPTR " -> %" PRIdPTR,
             resource_user->name.c_str(), resource_user, old, old - amount);
   }
   if (old == amount) {
@@ -890,11 +890,8 @@ void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
   if (old_count < thread_count || resource_quota->num_threads_allocated < 0) {
     gpr_log(GPR_ERROR,
             "Releasing more threads (%d) than currently allocated "
-            ""
-            "(resource_quota threads: "
-            "%d, ru threads: %d)",
+            "(resource_quota threads: %d, ru threads: %d)",
             thread_count, resource_quota->num_threads_allocated + thread_count,
-
             old_count);
     abort();
   }
@@ -1052,8 +1049,8 @@ static size_t grpc_slice_allocator_adjust_allocation_length(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(
         GPR_INFO,
-        "SliceAllocator(%p) requested %ld bytes for (%s) intent, adjusted "
-        "allocation size to %ld",
+        "SliceAllocator(%p) requested %zu bytes for (%s) intent, adjusted "
+        "allocation size to %zu",
         slice_allocator, requested_length,
         intent == grpc_slice_allocator_intent::kDefault ? "default" : "read",
         target);
