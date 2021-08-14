@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/config/config.h"
+#include "src/core/lib/config/core_configuration.h"
 #include <gtest/gtest.h>
 #include <chrono>
 #include <thread>

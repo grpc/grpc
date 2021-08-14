@@ -19,8 +19,8 @@ licenses(["notice"])
 grpc_package(name = "test/core/config")
 
 grpc_cc_test(
-    name = "config_test",
-    srcs = ["config_test.cc"],
+    name = "core_configuration_test",
+    srcs = ["core_configuration_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,

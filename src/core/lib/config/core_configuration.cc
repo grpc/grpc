@@ -14,7 +14,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/config/config.h"
+#include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
 
