@@ -51,6 +51,7 @@ TEST(ConfigTest, ThreadedInit) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   };
   std::vector<std::thread> threads;
+  threads.reserve(64);
   for (int i = 0; i < 64; i++) {
     threads.push_back(std::thread([]() { CoreConfiguration::Get(); }));
   }

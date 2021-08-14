@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CONFIG_CONFIG_H
-#define GRPC_CORE_LIB_CONFIG_CONFIG_H
+#ifndef GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
+#define GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -71,4 +71,4 @@ extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CONFIG_CONFIG_H */
+#endif /* GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H */
