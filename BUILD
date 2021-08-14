@@ -784,6 +784,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "config",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/config/config.h",
+    ],
+    srcs = [
+        "src/core/lib/config/config.cc",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
