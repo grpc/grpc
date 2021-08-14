@@ -57,6 +57,8 @@ TEST(ConfigTest, ThreadedInit) {
   for (auto& t : threads) {
     t.join();
   }
+  g_mock_builder = nullptr;
+  CoreConfiguration::Get();
 }
 }  // namespace testing
 
