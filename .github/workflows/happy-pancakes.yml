@@ -1,6 +1,6 @@
 name: Happy Pancakes
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
 jobs:
   check_status:
