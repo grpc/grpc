@@ -6077,6 +6077,21 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: promise_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/map_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: promise_test
   gtest: true
   build: test
