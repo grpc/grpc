@@ -29,9 +29,14 @@ CoreConfiguration* CoreConfiguration::Builder::Build() {
 CoreConfiguration::CoreConfiguration() = default;
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
+  // Construct builder, pass it up to code that knows about build configuration
   Builder builder;
   BuildCoreConfiguration(&builder);
+  // Use builder to construct a confguration
   CoreConfiguration* p = builder.Build();
+  // Try to set configuration global - it's possible another thread raced us
+  // here, in which case we drop the work we did and use the one that got set
+  // first
   CoreConfiguration* expected = nullptr;
   if (!config_.compare_exchange_strong(expected, p,
                                        std::memory_order_release)) {

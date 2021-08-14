@@ -14,6 +14,8 @@
 
 #include "src/core/lib/config/config.h"
 #include <gtest/gtest.h>
+#include <thread>
+#include <chrono>
 
 namespace grpc_core {
 
@@ -41,6 +43,20 @@ void InitConfigWithBuilder(ConfigBuilderFunction fn) {
 TEST(ConfigTest, NoopConfig) {
   InitConfigWithBuilder([](CoreConfiguration::Builder*) {});
   CoreConfiguration::Get();
+}
+
+TEST(ConfigTest, ThreadedInit) {
+  CoreConfiguration::Reset();
+  g_mock_builder = [](CoreConfiguration::Builder*) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  };
+  std::vector<std::thread> threads;
+  for (int i=0; i<64; i++) {
+    threads.push_back(std::thread([]() { CoreConfiguration::Get(); }));
+  }
+  for (auto& t : threads) {
+    t.join();
+  }
 }
 }  // namespace testing
 
