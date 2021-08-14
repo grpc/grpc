@@ -32,7 +32,6 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
-
    private:
     friend class CoreConfiguration;
 
@@ -70,7 +69,6 @@ class CoreConfiguration {
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
 
-}
+}  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SURFACE_INIT_H */
-
+#endif /* GRPC_CORE_LIB_CONFIG_CONFIG_H */

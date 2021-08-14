@@ -33,7 +33,8 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   BuildCoreConfiguration(&builder);
   CoreConfiguration* p = builder.Build();
   CoreConfiguration* expected = nullptr;
-  if (!config_.compare_exchange_strong(expected, p, std::memory_order_release)) {
+  if (!config_.compare_exchange_strong(expected, p,
+                                       std::memory_order_release)) {
     delete p;
     return *expected;
   }
@@ -44,6 +45,4 @@ void CoreConfiguration::Reset() {
   delete config_.exchange(nullptr, std::memory_order_acquire);
 }
 
-}
-
-
+}  // namespace grpc_core
