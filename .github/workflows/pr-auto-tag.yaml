@@ -1,7 +1,7 @@
 name: PR AutoTag
 on:
   pull_request_target:
-    types: [opened, reopened, synchronized]
+    types: [opened, reopened, synchronized, edited]
 jobs:
   triage:
     runs-on: ubuntu-latest
