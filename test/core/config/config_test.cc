@@ -22,9 +22,11 @@ namespace grpc_core {
 namespace testing {
 using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder*)>;
 static ConfigBuilderFunction g_mock_builder;
-}
+}  // namespace testing
 
-void BuildCoreConfiguration(CoreConfiguration::Builder* builder) { ::grpc_core::testing::g_mock_builder(builder); }
+void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  ::grpc_core::testing::g_mock_builder(builder);
+}
 
 namespace testing {
 // Helper for testing - clear out any state, rebuild configuration with fn being
@@ -40,7 +42,7 @@ TEST(ConfigTest, NoopConfig) {
   InitConfigWithBuilder([](CoreConfiguration::Builder*) {});
   CoreConfiguration::Get();
 }
-}
+}  // namespace testing
 
 }  // namespace grpc_core
 

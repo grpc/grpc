@@ -5071,6 +5071,17 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: config_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/config/config.h
+  src:
+  - src/core/lib/config/config.cc
+  - test/core/config/config_test.cc
+  deps: []
+  uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test

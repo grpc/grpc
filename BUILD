@@ -785,12 +785,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "config",
+    srcs = [
+        "src/core/lib/config/config.cc",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/config/config.h",
-    ],
-    srcs = [
-        "src/core/lib/config/config.cc",
     ],
     deps = [
         "gpr_platform",
