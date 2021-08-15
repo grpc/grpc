@@ -85,7 +85,9 @@ class BitSet {
   constexpr BitSet() : units_{} {}
 
   // Set bit i to true
-  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i) { units_[unit_for(i)] |= mask_for(i); }
+  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i) {
+    units_[unit_for(i)] |= mask_for(i);
+  }
 
   // Set bit i to is_set
   GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i, bool is_set) {
@@ -97,7 +99,9 @@ class BitSet {
   }
 
   // Set bit i to false
-  GRPC_BITSET_CONSTEXPR_MUTATOR void clear(int i) { units_[unit_for(i)] &= ~mask_for(i); }
+  GRPC_BITSET_CONSTEXPR_MUTATOR void clear(int i) {
+    units_[unit_for(i)] &= ~mask_for(i);
+  }
 
   // Return true if bit i is set
   constexpr bool is_set(int i) const {
