@@ -51,7 +51,7 @@ class LookupTable {
   GRPC_PCTENCODE_CONSTEXPR_FN void SetBit(int x) {
     int byte = x / 8;
     int bit = x % 8;
-    bits_[byte] |= (uint8_t)(1 << bit);
+    bits_[byte] |= static_cast<uint8_t>(1 << bit);
   }
 
  private:
