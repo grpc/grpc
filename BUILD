@@ -1316,6 +1316,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "bitset"
     ],
 )
 

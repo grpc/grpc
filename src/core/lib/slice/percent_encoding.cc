@@ -23,10 +23,11 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/gprpp/bitset.h"
 
 #include <cstdint>
 
-#if __cplusplus > 201103L
+#if __cplusplus > 201103l
 #define GRPC_PCTENCODE_CONSTEXPR_FN constexpr
 #define GRPC_PCTENCODE_CONSTEXPR_VALUE constexpr
 #else
@@ -37,55 +38,34 @@
 namespace grpc_core {
 
 namespace {
-class LookupTable {
- public:
-  bool IsSet(uint8_t c) const {
-    int byte = c / 8;
-    int bit = c % 8;
-    return ((bits_[byte] >> bit) & 1) != 0;
-  }
-
- protected:
-  GRPC_PCTENCODE_CONSTEXPR_FN LookupTable() : bits_{} {}
-
-  GRPC_PCTENCODE_CONSTEXPR_FN void SetBit(int x) {
-    int byte = x / 8;
-    int bit = x % 8;
-    bits_[byte] |= (uint8_t)(1 << bit);
-  }
-
- private:
-  uint8_t bits_[256 / 8];
-};
-
-class UrlTable : public LookupTable {
+class UrlTable : public BitSet<256> {
  public:
   GRPC_PCTENCODE_CONSTEXPR_FN UrlTable() {
-    for (int i = 'a'; i <= 'z'; i++) SetBit(i);
-    for (int i = 'A'; i <= 'Z'; i++) SetBit(i);
-    for (int i = '0'; i <= '9'; i++) SetBit(i);
-    SetBit('-');
-    SetBit('_');
-    SetBit('.');
-    SetBit('~');
+    for (int i = 'a'; i <= 'z'; i++) set(i);
+    for (int i = 'A'; i <= 'Z'; i++) set(i);
+    for (int i = '0'; i <= '9'; i++) set(i);
+    set('-');
+    set('_');
+    set('.');
+    set('~');
   }
 };
 
 static GRPC_PCTENCODE_CONSTEXPR_VALUE UrlTable g_url_table;
 
-class CompatibleTable : public LookupTable {
+class CompatibleTable : public BitSet<256> {
  public:
   GRPC_PCTENCODE_CONSTEXPR_FN CompatibleTable() {
     for (int i = 32; i <= 126; i++) {
       if (i == '%') continue;
-      SetBit(i);
+      set(i);
     }
   }
 };
 
 static GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
 
-const LookupTable& LookupTableForPercentEncodingType(PercentEncodingType type) {
+const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
   switch (type) {
     case PercentEncodingType::URL:
       return g_url_table;
@@ -99,7 +79,7 @@ grpc_slice PercentEncodeSlice(const grpc_slice& slice,
                               PercentEncodingType type) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
-  const LookupTable& lut = LookupTableForPercentEncodingType(type);
+  const BitSet<256>& lut = LookupTableForPercentEncodingType(type);
 
   // first pass: count the number of bytes needed to output this string
   size_t output_length = 0;
@@ -108,7 +88,7 @@ grpc_slice PercentEncodeSlice(const grpc_slice& slice,
   const uint8_t* p;
   bool any_reserved_bytes = false;
   for (p = slice_start; p < slice_end; p++) {
-    bool unres = lut.IsSet(*p);
+    bool unres = lut.is_set(*p);
     output_length += unres ? 1 : 3;
     any_reserved_bytes |= !unres;
   }
@@ -120,7 +100,7 @@ grpc_slice PercentEncodeSlice(const grpc_slice& slice,
   grpc_slice out = GRPC_SLICE_MALLOC(output_length);
   uint8_t* q = GRPC_SLICE_START_PTR(out);
   for (p = slice_start; p < slice_end; p++) {
-    if (lut.IsSet(*p)) {
+    if (lut.is_set(*p)) {
       *q++ = *p;
     } else {
       *q++ = '%';
@@ -151,7 +131,7 @@ absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
   const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
   bool any_percent_encoded_stuff = false;
-  const LookupTable& lut = LookupTableForPercentEncodingType(type);
+  const BitSet<256>& lut = LookupTableForPercentEncodingType(type);
   while (p != in_end) {
     if (*p == '%') {
       if (!valid_hex(++p, in_end)) return {};
@@ -159,7 +139,7 @@ absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
       p++;
       out_length++;
       any_percent_encoded_stuff = true;
-    } else if (lut.IsSet(*p)) {
+    } else if (lut.is_set(*p)) {
       p++;
       out_length++;
     } else {
