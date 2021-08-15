@@ -1600,6 +1600,7 @@ src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
+src/core/lib/gprpp/bitset.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \

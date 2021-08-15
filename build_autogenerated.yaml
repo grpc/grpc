@@ -739,6 +739,7 @@ libs:
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -1780,6 +1781,7 @@ libs:
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
