@@ -18,8 +18,8 @@ import argparse
 import datetime
 import os
 import re
-import sys
 import subprocess
+import sys
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))

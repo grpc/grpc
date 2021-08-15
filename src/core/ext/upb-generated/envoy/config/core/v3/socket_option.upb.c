@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/core/v3/socket_option.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -16,18 +16,18 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_config_core_v3_SocketOption__fields[6] = {
-  {1, UPB_SIZE(20, 24), 0, 0, 9, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 3, 1},
-  {3, UPB_SIZE(8, 8), 0, 0, 3, 1},
-  {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, 1},
-  {5, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 12, 1},
-  {6, UPB_SIZE(16, 16), 0, 0, 14, 1},
+  {1, UPB_SIZE(20, 24), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(8, 8), 0, 0, 3, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 12, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(16, 16), 0, 0, 14, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_core_v3_SocketOption_msginit = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
-  UPB_SIZE(48, 64), 6, false, 255,
+  UPB_SIZE(48, 64), 6, false, 6, 255,
 };
 
 #include "upb/port_undef.inc"

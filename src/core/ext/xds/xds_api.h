@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -109,9 +110,33 @@ class XdsApi {
       bool operator==(const HashPolicy& other) const;
       std::string ToString() const;
     };
-
     Matchers matchers;
     std::vector<HashPolicy> hash_policies;
+
+    struct RetryPolicy {
+      internal::StatusCodeSet retry_on;
+      uint32_t num_retries;
+
+      struct RetryBackOff {
+        Duration base_interval;
+        Duration max_interval;
+
+        bool operator==(const RetryBackOff& other) const {
+          return base_interval == other.base_interval &&
+                 max_interval == other.max_interval;
+        }
+        std::string ToString() const;
+      };
+      RetryBackOff retry_back_off;
+
+      bool operator==(const RetryPolicy& other) const {
+        return (retry_on == other.retry_on &&
+                num_retries == other.num_retries &&
+                retry_back_off == other.retry_back_off);
+      }
+      std::string ToString() const;
+    };
+    absl::optional<RetryPolicy> retry_policy;
 
     // Action for this route.
     // TODO(roth): When we can use absl::variant<>, consider using that
@@ -139,6 +164,7 @@ class XdsApi {
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers && cluster_name == other.cluster_name &&
+             retry_policy == other.retry_policy &&
              weighted_clusters == other.weighted_clusters &&
              max_stream_duration == other.max_stream_duration &&
              typed_per_filter_config == other.typed_per_filter_config;

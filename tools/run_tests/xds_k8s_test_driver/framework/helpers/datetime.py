@@ -24,6 +24,19 @@ def utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
 
+def shorten_utc_zone(utc_datetime_str: str) -> str:
+    """Replace ±00:00 timezone designator with Z (zero offset AKA Zulu time)."""
+    return RE_ZERO_OFFSET.sub('Z', utc_datetime_str)
+
+
+def iso8601_utc_time(timedelta: datetime.timedelta = None) -> str:
+    """Return datetime relative to current in ISO-8601 format, UTC tz."""
+    time: datetime.datetime = utc_now()
+    if timedelta:
+        time += timedelta
+    return shorten_utc_zone(time.isoformat())
+
+
 def datetime_suffix(*, seconds: bool = False) -> str:
     """Return current UTC date, and time in a format useful for resource naming.
 

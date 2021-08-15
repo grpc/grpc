@@ -19,18 +19,22 @@ modules.
 """
 import functools
 import logging
-from typing import Iterator, Optional
+import threading
+from typing import Iterator, List, Optional
 
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
+_XdsUpdateHealthServiceClient = grpc_testing.XdsUpdateHealthServiceClient
+_HealthClient = grpc_testing.HealthClient
 
 
 class XdsTestServer(framework.rpc.grpc.GrpcApp):
@@ -48,7 +52,8 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
                  server_id: Optional[str] = None,
                  xds_host: Optional[str] = None,
                  xds_port: Optional[int] = None,
-                 rpc_host: Optional[str] = None):
+                 rpc_host: Optional[str] = None,
+                 pod_name: Optional[str] = None):
         super().__init__(rpc_host=(rpc_host or ip))
         self.ip = ip
         self.rpc_port = rpc_port
@@ -56,11 +61,33 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
         self.secure_mode = secure_mode
         self.server_id = server_id
         self.xds_host, self.xds_port = xds_host, xds_port
+        self.pod_name = pod_name
 
     @property
     @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def update_health_service_client(self) -> _XdsUpdateHealthServiceClient:
+        return _XdsUpdateHealthServiceClient(
+            self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def health_client(self) -> _HealthClient:
+        return _HealthClient(self._make_channel(self.maintenance_port))
+
+    def set_serving(self):
+        logger.info('Setting health status to serving')
+        self.update_health_service_client.set_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
+
+    def set_not_serving(self):
+        logger.info('Setting health status to not serving')
+        self.update_health_service_client.set_not_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
 
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port
@@ -131,6 +158,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     DEFAULT_MAINTENANCE_PORT = 8080
     DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
 
+    _lock = threading.Lock()
+    _server_port_forwarding_offset = 0
+
     def __init__(self,
                  k8s_namespace,
                  *,
@@ -174,6 +204,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         # Kubernetes service account
         self.service_account_name = service_account_name or deployment_name
         self.service_account_template = service_account_template
+        # GCP.
+        self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -184,7 +217,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
-        self.port_forwarder = None
+        self.port_forwarders = []
 
     def run(self,
             *,
@@ -192,11 +225,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             maintenance_port=None,
             secure_mode=False,
             server_id=None,
-            replica_count=1) -> XdsTestServer:
-        # TODO(sergiitk): multiple replicas
-        if replica_count != 1:
-            raise NotImplementedError("Multiple replicas not yet supported")
-
+            replica_count=1) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security
@@ -214,6 +243,16 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         if not (isinstance(test_port, int) and
                 isinstance(maintenance_port, int)):
             raise TypeError('Port numbers must be integer')
+
+        logger.info(
+            'Deploying xDS test server "%s" to k8s namespace %s: test_port=%s '
+            'maintenance_port=%s secure_mode=%s server_id=%s replica_count=%s',
+            self.deployment_name, self.k8s_namespace.name, test_port,
+            maintenance_port, secure_mode, server_id, replica_count)
+        self._logs_explorer_link(deployment_name=self.deployment_name,
+                                 namespace_name=self.k8s_namespace.name,
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
 
         # Create namespace.
         super().run()
@@ -267,32 +306,45 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
 
         # Wait for pods running
         pods = self.k8s_namespace.list_deployment_pods(self.deployment)
+
+        servers = []
         for pod in pods:
-            self._wait_pod_started(pod.metadata.name)
+            pod_name = pod.metadata.name
+            self._wait_pod_started(pod_name)
 
-        # TODO(sergiitk): This is why multiple replicas not yet supported
-        pod = pods[0]
-        pod_ip = pod.status.pod_ip
-        rpc_host = None
-        # Experimental, for local debugging.
-        if self.debug_use_port_forwarding:
-            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                        pod_ip, maintenance_port)
-            self.port_forwarder = self.k8s_namespace.port_forward_pod(
-                pod, remote_port=maintenance_port)
-            rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+            pod_ip = pod.status.pod_ip
+            rpc_host = None
+            # Experimental, for local debugging.
+            local_port = maintenance_port
+            if self.debug_use_port_forwarding:
+                with KubernetesServerRunner._lock:
+                    local_port = maintenance_port + KubernetesServerRunner._server_port_forwarding_offset
+                    KubernetesServerRunner._server_port_forwarding_offset += 1
+                logger.info(
+                    'LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
+                    pod_ip, maintenance_port, local_port)
+                self.port_forwarders.append(
+                    self.k8s_namespace.port_forward_pod(
+                        pod,
+                        remote_port=maintenance_port,
+                        local_port=local_port))
+                rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestServer(ip=pod_ip,
-                             rpc_port=test_port,
-                             maintenance_port=maintenance_port,
-                             secure_mode=secure_mode,
-                             server_id=server_id,
-                             rpc_host=rpc_host)
+            servers.append(
+                XdsTestServer(ip=pod_ip,
+                              rpc_port=test_port,
+                              maintenance_port=local_port,
+                              secure_mode=secure_mode,
+                              server_id=server_id,
+                              rpc_host=rpc_host,
+                              pod_name=pod_name))
+        return servers
 
     def cleanup(self, *, force=False, force_namespace=False):
-        if self.port_forwarder:
-            self.k8s_namespace.port_forward_stop(self.port_forwarder)
-            self.port_forwarder = None
+        if self.port_forwarders:
+            for port_forwarder in self.port_forwarders:
+                self.k8s_namespace.port_forward_stop(port_forwarder)
+            self.port_forwarders = []
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
             self.deployment = None

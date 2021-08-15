@@ -14,16 +14,16 @@
 
 import argparse
 import glob
-import yaml
-import pickle
+import multiprocessing
 import os
+import pickle
 import shutil
 import sys
 import tempfile
-import multiprocessing
-from typing import Union, Dict, List
+from typing import Dict, List, Union
 
 import _utils
+import yaml
 
 PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                             "..")

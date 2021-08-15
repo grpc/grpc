@@ -17,6 +17,10 @@ from absl import flags
 KUBE_CONTEXT = flags.DEFINE_string("kube_context",
                                    default=None,
                                    help="Kubectl context to use")
+SECONDARY_KUBE_CONTEXT = flags.DEFINE_string(
+    "secondary_kube_context",
+    default=None,
+    help="Secondary kubectl context to use for cluster in another region")
 GCP_SERVICE_ACCOUNT = flags.DEFINE_string(
     "gcp_service_account",
     default=None,

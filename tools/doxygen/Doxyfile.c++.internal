@@ -1225,6 +1225,7 @@ src/core/ext/transport/chttp2/transport/frame_window_update.cc \
 src/core/ext/transport/chttp2/transport/frame_window_update.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder.h \
+src/core/ext/transport/chttp2/transport/hpack_encoder_index.h \
 src/core/ext/transport/chttp2/transport/hpack_parser.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser.h \
 src/core/ext/transport/chttp2/transport/hpack_table.cc \
@@ -1237,6 +1238,7 @@ src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
 src/core/ext/transport/chttp2/transport/incoming_metadata.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
+src/core/ext/transport/chttp2/transport/popularity_count.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/stream_map.cc \
 src/core/ext/transport/chttp2/transport/stream_map.h \
@@ -1286,10 +1288,14 @@ src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h \
+src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c \
+src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h \
+src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c \
+src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
@@ -1302,6 +1308,8 @@ src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h \
+src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c \
+src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h \
 src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h \
 src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c \
@@ -1354,6 +1362,8 @@ src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
 src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h \
 src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c \
 src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h \
+src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
+src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c \
@@ -1482,10 +1492,14 @@ src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
@@ -1498,6 +1512,8 @@ src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c \
@@ -1548,6 +1564,8 @@ src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c \
@@ -1701,7 +1719,6 @@ src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
-src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
@@ -1735,11 +1752,6 @@ src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
 src/core/lib/gpr/tls.h \
-src/core/lib/gpr/tls_gcc.h \
-src/core/lib/gpr/tls_msvc.h \
-src/core/lib/gpr/tls_pthread.cc \
-src/core/lib/gpr/tls_pthread.h \
-src/core/lib/gpr/tls_stdcpp.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -1749,6 +1761,7 @@ src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
+src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/examine_stack.cc \
@@ -1763,10 +1776,12 @@ src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/manual_constructor.h \
+src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/orphanable.h \
+src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \

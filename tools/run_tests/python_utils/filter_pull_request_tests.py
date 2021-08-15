@@ -17,8 +17,9 @@
 from __future__ import print_function
 
 import re
-import six
 import subprocess
+
+import six
 
 
 class TestSuite:
