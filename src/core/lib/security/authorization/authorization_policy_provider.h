@@ -20,13 +20,14 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 
+struct AuthorizationEngines {
+  grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> allow_engine;
+  grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine;
+};
+
 struct grpc_authorization_policy_provider
     : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
  public:
-  struct AuthorizationEngines {
-    grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> allow_engine;
-    grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine;
-  };
   virtual AuthorizationEngines engines() const = 0;
 };
 

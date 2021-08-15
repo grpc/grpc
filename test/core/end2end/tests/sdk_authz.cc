@@ -98,6 +98,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   const char* error_string = nullptr;
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
+  int was_cancelled = 2;
 
   const char* authz_policy =
       "{"
@@ -128,6 +129,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
 
   grpc_end2end_test_fixture f = begin_test(
       config, "test_allow_authorized_request", nullptr, &server_args);
+  grpc_authorization_policy_provider_release(provider);
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -176,10 +178,38 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_ERROR, "************************Status: %d", status);
-  GPR_ASSERT(GRPC_STATUS_OK == status);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, ""));
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv);
+  GPR_ASSERT(GRPC_STATUS_UNIMPLEMENTED == status);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+
+  grpc_slice_unref(details);
+  gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -188,7 +218,6 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   grpc_call_unref(c);
   grpc_call_unref(s);
   cq_verifier_destroy(cqv);
-  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -196,13 +225,10 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
 
 static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   grpc_call* c;
-  grpc_call* s;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
   grpc_status_code status;
   const char* error_string = nullptr;
   grpc_call_error error;
@@ -247,6 +273,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
 
   grpc_end2end_test_fixture f = begin_test(
       config, "test_deny_unauthorized_request", nullptr, &server_args);
+  grpc_authorization_policy_provider_release(provider);
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -257,8 +284,6 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -287,15 +312,9 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
@@ -304,12 +323,9 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
   cq_verifier_destroy(cqv);
-  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -318,13 +334,10 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
 static void test_deny_request_no_match_in_policy(
     grpc_end2end_test_config config) {
   grpc_call* c;
-  grpc_call* s;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
   grpc_status_code status;
   const char* error_string = nullptr;
   grpc_call_error error;
@@ -359,6 +372,7 @@ static void test_deny_request_no_match_in_policy(
 
   grpc_end2end_test_fixture f = begin_test(
       config, "test_deny_request_no_match_in_policy", nullptr, &server_args);
+  grpc_authorization_policy_provider_release(provider);
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -369,8 +383,6 @@ static void test_deny_request_no_match_in_policy(
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -399,15 +411,9 @@ static void test_deny_request_no_match_in_policy(
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
@@ -416,12 +422,9 @@ static void test_deny_request_no_match_in_policy(
   gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
   cq_verifier_destroy(cqv);
-  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
