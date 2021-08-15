@@ -1308,6 +1308,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "bitset",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
