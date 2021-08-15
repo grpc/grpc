@@ -29,9 +29,6 @@ class SdkServerAuthzFilter {
  private:
   class CallData {
    public:
-    CallData(grpc_call_element* elem, const grpc_call_element_args& args);
-    ~CallData();
-
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -41,21 +38,15 @@ class SdkServerAuthzFilter {
                         grpc_closure* /*ignored*/);
 
    private:
-    static bool IsAuthorized(SdkServerAuthzFilter* chand,
-                             grpc_transport_stream_op_batch* batch);
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-    static void RecvTrailingMetadataReady(void* user_data,
-                                          grpc_error_handle err);
+    CallData(grpc_call_element* elem, const grpc_call_element_args& args);
 
-    CallCombiner* call_combiner_;
-    grpc_transport_stream_op_batch* recv_initial_metadata_batch_;
+    bool IsAuthorized(SdkServerAuthzFilter* chand);
+
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+
+    grpc_metadata_batch* recv_initial_metadata_batch_;
     grpc_closure* original_recv_initial_metadata_ready_;
     grpc_closure recv_initial_metadata_ready_;
-    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
-    grpc_closure* original_recv_trailing_metadata_ready_;
-    grpc_closure recv_trailing_metadata_ready_;
-    grpc_error_handle recv_trailing_metadata_error_;
-    bool seen_recv_trailing_metadata_ready_ = false;
   };
 
   SdkServerAuthzFilter(
