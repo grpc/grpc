@@ -19,7 +19,6 @@
 #include "absl/container/inlined_vector.h"
 
 #include "include/grpcpp/security/tls_credentials_options.h"
-
 #include "src/cpp/common/tls_credentials_options_util.h"
 
 namespace grpc {

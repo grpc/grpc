@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/promise/poll.h"
 

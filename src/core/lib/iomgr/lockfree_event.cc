@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/lockfree_event.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 

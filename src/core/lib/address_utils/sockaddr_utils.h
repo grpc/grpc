@@ -24,7 +24,6 @@
 #include <string>
 
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the

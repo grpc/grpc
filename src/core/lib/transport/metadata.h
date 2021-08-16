@@ -25,7 +25,6 @@
 
 #include "include/grpc/grpc.h"
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"

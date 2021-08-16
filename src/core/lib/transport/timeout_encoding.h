@@ -23,7 +23,6 @@
 
 #include "include/grpc/slice.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 

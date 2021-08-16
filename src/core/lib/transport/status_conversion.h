@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"
 

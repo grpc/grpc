@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"

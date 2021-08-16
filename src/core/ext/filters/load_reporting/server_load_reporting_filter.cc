@@ -28,7 +28,6 @@
 #include "include/grpc/slice.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"

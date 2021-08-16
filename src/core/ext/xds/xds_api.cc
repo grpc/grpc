@@ -88,7 +88,6 @@
 #include "include/grpc/impl/codegen/log.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"

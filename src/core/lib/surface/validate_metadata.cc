@@ -23,7 +23,6 @@
 
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"

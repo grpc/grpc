@@ -21,7 +21,6 @@
 #include "include/grpc/slice.h"
 #include "include/grpc/slice_buffer.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"

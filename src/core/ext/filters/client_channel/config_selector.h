@@ -26,7 +26,6 @@
 #include "absl/strings/string_view.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"

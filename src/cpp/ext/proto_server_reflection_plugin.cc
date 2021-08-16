@@ -20,7 +20,6 @@
 #include "include/grpcpp/impl/server_builder_plugin.h"
 #include "include/grpcpp/impl/server_initializer.h"
 #include "include/grpcpp/server.h"
-
 #include "src/cpp/ext/proto_server_reflection.h"
 
 namespace grpc {

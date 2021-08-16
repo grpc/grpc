@@ -17,7 +17,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/time_util.h"
 
 namespace grpc_core {

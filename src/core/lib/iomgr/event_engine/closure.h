@@ -17,7 +17,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 

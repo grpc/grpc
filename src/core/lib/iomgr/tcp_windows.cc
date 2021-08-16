@@ -31,7 +31,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/log_windows.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

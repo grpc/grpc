@@ -15,7 +15,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 
 namespace {

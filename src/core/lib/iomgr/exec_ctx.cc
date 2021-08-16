@@ -23,7 +23,6 @@
 #include "include/grpc/event_engine/event_engine.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"

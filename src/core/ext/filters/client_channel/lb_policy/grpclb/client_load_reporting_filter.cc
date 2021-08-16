@@ -24,7 +24,6 @@
 
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/iomgr/error.h"

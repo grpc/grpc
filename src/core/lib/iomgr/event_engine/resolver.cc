@@ -16,7 +16,6 @@
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "absl/functional/bind_front.h"
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"

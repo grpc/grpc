@@ -28,7 +28,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/thd_id.h"
-
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/memory.h"
 

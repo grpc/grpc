@@ -32,7 +32,6 @@
 #include "include/grpc/slice_buffer.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice_internal.h"

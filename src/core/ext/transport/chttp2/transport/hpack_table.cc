@@ -27,7 +27,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/slice/slice_internal.h"

@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"

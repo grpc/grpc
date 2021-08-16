@@ -37,7 +37,6 @@
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/sync.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

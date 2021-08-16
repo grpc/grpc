@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/impl/codegen/grpc_types.h"
-
 #include "src/core/lib/channel/handshaker.h"
 
 // A handshaker factory is used to create handshakers.

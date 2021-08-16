@@ -23,7 +23,6 @@
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 

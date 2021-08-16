@@ -30,7 +30,6 @@
 #include <utility>
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/construct_destruct.h"
 
 namespace grpc_core {

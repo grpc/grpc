@@ -30,7 +30,6 @@
 #include <unistd.h>
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {

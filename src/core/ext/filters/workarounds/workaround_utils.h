@@ -20,7 +20,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/support/workaround_list.h"
-
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_WORKAROUND_PRIORITY_HIGH 10001

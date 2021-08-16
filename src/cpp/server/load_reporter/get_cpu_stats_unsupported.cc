@@ -21,7 +21,6 @@
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS) && !defined(GPR_APPLE)
 
 #include "include/grpc/support/log.h"
-
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
 namespace grpc {

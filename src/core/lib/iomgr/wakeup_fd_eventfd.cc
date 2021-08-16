@@ -27,7 +27,6 @@
 #include <unistd.h>
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
 

@@ -25,7 +25,6 @@
 #include "include/grpcpp/security/tls_credentials_options.h"
 
 #include "include/grpc/grpc_security.h"
-
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {

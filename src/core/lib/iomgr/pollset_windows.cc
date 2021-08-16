@@ -23,7 +23,6 @@
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

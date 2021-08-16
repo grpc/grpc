@@ -27,7 +27,6 @@
 
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 

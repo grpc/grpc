@@ -38,7 +38,6 @@
 #include "include/grpcpp/support/channel_arguments.h"
 #include "include/grpcpp/support/config.h"
 #include "include/grpcpp/support/status.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/surface/completion_queue.h"

@@ -24,7 +24,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/authority.h"

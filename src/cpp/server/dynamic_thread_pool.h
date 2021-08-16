@@ -24,7 +24,6 @@
 #include <queue>
 
 #include "include/grpcpp/support/config.h"
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/thread_pool_interface.h"

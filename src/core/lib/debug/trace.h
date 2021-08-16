@@ -23,7 +23,6 @@
 
 #include <stdbool.h>
 #include "include/grpc/support/atm.h"
-
 #include "src/core/lib/gprpp/global_config.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);

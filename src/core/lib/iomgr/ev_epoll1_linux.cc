@@ -47,7 +47,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/cpu.h"
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tls.h"

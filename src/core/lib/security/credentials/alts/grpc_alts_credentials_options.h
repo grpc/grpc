@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc_security.h"
-
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
 /* V-table for grpc_alts_credentials_options */

@@ -23,7 +23,6 @@
 
 #include "include/grpc/compression.h"
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 #ifdef __cplusplus

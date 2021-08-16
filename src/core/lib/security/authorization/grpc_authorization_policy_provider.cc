@@ -16,7 +16,6 @@
 
 #include "include/grpc/grpc_security.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 

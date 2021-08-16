@@ -32,7 +32,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
 #include "include/grpc/support/thd_id.h"
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/memory.h"

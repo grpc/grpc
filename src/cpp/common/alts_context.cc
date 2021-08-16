@@ -18,7 +18,6 @@
 
 #include "include/grpcpp/security/alts_context.h"
 #include "include/grpc/grpc_security.h"
-
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 

@@ -32,7 +32,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic.h"

@@ -26,7 +26,6 @@
 
 #include "include/grpc/slice.h"
 #include "include/grpc/slice_buffer.h"
-
 #include "src/core/lib/gpr/string.h"
 
 /* Calls gpr_dump on a slice. */

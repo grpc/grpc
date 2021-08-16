@@ -19,7 +19,6 @@
 #include "src/core/lib/surface/channel.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/api_trace.h"

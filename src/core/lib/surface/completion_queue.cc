@@ -33,7 +33,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"

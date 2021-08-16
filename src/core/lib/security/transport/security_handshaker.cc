@@ -27,7 +27,6 @@
 #include "include/grpc/slice_buffer.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/handshaker.h"

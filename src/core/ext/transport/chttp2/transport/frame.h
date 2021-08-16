@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/iomgr/error.h"
 
 /* defined in internal.h */

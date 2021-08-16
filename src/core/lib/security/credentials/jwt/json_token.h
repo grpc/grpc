@@ -23,7 +23,6 @@
 
 #include <openssl/rsa.h>
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/json/json.h"
 
 /* --- Constants. --- */

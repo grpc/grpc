@@ -24,7 +24,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/support/atm.h"
-
 #include "src/core/lib/iomgr/closure.h"
 
 namespace grpc_core {

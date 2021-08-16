@@ -16,7 +16,6 @@
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 

@@ -47,8 +47,10 @@ def check_port_platform_inclusion(directory_root):
                     if '#include' in l:
                         if l not in [
                                 '#include <grpc/support/port_platform.h>\n',
-                                '#include <grpc/impl/codegen/port_platform.h>\n'
+                                '#include <grpc/impl/codegen/port_platform.h>\n',
+                                '#include "include/grpc/support/port_platform.h"\n',
                         ]:
+                            print("%s[%d]: %r" % (path, index, l))
                             bad_files.append(path)
                         elif all_lines_in_file[index + 1] != '\n':
                             # Require a blank line after including port_platform.h in
@@ -70,7 +72,7 @@ if sys.argv[1:] == ['--fix']:
         with open(path) as f:
             for l in f.readlines():
                 if not found and '#include' in l:
-                    text += '#include <grpc/impl/codegen/port_platform.h>\n\n'
+                    text += '#include "include/grpc/impl/codegen/port_platform.h"\n\n'
                     found = True
                 text += l
         with open(path, 'w') as f:

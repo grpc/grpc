@@ -27,7 +27,6 @@
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/cpu.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/debug_location.h"

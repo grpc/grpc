@@ -51,7 +51,6 @@
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"

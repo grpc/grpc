@@ -22,7 +22,6 @@
 #include "include/grpcpp/impl/server_builder_plugin.h"
 #include "include/grpcpp/impl/server_initializer.h"
 #include "include/grpcpp/server.h"
-
 #include "src/cpp/server/channelz/channelz_service.h"
 
 namespace grpc {

@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_TRANSACTION_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_TRANSACTION_H
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/support/log.h"
 

@@ -20,7 +20,6 @@
 
 #include "include/grpc/support/log.h"
 #include "include/grpcpp/impl/codegen/sync.h"
-
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {

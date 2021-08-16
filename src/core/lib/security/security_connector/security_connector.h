@@ -24,7 +24,6 @@
 #include <stdbool.h>
 
 #include "include/grpc/grpc_security.h"
-
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"

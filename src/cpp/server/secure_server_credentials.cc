@@ -23,7 +23,6 @@
 #include "include/grpcpp/impl/codegen/slice.h"
 #include "include/grpcpp/impl/grpc_library.h"
 #include "include/grpcpp/security/auth_metadata_processor.h"
-
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 

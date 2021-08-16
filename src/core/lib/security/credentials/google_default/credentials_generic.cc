@@ -26,7 +26,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/env.h"
 
 std::string grpc_get_well_known_google_credentials_file_path_impl(void) {

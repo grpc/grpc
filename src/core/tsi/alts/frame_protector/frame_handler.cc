@@ -26,7 +26,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 /* Use little endian to interpret a string of bytes as uint32_t. */

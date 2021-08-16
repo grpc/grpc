@@ -27,7 +27,6 @@
 #include <sys/timeb.h>
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/gpr/time_precise.h"
 
 static LARGE_INTEGER g_start_time;

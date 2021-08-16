@@ -23,7 +23,6 @@
 
 #include "include/grpc/support/sync.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount;

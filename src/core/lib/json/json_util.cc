@@ -21,7 +21,6 @@
 #include "src/core/lib/json/json_util.h"
 
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/gpr/string.h"
 
 namespace grpc_core {

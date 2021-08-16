@@ -21,7 +21,6 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 
 #include "include/grpc/byte_buffer_reader.h"
-
 #include "src/core/lib/slice/slice_internal.h"
 
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {

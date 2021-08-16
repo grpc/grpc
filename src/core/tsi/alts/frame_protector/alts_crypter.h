@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/tsi/alts/crypt/gsec.h"
 
 /**

@@ -29,7 +29,6 @@
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/avl/avl.h"
 
 namespace grpc_core {

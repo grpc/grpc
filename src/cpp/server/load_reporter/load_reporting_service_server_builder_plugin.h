@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpcpp/impl/server_builder_plugin.h"
-
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 namespace grpc {

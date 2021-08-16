@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"

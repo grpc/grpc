@@ -24,7 +24,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpcpp/alarm.h"
 #include "include/grpcpp/grpcpp.h"
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"

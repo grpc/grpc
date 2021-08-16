@@ -26,7 +26,6 @@
 #include "absl/strings/string_view.h"
 
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/gpr/murmur_hash.h"
 
 namespace grpc_core {

@@ -17,7 +17,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/event_engine/endpoint_config.h"
-
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_event_engine {

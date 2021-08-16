@@ -26,7 +26,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */

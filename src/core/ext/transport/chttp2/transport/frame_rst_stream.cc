@@ -26,7 +26,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/transport/http2_errors.h"

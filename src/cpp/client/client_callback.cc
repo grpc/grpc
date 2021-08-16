@@ -16,7 +16,6 @@
  */
 
 #include "include/grpcpp/impl/codegen/client_callback.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"

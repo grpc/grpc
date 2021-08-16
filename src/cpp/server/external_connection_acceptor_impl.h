@@ -25,7 +25,6 @@
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server_builder.h"
 #include "include/grpcpp/support/channel_arguments.h"
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 

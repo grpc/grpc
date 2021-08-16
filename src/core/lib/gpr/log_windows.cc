@@ -28,7 +28,6 @@
 #include "include/grpc/support/log_windows.h"
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gprpp/examine_stack.h"

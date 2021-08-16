@@ -45,7 +45,6 @@
 #include "absl/strings/str_format.h"
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"

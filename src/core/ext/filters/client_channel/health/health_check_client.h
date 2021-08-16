@@ -23,7 +23,6 @@
 
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"

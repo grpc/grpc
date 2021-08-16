@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc_security.h"
-
 #include "src/core/lib/security/credentials/credentials.h"
 
 /* Main class for grpc local channel credential. */

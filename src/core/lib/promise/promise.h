@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PROMISE_H
 #define GRPC_CORE_LIB_PROMISE_PROMISE_H
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include "include/grpc/support/port_platform.h"
 
 #include <functional>
 #include "absl/types/optional.h"

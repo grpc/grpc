@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/ext/filters/workarounds/workaround_utils.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"

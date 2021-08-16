@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include "include/grpc/compression.h"
-
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"

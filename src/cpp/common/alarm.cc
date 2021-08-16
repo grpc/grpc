@@ -21,6 +21,7 @@
 
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/port_platform.h"
+
 #include "include/grpcpp/completion_queue.h"
 #include "include/grpcpp/impl/grpc_library.h"
 #include "include/grpcpp/support/time.h"

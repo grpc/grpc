@@ -23,7 +23,6 @@
 #include <memory>
 
 #include "include/grpcpp/support/config.h"
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/resource_quota.h"

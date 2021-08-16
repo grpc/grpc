@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 #include "include/grpc/slice.h"
-
 #include "src/core/lib/iomgr/error.h"
 
 /* Loads the content of a file into a slice. add_null_terminator will add

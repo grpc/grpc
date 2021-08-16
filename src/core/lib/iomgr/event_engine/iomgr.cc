@@ -17,7 +17,6 @@
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/promise.h"

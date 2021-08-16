@@ -27,7 +27,6 @@
 #include "absl/status/status.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"

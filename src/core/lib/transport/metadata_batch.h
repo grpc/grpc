@@ -28,7 +28,6 @@
 #include "include/grpc/grpc.h"
 #include "include/grpc/slice.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"

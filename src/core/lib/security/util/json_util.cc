@@ -24,7 +24,6 @@
 
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/util/json_util.h"
 

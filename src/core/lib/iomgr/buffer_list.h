@@ -26,7 +26,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"

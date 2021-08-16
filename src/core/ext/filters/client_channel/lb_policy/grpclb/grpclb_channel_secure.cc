@@ -27,7 +27,6 @@
 #include "include/grpc/grpc_security.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/server_address.h"

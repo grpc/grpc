@@ -26,7 +26,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/lib/iomgr/error.h"
 
 #define MAX_ERROR_DESCRIPTION 256

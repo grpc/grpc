@@ -26,7 +26,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 

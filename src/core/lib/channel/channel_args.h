@@ -24,7 +24,6 @@
 #include <string>
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/surface/channel_stack_type.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.

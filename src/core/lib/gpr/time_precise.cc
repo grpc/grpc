@@ -28,7 +28,6 @@
 #include "include/grpc/impl/codegen/gpr_types.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/gpr/time_precise.h"
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM

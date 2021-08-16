@@ -23,7 +23,6 @@
 #include "absl/types/optional.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"

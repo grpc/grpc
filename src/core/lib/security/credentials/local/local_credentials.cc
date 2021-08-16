@@ -23,7 +23,6 @@
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 

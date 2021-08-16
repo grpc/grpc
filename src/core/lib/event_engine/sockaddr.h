@@ -18,7 +18,6 @@
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "include/grpc/event_engine/port.h"
-
 #include "src/core/lib/iomgr/port.h"
 
 typedef struct sockaddr grpc_sockaddr;

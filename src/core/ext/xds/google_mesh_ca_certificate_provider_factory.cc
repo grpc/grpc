@@ -26,7 +26,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"

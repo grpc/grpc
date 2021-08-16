@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc.h"
 #include "src/core/lib/gprpp/ref_counted.h"

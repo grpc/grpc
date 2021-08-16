@@ -33,7 +33,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 char* gpr_strdup(const char* src) {

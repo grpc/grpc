@@ -28,7 +28,6 @@
 
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 

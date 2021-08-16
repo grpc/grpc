@@ -28,7 +28,6 @@
 
 #include "include/grpc/grpc_security.h"
 #include "include/grpc/slice_buffer.h"
-
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"

@@ -30,7 +30,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/gpr/string.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {

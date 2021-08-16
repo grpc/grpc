@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/grpc_security.h"
-
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

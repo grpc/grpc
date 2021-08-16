@@ -15,7 +15,6 @@
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/endpoint_config_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"

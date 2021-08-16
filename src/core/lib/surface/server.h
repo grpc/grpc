@@ -26,7 +26,6 @@
 #include "absl/types/optional.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"

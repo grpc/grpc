@@ -35,7 +35,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {

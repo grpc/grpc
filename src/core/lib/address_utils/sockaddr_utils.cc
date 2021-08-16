@@ -32,7 +32,6 @@
 #include "include/grpc/event_engine/event_engine.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"

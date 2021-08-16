@@ -30,7 +30,6 @@
 #include <string.h>
 
 #include "include/grpc/support/alloc.h"
-
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"

@@ -24,7 +24,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"

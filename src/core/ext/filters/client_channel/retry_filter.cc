@@ -23,7 +23,6 @@
 #include "absl/strings/strip.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"

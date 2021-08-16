@@ -28,7 +28,6 @@
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error_cfstream.h"

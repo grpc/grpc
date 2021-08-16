@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/slice_buffer.h"
-
 #include "src/core/tsi/transport_security_interface.h"
 
 /**

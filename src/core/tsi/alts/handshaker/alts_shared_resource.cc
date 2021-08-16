@@ -21,7 +21,6 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;

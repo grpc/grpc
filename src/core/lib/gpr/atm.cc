@@ -19,7 +19,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/support/atm.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,

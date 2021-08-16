@@ -24,7 +24,6 @@
 #include <unistd.h>
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/stat.h"
 
 namespace grpc_core {

@@ -24,7 +24,6 @@
 #include "include/grpc/byte_buffer.h"
 #include "include/grpc/byte_buffer_reader.h"
 #include "include/grpc/grpc.h"
-
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
 

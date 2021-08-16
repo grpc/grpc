@@ -28,7 +28,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"

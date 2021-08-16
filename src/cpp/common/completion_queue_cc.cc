@@ -24,7 +24,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpcpp/impl/grpc_library.h"
 #include "include/grpcpp/support/time.h"
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/sync.h"

@@ -22,7 +22,6 @@
 #include "include/grpc/support/log.h"
 #include "include/grpcpp/security/alts_context.h"
 #include "include/grpcpp/security/alts_util.h"
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/cpp/common/secure_auth_context.h"

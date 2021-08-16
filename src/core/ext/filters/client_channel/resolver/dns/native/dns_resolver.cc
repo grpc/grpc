@@ -27,7 +27,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"

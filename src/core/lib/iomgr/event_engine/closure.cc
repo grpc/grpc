@@ -15,7 +15,6 @@
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/transport/error_utils.h"

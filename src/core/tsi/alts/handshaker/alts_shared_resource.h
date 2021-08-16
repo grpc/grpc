@@ -23,7 +23,6 @@
 
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/completion_queue.h"

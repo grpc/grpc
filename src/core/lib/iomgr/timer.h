@@ -25,7 +25,6 @@
 
 #include "include/grpc/event_engine/event_engine.h"
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 

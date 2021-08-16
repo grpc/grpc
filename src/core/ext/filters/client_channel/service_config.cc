@@ -23,7 +23,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"

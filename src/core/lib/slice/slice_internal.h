@@ -26,7 +26,6 @@
 #include <string.h>
 #include "include/grpc/slice.h"
 #include "include/grpc/slice_buffer.h"
-
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"

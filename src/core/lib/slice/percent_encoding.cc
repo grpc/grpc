@@ -21,7 +21,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice_internal.h"
 

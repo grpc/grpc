@@ -26,7 +26,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/iomgr/resolve_address.h"
 
 #include "absl/strings/string_view.h"

@@ -24,7 +24,6 @@
 #include <stddef.h>
 
 #include "include/grpc/support/time.h"
-
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

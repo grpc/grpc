@@ -26,7 +26,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/surface/api_trace.h"
 
 /** -- gRPC TLS server authorization check API implementation. -- **/

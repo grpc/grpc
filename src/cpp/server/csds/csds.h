@@ -21,8 +21,8 @@
 
 #include "absl/status/status.h"
 #include "include/grpc/support/port_platform.h"
-#include "include/grpcpp/grpcpp.h"
 
+#include "include/grpcpp/grpcpp.h"
 #include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 
 namespace grpc {

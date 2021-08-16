@@ -21,7 +21,6 @@
 #include "include/grpcpp/channel.h"
 #include "include/grpcpp/impl/grpc_library.h"
 #include "include/grpcpp/support/channel_arguments.h"
-
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {

@@ -22,7 +22,6 @@
 #include "include/grpc/support/port_platform.h"
 
 #include "include/grpc/impl/codegen/grpc_types.h"
-
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {

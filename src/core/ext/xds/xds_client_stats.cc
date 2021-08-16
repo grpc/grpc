@@ -24,7 +24,6 @@
 
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/ext/xds/xds_client.h"
 
 namespace grpc_core {

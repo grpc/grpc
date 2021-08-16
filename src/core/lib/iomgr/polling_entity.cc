@@ -20,7 +20,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/iomgr/polling_entity.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(

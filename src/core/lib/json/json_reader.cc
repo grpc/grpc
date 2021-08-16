@@ -26,7 +26,6 @@
 #include "absl/strings/str_format.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/json/json.h"
 
 #define GRPC_JSON_MAX_DEPTH 255

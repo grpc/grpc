@@ -27,7 +27,6 @@
 #include "absl/container/inlined_vector.h"
 
 #include "include/grpc/slice.h"
-
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

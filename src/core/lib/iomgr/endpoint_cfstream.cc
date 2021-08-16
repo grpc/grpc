@@ -28,7 +28,6 @@
 #include "include/grpc/slice_buffer.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"

@@ -24,7 +24,6 @@
 #include "absl/container/inlined_vector.h"
 
 #include "include/grpc/impl/codegen/grpc_types.h"
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 

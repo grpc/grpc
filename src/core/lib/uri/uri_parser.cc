@@ -30,7 +30,6 @@
 #include "absl/strings/str_split.h"
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gpr/string.h"
 
 namespace grpc_core {

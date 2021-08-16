@@ -25,7 +25,6 @@
 #include <limits.h>
 
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"

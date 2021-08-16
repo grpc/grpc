@@ -20,7 +20,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/compression/stream_compression_identity.h"
 #include "src/core/lib/slice/slice_internal.h"
 

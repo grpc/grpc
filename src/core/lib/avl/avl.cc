@@ -25,7 +25,6 @@
 
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/string_util.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable) {

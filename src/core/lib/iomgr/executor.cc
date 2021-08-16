@@ -26,7 +26,6 @@
 #include "include/grpc/support/cpu.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"

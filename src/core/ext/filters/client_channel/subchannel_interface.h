@@ -23,7 +23,6 @@
 
 #include "include/grpc/impl/codegen/connectivity_state.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 

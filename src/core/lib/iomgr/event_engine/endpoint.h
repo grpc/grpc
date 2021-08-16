@@ -18,7 +18,6 @@
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "include/grpc/event_engine/event_engine.h"
-
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 

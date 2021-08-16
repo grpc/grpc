@@ -30,7 +30,6 @@
 #include "upb/def.h"
 
 #include "include/grpc/grpc.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/json/json.h"
 

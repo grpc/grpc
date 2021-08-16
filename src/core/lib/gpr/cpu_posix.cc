@@ -28,7 +28,6 @@
 #include "include/grpc/support/cpu.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gpr/useful.h"
 
 static long ncpus = 0;

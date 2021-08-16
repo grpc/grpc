@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 #include "include/grpc/support/thd_id.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"

@@ -20,7 +20,6 @@
 
 #include "include/grpc/support/sync.h"
 #include "include/grpcpp/channel.h"
-
 #include "src/core/lib/surface/channel.h"
 
 namespace grpc {

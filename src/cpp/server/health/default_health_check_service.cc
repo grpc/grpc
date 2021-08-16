@@ -25,7 +25,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpcpp/impl/codegen/method_handler.h"
-
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/upb.hpp"

@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_BITSET_H
 #define GRPC_CORE_LIB_GPRPP_BITSET_H
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include "include/grpc/support/port_platform.h"
 
 #include <utility>
 

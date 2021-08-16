@@ -31,7 +31,6 @@
 #include "include/grpc/fork.h"
 #include "include/grpc/grpc.h"
 #include "include/grpc/support/log.h"
-
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"

@@ -27,7 +27,6 @@
 #include "include/grpc/support/atm.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/memory.h"
 

@@ -30,7 +30,6 @@
 #include "include/grpcpp/impl/codegen/completion_queue.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
 #include "include/grpcpp/support/byte_buffer.h"
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 

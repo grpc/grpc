@@ -25,7 +25,6 @@
 
 #include <zlib.h>
 #include "include/grpc/slice_buffer.h"
-
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;

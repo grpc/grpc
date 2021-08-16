@@ -24,7 +24,6 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/sync.h"
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
