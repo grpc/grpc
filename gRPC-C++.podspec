@@ -203,6 +203,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/variant', abseil_version
 
     ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
@@ -283,6 +284,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -554,9 +556,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/match.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/orphanable.h',
+                      'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/stat.h',
@@ -943,6 +947,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -1214,9 +1219,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/orphanable.h',
+                              'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',

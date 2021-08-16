@@ -31,3 +31,8 @@ echo $ANDROID_NDK_HOME
 # clang compiler to check if sources can pass a set of warning options.
 bazel build --define=use_strict_warning=true \
   //examples/android/binder/java/io/grpc/binder/cpp/example:app
+
+# Make sure the Java code that will be invoked by binder transport
+# implementation builds
+bazel build --define=use_strict_warning=true \
+  @binder_transport_android_helper//io/grpc/binder/cpp:connection_helper

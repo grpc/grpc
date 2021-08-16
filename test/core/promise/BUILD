@@ -43,6 +43,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    # Why promise_map_test and not map_test?
+    # third_party/benchmark defines a map_test in its cmakefile, and we depend
+    # on that from our cmakefile, and cmake wants to have a flat namespace to
+    # deal with xcode/visual studio limitations... sooo... promise_map_test it
+    # is.
+    name = "promise_map_test",
+    srcs = ["map_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:map",
+        "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_factory_test",
     srcs = ["promise_factory_test.cc"],
     external_deps = [

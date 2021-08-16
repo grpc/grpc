@@ -68,7 +68,12 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
       absl::make_unique<ReadableParcelAndroid>(in);
   // The lock should be released "after" the callback finishes.
   absl::Status status = (*callback)(code, output.get());
-  return status.ok() ? STATUS_OK : STATUS_UNKNOWN_ERROR;
+  if (status.ok()) {
+    return STATUS_OK;
+  } else {
+    gpr_log(GPR_ERROR, "Callback failed: %s", status.ToString().c_str());
+    return STATUS_UNKNOWN_ERROR;
+  }
 }
 }  // namespace
 
@@ -215,7 +220,7 @@ bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
   tmp.resize(length);
   *reinterpret_cast<std::string*>(arrayData) = tmp;
   *outBuffer = reinterpret_cast<int8_t*>(
-      reinterpret_cast<std::string*>(arrayData)->data());
+      &((*reinterpret_cast<std::string*>(arrayData))[0]));
   return true;
 }
 
