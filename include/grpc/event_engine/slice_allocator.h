@@ -28,11 +28,16 @@ struct grpc_slice_buffer;
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(hork): stubbed out here, to be replaced with a real version in next PR.
+// TODO(nnoble): needs implementation
 class SliceBuffer {
  public:
   SliceBuffer() { abort(); }
   explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
+
+  grpc_slice_buffer* RawSliceBuffer() { return slice_buffer_; }
+
+ private:
+  grpc_slice_buffer* slice_buffer_;
 };
 
 class SliceAllocator {

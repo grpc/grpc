@@ -2238,6 +2238,7 @@ add_library(grpc_test_util
   test/core/util/port_server_client.cc
   test/core/util/reconnect_server.cc
   test/core/util/resolve_localhost_ip46.cc
+  test/core/util/resource_user_util.cc
   test/core/util/slice_splitter.cc
   test/core/util/stack_tracer.cc
   test/core/util/subprocess_posix.cc
@@ -2307,6 +2308,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/port_server_client.cc
   test/core/util/reconnect_server.cc
   test/core/util/resolve_localhost_ip46.cc
+  test/core/util/resource_user_util.cc
   test/core/util/slice_splitter.cc
   test/core/util/stack_tracer.cc
   test/core/util/subprocess_posix.cc
@@ -15295,6 +15297,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/port_server_client.cc
     test/core/util/reconnect_server.cc
     test/core/util/resolve_localhost_ip46.cc
+    test/core/util/resource_user_util.cc
     test/core/util/slice_splitter.cc
     test/core/util/stack_tracer.cc
     test/core/util/subprocess_posix.cc
