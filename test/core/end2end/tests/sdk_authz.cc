@@ -205,10 +205,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
-
-  gpr_log(GPR_ERROR, "************************Status: %d", status);
   GPR_ASSERT(GRPC_STATUS_UNIMPLEMENTED == status);
-  //GPR_ASSERT(0 == grpc_slice_str_cmp(details, ""));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

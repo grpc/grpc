@@ -58,8 +58,7 @@ void SdkServerAuthzFilter::Destroy(grpc_channel_element* elem) {
   chand->~SdkServerAuthzFilter();
 }
 
-SdkServerAuthzFilter::CallData::CallData(grpc_call_element* elem,
-                                         const grpc_call_element_args& args) {
+SdkServerAuthzFilter::CallData::CallData(grpc_call_element* elem) {
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
 }
@@ -81,7 +80,7 @@ void SdkServerAuthzFilter::CallData::StartTransportStreamOpBatch(
 
 grpc_error_handle SdkServerAuthzFilter::CallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
-  new (elem->call_data) CallData(elem, *args);
+  new (elem->call_data) CallData(elem);
   return GRPC_ERROR_NONE;
 }
 
@@ -101,8 +100,9 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-        gpr_log(GPR_INFO, "Request denied. Matching policy name: %s.",
-                decision.matching_policy_name.c_str());
+        gpr_log(GPR_INFO,
+                "Request denied. matching_policy_name=%s chand=%p calld=%p",
+                decision.matching_policy_name.c_str(), chand, this);
       }
       return false;
     }
@@ -112,14 +112,16 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-        gpr_log(GPR_INFO, "Request allowed. Matching policy name: %s.",
-                decision.matching_policy_name.c_str());
+        gpr_log(GPR_INFO,
+                "Request allowed. matching_policy_name=%s chand=%p calld=%p",
+                decision.matching_policy_name.c_str(), chand, this);
       }
       return true;
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-    gpr_log(GPR_INFO, "Request denied. No match found.");
+    gpr_log(GPR_INFO, "Request denied. No match found. chand=%p calld=%p",
+            chand, this);
   }
   return false;
 }

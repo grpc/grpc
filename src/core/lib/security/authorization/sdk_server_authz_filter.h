@@ -38,7 +38,7 @@ class SdkServerAuthzFilter {
                         grpc_closure* /*ignored*/);
 
    private:
-    CallData(grpc_call_element* elem, const grpc_call_element_args& args);
+    explicit CallData(grpc_call_element* elem);
 
     bool IsAuthorized(SdkServerAuthzFilter* chand);
 
