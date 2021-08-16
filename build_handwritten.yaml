@@ -41,13 +41,6 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.cc
   deps: []
-- name: gen_percent_encoding_tables
-  build: tool
-  language: c++
-  src:
-  - tools/codegen/core/gen_percent_encoding_tables.cc
-  deps: []
-  uses_polling: false
 configs:
   asan:
     CC: clang
