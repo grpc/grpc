@@ -3198,13 +3198,12 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE &&
-             GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO,
-            "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
-            " streams",
-            t->peer_string.c_str(),
-            grpc_chttp2_stream_map_size(&t->stream_map));
+  } else if (error == GRPC_ERROR_NONE) {
+    grpc_resource_quota_trace.Log(
+        GPR_INFO,
+        "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
+        " streams",
+        t->peer_string.c_str(), grpc_chttp2_stream_map_size(&t->stream_map));
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {

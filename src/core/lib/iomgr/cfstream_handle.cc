@@ -98,8 +98,8 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
   grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  grpc_tcp_trace.Log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
-            stream, type, clientCallBackInfo);
+  grpc_tcp_trace.Log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)",
+                     handle, stream, type, clientCallBackInfo);
   switch (type) {
     case kCFStreamEventOpenCompleted:
       handle->open_event_.SetReady();

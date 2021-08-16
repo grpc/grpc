@@ -353,11 +353,9 @@ class DynamicTerminationFilter::CallData {
         args, pollent, nullptr,
         service_config_call_data->call_dispatch_controller(),
         /*is_transparent_retry=*/false);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
-              client_channel, calld->lb_call_.get());
-    }
+    grpc_client_channel_routing_trace.Log(
+        GPR_INFO, "chand=%p dynamic_termination_calld=%p: create lb_call=%p",
+        chand, client_channel, calld->lb_call_.get());
   }
 
  private:
@@ -408,9 +406,8 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
   }
 
   ~ResolverResultHandler() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO, "chand=%p: resolver shutdown complete", chand_);
-    }
+    grpc_client_channel_routing_trace.Log(
+        GPR_INFO, "chand=%p: resolver shutdown complete", chand_);
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "ResolverResultHandler");
   }
 
@@ -451,11 +448,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         chand_(chand),
         subchannel_(std::move(subchannel)),
         health_check_service_name_(std::move(health_check_service_name)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
+    grpc_client_channel_routing_trace.Log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
-              chand, this, subchannel_.get());
-    }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
@@ -471,11 +465,10 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   }
 
   ~SubchannelWrapper() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p: destroying subchannel wrapper %p for subchannel %p",
-              chand_, this, subchannel_.get());
-    }
+    grpc_client_channel_routing_trace.Log(
+        GPR_INFO,
+        "chand=%p: destroying subchannel wrapper %p for subchannel %p", chand_,
+        this, subchannel_.get());
     chand_->subchannel_wrappers_.erase(this);
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
@@ -537,13 +530,12 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void UpdateHealthCheckServiceName(
       absl::optional<std::string> health_check_service_name) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p: subchannel wrapper %p: updating health check service "
-              "name from \"%s\" to \"%s\"",
-              chand_, this, health_check_service_name_->c_str(),
-              health_check_service_name->c_str());
-    }
+    grpc_client_channel_routing_trace.Log(
+        GPR_INFO,
+        "chand=%p: subchannel wrapper %p: updating health check service "
+        "name from \"%s\" to \"%s\"",
+        chand_, this, health_check_service_name_->c_str(),
+        health_check_service_name->c_str());
     for (auto& p : watcher_map_) {
       WatcherWrapper*& watcher_wrapper = p.second;
       // Cancel the current watcher and create a new one using the new
@@ -623,12 +615,11 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
 
     void OnConnectivityStateChange() override {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p: connectivity change for subchannel wrapper %p "
-                "subchannel %p; hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_.get());
-      }
+      grpc_client_channel_routing_trace.Log(
+          GPR_INFO,
+          "chand=%p: connectivity change for subchannel wrapper %p "
+          "subchannel %p; hopping into work_serializer",
+          parent_->chand_, parent_.get(), parent_->subchannel_.get());
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
           [this]()
@@ -658,14 +649,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
    private:
     void ApplyUpdateInControlPlaneWorkSerializer()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p: processing connectivity change in work serializer "
-                "for subchannel wrapper %p subchannel %p "
-                "watcher=%p",
-                parent_->chand_, parent_.get(), parent_->subchannel_.get(),
-                watcher_.get());
-      }
+      grpc_client_channel_routing_trace.Log(
+          GPR_INFO,
+          "chand=%p: processing connectivity change in work serializer "
+          "for subchannel wrapper %p subchannel %p "
+          "watcher=%p",
+          parent_->chand_, parent_.get(), parent_->subchannel_.get(),
+          watcher_.get());
       ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
           state_change.status.GetPayload(kKeepaliveThrottlingKey);
@@ -675,10 +665,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
                              &new_keepalive_time)) {
           if (new_keepalive_time > parent_->chand_->keepalive_time_) {
             parent_->chand_->keepalive_time_ = new_keepalive_time;
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-              gpr_log(GPR_INFO, "chand=%p: throttling keepalive time to %d",
-                      parent_->chand_, parent_->chand_->keepalive_time_);
-            }
+            grpc_client_channel_routing_trace.Log(
+                GPR_INFO, "chand=%p: throttling keepalive time to %d",
+                parent_->chand_, parent_->chand_->keepalive_time_);
             // Propagate the new keepalive time to all subchannels. This is so
             // that new transports created by any subchannel (and not just the
             // subchannel that received the GOAWAY), use the new keepalive time.
