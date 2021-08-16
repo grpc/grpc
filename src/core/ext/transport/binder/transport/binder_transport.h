@@ -47,6 +47,14 @@ struct grpc_binder_transport {
     return next_free_tx_code++;
   }
 
+  void Ref() { refs.Ref(); }
+
+  void Unref() {
+    if (refs.Unref()) {
+      delete this;
+    }
+  }
+
   grpc_transport base; /* must be first */
 
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
@@ -55,15 +63,7 @@ struct grpc_binder_transport {
   std::unique_ptr<grpc_binder::WireWriter> wire_writer;
 
   bool is_client;
-
-  // The following fields are currently only for the in-memory end-to-end
-  // testing.
-  // TODO(waynetu): Figure out if we need these in the actual server environment
-  // or not.
-
-  // The other-end of the transport. Set when constructing client/server binders
-  // pair in the testing environment.
-  grpc_binder_transport* other_end = nullptr;
+  grpc_core::Mutex mu;
 
   // The callback and the data for the callback when the stream is connected
   // between client and server.
@@ -75,6 +75,7 @@ struct grpc_binder_transport {
 
  private:
   int next_free_tx_code = grpc_binder::kFirstCallId;
+  grpc_core::RefCount refs;
 };
 
 grpc_transport* grpc_create_binder_transport_client(

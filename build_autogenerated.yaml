@@ -502,6 +502,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -738,8 +739,11 @@ libs:
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
@@ -1510,6 +1514,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/status:statusor
+  - absl/types:variant
   - gpr
   - libssl
   - address_sorting
@@ -1731,6 +1736,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -1775,8 +1781,11 @@ libs:
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
@@ -2192,6 +2201,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/status:statusor
+  - absl/types:variant
   - gpr
   - address_sorting
   baselib: true
@@ -5590,6 +5600,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: hpack_encoder_index_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
+  src:
+  - test/core/transport/chttp2/hpack_encoder_index_test.cc
+  deps:
+  - absl/types:optional
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c++
@@ -5661,6 +5681,21 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: if_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/if_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
 - name: init_test
   gtest: true
   build: test
@@ -6075,6 +6110,21 @@ targets:
   - absl/types:optional
   - absl/types:variant
   - absl/utility:utility
+  uses_polling: false
+- name: promise_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  src:
+  - test/core/promise/map_test.cc
+  deps:
+  - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: promise_test
   gtest: true
