@@ -1058,9 +1058,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/s2a_core/s2a/src/handshaker/s2a_proxy.cc \
     third_party/s2a_core/s2a/src/handshaker/s2a_util.cc \
     third_party/s2a_core/s2a/src/options/s2a_options.cc \
-    third_party/s2a_core/s2a/src/proto/upb-generated/proto/common.upb.c \
-    third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a.upb.c \
-    third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a_context.upb.c \
+    third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/common.upb.c \
+    third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a.upb.c \
+    third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a_context.upb.c \
     third_party/s2a_core/s2a/src/record_protocol/handshake_message_handler.cc \
     third_party/s2a_core/s2a/src/record_protocol/s2a_crypter.cc \
     third_party/s2a_core/s2a/src/record_protocol/s2a_crypter_util.cc \
@@ -1321,7 +1321,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/options)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/proto/upb-generated/proto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/record_protocol)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a_core/s2a/src/token_manager)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)

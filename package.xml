@@ -2094,12 +2094,12 @@
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/handshaker/s2a_util.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/handshaker/s2a_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/options/s2a_options.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/common.upb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/common.upb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a.upb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a.upb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a_context.upb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/proto/s2a_context.upb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/common.upb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/common.upb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a.upb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a.upb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a_context.upb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/s2a_context.upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/record_protocol/handshake_message_handler.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/record_protocol/handshake_message_handler.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/s2a/src/record_protocol/s2a_crypter.cc" role="src" />
