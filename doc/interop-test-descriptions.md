@@ -1011,16 +1011,49 @@ languages. Therefore they are not part of our interop matrix.
 #### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
-The number of RPCs is configured by the experimental flag, `soak_iterations`.
+
+This test is configurable via a few different command line flags:
+
+* `soak_iterations`: controls the number of RPCs to perform.
+
+* `soak_max_failures`: an inclusive upper limit on the number of RPC failures
+  that should be tolerated (i.e. after which the test process should
+  exit 0). A failure is considered to be either a non-OK status or an RPC
+  whose latency exceeded `soak_per_iteration_max_acceptable_latency_ms`.
+
+* `soak_per_iteration_max_acceptable_latency_ms`: an inclusive upper limit
+  on the latency of a single RPC in order for that RPC to be considered
+  successful.
+
+* `soak_overall_timeout_seconds`: the overall number of seconds after which
+  the test should stop and fail if `soak_iterations` haven not yet been
+  completed.
+
+The following suggestions are optional but encouraged to improve debuggbility:
+
+* Implementations should avoid setting RPC deadlines and should instead
+  wait for each RPC to complete.
+
+* Implementations should log the number of milliseconds that each RPC takes.
+  Additionally, implementations should use a histogram of RPC latencies
+  to log interesting latency percentiles at the end of the test (e.g. median,
+  90th, and max latency percentiles).
+
+* Implementations should perform all RPCs first and then examine the number
+  of failed RPCs in a second pass. Mainly, implementations should not quit early
+  after exceeding `soak_max_failures`, since the total number of failures can
+  be interesting debug data.
 
 #### channel_soak
 
-The client performs many large_unary RPCs in sequence. Before each RPC, it
-tears down and rebuilds the channel. The number of RPCs is configured by
-the experimental flag, `soak_iterations`.
+Similar to rpc_soak, but this time each RPC is performed on a new channel. The
+channel is created just before each RPC and is destroyed just after.
 
-This tests puts stress on several gRPC components; the resolver, the load
-balancer, and the RPC hotpath.
+This test is configured with the same command line flags that the rpc_soak test
+is configured with, with only one semantic difference: when measuring an RPCs
+latency to see if it exceeds `soak_per_iteration_max_acceptable_latency_ms` or
+not, the creation and destruction of the channel should be included in that
+latency measurement.
 
 #### long_lived_channel
 
