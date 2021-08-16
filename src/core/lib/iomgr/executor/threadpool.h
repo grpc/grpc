@@ -134,7 +134,8 @@ class ThreadPool : public ThreadPoolInterface {
   ThreadPoolWorker** threads_ = nullptr;  // Array of worker threads
   MPMCQueueInterface* queue_ = nullptr;   // Closure queue
 
-  Atomic<bool> shut_down_{false};  // Destructor has been called if set to true
+  std::atomic<bool> shut_down_{
+      false};  // Destructor has been called if set to true
 
   void SharedThreadPoolConstructor();
   // For ThreadPool, default stack size for mobile platform is 1952K. for other
