@@ -114,7 +114,7 @@ static GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
     const grpc_slice& slice) {
-  return conforms_to(slice, g_legal_header_key_bits, "Illegal header value");
+  return conforms_to(slice, g_legal_header_non_bin_value_bits, "Illegal header value");
 }
 
 int grpc_header_nonbin_value_is_legal(grpc_slice slice) {
