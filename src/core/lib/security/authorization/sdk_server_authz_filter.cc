@@ -79,7 +79,7 @@ void SdkServerAuthzFilter::CallData::StartTransportStreamOpBatch(
 }
 
 grpc_error_handle SdkServerAuthzFilter::CallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+    grpc_call_element* elem) {
   new (elem->call_data) CallData(elem);
   return GRPC_ERROR_NONE;
 }

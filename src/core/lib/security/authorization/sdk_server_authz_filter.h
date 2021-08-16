@@ -31,8 +31,7 @@ class SdkServerAuthzFilter {
    public:
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args);
+    static grpc_error_handle Init(grpc_call_element* elem);
     static void Destroy(grpc_call_element* elem,
                         const grpc_call_final_info* /*final_info*/,
                         grpc_closure* /*ignored*/);
