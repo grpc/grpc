@@ -207,6 +207,8 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   cq_verify(cqv);
   GPR_ASSERT(GRPC_STATUS_UNIMPLEMENTED == status);
 
+  grpc_slice_unref(details);
+  gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
