@@ -96,7 +96,6 @@ some configuration as environment variables that can be set.
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
-  - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
   - combiner - traces combiner lock state
   - call_combiner - traces call combiner state

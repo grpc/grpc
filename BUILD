@@ -873,6 +873,17 @@ grpc_cc_library(
         "gpr_tls",
     ],
 )
+      
+grpc_cc_library(
+    name = "map",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/map.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
 
 grpc_cc_library(
     name = "promise",
@@ -1315,6 +1326,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "bitset",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -2600,6 +2612,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "hpack_encoder_index",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2666,6 +2692,8 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_encoder_index",
+        "match",
         "popularity_count",
     ],
 )

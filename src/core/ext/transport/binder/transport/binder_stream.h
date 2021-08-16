@@ -24,20 +24,8 @@ struct grpc_binder_stream {
   // server_data will be null for client, and for server it will be whatever
   // passed in to the accept_stream_fn callback by client.
   grpc_binder_stream(grpc_binder_transport* t, grpc_core::Arena* arena,
-                     const void* server_data, int tx_code, bool is_client)
-      : t(t), arena(arena), seq(0), tx_code(tx_code), is_client(is_client) {
-    if (!server_data) {
-      // The stream is a client-side stream. If we indeed know what the other
-      // end is (for example, in the testing envorinment), call the
-      // accept_stream_fn callback with server_data being "this" (currently we
-      // don't need the actual value of "this"; a non-null value should work).
-      grpc_binder_transport* server = t->other_end;
-      if (server && server->accept_stream_fn) {
-        (*server->accept_stream_fn)(server->accept_stream_user_data,
-                                    &server->base, this);
-      }
-    }
-  }
+                     const void* /*server_data*/, int tx_code, bool is_client)
+      : t(t), arena(arena), seq(0), tx_code(tx_code), is_client(is_client) {}
   ~grpc_binder_stream() = default;
   int GetTxCode() { return tx_code; }
   int GetThenIncSeq() { return seq++; }
