@@ -169,18 +169,17 @@ class EndpointPairFixture : public BaseFixture {
     b.RegisterService(service);
     fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
+
     grpc_core::ExecCtx exec_ctx;
+
     /* add server endpoint to server_
      * */
     {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
-      grpc_resource_quota* server_resource_quota =
-          grpc_resource_quota_from_channel_args(server_args, true);
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */,
-          grpc_resource_user_create(server_resource_quota, "server_transport"));
-      grpc_resource_quota_unref(server_resource_quota);
+          server_args, endpoints.server, false /* is_client */);
+
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
@@ -199,16 +198,11 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_resource_quota* client_resource_quota =
-          grpc_resource_quota_from_channel_args(&c_args, true);
-      client_transport_ = grpc_create_chttp2_transport(
-          &c_args, endpoints.client, true,
-          grpc_resource_user_create(client_resource_quota, "client_transport"));
-      grpc_resource_quota_unref(client_resource_quota);
+      client_transport_ =
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
-      grpc_channel* channel =
-          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                              client_transport_, nullptr, 0, nullptr);
+      grpc_channel* channel = grpc_channel_create(
+          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 
@@ -290,7 +284,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     return p;
   }
 };

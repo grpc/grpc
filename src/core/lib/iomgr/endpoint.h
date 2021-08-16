@@ -46,6 +46,7 @@ struct grpc_endpoint_vtable {
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*shutdown)(grpc_endpoint* ep, grpc_error_handle why);
   void (*destroy)(grpc_endpoint* ep);
+  grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
   absl::string_view (*get_peer)(grpc_endpoint* ep);
   absl::string_view (*get_local_address)(grpc_endpoint* ep);
   int (*get_fd)(grpc_endpoint* ep);
@@ -97,6 +98,8 @@ void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
 /* Delete an endpoint from a pollset_set */
 void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set);
+
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep);
 
 bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 

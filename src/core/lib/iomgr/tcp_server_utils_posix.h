@@ -94,9 +94,6 @@ struct grpc_tcp_server {
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler;
-
-  /* used to create slice allocators for endpoints, owned */
-  grpc_slice_allocator_factory* slice_allocator_factory;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/resource_user_util.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -46,7 +45,7 @@ typedef struct {
   grpc_slice_buffer read_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
-  grpc_slice_allocator* slice_allocator;
+  grpc_resource_user* resource_user;
 } half;
 
 struct passthru_endpoint {
@@ -132,6 +131,7 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
+  grpc_resource_user_shutdown(m->resource_user);
   GRPC_ERROR_UNREF(why);
 }
 
@@ -144,8 +144,8 @@ static void me_destroy(grpc_endpoint* ep) {
     grpc_passthru_endpoint_stats_destroy(p->stats);
     grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
     grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-    grpc_slice_allocator_destroy(p->client.slice_allocator);
-    grpc_slice_allocator_destroy(p->server.slice_allocator);
+    grpc_resource_user_unref(p->client.resource_user);
+    grpc_resource_user_unref(p->server.resource_user);
     gpr_free(p);
   } else {
     gpr_mu_unlock(&p->mu);
@@ -170,6 +170,11 @@ static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
 
 static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
+static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
+  half* m = reinterpret_cast<half*>(ep);
+  return m->resource_user;
+}
+
 static const grpc_endpoint_vtable vtable = {
     me_read,
     me_write,
@@ -178,6 +183,7 @@ static const grpc_endpoint_vtable vtable = {
     me_delete_from_pollset_set,
     me_shutdown,
     me_destroy,
+    me_get_resource_user,
     me_get_peer,
     me_get_local_address,
     me_get_fd,
@@ -185,7 +191,7 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half* m, passthru_endpoint* parent,
-                      grpc_slice_allocator* slice_allocator,
+                      grpc_resource_quota* resource_quota,
                       const char* half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
@@ -193,11 +199,12 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  m->slice_allocator = slice_allocator;
+  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
+                                   grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
@@ -209,8 +216,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  half_init(&m->client, m, grpc_slice_allocator_create_unlimited(), "client");
-  half_init(&m->server, m, grpc_slice_allocator_create_unlimited(), "server");
+  half_init(&m->client, m, resource_quota, "client");
+  half_init(&m->server, m, resource_quota, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

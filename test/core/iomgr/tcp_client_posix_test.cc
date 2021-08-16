@@ -38,7 +38,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static grpc_pollset_set* g_pollset_set;
@@ -108,9 +107,9 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &done, &g_connecting, grpc_slice_allocator_create_unlimited(),
-      g_pollset_set, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+
   /* await the connection */
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
@@ -157,9 +156,9 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &done, &g_connecting, grpc_slice_allocator_create_unlimited(),
-      g_pollset_set, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */

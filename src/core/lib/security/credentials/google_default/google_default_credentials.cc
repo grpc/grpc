@@ -193,6 +193,7 @@ static int is_metadata_server_reachable() {
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */

@@ -401,6 +401,7 @@ class grpc_compute_engine_token_fetcher_credentials
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
+    grpc_resource_quota_unref_internal(resource_quota);
   }
 
   std::string debug_string() override {
@@ -461,6 +462,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
                     GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
                                       metadata_req, grpc_schedule_on_exec_ctx),
                     &metadata_req->response);
+  grpc_resource_quota_unref_internal(resource_quota);
 }
 
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
@@ -593,6 +595,7 @@ class StsTokenFetcherCredentials
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
+    grpc_resource_quota_unref_internal(resource_quota);
     gpr_free(body);
   }
 

@@ -46,7 +46,6 @@ grpc_cc_library(
         "port_server_client.cc",
         "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
-        "resource_user_util.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
@@ -70,7 +69,6 @@ grpc_cc_library(
         "port_server_client.h",
         "reconnect_server.h",
         "resolve_localhost_ip46.h",
-        "resource_user_util.h",
         "slice_splitter.h",
         "subprocess.h",
         "test_config.h",
@@ -81,7 +79,6 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/debugging:symbolize",
-        "absl/strings:str_format",
     ],
     language = "C++",
     deps = [

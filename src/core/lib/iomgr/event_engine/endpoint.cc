@@ -39,7 +39,6 @@ namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::ResolvedAddressToURI;
-using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -103,12 +102,19 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
             str);
   }
+  grpc_resource_user_shutdown(eeep->ru);
   eeep->endpoint.reset();
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  grpc_resource_user_unref(eeep->ru);
   delete eeep;
+}
+
+grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  return eeep->ru;
 }
 
 absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
@@ -148,6 +154,7 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     endpoint_delete_from_pollset_set,
     endpoint_shutdown,
     endpoint_destroy,
+    endpoint_get_resource_user,
     endpoint_get_peer,
     endpoint_get_local_address,
     endpoint_get_fd,
@@ -159,6 +166,7 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
+  // TODO(hork): populate endpoint->ru from the uvEngine's subclass
   endpoint->endpoint = std::move(ee_endpoint);
   return endpoint;
 }
@@ -167,6 +175,17 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
+  grpc_resource_quota* resource_quota =
+      grpc_channel_args_find_pointer<grpc_resource_quota>(
+          channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  if (resource_quota != nullptr) {
+    grpc_resource_quota_ref_internal(resource_quota);
+  } else {
+    resource_quota = grpc_resource_quota_create(nullptr);
+  }
+  endpoint->ru = grpc_resource_user_create(resource_quota,
+                                           std::string(peer_address).c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }
 

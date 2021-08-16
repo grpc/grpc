@@ -28,13 +28,13 @@
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char* /* name */, grpc_channel_args* /* args */) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* args) {
   grpc_endpoint_pair endpoint_pair;
   // TODO(mlumish): implement this properly under libuv
   GPR_ASSERT(false &&
              "grpc_iomgr_create_endpoint_pair is not suppoted with libuv");
-  GPR_UNREACHABLE_CODE(return endpoint_pair);
+  return endpoint_pair;
 }
 
 #endif /* GRPC_UV */
