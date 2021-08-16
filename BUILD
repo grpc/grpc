@@ -333,7 +333,7 @@ grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
-    deps = ["gpr_platform"]
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -930,11 +930,11 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
+        "atomic_utils",
         "debug_location",
         "gpr_base",
         "grpc_trace",
         "ref_counted_ptr",
-        "atomic_utils",
     ],
 )
 
