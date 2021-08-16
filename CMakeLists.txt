@@ -3982,6 +3982,21 @@ target_include_directories(gen_hpack_tables
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gen_hpack_tables
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+)
+
+
+if(gRPC_BUILD_TESTS)
+
 add_executable(algorithm_test
   test/core/compression/algorithm_test.cc
 )
