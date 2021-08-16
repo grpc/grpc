@@ -223,3 +223,16 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "hpack_encoder_index_test",
+    srcs = ["hpack_encoder_index_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:hpack_encoder_index",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
