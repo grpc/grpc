@@ -626,6 +626,20 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
     engine_name = static_cast<char*>(gpr_zalloc(engine_name_length + 1));
     memcpy(engine_name, engine_start, engine_name_length);
     gpr_log(GPR_DEBUG, "ENGINE key: %s", engine_name);
+    // Parse keys which is in following format engine:<engine_id>:<key_id>:<key_pin>
+    char* key_pin = nullptr;
+    char* key_id_end = (char*)strchr(key_id, ':');
+    if (key_id_end != nullptr) {
+      gpr_log(GPR_DEBUG, "ENGINE pin found");
+      int key_id_length = key_id_end - (engine_end + 1);
+      if (key_id_length == 0) {
+        result = TSI_INVALID_ARGUMENT;
+        break;
+      }
+      key_id = static_cast<char*>(gpr_zalloc(key_id_length + 1));
+      memcpy(key_id, engine_end + 1, key_id_length);
+      key_pin = key_id_end + 1;
+    }
     ENGINE_load_dynamic();
     engine = ENGINE_by_id(engine_name);
     if (engine == nullptr) {
@@ -645,6 +659,12 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
         gpr_log(GPR_ERROR, "Cannot find engine");
         result = TSI_INVALID_ARGUMENT;
         break;
+      }
+    }
+    if (key_pin != nullptr) {
+      if (!ENGINE_ctrl_cmd_string(engine, "PIN", key_pin, 0)) {
+        gpr_log(GPR_ERROR, "ENGINE_ctrl_cmd_string with PIN failed");
+        result = TSI_INVALID_ARGUMENT;
       }
     }
     if (!ENGINE_set_default(engine, ENGINE_METHOD_ALL)) {
