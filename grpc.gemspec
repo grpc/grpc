@@ -288,6 +288,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_index.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_table.cc )
