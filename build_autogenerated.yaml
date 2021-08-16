@@ -5681,6 +5681,21 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: if_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/if_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
 - name: init_test
   gtest: true
   build: test
