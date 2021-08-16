@@ -44,4 +44,4 @@ inline bool IncrementIfNonzero(std::atomic<T>* p) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_UTILS_H */
