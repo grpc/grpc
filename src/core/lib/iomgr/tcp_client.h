@@ -26,9 +26,11 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 typedef struct grpc_tcp_client_vtable {
   void (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
+                  grpc_slice_allocator* slice_allocator,
                   grpc_pollset_set* interested_parties,
                   const grpc_channel_args* channel_args,
                   const grpc_resolved_address* addr, grpc_millis deadline);
@@ -40,6 +42,7 @@ typedef struct grpc_tcp_client_vtable {
    interested_parties points to a set of pollsets that would be interested
    in this connection being established (in order to continue their work) */
 void grpc_tcp_client_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
+                             grpc_slice_allocator* slice_allocator,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
                              const grpc_resolved_address* addr,

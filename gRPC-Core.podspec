@@ -2227,6 +2227,8 @@ Pod::Spec.new do |s|
                       'test/core/util/reconnect_server.h',
                       'test/core/util/resolve_localhost_ip46.cc',
                       'test/core/util/resolve_localhost_ip46.h',
+                      'test/core/util/resource_user_util.cc',
+                      'test/core/util/resource_user_util.h',
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/stack_tracer.cc',

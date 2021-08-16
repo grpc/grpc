@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_core {
 
@@ -68,6 +69,7 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_timeout_;
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
+  grpc_resource_quota* resource_quota_ = nullptr;
 };
 
 }  // namespace grpc_core

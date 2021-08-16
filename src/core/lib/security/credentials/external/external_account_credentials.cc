@@ -297,7 +297,6 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -387,7 +386,6 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
