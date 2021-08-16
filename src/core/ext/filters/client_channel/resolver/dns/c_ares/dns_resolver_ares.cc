@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if GRPC_ARES == 1
 
@@ -27,8 +27,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 #include <address_sorting/address_sorting.h>
 

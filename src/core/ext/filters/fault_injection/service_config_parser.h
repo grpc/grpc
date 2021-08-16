@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
 #define GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <vector>
 

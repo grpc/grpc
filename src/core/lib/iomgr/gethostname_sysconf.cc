@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
@@ -25,7 +25,7 @@
 
 #include <unistd.h>
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 char* grpc_gethostname() {
   size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);

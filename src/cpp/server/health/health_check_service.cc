@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpcpp/health_check_service_interface.h>
+#include "include/grpcpp/health_check_service_interface.h"
 
 namespace grpc {
 namespace {

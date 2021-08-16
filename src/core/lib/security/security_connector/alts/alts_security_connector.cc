@@ -16,17 +16,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #include <stdbool.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"

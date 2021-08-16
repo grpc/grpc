@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

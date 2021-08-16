@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <inttypes.h>
 #include <climits>
@@ -24,9 +24,9 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"

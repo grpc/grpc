@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 
@@ -25,10 +25,10 @@
 
 #include <string>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/lib/avl/avl.h"
 

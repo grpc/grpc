@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
@@ -25,9 +25,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"

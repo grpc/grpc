@@ -17,7 +17,7 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"

@@ -16,17 +16,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC)
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include <errno.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <time.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 #include "src/core/lib/profiling/timers.h"
 
 #include "absl/base/call_once.h"

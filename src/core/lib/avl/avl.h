@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_AVL_AVL_H
 #define GRPC_CORE_LIB_AVL_AVL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/sync.h>
+#include "include/grpc/support/sync.h"
 
 /** internal node of an AVL tree */
 typedef struct grpc_avl_node {

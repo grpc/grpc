@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdint.h>
 #include <stdlib.h>

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <list>
 
@@ -24,9 +24,9 @@
 
 #include "upb/upb.hpp"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/byte_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"

@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS)
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 bool grpc_alts_is_running_on_gcp() {
   gpr_log(GPR_INFO,

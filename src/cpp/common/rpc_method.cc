@@ -16,6 +16,6 @@
  *
  */
 
-#include <grpcpp/impl/rpc_method.h>
+#include "include/grpcpp/impl/rpc_method.h"
 
 namespace grpc {}  // namespace grpc

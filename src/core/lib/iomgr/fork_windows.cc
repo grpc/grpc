@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifndef GRPC_POSIX_FORK
 
-#include <grpc/fork.h>
-#include <grpc/support/log.h>
+#include "include/grpc/fork.h"
+#include "include/grpc/support/log.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/http/format_request.h"
 
@@ -29,9 +29,9 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 #include "src/core/lib/gpr/string.h"
 
 static void fill_common_header(const grpc_httpcli_request* request,

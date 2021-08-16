@@ -18,14 +18,14 @@
 
 /* Win32 code for gpr synchronization support. */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
     !defined(GPR_CUSTOM_SYNC)
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   InitializeCriticalSection(&mu->cs);

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
@@ -23,9 +23,9 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"

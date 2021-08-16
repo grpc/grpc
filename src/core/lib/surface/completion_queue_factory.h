@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 #define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 typedef struct grpc_completion_queue_factory_vtable {

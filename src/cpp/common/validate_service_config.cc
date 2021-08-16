@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpcpp/support/validate_service_config.h>
+#include "include/grpcpp/support/validate_service_config.h"
+#include "include/grpc/grpc.h"
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 

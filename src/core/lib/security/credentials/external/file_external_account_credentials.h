@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 

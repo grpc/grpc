@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/cpu.h"
+#include "include/grpc/support/log.h"
 
 unsigned gpr_cpu_num_cores(void) {
   SYSTEM_INFO si;

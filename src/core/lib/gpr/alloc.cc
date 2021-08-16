@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
-#include <grpc/support/log.h>
 #include <stdlib.h>
 #include <string.h>
+#include "include/grpc/support/log.h"
 #include "src/core/lib/profiling/timers.h"
 
 void* gpr_malloc(size_t size) {

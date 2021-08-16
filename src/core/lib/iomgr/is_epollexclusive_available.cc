@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -24,7 +24,7 @@
 
 #ifdef GRPC_LINUX_EPOLL_CREATE1
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include <errno.h>
 #include <sys/epoll.h>

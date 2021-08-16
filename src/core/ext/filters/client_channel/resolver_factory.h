@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/strings/strip.h"
 
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/gprpp/memory.h"

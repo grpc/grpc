@@ -23,7 +23,7 @@
 #include <memory>
 #include <queue>
 
-#include <grpcpp/support/config.h>
+#include "include/grpcpp/support/config.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

@@ -21,7 +21,7 @@
 
 // manually construct a region of memory with some type
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -29,7 +29,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 

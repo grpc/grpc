@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpcpp/test/channel_test_peer.h>
+#include "include/grpcpp/test/channel_test_peer.h"
 
-#include <grpc/support/sync.h>
-#include <grpcpp/channel.h>
+#include "include/grpc/support/sync.h"
+#include "include/grpcpp/channel.h"
 
 #include "src/core/lib/surface/channel.h"
 

@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
   switch (id) {

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -24,7 +24,7 @@
 
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"

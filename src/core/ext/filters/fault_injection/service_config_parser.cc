@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 

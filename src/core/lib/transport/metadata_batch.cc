@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -26,8 +26,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"

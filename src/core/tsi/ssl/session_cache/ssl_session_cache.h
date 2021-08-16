@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_CACHE_H
 #define GRPC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_CACHE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/support/sync.h"
 
 extern "C" {
 #include <openssl/ssl.h>

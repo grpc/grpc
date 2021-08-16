@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_API_H
 #define GRPC_CORE_EXT_XDS_XDS_API_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdint.h>
 
@@ -31,7 +31,7 @@
 
 #include "upb/def.hpp"
 
-#include <grpc/slice_buffer.h>
+#include "include/grpc/slice_buffer.h"
 
 #include "envoy/admin/v3/config_dump.upb.h"
 #include "src/core/ext/filters/client_channel/server_address.h"

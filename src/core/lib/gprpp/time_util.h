@@ -17,9 +17,9 @@
 #ifndef GRPC_CORE_LIB_GPRPP_TIME_UTIL_H
 #define GRPC_CORE_LIB_GPRPP_TIME_UTIL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/time.h>
+#include "include/grpc/support/time.h"
 
 #include "absl/time/time.h"
 

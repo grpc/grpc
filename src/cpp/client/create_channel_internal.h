@@ -23,9 +23,9 @@
 #include <string>
 #include <vector>
 
-#include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/support/config.h>
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/impl/codegen/client_interceptor.h"
+#include "include/grpcpp/support/config.h"
 
 struct grpc_channel;
 

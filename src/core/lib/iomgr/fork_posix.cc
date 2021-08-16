@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -28,9 +28,9 @@
 
 #include <string.h>
 
-#include <grpc/fork.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/fork.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"

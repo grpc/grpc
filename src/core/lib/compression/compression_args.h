@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_COMPRESSION_ARGS_H
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_ARGS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/compression.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/impl/codegen/grpc_types.h"
 
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm

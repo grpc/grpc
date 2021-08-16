@@ -19,15 +19,15 @@
 #ifndef GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
 #define GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/event_engine/port.h>
+#include "include/grpc/event_engine/port.h"
 
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #ifndef _STRUCT_IOVEC
 #if !defined(GRPC_EVENT_ENGINE_POSIX) && !defined(GRPC_UV)

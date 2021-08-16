@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

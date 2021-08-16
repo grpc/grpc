@@ -19,7 +19,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <grpcpp/grpcpp.h>
+#include "include/grpcpp/grpcpp.h"
 
 #include "src/cpp/ext/proto_server_reflection.h"
 

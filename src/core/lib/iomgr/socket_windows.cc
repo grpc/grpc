@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -29,9 +29,9 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/log_windows.h"
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

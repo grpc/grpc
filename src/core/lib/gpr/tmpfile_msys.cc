@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_MSYS_TMPFILE
 
@@ -25,9 +25,9 @@
 #include <string.h>
 #include <tchar.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gpr/tmpfile.h"

@@ -14,9 +14,9 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_CLOSURE_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_CLOSURE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/event_engine/event_engine.h>
+#include "include/grpc/event_engine/event_engine.h"
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"

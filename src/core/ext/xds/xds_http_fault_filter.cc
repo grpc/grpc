@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include <string>
 

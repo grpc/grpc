@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/slice_buffer.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 #include "src/core/ext/transport/chttp2/transport/popularity_count.h"

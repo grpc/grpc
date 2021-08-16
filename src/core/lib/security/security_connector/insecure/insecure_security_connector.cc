@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 

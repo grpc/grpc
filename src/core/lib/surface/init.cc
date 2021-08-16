@@ -16,18 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>
 #include <memory.h>
 
-#include <grpc/fork.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include "include/grpc/fork.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"

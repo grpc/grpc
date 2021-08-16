@@ -24,13 +24,10 @@
 #define _GNU_SOURCE
 #endif
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_LINUX_LOG
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -38,6 +35,9 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 #include <string>
 

@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_CORE_LIB_SURFACE_SERVER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <list>
 #include <vector>
@@ -25,7 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

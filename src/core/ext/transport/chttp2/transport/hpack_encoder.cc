@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
@@ -26,10 +26,10 @@
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
  */
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"

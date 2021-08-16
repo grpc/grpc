@@ -19,12 +19,12 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/log.h>
+#include "include/grpc/impl/codegen/log.h"
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/slice.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"

@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_FACTORY_H
 #define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_FACTORY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"

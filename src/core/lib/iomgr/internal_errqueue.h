@@ -25,7 +25,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
 #define GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 

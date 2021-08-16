@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 typedef struct filter_node {
   struct filter_node* next;

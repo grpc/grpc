@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CPP_LOAD_REPORTING_SERVICE_SERVER_BUILDER_PLUGIN_H
 #define GRPC_SRC_CPP_LOAD_REPORTING_SERVICE_SERVER_BUILDER_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpcpp/impl/server_builder_plugin.h>
+#include "include/grpcpp/impl/server_builder_plugin.h"
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 

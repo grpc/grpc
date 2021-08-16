@@ -19,12 +19,12 @@
 #ifndef GRPC_CORE_LIB_GPRPP_MPSCQ_H
 #define GRPC_CORE_LIB_GPRPP_MPSCQ_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 namespace grpc_core {
 

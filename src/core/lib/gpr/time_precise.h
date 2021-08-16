@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_GPR_TIME_PRECISE_H
 #define GRPC_CORE_LIB_GPR_TIME_PRECISE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/time.h>
+#include "include/grpc/impl/codegen/gpr_types.h"
+#include "include/grpc/support/time.h"
 
 // Depending on the platform gpr_get_cycle_counter() can have a resolution as
 // low as a usec. Use other clock sources or gpr_precise_clock_now(),

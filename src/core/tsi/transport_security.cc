@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/tsi/transport_security.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 #include <stdlib.h>
 #include <string.h>

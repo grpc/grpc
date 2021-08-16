@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/support/byte_buffer.h>
+#include "include/grpc/byte_buffer.h"
+#include "include/grpc/byte_buffer_reader.h"
+#include "include/grpcpp/impl/grpc_library.h"
+#include "include/grpcpp/support/byte_buffer.h"
 
 namespace grpc {
 

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -25,10 +25,10 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
+#include "include/grpc/byte_buffer_reader.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/service_config.h"

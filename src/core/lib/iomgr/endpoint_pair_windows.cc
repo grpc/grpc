@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -29,7 +29,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 

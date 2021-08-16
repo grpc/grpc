@@ -16,13 +16,10 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_POSIX_LOG
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -30,6 +27,9 @@
 #include <string.h>
 #include <time.h>
 #include <string>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 #include "absl/strings/str_format.h"
 #include "src/core/lib/gprpp/examine_stack.h"

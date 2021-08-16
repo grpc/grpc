@@ -47,3 +47,13 @@ grep -EIrn \
     '^#include (<pthread.h>)' \
     test | \
     diff - /dev/null
+
+#
+# Prevent the use of <grpc include paths in the source tree.
+#
+
+grep -EIrn \
+    '^#include <grpc' \
+    src/core src/cpp | \
+    diff - /dev/null
+

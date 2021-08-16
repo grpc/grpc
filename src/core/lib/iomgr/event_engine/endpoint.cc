@@ -11,16 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/time.h>
 #include "absl/strings/string_view.h"
+#include "include/grpc/event_engine/event_engine.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"

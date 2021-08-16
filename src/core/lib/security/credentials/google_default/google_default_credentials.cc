@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -24,9 +24,9 @@
 
 #include "absl/strings/match.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"

@@ -18,16 +18,16 @@
 
 /* Windows implementation for gpr threads. */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS
 
 #include "src/core/lib/gprpp/thd.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/thd_id.h>
 #include <string.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/thd_id.h"
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/memory.h"

@@ -19,15 +19,15 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"

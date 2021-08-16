@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -24,11 +24,11 @@
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/slice_buffer.h>
+#include "include/grpc/slice_buffer.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"

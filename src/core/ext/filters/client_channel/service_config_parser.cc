@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 namespace grpc_core {
 

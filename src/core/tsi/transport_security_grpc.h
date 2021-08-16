@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice_buffer.h>
+#include "include/grpc/slice_buffer.h"
 #include "src/core/tsi/transport_security.h"
 
 /* This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK

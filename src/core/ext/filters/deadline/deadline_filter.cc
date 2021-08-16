@@ -14,17 +14,17 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 
 #include <stdbool.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/memory.h"

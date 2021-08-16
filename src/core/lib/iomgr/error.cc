@@ -15,20 +15,20 @@
  * limitations under the License.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/error.h"
 
 #include <inttypes.h>
 #include <string.h>
 
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/status.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #ifdef GPR_WINDOWS
-#include <grpc/support/log_windows.h>
+#include "include/grpc/support/log_windows.h"
 #endif
 
 #include "src/core/lib/debug/trace.h"

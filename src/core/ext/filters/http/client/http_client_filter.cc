@@ -15,7 +15,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -27,8 +27,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"

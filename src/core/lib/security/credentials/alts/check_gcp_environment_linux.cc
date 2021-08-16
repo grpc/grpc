@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_LINUX
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/sync.h"
 
 #include <string.h>
 

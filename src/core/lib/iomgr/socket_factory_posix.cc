@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -26,8 +26,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/sync.h"
 
 void grpc_socket_factory_init(grpc_socket_factory* factory,
                               const grpc_socket_factory_vtable* vtable) {

@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc_security.h>
+#include "include/grpc/grpc_security.h"
 
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"

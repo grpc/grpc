@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if GPR_LINUX
 #include <fcntl.h>
@@ -25,9 +25,9 @@
 
 #include <algorithm>
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include "include/grpc/impl/codegen/gpr_types.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/time_precise.h"
 

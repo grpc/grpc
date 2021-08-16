@@ -16,17 +16,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include <string.h>
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"

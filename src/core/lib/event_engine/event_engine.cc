@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/log.h>
+#include "include/grpc/event_engine/endpoint_config.h"
+#include "include/grpc/event_engine/event_engine.h"
+#include "include/grpc/event_engine/port.h"
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/log.h"
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"

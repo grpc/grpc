@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/host_port.h"
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 namespace grpc_core {
 

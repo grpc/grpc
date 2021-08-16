@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 #define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <string.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/slice_buffer.h"
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"

@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_DEBUG_STATS_H
 #define GRPC_CORE_LIB_DEBUG_STATS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string>
 
-#include <grpc/support/atm.h>
+#include "include/grpc/support/atm.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 

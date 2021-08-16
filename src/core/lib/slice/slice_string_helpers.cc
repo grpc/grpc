@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 #include <string.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"

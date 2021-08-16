@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc_security_constants.h>
 #include "absl/strings/string_view.h"
+#include "include/grpc/grpc_security_constants.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern "C" {

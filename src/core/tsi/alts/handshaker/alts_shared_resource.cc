@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 

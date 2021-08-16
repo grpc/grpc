@@ -19,15 +19,15 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
 #include <string>
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/sync.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"

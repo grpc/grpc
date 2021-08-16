@@ -25,13 +25,13 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ARENA_H
 #define GRPC_CORE_LIB_GPRPP_ARENA_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <new>
 #include <utility>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/spinlock.h"

@@ -55,7 +55,7 @@
 // using that endpoint. Because of various transitive includes in uv.h,
 // including windows.h on Windows, uv.h must be included before other system
 // headers. Therefore, sockaddr.h must always be included first.
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -72,11 +72,11 @@
 
 #include "upb/upb.hpp"
 
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "include/grpc/byte_buffer_reader.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"

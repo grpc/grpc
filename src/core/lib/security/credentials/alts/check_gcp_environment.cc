@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 const size_t kBiosDataBufferSize = 256;
 

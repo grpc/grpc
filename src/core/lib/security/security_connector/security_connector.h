@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
-#include <grpc/grpc_security.h>
+#include "include/grpc/grpc_security.h"
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted.h"

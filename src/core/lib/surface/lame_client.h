@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 

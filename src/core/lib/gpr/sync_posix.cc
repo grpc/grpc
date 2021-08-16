@@ -16,15 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
     !defined(GPR_CUSTOM_SYNC)
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 
 #include <errno.h>
 #include <time.h>

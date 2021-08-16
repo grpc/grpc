@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <grpc/event_engine/event_engine.h>
+#include "include/grpc/event_engine/event_engine.h"
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/container/inlined_vector.h"
 
@@ -27,7 +27,7 @@
 #include <string.h>
 #include <algorithm>
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 //
 // grpc_handshaker_factory_list

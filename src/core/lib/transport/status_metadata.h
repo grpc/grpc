@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATUS_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATUS_METADATA_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/status.h>
+#include "include/grpc/status.h"
 
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"

@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <functional>
 #include <map>
@@ -25,7 +25,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"

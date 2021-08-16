@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -25,7 +25,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>

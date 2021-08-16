@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice_internal.h"

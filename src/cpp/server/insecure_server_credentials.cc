@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpcpp/security/server_credentials.h>
+#include "include/grpcpp/security/server_credentials.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/log.h"
 
 namespace grpc {
 namespace {

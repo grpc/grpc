@@ -19,15 +19,15 @@
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/slice_buffer.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/slice_buffer.h"
 
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

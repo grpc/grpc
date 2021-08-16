@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/strings/string_view.h"
 

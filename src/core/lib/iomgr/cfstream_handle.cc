@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
@@ -25,9 +25,9 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import "src/core/lib/iomgr/cfstream_handle.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"

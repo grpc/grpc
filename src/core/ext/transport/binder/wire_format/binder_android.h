@@ -17,7 +17,7 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "include/grpc/impl/codegen/port_platform.h"
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>

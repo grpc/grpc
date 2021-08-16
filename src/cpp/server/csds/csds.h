@@ -19,9 +19,9 @@
 #ifndef GRPC_INTERNAL_CPP_SERVER_CSDS_H
 #define GRPC_INTERNAL_CPP_SERVER_CSDS_H
 
-#include <grpc/support/port_platform.h>
-#include <grpcpp/grpcpp.h>
 #include "absl/status/status.h"
+#include "include/grpc/support/port_platform.h"
+#include "include/grpcpp/grpcpp.h"
 
 #include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 

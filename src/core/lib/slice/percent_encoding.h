@@ -26,12 +26,12 @@
      and another which applies percent encoding only to non-http2 header
      bytes (the 'compatible' variant) */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
-#include <grpc/slice.h>
 #include "absl/types/optional.h"
+#include "include/grpc/slice.h"
 
 namespace grpc_core {
 

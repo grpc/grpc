@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <string.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

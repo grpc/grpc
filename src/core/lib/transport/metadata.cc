@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -25,13 +25,13 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/string.h"

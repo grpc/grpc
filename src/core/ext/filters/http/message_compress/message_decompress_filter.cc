@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
@@ -25,10 +25,10 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/compression.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "absl/strings/str_format.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"

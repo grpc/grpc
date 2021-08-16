@@ -14,10 +14,10 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <grpc/event_engine/port.h>
+#include "include/grpc/event_engine/port.h"
 
 #include "src/core/lib/iomgr/port.h"
 

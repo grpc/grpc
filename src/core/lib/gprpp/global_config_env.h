@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_ENV_H
 #define GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_ENV_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"

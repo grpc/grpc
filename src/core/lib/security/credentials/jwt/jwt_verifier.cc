@@ -16,17 +16,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/sync.h"
 
 extern "C" {
 #include <openssl/bn.h>

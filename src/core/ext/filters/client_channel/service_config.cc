@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 
@@ -22,7 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/json/json.h"

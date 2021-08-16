@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc_security.h>
+#include "include/grpc/grpc_security.h"
 
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/security/credentials/credentials.h"

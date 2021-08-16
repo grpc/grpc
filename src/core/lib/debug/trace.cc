@@ -16,16 +16,16 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/debug/trace.h"
 
 #include <string.h>
 #include <type_traits>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_trace, "",

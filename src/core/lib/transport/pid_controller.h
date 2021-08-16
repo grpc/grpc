@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <limits>
 

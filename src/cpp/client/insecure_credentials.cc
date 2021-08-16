@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-#include <grpcpp/security/credentials.h>
+#include "include/grpcpp/security/credentials.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/support/channel_arguments.h"
+#include "include/grpcpp/support/config.h"
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {

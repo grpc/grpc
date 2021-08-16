@@ -19,7 +19,7 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 #define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

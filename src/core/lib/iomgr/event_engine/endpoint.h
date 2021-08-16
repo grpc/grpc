@@ -14,10 +14,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <grpc/event_engine/event_engine.h>
+#include "include/grpc/event_engine/event_engine.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resource_quota.h"

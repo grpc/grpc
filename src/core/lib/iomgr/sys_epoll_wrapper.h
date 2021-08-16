@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SYS_EPOLL_WRAPPER_H
 #define GRPC_CORE_LIB_IOMGR_SYS_EPOLL_WRAPPER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <sys/epoll.h>
 

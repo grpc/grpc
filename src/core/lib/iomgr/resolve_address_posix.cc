@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
@@ -28,10 +28,10 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"

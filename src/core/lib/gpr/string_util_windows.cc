@@ -18,7 +18,7 @@
 
 /* Posix code for gpr snprintf support. */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS
 
@@ -32,9 +32,9 @@
 #include <string.h>
 #include <strsafe.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log_windows.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"

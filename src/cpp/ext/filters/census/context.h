@@ -19,9 +19,9 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 #define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/status.h>
+#include "include/grpc/status.h"
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"

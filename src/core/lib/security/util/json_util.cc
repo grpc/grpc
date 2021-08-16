@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/util/json_util.h"

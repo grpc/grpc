@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
@@ -26,11 +26,11 @@
 
 #include "upb/upb.hpp"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/thd_id.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

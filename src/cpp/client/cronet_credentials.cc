@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpcpp/security/credentials.h>
+#include "include/grpcpp/security/credentials.h"
 
-#include <grpc/grpc_cronet.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/channel_arguments.h>
+#include "include/grpc/grpc_cronet.h"
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/support/channel_arguments.h"
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {

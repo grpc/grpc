@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
@@ -25,7 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/json/json.h"
 

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
@@ -29,11 +29,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"

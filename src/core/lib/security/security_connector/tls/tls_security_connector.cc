@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
@@ -26,10 +26,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"

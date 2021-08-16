@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpcpp/impl/codegen/core_codegen.h>
+#include "include/grpcpp/impl/codegen/core_codegen.h"
 
 #include <stdlib.h>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/support/config.h>
+#include "include/grpc/byte_buffer.h"
+#include "include/grpc/byte_buffer_reader.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/port_platform.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpcpp/support/config.h"
 
 #include "src/core/lib/profiling/timers.h"
 

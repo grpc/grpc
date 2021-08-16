@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 
@@ -26,8 +26,8 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"

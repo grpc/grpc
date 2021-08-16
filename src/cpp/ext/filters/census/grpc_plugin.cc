@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-#include <grpcpp/server_context.h>
+#include "include/grpcpp/server_context.h"
 
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"

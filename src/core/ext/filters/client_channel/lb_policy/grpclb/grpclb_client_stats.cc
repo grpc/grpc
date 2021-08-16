@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 
 #include <string.h>
 
-#include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/string_util.h"
 
 #include "absl/memory/memory.h"
 

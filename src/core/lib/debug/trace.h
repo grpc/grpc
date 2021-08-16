@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_CORE_LIB_DEBUG_TRACE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/atm.h>
 #include <stdbool.h>
+#include "include/grpc/support/atm.h"
 
 #include "src/core/lib/gprpp/global_config.h"
 

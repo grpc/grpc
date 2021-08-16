@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include "include/grpc/slice.h"
+#include "include/grpc/support/time.h"
 
 /* --- Constants. --- */
 

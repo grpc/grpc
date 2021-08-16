@@ -19,12 +19,12 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
-#include <grpc/slice_buffer.h>
 #include <zlib.h>
+#include "include/grpc/slice_buffer.h"
 
 #include "src/core/lib/transport/static_metadata.h"
 

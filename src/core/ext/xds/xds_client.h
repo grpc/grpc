@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_CLIENT_H
 #define GRPC_CORE_EXT_XDS_XDS_CLIENT_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <set>
 #include <vector>

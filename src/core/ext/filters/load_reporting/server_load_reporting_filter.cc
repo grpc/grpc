@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
@@ -24,10 +24,10 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"

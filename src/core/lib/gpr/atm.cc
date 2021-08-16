@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/atm.h>
+#include "include/grpc/support/atm.h"
 
 #include "src/core/lib/gpr/useful.h"
 

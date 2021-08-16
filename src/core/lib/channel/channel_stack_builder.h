@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 

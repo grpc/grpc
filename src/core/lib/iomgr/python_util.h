@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
 #define GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/status.h>
+#include "include/grpc/impl/codegen/slice.h"
+#include "include/grpc/status.h"
 #include "src/core/lib/iomgr/error.h"
 
 // These are only used by the gRPC Python extensions.

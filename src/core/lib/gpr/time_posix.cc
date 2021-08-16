@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gpr/time_precise.h"
 
@@ -28,9 +28,9 @@
 #ifdef __linux__
 #include <sys/syscall.h>
 #endif
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;

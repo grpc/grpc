@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/sync.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /** The virtual table of grpc_socket_factory */

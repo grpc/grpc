@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpcpp/resource_quota.h>
+#include "include/grpc/grpc.h"
+#include "include/grpcpp/resource_quota.h"
 
 namespace grpc {
 

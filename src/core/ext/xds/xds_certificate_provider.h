@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
 #define GRPC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"

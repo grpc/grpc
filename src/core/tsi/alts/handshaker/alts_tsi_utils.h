@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
 #define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
+#include "include/grpc/byte_buffer.h"
+#include "include/grpc/grpc.h"
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/proto/grpc/gcp/handshaker.upb.h"

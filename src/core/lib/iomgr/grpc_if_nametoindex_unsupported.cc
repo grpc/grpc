@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -24,7 +24,7 @@
 
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 uint32_t grpc_if_nametoindex(char* name) {
   gpr_log(GPR_DEBUG,

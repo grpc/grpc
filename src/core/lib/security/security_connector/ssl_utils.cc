@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -24,9 +24,9 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"

@@ -21,7 +21,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/cpp/common/channel_filter.h"
 
-#include <grpcpp/impl/codegen/slice.h>
+#include "include/grpcpp/impl/codegen/slice.h"
 
 namespace grpc {
 

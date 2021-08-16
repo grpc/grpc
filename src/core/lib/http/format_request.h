@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_HTTP_FORMAT_REQUEST_H
 #define GRPC_CORE_LIB_HTTP_FORMAT_REQUEST_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice.h>
+#include "include/grpc/slice.h"
 #include "src/core/lib/http/httpcli.h"
 
 grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request* request);

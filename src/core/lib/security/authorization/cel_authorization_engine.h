@@ -16,13 +16,13 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/log.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+#include "include/grpc/support/log.h"
 
 #include "absl/container/flat_hash_set.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"

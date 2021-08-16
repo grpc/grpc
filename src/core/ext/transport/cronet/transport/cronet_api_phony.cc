@@ -19,11 +19,11 @@
 /* This file has empty implementation of all the functions exposed by the cronet
 library, so we can build it in all environments */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 

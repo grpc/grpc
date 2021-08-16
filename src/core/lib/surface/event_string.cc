@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/surface/event_string.h"
 
@@ -27,8 +27,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/byte_buffer.h"
+#include "include/grpc/support/string_util.h"
 #include "src/core/lib/gpr/string.h"
 
 static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {

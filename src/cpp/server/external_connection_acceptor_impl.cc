@@ -20,8 +20,8 @@
 
 #include <memory>
 
-#include <grpcpp/server_builder.h>
-#include <grpcpp/support/channel_arguments.h>
+#include "include/grpcpp/server_builder.h"
+#include "include/grpcpp/support/channel_arguments.h"
 
 namespace grpc {
 namespace internal {

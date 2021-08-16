@@ -19,14 +19,14 @@
 #ifndef GRPC_CORE_LIB_IOMGR_IOMGR_CUSTOM_H
 #define GRPC_CORE_LIB_IOMGR_IOMGR_CUSTOM_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/pollset_custom.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/timer_custom.h"
 
-#include <grpc/support/thd_id.h>
+#include "include/grpc/support/thd_id.h"
 
 /* The thread ID of the thread on which grpc was initialized. Used to verify
  * that all calls into the custom iomgr are made on that same thread */

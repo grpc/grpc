@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPR_ALLOC_H
 #define GRPC_CORE_LIB_GPR_ALLOC_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 /// Given a size, round up to the next multiple of sizeof(void*).
 #define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x) \

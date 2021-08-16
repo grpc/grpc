@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"

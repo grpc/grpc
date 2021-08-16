@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 

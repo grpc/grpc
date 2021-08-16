@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_GPR_SPINLOCK_H
 #define GRPC_CORE_LIB_GPR_SPINLOCK_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/atm.h>
+#include "include/grpc/support/atm.h"
 
 // Simple spinlock. No backoff strategy, gpr_spinlock_lock is almost always
 // a concurrency code smell. Code must _never_ block while holding a spinlock

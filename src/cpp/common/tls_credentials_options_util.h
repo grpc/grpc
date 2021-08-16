@@ -19,8 +19,8 @@
 #ifndef GRPC_INTERNAL_CPP_COMMON_TLS_CREDENTIALS_OPTIONS_UTIL_H
 #define GRPC_INTERNAL_CPP_COMMON_TLS_CREDENTIALS_OPTIONS_UTIL_H
 
-#include <grpc/grpc_security.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpcpp/security/tls_credentials_options.h"
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 

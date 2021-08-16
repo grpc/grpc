@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -29,12 +29,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/grpc.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"

@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include <string.h>
 

@@ -19,9 +19,9 @@
 #ifndef GRPC_INTERNAL_CPP_SERVER_CHANNELZ_SERVICE_H
 #define GRPC_INTERNAL_CPP_SERVER_CHANNELZ_SERVICE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpcpp/grpcpp.h>
+#include "include/grpcpp/grpcpp.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 
 namespace grpc {

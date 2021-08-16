@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -29,7 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/string.h"
 

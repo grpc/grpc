@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"

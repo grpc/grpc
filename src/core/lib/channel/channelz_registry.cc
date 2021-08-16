@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "include/grpc/impl/codegen/port_platform.h"
 
 #include <algorithm>
 #include <cstring>
@@ -30,10 +30,10 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/sync.h"
 
 namespace grpc_core {
 namespace channelz {

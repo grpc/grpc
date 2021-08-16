@@ -15,15 +15,15 @@
  *
  */
 
-#include <grpcpp/completion_queue.h>
+#include "include/grpcpp/completion_queue.h"
 
 #include <memory>
 
-#include <grpc/grpc.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/support/time.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/cpu.h"
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/impl/grpc_library.h"
+#include "include/grpcpp/support/time.h"
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

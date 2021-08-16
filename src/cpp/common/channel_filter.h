@@ -19,9 +19,9 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/config.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpcpp/impl/codegen/config.h"
 
 #include <functional>
 #include <vector>

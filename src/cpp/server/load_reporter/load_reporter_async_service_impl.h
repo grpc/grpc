@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/log.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/grpcpp.h>
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/alarm.h"
+#include "include/grpcpp/grpcpp.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

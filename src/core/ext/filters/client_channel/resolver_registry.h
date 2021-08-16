@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_REGISTRY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/gprpp/memory.h"

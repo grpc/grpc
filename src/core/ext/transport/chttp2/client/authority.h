@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"

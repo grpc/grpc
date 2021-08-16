@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <map>
 #include <memory>
@@ -27,7 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"

@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
 #define GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
 
 #include <atomic>
 #include <cassert>

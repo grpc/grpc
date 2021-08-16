@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/cpu.h>
+#include "include/grpc/support/cpu.h"
 
 #ifdef GPR_CPU_IPHONE
 

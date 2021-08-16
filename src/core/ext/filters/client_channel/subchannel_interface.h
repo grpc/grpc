@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include "include/grpc/impl/codegen/connectivity_state.h"
+#include "include/grpc/impl/codegen/grpc_types.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/pollset_set.h"

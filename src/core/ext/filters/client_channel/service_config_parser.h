@@ -17,13 +17,13 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <memory>
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"

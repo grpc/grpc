@@ -21,7 +21,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_LINUX_ENV
 
@@ -32,8 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"

@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/thd_id.h>
+#include "include/grpc/support/thd_id.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"

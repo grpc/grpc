@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/surface/channel_init.h"
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 typedef struct stage_slot {
   grpc_channel_init_stage fn;

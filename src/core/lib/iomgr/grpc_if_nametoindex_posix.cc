@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <net/if.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 uint32_t grpc_if_nametoindex(char* name) {
   uint32_t out = if_nametoindex(name);

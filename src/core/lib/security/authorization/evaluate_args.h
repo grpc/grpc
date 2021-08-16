@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <map>
 

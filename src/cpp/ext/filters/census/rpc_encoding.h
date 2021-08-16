@@ -19,7 +19,7 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H
 #define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 

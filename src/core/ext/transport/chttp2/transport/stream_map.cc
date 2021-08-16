@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity) {

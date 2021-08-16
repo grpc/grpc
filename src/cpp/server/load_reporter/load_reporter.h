@@ -19,15 +19,15 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <atomic>
 #include <chrono>
 #include <deque>
 #include <vector>
 
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config.h>
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/impl/codegen/config.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"

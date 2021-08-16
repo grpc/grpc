@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 
-#include <grpcpp/impl/server_initializer.h>
+#include "include/grpcpp/impl/server_initializer.h"
 
 namespace grpc {
 namespace load_reporter {

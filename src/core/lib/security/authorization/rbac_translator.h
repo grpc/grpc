@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/status/statusor.h"
 #include "src/core/lib/json/json.h"

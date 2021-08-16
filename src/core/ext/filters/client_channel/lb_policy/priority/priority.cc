@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -22,7 +22,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"

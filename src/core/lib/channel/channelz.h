@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "include/grpc/impl/codegen/port_platform.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include <set>
 #include <string>

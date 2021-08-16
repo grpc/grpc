@@ -23,7 +23,7 @@
 /// and grpc_apple_register_read_stream. Pollsets are phony and block on a
 /// condition variable in pollset_work().
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 

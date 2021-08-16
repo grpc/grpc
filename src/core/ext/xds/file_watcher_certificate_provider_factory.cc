@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 

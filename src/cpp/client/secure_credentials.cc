@@ -18,15 +18,15 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/status.h>
-#include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/support/channel_arguments.h>
+#include "include/grpc/impl/codegen/slice.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/impl/codegen/status.h"
+#include "include/grpcpp/impl/grpc_library.h"
+#include "include/grpcpp/support/channel_arguments.h"
 
 #include "absl/strings/str_join.h"
 

@@ -17,14 +17,14 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <unordered_map>
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/gprpp/ref_counted.h"

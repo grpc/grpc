@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc_security.h>
+#include "include/grpc/grpc_security.h"
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 

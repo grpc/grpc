@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/timer.h"
 

@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_GZIP_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_GZIP_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/compression/stream_compression.h"
 

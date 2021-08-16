@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_GPR_STRING_H
 #define GRPC_CORE_LIB_GPR_STRING_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include "include/grpc/impl/codegen/gpr_types.h"
 
 #include <stdbool.h>
 #include <stddef.h>

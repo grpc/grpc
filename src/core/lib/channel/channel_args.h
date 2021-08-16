@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string>
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/lib/surface/channel_stack_type.h"
 

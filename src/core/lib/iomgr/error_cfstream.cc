@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GRPC_CFSTREAM
 #include <string>
@@ -25,7 +25,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include "src/core/lib/iomgr/error.h"
 

@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
 #define GRPC_CORE_LIB_GPRPP_TABLE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "include/grpc/impl/codegen/port_platform.h"
 
 #include <utility>
 #include "absl/utility/utility.h"

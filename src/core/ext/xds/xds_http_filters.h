@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 #define GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <memory>
 #include <set>
@@ -29,7 +29,7 @@
 #include "google/protobuf/any.upb.h"
 #include "upb/def.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/json/json.h"

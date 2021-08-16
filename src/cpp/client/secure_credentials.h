@@ -19,11 +19,11 @@
 #ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 #define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 
-#include <grpc/grpc_security.h>
+#include "include/grpc/grpc_security.h"
 
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/security/tls_credentials_options.h>
-#include <grpcpp/support/config.h>
+#include "include/grpcpp/security/credentials.h"
+#include "include/grpcpp/security/tls_credentials_options.h"
+#include "include/grpcpp/support/config.h"
 
 #include "absl/strings/str_cat.h"
 // TODO(yashykt): We shouldn't be including "src/core" headers.

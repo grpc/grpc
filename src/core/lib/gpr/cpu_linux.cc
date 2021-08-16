@@ -20,7 +20,7 @@
 #define _GNU_SOURCE
 #endif /* _GNU_SOURCE */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_CPU_LINUX
 
@@ -29,9 +29,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/cpu.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
 
 static int ncpus = 0;
 

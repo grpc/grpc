@@ -16,15 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/slice/b64.h"
 
 #include <stdint.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"

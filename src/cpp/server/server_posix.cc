@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpcpp/server_posix.h>
+#include "include/grpcpp/server_posix.h"
 
-#include <grpc/grpc_posix.h>
+#include "include/grpc/grpc_posix.h"
 
 namespace grpc {
 

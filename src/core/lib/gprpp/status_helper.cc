@@ -16,12 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time_util.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"

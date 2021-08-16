@@ -17,9 +17,9 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
 #define GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "absl/status/statusor.h"
 #include "src/core/ext/xds/xds_http_filters.h"

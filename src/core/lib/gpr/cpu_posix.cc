@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #if defined(GPR_CPU_POSIX)
 
@@ -25,9 +25,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "include/grpc/support/cpu.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
 
 #include "src/core/lib/gpr/useful.h"
 

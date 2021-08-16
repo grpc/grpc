@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpcpp/ext/channelz_service_plugin.h>
-#include <grpcpp/impl/server_builder_plugin.h>
-#include <grpcpp/impl/server_initializer.h>
-#include <grpcpp/server.h>
+#include "include/grpcpp/ext/channelz_service_plugin.h"
+#include "include/grpcpp/impl/server_builder_plugin.h"
+#include "include/grpcpp/impl/server_initializer.h"
+#include "include/grpcpp/server.h"
 
 #include "src/cpp/server/channelz/channelz_service.h"
 

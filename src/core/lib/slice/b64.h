@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SLICE_B64_H
 #define GRPC_CORE_LIB_SLICE_B64_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/slice.h>
+#include "include/grpc/slice.h"
 
 /* Encodes data using base64. It is the caller's responsibility to free
    the returned char * using gpr_free. Returns NULL on NULL input.

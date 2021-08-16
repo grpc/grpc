@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
-#include <grpc/impl/codegen/log.h>
+#include "include/grpc/impl/codegen/log.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP

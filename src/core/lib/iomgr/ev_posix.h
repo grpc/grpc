@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EV_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_EV_POSIX_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <poll.h>
 

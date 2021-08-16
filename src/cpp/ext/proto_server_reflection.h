@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <grpcpp/grpcpp.h>
+#include "include/grpcpp/grpcpp.h"
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {

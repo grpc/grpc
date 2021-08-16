@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -33,8 +33,8 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/useful.h"
 

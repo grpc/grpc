@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_REGISTRY_H
 #define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string>
 

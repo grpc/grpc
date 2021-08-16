@@ -17,7 +17,7 @@
 // This is similar to the sockaddr resolver, except that it supports a
 // bunch of query args that are useful for dependency injection in tests.
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <limits.h>
 #include <stdbool.h>
@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"

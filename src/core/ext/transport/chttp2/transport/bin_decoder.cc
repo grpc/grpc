@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"

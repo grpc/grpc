@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string>
 #include <vector>

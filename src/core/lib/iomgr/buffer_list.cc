@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <netinet/in.h>

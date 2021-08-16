@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <memory>
 #include <vector>

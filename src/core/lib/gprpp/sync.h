@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_GPRPP_SYNC_H
 #define GRPC_CORE_LIB_GPRPP_SYNC_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/sync.h"
+#include "include/grpc/support/time.h"
 
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/gprpp/time_util.h"

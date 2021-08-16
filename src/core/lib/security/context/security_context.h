@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 #define GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"

@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/compression.h>
+#include "include/grpc/compression.h"
 
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"

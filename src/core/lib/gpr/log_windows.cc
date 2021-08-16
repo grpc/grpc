@@ -16,18 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS_LOG
 
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/log_windows.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"

@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/xds_client_stats.h"
 
 #include <string.h>
 
-#include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/atm.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/xds/xds_client.h"
 

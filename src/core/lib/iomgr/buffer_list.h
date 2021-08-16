@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_IOMGR_BUFFER_LIST_H
 #define GRPC_CORE_LIB_IOMGR_BUFFER_LIST_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/types/optional.h"
 
 #include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/time.h>
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"

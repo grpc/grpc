@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
@@ -24,12 +24,12 @@
 
 #include <ares.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 #include <string.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/log_windows.h"
+#include "include/grpc/support/string_util.h"
+#include "include/grpc/support/time.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
@@ -24,7 +24,7 @@
 
 #include <string>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 void grpc_create_socketpair_if_unix(int /* sv */[2]) {
   // TODO: Either implement this for the non-Unix socket case or make

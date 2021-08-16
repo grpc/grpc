@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include "src/core/ext/filters/workarounds/workaround_utils.h"
 #include "src/core/lib/channel/channel_stack_builder.h"

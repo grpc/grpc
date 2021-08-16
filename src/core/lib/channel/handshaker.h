@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/string_util.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include "include/grpc/impl/codegen/grpc_types.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"

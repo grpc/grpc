@@ -30,7 +30,7 @@
 /// dispatch queues. The caveat of this pollset is that users may not be able to
 /// run a gRPC server in the same process.
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 

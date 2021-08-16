@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
 #define GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <memory>
 #include <set>
@@ -26,7 +26,7 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/slice.h>
+#include "include/grpc/slice.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/gprpp/memory.h"

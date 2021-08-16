@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpcpp/security/server_credentials.h>
+#include "include/grpcpp/security/server_credentials.h"
 
-#include <grpcpp/impl/grpc_library.h>
+#include "include/grpcpp/impl/grpc_library.h"
 
 namespace grpc {
 

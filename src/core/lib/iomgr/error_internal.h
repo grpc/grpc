@@ -19,12 +19,12 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 #define GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <inttypes.h>
 #include <stdbool.h>  // TODO(unknown): , do we need this?
 
-#include <grpc/support/sync.h>
+#include "include/grpc/support/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
 #ifndef GRPC_ERROR_IS_ABSEIL_STATUS

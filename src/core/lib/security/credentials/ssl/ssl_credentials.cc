@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
@@ -26,9 +26,9 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 //
 // SSL Channel Credentials.

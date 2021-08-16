@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 

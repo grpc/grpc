@@ -24,12 +24,12 @@
  * updates. Note however that updates will start picking from the beginning of
  * the updated list. */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"

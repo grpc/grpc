@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_H
 #define GRPC_CORE_LIB_GPRPP_ATOMIC_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <atomic>
 
-#include <grpc/support/atm.h>
+#include "include/grpc/support/atm.h"
 
 namespace grpc_core {
 

@@ -16,17 +16,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <assert.h>
 #include <string.h>
 
 #include "absl/types/optional.h"
 
-#include <grpc/compression.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/slice_buffer.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"

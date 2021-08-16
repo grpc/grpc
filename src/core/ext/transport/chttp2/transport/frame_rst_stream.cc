@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -24,8 +24,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/gprpp/memory.h"

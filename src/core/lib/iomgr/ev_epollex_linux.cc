@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL_CREATE1
@@ -44,7 +44,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
+#include "include/grpc/support/alloc.h"
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"

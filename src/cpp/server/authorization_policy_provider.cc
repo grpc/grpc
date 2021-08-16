@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/security/authorization_policy_provider.h>
+#include "include/grpcpp/security/authorization_policy_provider.h"
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/alloc.h"
 
 namespace grpc {
 namespace experimental {

@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/compression.h>
-#include <grpc/slice.h>
+#include "include/grpc/compression.h"
+#include "include/grpc/slice.h"
 
 #include "src/core/lib/gpr/useful.h"
 

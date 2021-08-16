@@ -16,15 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/alts/crypt/gsec.h"

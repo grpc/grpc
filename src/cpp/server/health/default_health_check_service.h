@@ -22,14 +22,14 @@
 #include <atomic>
 #include <set>
 
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/async_generic_service.h>
-#include <grpcpp/impl/codegen/async_unary_call.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/service_type.h>
-#include <grpcpp/support/byte_buffer.h>
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/grpcpp.h"
+#include "include/grpcpp/health_check_service_interface.h"
+#include "include/grpcpp/impl/codegen/async_generic_service.h"
+#include "include/grpcpp/impl/codegen/async_unary_call.h"
+#include "include/grpcpp/impl/codegen/completion_queue.h"
+#include "include/grpcpp/impl/codegen/service_type.h"
+#include "include/grpcpp/support/byte_buffer.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

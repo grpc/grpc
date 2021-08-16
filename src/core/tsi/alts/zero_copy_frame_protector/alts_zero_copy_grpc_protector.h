@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_ZERO_COPY_GRPC_PROTECTOR_H
 #define GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_ZERO_COPY_GRPC_PROTECTOR_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdbool.h>
 

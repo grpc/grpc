@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 #define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <cstring>
 
-#include <grpc/slice.h>
+#include "include/grpc/slice.h"
 
 #include "src/core/lib/iomgr/error.h"
 

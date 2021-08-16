@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 
@@ -25,7 +25,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"

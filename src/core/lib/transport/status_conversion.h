@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
 #define GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/grpc.h>
+#include "include/grpc/grpc.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"

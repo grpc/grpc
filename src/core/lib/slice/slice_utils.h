@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_UTILS_H
 #define GRPC_CORE_LIB_SLICE_SLICE_UTILS_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <cstring>
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/slice.h>
+#include "include/grpc/slice.h"
 
 #include "src/core/lib/gpr/murmur_hash.h"
 

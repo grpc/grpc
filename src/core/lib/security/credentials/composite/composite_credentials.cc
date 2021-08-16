@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
@@ -30,9 +30,9 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 /* -- Composite call credentials. -- */
 

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 
@@ -29,10 +29,10 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
     false, "auth_context_refcount");

@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
+#include "include/grpc/event_engine/event_engine.h"
+#include "include/grpc/support/alloc.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {

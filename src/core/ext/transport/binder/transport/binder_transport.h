@@ -15,9 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "include/grpc/impl/codegen/port_platform.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include <memory>
 #include <string>

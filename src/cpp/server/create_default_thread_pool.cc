@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/cpu.h>
+#include "include/grpc/support/cpu.h"
 
 #include "src/cpp/server/dynamic_thread_pool.h"
 

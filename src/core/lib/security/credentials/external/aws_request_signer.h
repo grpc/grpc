@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_AWS_REQUEST_SIGNER_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_AWS_REQUEST_SIGNER_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <map>
 #include <string>

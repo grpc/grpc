@@ -18,7 +18,7 @@
 
 #include "src/cpp/util/core_stats.h"
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 using grpc::core::Bucket;
 using grpc::core::Histogram;

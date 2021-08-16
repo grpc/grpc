@@ -18,15 +18,15 @@
 
 /* Win32 code for gpr time support. */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS_TIME
 
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <limits.h>
 #include <process.h>
 #include <sys/timeb.h>
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/time.h"
 
 #include "src/core/lib/gpr/time_precise.h"
 

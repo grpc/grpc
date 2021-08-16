@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <string.h>
 

@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_EXT_XDS_FILE_WATCHER_CERTIFICATE_PROVIDER_FACTORY_H
 #define GRPC_CORE_EXT_XDS_FILE_WATCHER_CERTIFICATE_PROVIDER_FACTORY_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
 

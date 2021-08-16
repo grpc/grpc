@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
 #define GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/atomic.h"

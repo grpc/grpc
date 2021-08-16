@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -28,12 +28,12 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/impl/codegen/slice.h"
+#include "include/grpc/slice.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_STATUS_UTIL_H
 #define GRPC_CORE_LIB_CHANNEL_STATUS_UTIL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
-#include <grpc/status.h>
+#include "include/grpc/status.h"
 
 #include <stdbool.h>
 #include <string.h>

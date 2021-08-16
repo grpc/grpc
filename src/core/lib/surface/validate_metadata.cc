@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/support/alloc.h"
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"

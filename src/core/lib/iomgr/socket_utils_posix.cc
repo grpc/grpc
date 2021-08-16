@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -28,7 +28,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,

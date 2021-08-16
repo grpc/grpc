@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_FORK_H
 #define GRPC_CORE_LIB_GPRPP_FORK_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/gprpp/atomic.h"
 

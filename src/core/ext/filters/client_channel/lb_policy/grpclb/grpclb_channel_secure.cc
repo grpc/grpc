@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 
@@ -24,9 +24,9 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/alloc.h"
+#include "include/grpc/support/string_util.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"

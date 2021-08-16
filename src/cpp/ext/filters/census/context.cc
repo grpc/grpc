@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "opencensus/tags/context_util.h"
 #include "opencensus/trace/context_util.h"

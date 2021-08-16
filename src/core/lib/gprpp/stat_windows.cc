@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #ifdef GPR_WINDOWS_STAT
 
@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/stat.h"
 

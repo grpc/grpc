@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <grpc/support/log.h>
+#include "include/grpc/support/log.h"
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

@@ -18,10 +18,10 @@
 
 #include "upb/upb.hpp"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpcpp/security/alts_context.h>
-#include <grpcpp/security/alts_util.h>
+#include "include/grpc/grpc_security.h"
+#include "include/grpc/support/log.h"
+#include "include/grpcpp/security/alts_context.h"
+#include "include/grpcpp/security/alts_util.h"
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"

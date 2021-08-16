@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_CORE_LIB_SURFACE_CALL_H
 
-#include <grpc/support/port_platform.h>
+#include "include/grpc/support/port_platform.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -27,8 +27,8 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
+#include "include/grpc/grpc.h"
+#include "include/grpc/impl/codegen/compression_types.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
