@@ -342,12 +342,12 @@ grpc_cc_library(
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb",
         "grpc_trace",
-        "config",
     ],
 )
 
@@ -380,6 +380,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -388,7 +389,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
-        "config",
     ],
 )
 
