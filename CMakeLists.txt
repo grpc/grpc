@@ -10653,6 +10653,7 @@ target_link_libraries(end2end_binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::random_random
+  absl::variant
   grpc_test_util
 )
 
@@ -10982,6 +10983,7 @@ target_link_libraries(fake_binder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::random_random
+  absl::variant
   grpc_test_util
 )
 

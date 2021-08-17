@@ -21,6 +21,8 @@
 namespace grpc_binder {
 namespace end2end_testing {
 
+// TODO(waynetu): Replace this with TestServiceImpl declared in
+// test/cpp/end2end/test_service_impl.h
 class EchoServer final : public EchoService::Service {
  public:
   static const absl::string_view kCancelledText;

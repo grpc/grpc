@@ -18,6 +18,8 @@
 // This service is for end-to-end testing with fake binder tunnels.
 syntax = "proto3";
 
+// TODO(waynetu): This can be replaced by EchoTestService in
+// src/proto/grpc/testing/echo.proto
 package grpc_binder.end2end_testing;
 
 message EchoRequest {
