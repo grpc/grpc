@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+trap 'date' DEBUG
 set -ex
 
 # change to grpc repo root

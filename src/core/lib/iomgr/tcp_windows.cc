@@ -117,7 +117,7 @@ typedef struct grpc_tcp {
   grpc_slice_buffer* write_slices;
   grpc_slice_buffer* read_slices;
 
-  grpc_resource_user* resource_user;
+  grpc_slice_allocator* slice_allocator;
 
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
@@ -133,7 +133,7 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_resource_user_unref(tcp->resource_user);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   delete tcp;
 }
@@ -467,7 +467,6 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   }
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);
-  grpc_resource_user_shutdown(tcp->resource_user);
 }
 
 static void win_destroy(grpc_endpoint* ep) {
@@ -486,11 +485,6 @@ static absl::string_view win_get_local_address(grpc_endpoint* ep) {
   return tcp->local_address;
 }
 
-static grpc_resource_user* win_get_resource_user(grpc_endpoint* ep) {
-  grpc_tcp* tcp = (grpc_tcp*)ep;
-  return tcp->resource_user;
-}
-
 static int win_get_fd(grpc_endpoint* ep) { return -1; }
 
 static bool win_can_track_err(grpc_endpoint* ep) { return false; }
@@ -502,7 +496,6 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_delete_from_pollset_set,
                                       win_shutdown,
                                       win_destroy,
-                                      win_get_resource_user,
                                       win_get_peer,
                                       win_get_local_address,
                                       win_get_fd,
@@ -510,17 +503,8 @@ static grpc_endpoint_vtable vtable = {win_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               const char* peer_string) {
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
-      }
-    }
-  }
+                               const char* peer_string,
+                               grpc_slice_allocator* slice_allocator) {
   grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -540,9 +524,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   }
   tcp->peer_string = peer_string;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_quota_unref_internal(resource_quota);
-
+  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }
 

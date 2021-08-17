@@ -638,7 +638,6 @@ grpc_cc_library(
         "src/core/lib/gpr/time_posix.cc",
         "src/core/lib/gpr/time_precise.cc",
         "src/core/lib/gpr/time_windows.cc",
-        "src/core/lib/gpr/tls_pthread.cc",
         "src/core/lib/gpr/tmpfile_msys.cc",
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
@@ -667,10 +666,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tls.h",
-        "src/core/lib/gpr/tls_gcc.h",
-        "src/core/lib/gpr/tls_msvc.h",
-        "src/core/lib/gpr/tls_pthread.h",
-        "src/core/lib/gpr/tls_stdcpp.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
@@ -715,6 +710,14 @@ grpc_cc_library(
         "gpr_codegen",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "capture",
+    external_deps = ["absl/utility"],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/capture.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -842,6 +845,84 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "poll",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/poll.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "map",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/map.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/promise.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_like",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_like.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_factory",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_factory.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "if",
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/if.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_status",
     external_deps = [
         "absl/status",
@@ -850,6 +931,15 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/detail/status.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/switch.h",
     ],
     deps = ["gpr_platform"],
 )
@@ -1232,6 +1322,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "bitset",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -2505,6 +2596,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "popularity_count",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/popularity_count.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_encoder_index",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2571,6 +2687,9 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_encoder_index",
+        "match",
+        "popularity_count",
     ],
 )
 

@@ -22,12 +22,13 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_binder {
 
-class WireReader {
+class WireReader : public grpc_core::InternallyRefCounted<WireReader> {
  public:
-  virtual ~WireReader() = default;
+  ~WireReader() override = default;
   virtual std::unique_ptr<WireWriter> SetupTransport(
       std::unique_ptr<Binder> endpoint_binder) = 0;
 };

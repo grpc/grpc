@@ -16,6 +16,8 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "absl/strings/numbers.h"
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"

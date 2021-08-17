@@ -110,6 +110,22 @@ grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
   }
 }
 
+namespace {
+
+void StreamFlowControlWindowCheck(void* user_data, uint32_t /* key */,
+                                  void* stream) {
+  bool* error = static_cast<bool*>(user_data);
+  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+  if ((s->t->settings[GRPC_PEER_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
+       s->t->initial_window_update + s->flow_control->remote_window_delta()) >
+      ((1u << 31) - 1)) {
+    *error = true;
+  }
+}
+
+}  // namespace
+
 grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                                                     grpc_chttp2_transport* t,
                                                     grpc_chttp2_stream* /*s*/,
@@ -224,6 +240,23 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
                       t->is_client ? "cli" : "svr",
                       static_cast<int>(t->initial_window_update));
+            }
+            if (grpc_core::chttp2::
+                    g_test_only_transport_flow_control_window_check) {
+              bool error = false;
+              if (parser->value > grpc_core::chttp2::kMaxInitialWindowSize ||
+                  parser->value < grpc_core::chttp2::kMinInitialWindowSize) {
+                error = true;
+              } else {
+                grpc_chttp2_stream_map_for_each(
+                    &t->stream_map, StreamFlowControlWindowCheck, &error);
+              }
+              if (error) {
+                grpc_chttp2_goaway_append(
+                    t->last_new_stream_id, sp->error_value,
+                    grpc_slice_from_static_string("HTTP2 settings error"),
+                    &t->qbuf);
+              }
             }
           }
           parser->incoming_settings[id] = parser->value;

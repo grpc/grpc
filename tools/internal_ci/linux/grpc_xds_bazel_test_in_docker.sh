@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+trap 'date' DEBUG
 set -ex -o igncr || set -ex
 
 mkdir -p /var/local/git
@@ -22,8 +23,9 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 ${name}')
 cd /var/local/git/grpc
 
+python3 -m pip install virtualenv
 VIRTUAL_ENV=$(mktemp -d)
-virtualenv "$VIRTUAL_ENV" -p python3
+python3 -m virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade grpcio grpcio-tools google-api-python-client google-auth-httplib2 oauth2client xds-protos
