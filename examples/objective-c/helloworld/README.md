@@ -84,7 +84,7 @@ $ bazel build :HelloWorld
 #### Try it!
 To run the Hello World sample properly, we need a local server. Let's compile and run the corresponding C++ server:
 ```shell
-$ bazel run //examples:greeter_server
+$ bazel run //examples/cpp/helloworld:greeter_server
 ```
 
 To run the sample, you need to know the available simulator runtimes in your machine. You could either list the available runtimes yourself by running:
@@ -104,4 +104,4 @@ $ bazel run :HelloWorld --ios_simulator_version='<runtime>' --ios_sumlator_devic
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/tutorials/basic/objective-c.html).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/languages/objective-c/basics).

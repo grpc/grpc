@@ -133,7 +133,7 @@ static void run_some_timers() {
   }
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&g_mu);
-  // garbage collect any threads hanging out that are dead
+  // garbage collect any threads that are dead
   gc_completed_threads();
   // get ready to wait again
   ++g_waiter_count;
@@ -250,7 +250,7 @@ static void timer_main_loop() {
           gpr_log(GPR_INFO, "timers not checked: expect another thread to");
         }
         next = GRPC_MILLIS_INF_FUTURE;
-      // fallthrough
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         if (!wait_until(next)) {
           return;
@@ -342,8 +342,8 @@ void grpc_timer_manager_shutdown(void) {
   gpr_cv_destroy(&g_cv_shutdown);
 }
 
-void grpc_timer_manager_set_threading(bool threaded) {
-  if (threaded) {
+void grpc_timer_manager_set_threading(bool enabled) {
+  if (enabled) {
     start_threads();
   } else {
     stop_threads();

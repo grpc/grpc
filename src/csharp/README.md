@@ -4,21 +4,17 @@ gRPC C#
 
 A C# implementation of gRPC based on the native gRPC Core library.
 
-There are currently two official implementations of gRPC for C#
-
-- The original gRPC C# implementation based on the native gRPC Core library (the source code lives in this directory)
-- The new "gRPC for .NET" implementation written in pure C# and based on the newly released .NET Core 3 (source code available at https://github.com/grpc/grpc-dotnet)
-
-The implementations are meant to coexist side-by-side and each has its own advantages in terms of available features, integrations, supported platforms, maturity level and performance.
-They share the same API for invoking and handling RPCs, thus limiting the lock-in and enabling users to choose the implementation that satisfies their needs the best
-(and perhaps adjust their choice over time without needing to do too much refactoring).
+The implementation in this directory is the original implementation of gRPC for C# (i.e. `Grpc.Core` nuget package)
+and it is currently in maintenance mode. We plan to deprecate it in the future
+in favor of the [grpc-dotnet](https://github.com/grpc/grpc-dotnet) implementation.
+See [blogpost](https://grpc.io/blog/grpc-csharp-future/) for more details.
 
 The following documentation is for the original gRPC C# implementation only (the `Grpc.Core` nuget package).
 
 SUPPORTED PLATFORMS
 ------------------
 
-- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X 
+- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X
 - .NET Framework 4.5+ (Windows)
 - Mono 4+ on Linux, Windows and Mac OS X
 
@@ -39,7 +35,7 @@ HOW TO USE
 
 - Open Visual Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
 
-- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
+- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages).
 
 - To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package which provides [code generation integrated into your build](BUILD-INTEGRATION.md).
 
@@ -78,11 +74,11 @@ If you are a user of gRPC C#, go to Usage section above.
 **Windows, Linux or Mac OS X**
 
 - The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library.
-  
+
   ```
-  # NOTE: make sure all necessary git submodules with dependencies 
+  # NOTE: make sure all necessary git submodules with dependencies
   # are available by running "git submodule update --init"
-  
+
   # from the gRPC repository root
   $ python tools/run_tests/run_tests.py -l csharp -c dbg --build_only
   ```
@@ -126,4 +122,4 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 [API Reference]: https://grpc.io/grpc/csharp/api/Grpc.Core.html
 [Helloworld Example]: ../../examples/csharp/Helloworld
-[RouteGuide Tutorial]: https://grpc.io/docs/tutorials/basic/csharp.html 
+[RouteGuide Tutorial]: https://grpc.io/docs/languages/csharp/basics

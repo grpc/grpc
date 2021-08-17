@@ -176,7 +176,7 @@ namespace grpc_core {
 struct StaticSliceRefcount {
   static grpc_slice_refcount kStaticSubRefcount;
 
-  StaticSliceRefcount(uint32_t index)
+  explicit StaticSliceRefcount(uint32_t index)
       : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
         index(index) {}
 
@@ -231,6 +231,7 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
       GPR_DEBUG_ASSERT(
           (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
           (a.refcount == b.refcount));
+      ABSL_FALLTHROUGH_INTENDED;
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
@@ -310,7 +311,7 @@ inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
-void grpc_test_only_set_slice_hash_seed(uint32_t key);
+void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // if slice matches a static slice, returns the static slice
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static
@@ -338,6 +339,7 @@ inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
                                         size_t len);
 grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
+grpc_slice grpc_slice_from_cpp_string(std::string str);
 
 // Returns the memory used by this slice, not counting the slice structure
 // itself. This means that inlined and slices from static strings will return
@@ -346,5 +348,19 @@ size_t grpc_slice_memory_usage(grpc_slice s);
 
 grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
     const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
+
+namespace grpc_core {
+
+struct SliceHash {
+  std::size_t operator()(const grpc_slice& slice) const {
+    return grpc_slice_hash_internal(slice);
+  }
+};
+
+}  // namespace grpc_core
+
+inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) {
+  return grpc_slice_eq(s1, s2);
+}
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

@@ -14,10 +14,10 @@
 """Reference implementation for health checking in gRPC Python."""
 
 import collections
-import threading
 import sys
-import grpc
+import threading
 
+import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
@@ -85,7 +85,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                  experimental_non_blocking=True,
                  experimental_thread_pool=None):
         self._lock = threading.RLock()
-        self._server_status = {}
+        self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = experimental_non_blocking
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool

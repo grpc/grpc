@@ -50,7 +50,11 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        # Test manipulates system time and requires root while running so it is only
+        # run on demand ("manual") and when no other tests are running ("exclusive").
+        # It also means that the test won't work with setups like bazel RBE.
         "manual",
+        "exclusive",
         "no_windows",
     ],
     deps = [

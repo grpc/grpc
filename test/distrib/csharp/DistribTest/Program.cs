@@ -53,6 +53,14 @@ namespace TestGrpcPackage
                 server.ShutdownAsync().Wait();
             }
         }
+
+        // Test that codegen works well in case the .csproj has .proto files
+        // of the same name, but under different directories (see #17672).
+        // This method doesn't need to be used, it is enough to check that it builds.
+        private static object CheckDuplicateProtoFilesAreOk()
+        {
+            return new DuplicateProto.MessageFromDuplicateProto();
+        }
     }
 
     class GreeterImpl : Greeter.GreeterBase

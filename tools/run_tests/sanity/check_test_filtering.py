@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -15,14 +15,15 @@
 # limitations under the License.
 
 import os
+import re
 import sys
 import unittest
-import re
 
 # hack import paths to pick up extra code
 sys.path.insert(0, os.path.abspath('tools/run_tests/'))
-from run_tests_matrix import _create_test_jobs, _create_portability_test_jobs
 import python_utils.filter_pull_request_tests as filter_pull_request_tests
+from run_tests_matrix import _create_portability_test_jobs
+from run_tests_matrix import _create_test_jobs
 
 _LIST_OF_LANGUAGE_LABELS = [
     'c', 'c++', 'csharp', 'grpc-node', 'objc', 'php', 'php7', 'python', 'ruby'
@@ -67,8 +68,8 @@ class TestFilteringTest(unittest.TestCase):
         filtered_jobs = [
             job for job in filtered_jobs if "sanity" not in job.labels
         ]
-        self.assertEquals(sanity_tests_in_all_jobs,
-                          sanity_tests_in_filtered_jobs)
+        self.assertEqual(sanity_tests_in_all_jobs,
+                         sanity_tests_in_filtered_jobs)
 
         for label in labels:
             for job in filtered_jobs:
@@ -79,8 +80,8 @@ class TestFilteringTest(unittest.TestCase):
             for job in all_jobs:
                 if (label in job.labels):
                     jobs_matching_labels += 1
-        self.assertEquals(len(filtered_jobs),
-                          len(all_jobs) - jobs_matching_labels)
+        self.assertEqual(len(filtered_jobs),
+                         len(all_jobs) - jobs_matching_labels)
 
     def test_individual_language_filters(self):
         # Changing unlisted file should trigger all languages
@@ -146,13 +147,13 @@ class TestFilteringTest(unittest.TestCase):
             if label not in filter_pull_request_tests._WINDOWS_TEST_SUITE.labels
         ])
 
-    def test_whitelist(self):
-        whitelist = filter_pull_request_tests._WHITELIST_DICT
+    def test_allowlist(self):
+        allowlist = filter_pull_request_tests._ALLOWLIST_DICT
         files_that_should_trigger_all_tests = [
             'src/core/foo.bar', 'some_file_not_on_the_white_list', 'BUILD',
             'etc/roots.pem', 'Makefile', 'tools/foo'
         ]
-        for key in whitelist.keys():
+        for key in list(allowlist.keys()):
             for file_name in files_that_should_trigger_all_tests:
                 self.assertFalse(re.match(key, file_name))
 

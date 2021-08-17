@@ -37,3 +37,15 @@ rm -f Podfile.lock
 echo "TIME:  $(date)"
 pod install
 
+# ios-test-cfstream-tests flakes sometimes because of missing files in gRPC-Core,
+# add some log to help find out the root cause.
+# TODO(yulinliang): Delete it after solving the issue.
+if [ -d "./Pods/Headers/Public/gRPC-Core/grpc/impl/codegen" ]
+then 
+    echo "grpc/impl/codegen/ has been imported."
+    number_of_files=$(find Pods/Headers/Public/gRPC-Core/grpc/impl/codegen -name "*.h" | wc -l)
+    echo "The number of files in Pods/Headers/Public/gRPC-Core/grpc/impl/codegen/ is $number_of_files"
+else
+    echo "Error: grpc/impl/codegen/ hasn't been imported."
+fi
+

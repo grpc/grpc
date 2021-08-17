@@ -37,8 +37,24 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #define GRPC_TEST_PICK_PORT
 #endif
 
+// Returns whether this is built under ThreadSanitizer
+bool BuiltUnderTsan();
+
+// Returns whether this is built under AddressSanitizer
+bool BuiltUnderAsan();
+
+// Returns whether this is built under MemorySanitizer
+bool BuiltUnderMsan();
+
+// Returns whether this is built under UndefinedBehaviorSanitizer
+bool BuiltUnderUbsan();
+
 // Prefer TestEnvironment below.
 void grpc_test_init(int argc, char** argv);
+
+// Wait until gRPC is fully shut down.
+// Returns if grpc is shutdown
+bool grpc_wait_until_shutdown(int64_t time_s);
 
 namespace grpc {
 namespace testing {
@@ -49,6 +65,15 @@ class TestEnvironment {
  public:
   TestEnvironment(int argc, char** argv);
   ~TestEnvironment();
+};
+
+// A TestGrpcScope makes sure that
+// - when it's created, gRPC will be initialized
+// - when it's destroyed, gRPC will shutdown and it waits until shutdown
+class TestGrpcScope {
+ public:
+  TestGrpcScope();
+  ~TestGrpcScope();
 };
 
 }  // namespace testing

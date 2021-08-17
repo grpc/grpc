@@ -25,11 +25,6 @@
 #import "GRPCTransport.h"
 #import "private/GRPCTransport+Private.h"
 
-NSString *const kGRPCHeadersKey = @"io.grpc.HeadersKey";
-NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";
-
-NSString *const kGRPCErrorDomain = @"io.grpc";
-
 /**
  * The response dispatcher creates its own serial dispatch queue and target the queue to the
  * dispatch queue of a user provided response handler. It removes the requirement of having to use

@@ -39,6 +39,7 @@ class BenchmarkServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function UnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -54,6 +55,7 @@ class BenchmarkServiceClient extends \Grpc\BaseStub {
      * The server returns the client payload as-is on each response
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function StreamingCall($metadata = [], $options = []) {
         return $this->_bidiRequest('/grpc.testing.BenchmarkService/StreamingCall',
@@ -66,6 +68,7 @@ class BenchmarkServiceClient extends \Grpc\BaseStub {
      * The server returns the client payload as-is once the client does WritesDone
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function StreamingFromClient($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/grpc.testing.BenchmarkService/StreamingFromClient',
@@ -79,6 +82,7 @@ class BenchmarkServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function StreamingFromServer(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -93,6 +97,7 @@ class BenchmarkServiceClient extends \Grpc\BaseStub {
      * Both sides send the content of their own choice to the other
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\SimpleResponse
      */
     public function StreamingBothWays($metadata = [], $options = []) {
         return $this->_bidiRequest('/grpc.testing.BenchmarkService/StreamingBothWays',

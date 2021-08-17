@@ -32,7 +32,7 @@ namespace Grpc.Tools.Tests
         public void SetUp()
         {
             _mockEngine = new Mock<IBuildEngine>();
-            _log = new TaskLoggingHelper(_mockEngine.Object, "dummy");
+            _log = new TaskLoggingHelper(_mockEngine.Object, "phony");
         }
 
         [TestCase("csharp")]

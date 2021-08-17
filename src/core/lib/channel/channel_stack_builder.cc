@@ -267,7 +267,7 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
   gpr_free(builder);
 }
 
-grpc_error* grpc_channel_stack_builder_finish(
+grpc_error_handle grpc_channel_stack_builder_finish(
     grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
     grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
   // count the number of filters
@@ -294,7 +294,7 @@ grpc_error* grpc_channel_stack_builder_finish(
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       static_cast<char*>(*result) + prefix_bytes);
   // and initialize it
-  grpc_error* error = grpc_channel_stack_init(
+  grpc_error_handle error = grpc_channel_stack_init(
       initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
       filters, num_filters, builder->args, builder->transport, builder->name,
       channel_stack);

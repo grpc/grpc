@@ -21,13 +21,11 @@
 
 #include "src/compiler/config.h"
 
-#include <google/protobuf/compiler/csharp/csharp_names.h>
-
 namespace grpc_csharp_generator {
 
-grpc::string GetServices(const grpc::protobuf::FileDescriptor* file,
-                         bool generate_client, bool generate_server,
-                         bool internal_access);
+std::string GetServices(const grpc::protobuf::FileDescriptor* file,
+                        bool generate_client, bool generate_server,
+                        bool internal_access);
 
 }  // namespace grpc_csharp_generator
 

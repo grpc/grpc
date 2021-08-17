@@ -65,6 +65,7 @@
 
 #ifndef GRPC_CUSTOM_JSONUTIL
 #include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver_util.h>
 #define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
 #define GRPC_CUSTOM_UTIL_STATUS ::google::protobuf::util::Status
 #endif
@@ -90,6 +91,7 @@ namespace util {
 typedef GRPC_CUSTOM_UTIL_STATUS Status;
 }  // namespace util
 
+// NOLINTNEXTLINE(misc-unused-alias-decls)
 namespace json = GRPC_CUSTOM_JSONUTIL;
 
 namespace io {

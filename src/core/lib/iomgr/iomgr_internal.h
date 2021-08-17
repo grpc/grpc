@@ -38,7 +38,7 @@ typedef struct grpc_iomgr_platform_vtable {
   void (*shutdown_background_closure)(void);
   bool (*is_any_background_poller_thread)(void);
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
-                                           grpc_error* error);
+                                           grpc_error_handle error);
 } grpc_iomgr_platform_vtable;
 
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
@@ -65,8 +65,8 @@ bool grpc_iomgr_platform_is_any_background_poller_thread(void);
 /** Return true if the closure is registered into the background poller. Note
  * that the closure may or may not run yet when this function returns, and the
  * closure should not be blocking or long-running. */
-bool grpc_iomgr_platform_add_closure_to_background_poller(grpc_closure* closure,
-                                                          grpc_error* error);
+bool grpc_iomgr_platform_add_closure_to_background_poller(
+    grpc_closure* closure, grpc_error_handle error);
 
 bool grpc_iomgr_abort_on_leaks(void);
 

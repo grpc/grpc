@@ -26,8 +26,8 @@
 namespace grpc {
 namespace testing {
 
-grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
-                                 grpc::protobuf::DescriptorPool& desc_pool) {
+std::string DescribeServiceList(std::vector<std::string> service_list,
+                                grpc::protobuf::DescriptorPool& desc_pool) {
   std::stringstream result;
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     auto const& service = *it;
@@ -40,16 +40,16 @@ grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
   return result.str();
 }
 
-grpc::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
-  grpc::string result;
+std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
+  std::string result;
   if (service->options().deprecated()) {
     result.append("DEPRECATED\n");
   }
   result.append("filename: " + service->file()->name() + "\n");
 
-  grpc::string package = service->full_name();
+  std::string package = service->full_name();
   size_t pos = package.rfind("." + service->name());
-  if (pos != grpc::string::npos) {
+  if (pos != std::string::npos) {
     package.erase(pos);
     result.append("package: " + package + ";\n");
   }
@@ -61,7 +61,7 @@ grpc::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
   return result;
 }
 
-grpc::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
+std::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
   std::stringstream result;
   result << "  rpc " << method->name()
          << (method->client_streaming() ? "(stream " : "(")
@@ -74,17 +74,16 @@ grpc::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
   return result.str();
 }
 
-grpc::string SummarizeService(
-    const grpc::protobuf::ServiceDescriptor* service) {
-  grpc::string result;
+std::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service) {
+  std::string result;
   for (int i = 0; i < service->method_count(); ++i) {
     result.append(SummarizeMethod(service->method(i)));
   }
   return result;
 }
 
-grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method) {
-  grpc::string result = method->name();
+std::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method) {
+  std::string result = method->name();
   result.append("\n");
   return result;
 }

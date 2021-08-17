@@ -16,16 +16,20 @@
  *
  */
 
-#include <string.h>
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
+#include <string.h>
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/bad_ssl/server_common.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 /* This test starts a server that is configured to advertise (via alpn and npn)
  * a protocol that the connecting client does not support. It does this by
@@ -52,8 +56,16 @@ const char* grpc_chttp2_get_alpn_version_index(size_t i) {
 
 int main(int argc, char** argv) {
   const char* addr = bad_ssl_addr(argc, argv);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
-                                                  test_server1_cert};
+  grpc_slice cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
   grpc_server_credentials* ssl_creds;
   grpc_server* server;
 
@@ -65,6 +77,8 @@ int main(int argc, char** argv) {
   grpc_server_credentials_release(ssl_creds);
 
   bad_ssl_run(server);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
   grpc_shutdown();
 
   return 0;

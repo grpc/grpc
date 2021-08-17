@@ -42,7 +42,7 @@ grpc_workaround_user_agent_md* grpc_parse_user_agent(grpc_mdelem md) {
       user_agent_md->workaround_active[i] = ua_parser[i](md);
     }
   }
-  grpc_mdelem_set_user_data(md, destroy_user_agent_md, (void*)user_agent_md);
+  grpc_mdelem_set_user_data(md, destroy_user_agent_md, user_agent_md);
 
   return user_agent_md;
 }

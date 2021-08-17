@@ -76,6 +76,13 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
   cdef grpc_channel_credentials *c(self) except *
 
 
+cdef class XDSChannelCredentials(ChannelCredentials):
+
+  cdef readonly ChannelCredentials _fallback_credentials
+
+  cdef grpc_channel_credentials *c(self) except *
+
+
 cdef class ServerCertificateConfig:
 
   cdef grpc_ssl_server_certificate_config *c_cert_config
@@ -102,3 +109,9 @@ cdef class ServerCredentials:
 cdef class LocalChannelCredentials(ChannelCredentials):
 
   cdef grpc_local_connect_type _local_connect_type
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+  cdef grpc_alts_credentials_options *c_options
+
+  cdef grpc_channel_credentials *c(self) except *

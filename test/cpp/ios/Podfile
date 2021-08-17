@@ -7,7 +7,7 @@ GRPC_LOCAL_SRC = '../../..'
 
 
 target 'CronetTests' do
-  platform :ios, '8.0'
+  platform :ios, '9.0'
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 
   pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
@@ -55,6 +55,14 @@ pre_install do |installer|
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
+
+  # This is the RemoteTestCpp podspec object.
+  remote_test_cpp_spec = installer.pod_targets.find{|t| t.name.start_with?('RemoteTestCpp')}.root_spec
+
+  # ios-cpp-test-cronet failes by chance because the RemoteTestCpp target cannot find Protobuf-C++.
+  remote_test_cpp_spec.pod_target_xcconfig = {
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_ROOT)/header/Public/Protobuf-C++"',
+  }
 end
 
 post_install do |installer|
@@ -72,7 +80,7 @@ post_install do |installer|
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1 GRPC_CFSTREAM=1'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
       end
     end
 

@@ -141,6 +141,15 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
+        public void AdditionalProtocArguments()
+        {
+            _task.AdditionalProtocArguments = new[] { "--experimental_allow_proto3_optional" };
+            ExecuteExpectSuccess();
+            Assert.That(_task.LastResponseFile,
+                Does.Contain("--experimental_allow_proto3_optional"));
+        }
+
+        [Test]
         public void DirectoryArgumentsSlashTrimmed()
         {
             _task.GrpcPluginExe = "/foo/grpcgen";

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017 gRPC authors.
 #
@@ -25,7 +25,8 @@ def check_port_platform_inclusion(directory_root):
     for root, dirs, files in os.walk(directory_root):
         for filename in files:
             path = os.path.join(root, filename)
-            if os.path.splitext(path)[1] not in ['.c', '.cc', '.h']: continue
+            if os.path.splitext(path)[1] not in ['.c', '.cc', '.h']:
+                continue
             if path in [
                     os.path.join('include', 'grpc', 'support',
                                  'port_platform.h'),
@@ -36,7 +37,9 @@ def check_port_platform_inclusion(directory_root):
             if filename.endswith('.pb.h') or filename.endswith('.pb.c'):
                 continue
             # Skip check for upb generated code.
-            if filename.endswith('.upb.h') or filename.endswith('.upb.c'):
+            if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
+                    filename.endswith('.upbdefs.h') or
+                    filename.endswith('.upbdefs.c')):
                 continue
             with open(path) as f:
                 all_lines_in_file = f.readlines()
@@ -60,8 +63,21 @@ all_bad_files = []
 all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'))
 all_bad_files += check_port_platform_inclusion(os.path.join('include', 'grpc'))
 
-if len(all_bad_files) > 0:
-    for f in all_bad_files:
-        print(('port_platform.h is not the first included header or there '
-               'is not a blank line following its inclusion in %s') % f)
-    sys.exit(1)
+if sys.argv[1:] == ['--fix']:
+    for path in all_bad_files:
+        text = ''
+        found = False
+        with open(path) as f:
+            for l in f.readlines():
+                if not found and '#include' in l:
+                    text += '#include <grpc/impl/codegen/port_platform.h>\n\n'
+                    found = True
+                text += l
+        with open(path, 'w') as f:
+            f.write(text)
+else:
+    if len(all_bad_files) > 0:
+        for f in all_bad_files:
+            print((('port_platform.h is not the first included header or there '
+                    'is not a blank line following its inclusion in %s') % f))
+        sys.exit(1)

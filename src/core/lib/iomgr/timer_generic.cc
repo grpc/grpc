@@ -22,12 +22,15 @@
 
 #include <inttypes.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -56,7 +59,7 @@ grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
  * stats maintained in 'stats' and the relevant timers are then moved from the
  * 'list' to 'heap'.
  */
-typedef struct {
+struct timer_shard {
   gpr_mu mu;
   grpc_time_averaged_stats stats;
   /* All and only timers with deadlines < this will be in the heap. */
@@ -70,8 +73,7 @@ typedef struct {
   grpc_timer_heap heap;
   /* This holds timers whose deadline is >= queue_deadline_cap. */
   grpc_timer list;
-} timer_shard;
-
+};
 static size_t g_num_shards;
 
 /* Array of timer shards. Whenever a timer (grpc_timer *) is added, its address
@@ -245,7 +247,7 @@ static grpc_millis saturating_add(grpc_millis a, grpc_millis b) {
 
 static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
                                                        grpc_millis* next,
-                                                       grpc_error* error);
+                                                       grpc_error_handle error);
 
 static grpc_millis compute_min_deadline(timer_shard* shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
@@ -407,7 +409,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   }
   gpr_mu_unlock(&shard->mu);
 
-  /* Deadline may have decreased, we need to adjust the master queue.  Note
+  /* Deadline may have decreased, we need to adjust the main queue.  Note
      that there is a potential racy unlocked region here.  There could be a
      reordering of multiple grpc_timer_init calls, at this point, but the < test
      below should ensure that we err on the side of caution.  There could
@@ -430,7 +432,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
       note_deadline_change(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
 #if GPR_ARCH_64
-        // TODO: sreek - Using c-style cast here. static_cast<> gives an error
+        // TODO(sreek): Using c-style cast here. static_cast<> gives an error
         // (on mac platforms complaining that gpr_atm* is (long *) while
         // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
         // safe since we know that both are pointer types and 64-bit wide.
@@ -559,7 +561,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
 
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_timers(timer_shard* shard, grpc_millis now,
-                         grpc_millis* new_min_deadline, grpc_error* error) {
+                         grpc_millis* new_min_deadline,
+                         grpc_error_handle error) {
   size_t n = 0;
   grpc_timer* timer;
   gpr_mu_lock(&shard->mu);
@@ -578,13 +581,12 @@ static size_t pop_timers(timer_shard* shard, grpc_millis now,
   return n;
 }
 
-static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
-                                                       grpc_millis* next,
-                                                       grpc_error* error) {
+static grpc_timer_check_result run_some_expired_timers(
+    grpc_millis now, grpc_millis* next, grpc_error_handle error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
-  // TODO: sreek - Using c-style cast here. static_cast<> gives an error (on
+  // TODO(sreek): Using c-style cast here. static_cast<> gives an error (on
   // mac platforms complaining that gpr_atm* is (long *) while
   // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
   // safe since we know that both are pointer types and 64-bit wide
@@ -637,7 +639,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
 
       /* An grpc_timer_init() on the shard could intervene here, adding a new
          timer that is earlier than new_min_deadline.  However,
-         grpc_timer_init() will block on the master_lock before it can call
+         grpc_timer_init() will block on the mutex before it can call
          set_min_deadline, so this one will complete first and then the Addtimer
          will reduce the min_deadline (perhaps unnecessarily). */
       g_shard_queue[0]->min_deadline = new_min_deadline;
@@ -649,7 +651,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
     }
 
 #if GPR_ARCH_64
-    // TODO: sreek - Using c-style cast here. static_cast<> gives an error (on
+    // TODO(sreek): Using c-style cast here. static_cast<> gives an error (on
     // mac platforms complaining that gpr_atm* is (long *) while
     // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
     // safe since we know that both are pointer types and 64-bit wide
@@ -700,45 +702,43 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
-  grpc_error* shutdown_error =
+  grpc_error_handle shutdown_error =
       now != GRPC_MILLIS_INF_FUTURE
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
 
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    char* next_str;
+    std::string next_str;
     if (next == nullptr) {
-      next_str = gpr_strdup("NULL");
+      next_str = "NULL";
     } else {
-      gpr_asprintf(&next_str, "%" PRId64, *next);
+      next_str = absl::StrCat(*next);
     }
 #if GPR_ARCH_64
     gpr_log(GPR_INFO,
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
             " glob_min=%" PRId64,
-            now, next_str, min_timer,
+            now, next_str.c_str(), min_timer,
             static_cast<grpc_millis>(gpr_atm_no_barrier_load(
                 (gpr_atm*)(&g_shared_mutables.min_timer))));
 #else
     gpr_log(GPR_INFO, "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64,
-            now, next_str, min_timer);
+            now, next_str.c_str(), min_timer);
 #endif
-    gpr_free(next_str);
   }
   // actual code
   grpc_timer_check_result r =
       run_some_expired_timers(now, next, shutdown_error);
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    char* next_str;
+    std::string next_str;
     if (next == nullptr) {
-      next_str = gpr_strdup("NULL");
+      next_str = "NULL";
     } else {
-      gpr_asprintf(&next_str, "%" PRId64, *next);
+      next_str = absl::StrCat(*next);
     }
-    gpr_log(GPR_INFO, "TIMER CHECK END: r=%d; next=%s", r, next_str);
-    gpr_free(next_str);
+    gpr_log(GPR_INFO, "TIMER CHECK END: r=%d; next=%s", r, next_str.c_str());
   }
   return r;
 }

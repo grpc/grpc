@@ -22,17 +22,17 @@ load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
 
 objc_grpc_library(
     name = "HelloWorld_grpc_proto",
-    srcs = ["//examples:protos/helloworld.proto"],
+    srcs = ["//examples/protos:helloworld.proto"],
     tags = ["manual"],
-    deps = ["//examples:helloworld_proto"],
+    deps = ["//examples/protos:helloworld_proto"],
 )
 
-# This one works with import "external/com_github_grpc_grpc/examples/protos/Helloworld.pbrpc.h"
+# This one works with import "external/com_github_grpc_grpc/examples/protos/Keyvaluestore.pbrpc.h"
 objc_grpc_library(
-    name = "HelloWorld_grpc_proto_external",
-    srcs = ["//external/com_github_grpc_grpc/examples:protos/helloworld.proto"],
+    name = "Keyvaluestore_grpc_proto_external",
+    srcs = ["//external/com_github_grpc_grpc/examples/protos:keyvaluestore.proto"],
     tags = ["manual"],
-    deps = ["@com_github_grpc_grpc//examples:helloworld_proto"],
+    deps = ["@com_github_grpc_grpc//examples/protos:keyvaluestore_proto"],
 )
 
 objc_library(
@@ -56,7 +56,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["helloworld/HelloWorld/Info.plist"],
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     tags = ["manual"],
     deps = [":HelloWorld-lib"],
 )
@@ -86,9 +86,9 @@ macos_application(
 
 objc_grpc_library(
     name = "RouteGuide",
-    srcs = ["//examples:protos/route_guide.proto"],
+    srcs = ["//examples/protos:route_guide.proto"],
     tags = ["manual"],
-    deps = ["//examples:route_guide_proto"],
+    deps = ["//examples/protos:route_guide_proto"],
 )
 
 objc_library(
@@ -113,7 +113,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["route_guide/Misc/Info.plist"],
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     tags = ["manual"],
     deps = [":RouteGuideClient-lib"],
 )

@@ -38,8 +38,8 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs) {
   if (kp == nullptr) return;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free((void*)kp[i].private_key);
-    gpr_free((void*)kp[i].cert_chain);
+    gpr_free(const_cast<char*>(kp[i].private_key));
+    gpr_free(const_cast<char*>(kp[i].cert_chain));
   }
   gpr_free(kp);
 }
@@ -87,7 +87,7 @@ grpc_ssl_credentials::create_security_connector(
     return sc;
   }
   grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+      const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return sc;
 }
@@ -115,6 +115,16 @@ void grpc_ssl_credentials::build_config(
     // Otherwise set all options to default values
     memset(&config_.verify_options, 0, sizeof(verify_peer_options));
   }
+}
+
+void grpc_ssl_credentials::set_min_tls_version(
+    grpc_tls_version min_tls_version) {
+  config_.min_tls_version = min_tls_version;
+}
+
+void grpc_ssl_credentials::set_max_tls_version(
+    grpc_tls_version max_tls_version) {
+  config_.max_tls_version = max_tls_version;
 }
 
 /* Deprecated in favor of grpc_ssl_credentials_create_ex. Will be removed
@@ -180,7 +190,8 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
   gpr_free(config_.pem_root_certs);
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_ssl_server_credentials::create_security_connector() {
+grpc_ssl_server_credentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
 
@@ -213,6 +224,16 @@ void grpc_ssl_server_credentials::build_config(
   config_.num_key_cert_pairs = num_key_cert_pairs;
 }
 
+void grpc_ssl_server_credentials::set_min_tls_version(
+    grpc_tls_version min_tls_version) {
+  config_.min_tls_version = min_tls_version;
+}
+
+void grpc_ssl_server_credentials::set_max_tls_version(
+    grpc_tls_version max_tls_version) {
+  config_.max_tls_version = max_tls_version;
+}
+
 grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
     const char* pem_root_certs,
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
@@ -242,8 +263,8 @@ void grpc_ssl_server_certificate_config_destroy(
     grpc_ssl_server_certificate_config* config) {
   if (config == nullptr) return;
   for (size_t i = 0; i < config->num_key_cert_pairs; i++) {
-    gpr_free((void*)config->pem_key_cert_pairs[i].private_key);
-    gpr_free((void*)config->pem_key_cert_pairs[i].cert_chain);
+    gpr_free(const_cast<char*>(config->pem_key_cert_pairs[i].private_key));
+    gpr_free(const_cast<char*>(config->pem_key_cert_pairs[i].cert_chain));
   }
   gpr_free(config->pem_key_cert_pairs);
   gpr_free(config->pem_root_certs);

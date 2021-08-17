@@ -100,6 +100,7 @@ static NSMutableDictionary *gHostCache;
 - (GRPCCallOptions *)callOptions {
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.userAgentPrefix = _userAgentPrefix;
+  options.userAgentSuffix = _userAgentSuffix;
   options.responseSizeLimit = _responseSizeLimitOverride;
   options.compressionAlgorithm = (GRPCCompressionAlgorithm)_compressAlgorithm;
   options.retryEnabled = _retryEnabled;

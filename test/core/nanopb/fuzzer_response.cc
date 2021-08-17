@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 

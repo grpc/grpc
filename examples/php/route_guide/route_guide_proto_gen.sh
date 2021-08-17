@@ -13,4 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-protoc --proto_path=./../../protos  --php_out=./  --grpc_out=./ --plugin=protoc-gen-grpc=./../../../bins/opt/grpc_php_plugin ./../../protos/route_guide.proto
+set -e
+
+cd $(dirname $0)/../../..
+
+# protoc and grpc_*_plugin binaries can be obtained by running
+# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
+PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
+
+$PROTOC --proto_path=examples/protos \
+       --php_out=examples/php/route_guide \
+       --grpc_out=generate_server:examples/php/route_guide \
+       --plugin=$PLUGIN examples/protos/route_guide.proto

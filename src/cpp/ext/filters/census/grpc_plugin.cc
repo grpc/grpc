@@ -47,6 +47,9 @@ void RegisterOpenCensusPlugin() {
   RpcClientServerLatency();
   RpcClientSentMessagesPerRpc();
   RpcClientReceivedMessagesPerRpc();
+  RpcClientRetriesPerCall();
+  RpcClientTransparentRetriesPerCall();
+  RpcClientRetryDelayPerCall();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -55,8 +58,11 @@ void RegisterOpenCensusPlugin() {
   RpcServerReceivedMessagesPerRpc();
 }
 
-::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context) {
-  return reinterpret_cast<const CensusContext*>(context->census_context())
+::opencensus::trace::Span GetSpanFromServerContext(
+    grpc::ServerContext* context) {
+  if (context == nullptr) return opencensus::trace::Span::BlankSpan();
+
+  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
       ->Span();
 }
 
@@ -109,6 +115,16 @@ ABSL_CONST_INIT const absl::string_view kRpcClientRoundtripLatencyMeasureName =
 ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
     "grpc.io/client/server_latency";
 
+ABSL_CONST_INIT const absl::string_view kRpcClientRetriesPerCallMeasureName =
+    "grpc.io/client/retries_per_call";
+
+ABSL_CONST_INIT const absl::string_view
+    kRpcClientTransparentRetriesPerCallMeasureName =
+        "grpc.io/client/transparent_retries_per_call";
+
+ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
+    "grpc.io/client/retry_delay_per_call";
+
 // Server
 ABSL_CONST_INIT const absl::string_view
     kRpcServerSentMessagesPerRpcMeasureName =
@@ -127,5 +143,4 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
-
 }  // namespace grpc

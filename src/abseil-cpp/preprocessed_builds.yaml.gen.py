@@ -69,8 +69,11 @@ def parse_bazel_rule(elem, package):
 
 def read_bazel_build(package):
   """Runs bazel query on given package file and returns all cc rules."""
+  # Use a wrapper version of bazel in gRPC not to use system-wide bazel
+  # to avoid bazel conflict when running on Kokoro.
+  BAZEL_BIN = "../../tools/bazel"
   result = subprocess.check_output(
-      ["bazel", "query", package + ":all", "--output", "xml"])
+      [BAZEL_BIN, "query", package + ":all", "--output", "xml"])
   root = ET.fromstring(result)
   return [
       parse_bazel_rule(elem, package)
@@ -203,7 +206,7 @@ def main():
   builds = generate_builds("absl")
   os.chdir(previous_dir)
   with open(OUTPUT_PATH, 'w') as outfile:
-    outfile.write(yaml.dump(builds, indent=2, sort_keys=True))
+    outfile.write(yaml.dump(builds, indent=2))
 
 
 if __name__ == "__main__":

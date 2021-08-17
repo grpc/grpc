@@ -17,10 +17,10 @@
  */
 
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
+#include "test/core/util/test_config.h"
 
 #include <gtest/gtest.h>
-
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace {
 
@@ -56,6 +56,7 @@ TEST(GetStatusCodeFromMetadata, Unparseable) {
 }  // namespace
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

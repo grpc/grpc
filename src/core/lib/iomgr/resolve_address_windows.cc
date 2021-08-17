@@ -29,29 +29,32 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 
-typedef struct {
+struct request {
   char* name;
   char* default_port;
   grpc_closure request_closure;
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
-} request;
-
-static grpc_error* windows_blocking_resolve_address(
+};
+static grpc_error_handle windows_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
@@ -59,28 +62,24 @@ static grpc_error* windows_blocking_resolve_address(
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
-  if (host == NULL) {
-    char* msg;
-    gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+  if (host.empty()) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("unparseable host:port: '%s'", name).c_str());
     goto done;
   }
-  if (port == NULL) {
+  if (port.empty()) {
     if (default_port == NULL) {
-      char* msg;
-      gpr_asprintf(&msg, "no port in name '%s'", name);
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrFormat("no port in name '%s'", name).c_str());
       goto done;
     }
-    port.reset(gpr_strdup(default_port));
+    port = default_port;
   }
 
   /* Call getaddrinfo */
@@ -90,7 +89,7 @@ static grpc_error* windows_blocking_resolve_address(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  s = getaddrinfo(host.get(), port.get(), &hints, &result);
+  s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
@@ -113,14 +112,6 @@ static grpc_error* windows_blocking_resolve_address(
     i++;
   }
 
-  {
-    for (i = 0; i < (*addresses)->naddrs; i++) {
-      char* buf;
-      grpc_sockaddr_to_string(&buf, &(*addresses)->addrs[i], 0);
-      gpr_free(buf);
-    }
-  }
-
 done:
   if (result) {
     freeaddrinfo(result);
@@ -130,7 +121,7 @@ done:
 
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error* error) {
+static void do_request_thread(void* rp, grpc_error_handle error) {
   request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
     error =

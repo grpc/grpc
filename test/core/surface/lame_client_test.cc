@@ -30,16 +30,17 @@
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:
-  void Notify(grpc_connectivity_state new_state) override {
+  void Notify(grpc_connectivity_state new_state,
+              const absl::Status& /* status */) override {
     GPR_ASSERT(new_state == GRPC_CHANNEL_SHUTDOWN);
   }
 };
 
-static void* tag(intptr_t x) { return (void*)x; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_closure transport_op_cb;
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;
@@ -75,8 +76,10 @@ int main(int argc, char** argv) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  chan = grpc_lame_client_channel_create(
-      "lampoon:national", GRPC_STATUS_UNKNOWN, "Rpc sent on a lame channel.");
+  const char* error_message = "Rpc sent on a lame channel.";
+  grpc_status_code error_code = GRPC_STATUS_ABORTED;
+  chan = grpc_lame_client_channel_create("lampoon:national", error_code,
+                                         error_message);
   GPR_ASSERT(chan);
 
   test_transport_op(chan);
@@ -134,6 +137,9 @@ int main(int argc, char** argv) {
   peer = grpc_call_get_peer(call);
   GPR_ASSERT(strcmp(peer, "lampoon:national") == 0);
   gpr_free(peer);
+
+  GPR_ASSERT(status == error_code);
+  GPR_ASSERT(grpc_slice_str_cmp(details, error_message) == 0);
 
   grpc_call_unref(call);
   grpc_channel_destroy(chan);

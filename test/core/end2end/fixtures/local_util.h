@@ -23,7 +23,7 @@
 #include "src/core/lib/surface/channel.h"
 
 struct grpc_end2end_local_fullstack_fixture_data {
-  grpc_core::UniquePtr<char> localaddr;
+  std::string localaddr;
 };
 
 /* Utility functions shared by h2_local tests. */

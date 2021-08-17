@@ -25,7 +25,7 @@ A regression was noted in cases where users are doing fork/exec. This
 was due to ```pthread_atfork()``` handler that was added in 1.7 to partially
 support forking in gRPC. A deadlock can happen when pthread_atfork
 handler is running, and an application thread is calling into gRPC.
-We have provided a workaround for this issue by allowing users to turn 
+We have provided a workaround for this issue by allowing users to turn
 off the handler using env flag ```GRPC_ENABLE_FORK_SUPPORT=False```.
 This should be set whenever a user expects to always call exec
 immediately following fork.  It will disable the fork handlers.

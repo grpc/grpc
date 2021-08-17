@@ -44,6 +44,13 @@ cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
 make -j4 install
 popd
 
+# Install re2
+mkdir -p "third_party/re2/cmake/build"
+pushd "third_party/re2/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
+
 # Install zlib
 mkdir -p "third_party/zlib/cmake/build"
 pushd "third_party/zlib/cmake/build"
@@ -66,6 +73,7 @@ cmake \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..

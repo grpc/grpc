@@ -15,6 +15,7 @@
 
 import os
 import time
+
 from six import string_types
 
 
@@ -39,7 +40,8 @@ class DirWatcher(object):
                 continue
             for root, _, files in os.walk(path):
                 for f in files:
-                    if f and f[0] == '.': continue
+                    if f and f[0] == '.':
+                        continue
                     try:
                         st = os.stat(os.path.join(root, f))
                     except OSError as e:

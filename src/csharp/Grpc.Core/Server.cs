@@ -141,7 +141,9 @@ namespace Grpc.Core
 
         /// <summary>
         /// Starts the server.
-        /// Throws <c>IOException</c> if not successful.
+        /// Throws <c>IOException</c> if not all ports have been bound successfully (see <c>Ports.Add</c> method).
+        /// Even if some of that ports haven't been bound, the server will still serve normally on all ports that have been
+        /// bound successfully (and the user is expected to shutdown the server by invoking <c>ShutdownAsync</c> or <c>KillAsync</c>).
         /// </summary>
         public void Start()
         {
@@ -151,7 +153,6 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 startRequested = true;
 
-                CheckPortsBoundSuccessfully();
                 handle.Start();
 
                 for (int i = 0; i < requestCallTokensPerCq; i++)
@@ -161,6 +162,13 @@ namespace Grpc.Core
                         AllowOneRpc(cq);
                     }
                 }
+
+                // Throw if some ports weren't bound successfully.
+                // Even when that happens, some server ports might have been
+                // bound successfully, so we let server initialization
+                // proceed as usual and we only throw at the very end of the
+                // Start() method.
+                CheckPortsBoundSuccessfully();
             }
         }
 
@@ -443,7 +451,7 @@ namespace Grpc.Core
             /// <summary>
             /// Adds a new port on which server should listen.
             /// Only call this before Start().
-            /// <returns>The port on which server will be listening.</returns>
+            /// <returns>The port on which server will be listening. Return value of zero means that binding the port has failed.</returns>
             /// </summary>
             public int Add(ServerPort serverPort)
             {
@@ -452,7 +460,7 @@ namespace Grpc.Core
 
             /// <summary>
             /// Adds a new port on which server should listen.
-            /// <returns>The port on which server will be listening.</returns>
+            /// <returns>The port on which server will be listening. Return value of zero means that binding the port has failed.</returns>
             /// </summary>
             /// <param name="host">the host</param>
             /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>

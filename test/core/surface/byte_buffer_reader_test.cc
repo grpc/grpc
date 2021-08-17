@@ -25,7 +25,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
@@ -168,75 +167,6 @@ static void test_peek_none_compressed_slice(void) {
   grpc_byte_buffer_destroy(buffer);
 }
 
-static void test_read_corrupted_slice(void) {
-  grpc_slice slice;
-  grpc_byte_buffer* buffer;
-  grpc_byte_buffer_reader reader;
-
-  LOG_TEST("test_read_corrupted_slice");
-  slice = grpc_slice_from_copied_string("test");
-  buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  buffer->data.raw.compression = GRPC_COMPRESS_GZIP; /* lies! */
-  grpc_slice_unref(slice);
-  GPR_ASSERT(!grpc_byte_buffer_reader_init(&reader, buffer));
-  grpc_byte_buffer_destroy(buffer);
-}
-
-static void read_compressed_slice(grpc_compression_algorithm algorithm,
-                                  size_t input_size) {
-  grpc_slice input_slice;
-  grpc_slice_buffer sliceb_in;
-  grpc_slice_buffer sliceb_out;
-  grpc_byte_buffer* buffer;
-  grpc_byte_buffer_reader reader;
-  grpc_slice read_slice;
-  size_t read_count = 0;
-
-  grpc_slice_buffer_init(&sliceb_in);
-  grpc_slice_buffer_init(&sliceb_out);
-
-  input_slice = grpc_slice_malloc(input_size);
-  memset(GRPC_SLICE_START_PTR(input_slice), 'a', input_size);
-  grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_msg_compress(
-
-        grpc_compression_algorithm_to_message_compression_algorithm(algorithm),
-        &sliceb_in, &sliceb_out));
-  }
-
-  buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
-                                                  sliceb_out.count, algorithm);
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
-             "Couldn't init byte buffer reader");
-
-  while (grpc_byte_buffer_reader_next(&reader, &read_slice)) {
-    GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(read_slice),
-                      GRPC_SLICE_START_PTR(input_slice) + read_count,
-                      GRPC_SLICE_LENGTH(read_slice)) == 0);
-    read_count += GRPC_SLICE_LENGTH(read_slice);
-    grpc_slice_unref(read_slice);
-  }
-  GPR_ASSERT(read_count == input_size);
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(buffer);
-  grpc_slice_buffer_destroy(&sliceb_out);
-  grpc_slice_buffer_destroy(&sliceb_in);
-}
-
-static void test_read_gzip_compressed_slice(void) {
-  const size_t INPUT_SIZE = 2048;
-  LOG_TEST("test_read_gzip_compressed_slice");
-  read_compressed_slice(GRPC_COMPRESS_GZIP, INPUT_SIZE);
-}
-
-static void test_read_deflate_compressed_slice(void) {
-  const size_t INPUT_SIZE = 2048;
-  LOG_TEST("test_read_deflate_compressed_slice");
-  read_compressed_slice(GRPC_COMPRESS_DEFLATE, INPUT_SIZE);
-}
-
 static void test_byte_buffer_from_reader(void) {
   grpc_slice slice;
   grpc_byte_buffer *buffer, *buffer_from_reader;
@@ -342,9 +272,6 @@ int main(int argc, char** argv) {
   test_peek_one_slice();
   test_peek_one_slice_malloc();
   test_peek_none_compressed_slice();
-  test_read_gzip_compressed_slice();
-  test_read_deflate_compressed_slice();
-  test_read_corrupted_slice();
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();

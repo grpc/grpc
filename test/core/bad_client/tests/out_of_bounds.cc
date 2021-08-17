@@ -31,7 +31,7 @@ namespace {
 
 void verifier(grpc_server* server, grpc_completion_queue* cq,
               void* /*registered_method*/) {
-  while (grpc_server_has_open_connections(server)) {
+  while (server->core_server->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);

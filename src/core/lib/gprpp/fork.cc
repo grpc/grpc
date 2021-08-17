@@ -43,7 +43,7 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
                               GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
-                              "Enable folk support");
+                              "Enable fork support");
 
 namespace grpc_core {
 namespace internal {
@@ -54,7 +54,7 @@ namespace internal {
 // When blocked, the exec_ctx_count is 0-indexed.  Note that ExecCtx
 // creation can only be blocked if there is exactly 1 outstanding ExecCtx,
 // meaning that BLOCKED and UNBLOCKED counts partition the integers
-#define UNBLOCKED(n) (n + 2)
+#define UNBLOCKED(n) ((n) + 2)
 #define BLOCKED(n) (n)
 
 class ExecCtxState {

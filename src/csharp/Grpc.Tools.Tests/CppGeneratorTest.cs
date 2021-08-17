@@ -72,8 +72,8 @@ namespace Grpc.Tools.Tests
             Assert.AreEqual(4, poss.Length);
             Assert.Contains("foo.pb.cc", poss);
             Assert.Contains("foo.pb.h", poss);
-            Assert.Contains("foo_grpc.pb.cc", poss);
-            Assert.Contains("foo_grpc.pb.h", poss);
+            Assert.Contains("foo.grpc.pb.cc", poss);
+            Assert.Contains("foo.grpc.pb.h", poss);
         }
 
         [Test]

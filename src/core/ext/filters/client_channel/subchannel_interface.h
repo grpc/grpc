@@ -21,8 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
 
@@ -44,11 +47,10 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
-  template <typename TraceFlagT = TraceFlag>
-  explicit SubchannelInterface(TraceFlagT* trace_flag = nullptr)
-      : RefCounted<SubchannelInterface>(trace_flag) {}
+  explicit SubchannelInterface(const char* trace = nullptr)
+      : RefCounted<SubchannelInterface>(trace) {}
 
-  virtual ~SubchannelInterface() = default;
+  ~SubchannelInterface() override = default;
 
   // Returns the current connectivity state of the subchannel.
   virtual grpc_connectivity_state CheckConnectivityState() = 0;
@@ -87,6 +89,40 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
+};
+
+// A class that delegates to another subchannel, to be used in cases
+// where an LB policy needs to wrap a subchannel.
+class DelegatingSubchannel : public SubchannelInterface {
+ public:
+  explicit DelegatingSubchannel(RefCountedPtr<SubchannelInterface> subchannel)
+      : wrapped_subchannel_(std::move(subchannel)) {}
+
+  RefCountedPtr<SubchannelInterface> wrapped_subchannel() const {
+    return wrapped_subchannel_;
+  }
+
+  grpc_connectivity_state CheckConnectivityState() override {
+    return wrapped_subchannel_->CheckConnectivityState();
+  }
+  void WatchConnectivityState(
+      grpc_connectivity_state initial_state,
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
+    return wrapped_subchannel_->WatchConnectivityState(initial_state,
+                                                       std::move(watcher));
+  }
+  void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) override {
+    return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
+  }
+  void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
+  void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
+  const grpc_channel_args* channel_args() override {
+    return wrapped_subchannel_->channel_args();
+  }
+
+ private:
+  RefCountedPtr<SubchannelInterface> wrapped_subchannel_;
 };
 
 }  // namespace grpc_core

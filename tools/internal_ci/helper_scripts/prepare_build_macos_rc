@@ -25,9 +25,19 @@ ulimit -a
 # - try adding a dependency under a language-specific section first (reduces latency and increases build stability)
 # - only add stuff that you absolutely need for your builds to work (add comment to explain why its needed)
 
+# Disable HOMEBREW update to avoid new updates which potentially have problems.
+# Brew packages installed when Kokoro image was built tend to have less conflict.
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+# Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
+# because it should be the same as below unless it's been updated.
+# - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
+brew config
+
 # Add GCP credentials for BQ access
-pip install --user google-api-python-client oauth2client
+pip install --user google-api-python-client oauth2client six==1.15.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
@@ -36,14 +46,21 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
-  set +ex  # rvm script is very verbose and exits with errorcode
-  # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
-  brew update && brew upgrade brew-cask && brew cleanup && brew cask cleanup
-  set -e  # rvm commands are very verbose
+  # Fetch keys per https://rvm.io/rvm/install
+  gpg_recv_keys_success=0
+  for ((i=0;i<5;i++)); do
+    # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
+    GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
+    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+      && gpg_recv_keys_success=1
+    [[ "$gpg_recv_keys_success" == 1 ]] && break
+    sleep 3
+  done
+  [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   source $HOME/.rvm/scripts/rvm
-  for RUBY_VERSION in 2.5.0 2.7.0; do
-    rvm --debug requirements "ruby-${RUBY_VERSION}"
-    time rvm install "$RUBY_VERSION"
+  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+    time rvm install "ruby-${RUBY_VERSION}"
     time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
   done;
@@ -51,22 +68,19 @@ then
   time gem install cocoapods --version 1.3.1 --no-document
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
-  set -ex
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
+  time gem install cocoapods --version 1.7.2 --no-document
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
-  # set xcode version for Obj-C tests
-  sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
-
   # Needed for ios-binary-size
-  time pip install --user pyyaml pyjwt cryptography requests
+  time pip install --user -r $DIR/requirements.macos.txt
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -83,21 +97,32 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
   # python
-  time pip install --user virtualenv
-  time pip install --user --upgrade Mako six tox setuptools twisted pyyaml pyjwt cryptography requests
-  export PYTHONPATH=/Library/Python/3.4/site-packages
+  time pip install --user -r $DIR/requirements.macos.txt
+  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
-  # make sure md5sum is available (requires coreutils 8.31+)
-  brew upgrade coreutils
+  # Install Python 3.7 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.7" ]; then
+    time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+  fi
 
-  # Install Python 3.7 and Python 3.8
-  time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
-  time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
-  echo "ae0717a02efea3b0eb34aadc680dc498 python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.md5
-  echo "f5f9ae9f416170c6355cab7256bb75b5 python-3.8.0-macosx10.9.pkg" >> /tmp/python_installer_checksum.md5
-  md5sum -c /tmp/python_installer_checksum.md5
-  time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
-  time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
+  # Install Python 3.8 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.8" ]; then
+    time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
+    echo "30961fe060da9dc5afdc4e789a57fe9bcc0d20244474e9f095d7bfc89d2e1869  python-3.8.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.9 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.9" ]; then
+    time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
+    echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
@@ -106,13 +131,26 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
-
-  # Xcode 10+ doesn't support building for i386 architecture
-  sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 fi
 
-# PHP tests currently require using an older version of PHPUnit
-ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
+then
+  # It's required to update the brew because it won't work with the default version Kokoro has.
+  # This can be fragile, though because the future version of brew can break. In that case,
+  # please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
+  brew update || true
+  brew config
+
+  # Install PHP 7.3 explictly to address missing php header files and
+  # to work well with the pre-installed phpunit 8.4
+  brew install php@7.3 || true
+  export LDFLAGS="-L/usr/local/opt/php@7.3/lib $(LDFLAGS)"
+  export CPPFLAGS="-I/usr/local/opt/php@7.3/include $(CPPFLAGS)"
+  export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:$PATH"
+
+  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+  mkdir -p /usr/local/lib/php/pecl
+fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date

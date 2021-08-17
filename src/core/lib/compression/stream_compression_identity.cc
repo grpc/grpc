@@ -82,9 +82,7 @@ grpc_stream_compression_context_create_identity(
 }
 
 static void grpc_stream_compression_context_destroy_identity(
-    grpc_stream_compression_context* /*ctx*/) {
-  return;
-}
+    grpc_stream_compression_context* /*ctx*/) {}
 
 const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable = {
     grpc_stream_compress_identity, grpc_stream_decompress_identity,

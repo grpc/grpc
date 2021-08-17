@@ -15,15 +15,16 @@
 
 import abc
 import asyncio
-import time
 import logging
 import random
+import time
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import (benchmark_service_pb2_grpc, control_pb2,
-                                    messages_pb2)
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import messages_pb2
 from tests.qps import histogram
 from tests.unit import resources
 
@@ -33,6 +34,8 @@ class GenericStub(object):
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
             '/grpc.testing.BenchmarkService/UnaryCall')
+        self.StreamingFromServer = channel.unary_stream(
+            '/grpc.testing.BenchmarkService/StreamingFromServer')
         self.StreamingCall = channel.stream_stream(
             '/grpc.testing.BenchmarkService/StreamingCall')
 
@@ -146,6 +149,35 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
         await super().run()
         self._running = True
         senders = (self._one_streaming_call() for _ in range(self._concurrency))
+        await asyncio.gather(*senders)
+        self._stopped.set()
+
+    async def stop(self):
+        self._running = False
+        await self._stopped.wait()
+        await super().stop()
+
+
+class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
+
+    def __init__(self, address: str, config: control_pb2.ClientConfig,
+                 hist: histogram.Histogram):
+        super().__init__(address, config, hist)
+        self._running = None
+        self._stopped = asyncio.Event()
+
+    async def _one_server_streaming_call(self):
+        call = self._stub.StreamingFromServer(self._request)
+        while self._running:
+            start_time = time.time()
+            await call.read()
+            self._record_query_time(time.time() - start_time)
+
+    async def run(self):
+        await super().run()
+        self._running = True
+        senders = (
+            self._one_server_streaming_call() for _ in range(self._concurrency))
         await asyncio.gather(*senders)
         self._stopped.set()
 

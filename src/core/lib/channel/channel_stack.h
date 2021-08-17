@@ -31,7 +31,18 @@
    chains are linear, then channel stacks provide a mechanism to minimize
    allocations for that chain.
    Call stacks are created by channel stacks and represent the per-call data
-   for that stack. */
+   for that stack.
+
+   Implementations should take care of the following details for a batch -
+   1. Synchronization is achieved with a CallCombiner. View
+   src/core/lib/iomgr/call_combiner.h for more details.
+   2. If the filter wants to inject an error on the way down, it needs to call
+   grpc_transport_stream_op_batch_finish_with_failure from within the call
+   combiner. This will cause any batch callbacks to be called with that error.
+   3. If the filter wants to inject an error on the way up (from a callback), it
+   should also inject that error in the recv_trailing_metadata callback so that
+   it can have an effect on the call status.
+*/
 
 #include <grpc/support/port_platform.h>
 
@@ -54,31 +65,28 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
-typedef struct {
+struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
   /** Transport, iff it is known */
   grpc_transport* optional_transport;
   int is_first;
   int is_last;
-} grpc_channel_element_args;
-
-typedef struct {
+};
+struct grpc_call_element_args {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
   grpc_call_context_element* context;
   const grpc_slice& path;
-  gpr_cycle_counter start_time;
+  gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
   grpc_millis deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
-} grpc_call_element_args;
-
-typedef struct {
+};
+struct grpc_call_stats {
   grpc_transport_stream_stats transport_stream_stats;
   gpr_timespec latency; /* From call creating to enqueing of received status */
-} grpc_call_stats;
-
+};
 /** Information about the call upon completion. */
 struct grpc_call_final_info {
   grpc_call_stats stats;
@@ -96,7 +104,7 @@ struct grpc_call_final_info {
    4. a name, which is useful when debugging
 
    Members are laid out in approximate frequency of use order. */
-typedef struct {
+struct grpc_channel_filter {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
@@ -117,8 +125,8 @@ typedef struct {
      transport and is on the server. Most filters want to ignore this
      argument.
      Implementations may assume that elem->call_data is all zeros. */
-  grpc_error* (*init_call_elem)(grpc_call_element* elem,
-                                const grpc_call_element_args* args);
+  grpc_error_handle (*init_call_elem)(grpc_call_element* elem,
+                                      const grpc_call_element_args* args);
   void (*set_pollset_or_pollset_set)(grpc_call_element* elem,
                                      grpc_polling_entity* pollent);
   /* Destroy per call data.
@@ -140,8 +148,8 @@ typedef struct {
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining.
      Implementations may assume that elem->channel_data is all zeros. */
-  grpc_error* (*init_channel_elem)(grpc_channel_element* elem,
-                                   grpc_channel_element_args* args);
+  grpc_error_handle (*init_channel_elem)(grpc_channel_element* elem,
+                                         grpc_channel_element_args* args);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_channel_element* elem);
@@ -152,8 +160,7 @@ typedef struct {
 
   /* The name of this filter */
   const char* name;
-} grpc_channel_filter;
-
+};
 /* A channel_element tracks its filter and the filter requested memory within
    a channel allocation */
 struct grpc_channel_element {
@@ -197,6 +204,13 @@ grpc_channel_element* grpc_channel_stack_element(grpc_channel_stack* stack,
 /* Get the last channel element in a channel stack */
 grpc_channel_element* grpc_channel_stack_last_element(
     grpc_channel_stack* stack);
+
+// A utility function for a filter to determine how many other instances
+// of the same filter exist above it in the same stack.  Intended to be
+// used in the filter's init_channel_elem() method.
+size_t grpc_channel_stack_filter_instance_number(
+    grpc_channel_stack* channel_stack, grpc_channel_element* elem);
+
 /* Get a call stack element given a call stack and an index */
 grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 
@@ -204,7 +218,7 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-grpc_error* grpc_channel_stack_init(
+grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* args, grpc_transport* optional_transport,
@@ -215,10 +229,11 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
-                                 int initial_refs, grpc_iomgr_cb_func destroy,
-                                 void* destroy_arg,
-                                 const grpc_call_element_args* elem_args);
+grpc_error_handle grpc_call_stack_init(grpc_channel_stack* channel_stack,
+                                       int initial_refs,
+                                       grpc_iomgr_cb_func destroy,
+                                       void* destroy_arg,
+                                       const grpc_call_element_args* elem_args);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,

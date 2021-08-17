@@ -1,7 +1,7 @@
 gRPC Internationalization
 =========================
 
-As a universal RPC framework, gRPC needs to be fully usable within/across different international environments. 
+As a universal RPC framework, gRPC needs to be fully usable within/across different international environments.
 This document describes gRPC API and behavior specifics when used in a non-english environment.
 
 ## API Concepts

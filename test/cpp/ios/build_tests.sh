@@ -38,3 +38,14 @@ rm -rf RemoteTestClientCpp/src
 echo "TIME:  $(date)"
 pod install
 
+# ios-cpp-test-cronet flakes sometimes because of missing files in Protobuf-C++,
+# add some log to help find out the root cause.
+# TODO(yulinliang): Delete it after solving the issue.
+if [ -d "./Pods/Headers/Public/Protobuf-C++/google/protobuf" ]
+then 
+    echo "Protobuf-C++/google/protobuf/ has been imported."
+    number_of_files=$(find Pods/Headers/Public/Protobuf-C++/google/protobuf -name "*.h" | wc -l)
+    echo "The number of header files in Pods/Headers/Public/Protobuf-C++/google/protobuf/ is $number_of_files"
+else
+    echo "Error: Protobuf-C++/google/protobuf/ hasn't been imported."
+fi

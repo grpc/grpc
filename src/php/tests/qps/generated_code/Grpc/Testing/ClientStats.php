@@ -18,21 +18,21 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 1;</code>
      */
-    private $latencies = null;
+    protected $latencies = null;
     /**
      * See ServerStats for details.
      *
      * Generated from protobuf field <code>double time_elapsed = 2;</code>
      */
-    private $time_elapsed = 0.0;
+    protected $time_elapsed = 0.0;
     /**
      * Generated from protobuf field <code>double time_user = 3;</code>
      */
-    private $time_user = 0.0;
+    protected $time_user = 0.0;
     /**
      * Generated from protobuf field <code>double time_system = 4;</code>
      */
-    private $time_system = 0.0;
+    protected $time_system = 0.0;
     /**
      * Number of failed requests (one row per status code seen)
      *
@@ -44,17 +44,37 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
      */
-    private $cq_poll_count = 0;
+    protected $cq_poll_count = 0;
     /**
      * Core library stats
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
      */
-    private $core_stats = null;
+    protected $core_stats = null;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Testing\HistogramData $latencies
+     *           Latency histogram. Data points are in nanoseconds.
+     *     @type float $time_elapsed
+     *           See ServerStats for details.
+     *     @type float $time_user
+     *     @type float $time_system
+     *     @type \Grpc\Testing\RequestResultCount[]|\Google\Protobuf\Internal\RepeatedField $request_results
+     *           Number of failed requests (one row per status code seen)
+     *     @type int|string $cq_poll_count
+     *           Number of polls called inside completion queue
+     *     @type \Grpc\Core\Stats $core_stats
+     *           Core library stats
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

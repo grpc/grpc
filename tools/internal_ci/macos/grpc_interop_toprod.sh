@@ -21,8 +21,12 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
 
-# using run_interop_tests.py without --use_docker, so we need to build first
-tools/run_tests/run_tests.py -l c++ -c opt --build_only
+# build C++ interop client and server
+mkdir -p cmake/build
+pushd cmake/build
+cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release ../..
+make interop_client interop_server -j4
+popd
 
 export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/etc/roots.pem"
 

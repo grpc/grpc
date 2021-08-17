@@ -13,6 +13,8 @@
 # limitations under the License.
 """Provides distutils command classes for the GRPC Python setup process."""
 
+from __future__ import print_function
+
 import distutils
 import glob
 import os
@@ -22,6 +24,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import traceback
 
 import setuptools
@@ -30,7 +33,6 @@ from setuptools.command import build_py
 from setuptools.command import easy_install
 from setuptools.command import install
 from setuptools.command import test
-
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
@@ -99,7 +101,7 @@ class SphinxDocumentation(setuptools.Command):
         target_dir = os.path.join(GRPC_STEM, 'doc', 'build')
         exit_code = sphinx.cmd.build.build_main(
             ['-b', 'html', '-W', '--keep-going', source_dir, target_dir])
-        if exit_code is not 0:
+        if exit_code != 0:
             raise CommandError(
                 "Documentation generation has warnings or errors")
 
@@ -209,21 +211,38 @@ class BuildExt(build_ext.build_ext):
     }
     LINK_OPTIONS = {}
 
+    def get_ext_filename(self, ext_name):
+        # since python3.5, python extensions' shared libraries use a suffix that corresponds to the value
+        # of sysconfig.get_config_var('EXT_SUFFIX') and contains info about the architecture the library targets.
+        # E.g. on x64 linux the suffix is ".cpython-XYZ-x86_64-linux-gnu.so"
+        # When crosscompiling python wheels, we need to be able to override this suffix
+        # so that the resulting file name matches the target architecture and we end up with a well-formed
+        # wheel.
+        filename = build_ext.build_ext.get_ext_filename(self, ext_name)
+        orig_ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        new_ext_suffix = os.getenv('GRPC_PYTHON_OVERRIDE_EXT_SUFFIX')
+        if new_ext_suffix and filename.endswith(orig_ext_suffix):
+            filename = filename[:-len(orig_ext_suffix)] + new_ext_suffix
+        return filename
+
     def build_extensions(self):
 
         def compiler_ok_with_extra_std():
             """Test if default compiler is okay with specifying c++ version
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
-            if platform.system() != 'Windows':
+            try:
+                # TODO(lidiz) Remove the generated a.out for success tests.
+                cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+                                           stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+                _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
+                return not 'invalid argument' in str(cc_err)
+            except:
+                sys.stderr.write('Non-fatal exception:' +
+                                 traceback.format_exc() + '\n')
                 return False
-            # TODO(lidiz) Remove the generated a.out for success tests.
-            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-            _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
-            return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
@@ -238,9 +257,13 @@ class BuildExt(build_ext.build_ext):
             old_compile = self.compiler._compile
 
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
-                if src[-2:] == '.c':
+                if src.endswith('.c'):
                     extra_postargs = [
                         arg for arg in extra_postargs if not '-std=c++' in arg
+                    ]
+                elif src.endswith('.cc') or src.endswith('.cpp'):
+                    extra_postargs = [
+                        arg for arg in extra_postargs if not '-std=gnu99' in arg
                     ]
                 return old_compile(obj, src, ext, cc_args, extra_postargs,
                                    pp_opts)
@@ -290,3 +313,43 @@ class Gather(setuptools.Command):
                 self.distribution.install_requires)
         if self.test and self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class Clean(setuptools.Command):
+    """Command to clean build artifacts."""
+
+    description = 'Clean build artifacts.'
+    user_options = [
+        ('all', 'a', 'a phony flag to allow our script to continue'),
+    ]
+
+    _FILE_PATTERNS = (
+        'python_build',
+        'src/python/grpcio/__pycache__/',
+        'src/python/grpcio/grpc/_cython/cygrpc.cpp',
+        'src/python/grpcio/grpc/_cython/*.so',
+        'src/python/grpcio/grpcio.egg-info/',
+    )
+    _CURRENT_DIRECTORY = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
+
+    def initialize_options(self):
+        self.all = False
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        for path_spec in self._FILE_PATTERNS:
+            this_glob = os.path.normpath(
+                os.path.join(Clean._CURRENT_DIRECTORY, path_spec))
+            abs_paths = glob.glob(this_glob)
+            for path in abs_paths:
+                if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+                    raise ValueError(
+                        "Cowardly refusing to delete {}.".format(path))
+                print("Removing {}".format(os.path.relpath(path)))
+                if os.path.isfile(path):
+                    os.remove(str(path))
+                else:
+                    shutil.rmtree(str(path))

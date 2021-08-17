@@ -28,11 +28,10 @@
 static const char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-typedef struct {
+struct b64_huff_sym {
   uint16_t bits;
   uint8_t length;
-} b64_huff_sym;
-
+};
 static const b64_huff_sym huff_alphabet[64] = {
     {0x21, 6}, {0x5d, 7}, {0x5e, 7},   {0x5f, 7}, {0x60, 7}, {0x61, 7},
     {0x62, 7}, {0x63, 7}, {0x64, 7},   {0x65, 7}, {0x66, 7}, {0x67, 7},
@@ -136,12 +135,11 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   return output;
 }
 
-typedef struct {
+struct huff_out {
   uint32_t temp;
   uint32_t temp_length;
   uint8_t* out;
-} huff_out;
-
+};
 static void enc_flush_some(huff_out* out) {
   while (out->temp_length > 8) {
     out->temp_length -= 8;

@@ -59,7 +59,7 @@ void TrackCounters::Finish(benchmark::State& state) {
   state.SetLabel(label.c_str());
 }
 
-void TrackCounters::AddLabel(const grpc::string& label) {
+void TrackCounters::AddLabel(const std::string& label) {
   labels_.push_back(label);
 }
 

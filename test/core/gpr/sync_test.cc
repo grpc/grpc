@@ -431,7 +431,7 @@ static void refinc(void* v /*=m*/) {
     }
   }
   if (gpr_unref(&m->thread_refcount)) {
-    gpr_event_set(&m->event, (void*)1);
+    gpr_event_set(&m->event, reinterpret_cast<void*>(1));
   }
   mark_thread_done(m);
 }

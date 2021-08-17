@@ -27,13 +27,15 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:
     from python_utils.upload_test_results import upload_interop_results_to_bq
@@ -97,16 +99,16 @@ class CXXLanguage:
         self.safename = 'cxx'
 
     def client_cmd(self, args):
-        return ['bins/opt/interop_client'] + args
+        return ['cmake/build/interop_client'] + args
 
     def client_cmd_http2interop(self, args):
-        return ['bins/opt/http2_client'] + args
+        return ['cmake/build/http2_client'] + args
 
     def cloud_to_prod_env(self):
         return {}
 
     def server_cmd(self, args):
-        return ['bins/opt/interop_server'] + args
+        return ['cmake/build/interop_server'] + args
 
     def global_env(self):
         return {}
@@ -190,8 +192,8 @@ class CSharpCoreCLRLanguage:
 class AspNetCoreLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-dotnet/testassets/InteropTestsClient/bin/Debug/netcoreapp3.0'
-        self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
+        self.client_cwd = '../grpc-dotnet/output/InteropTestsClient'
+        self.server_cwd = '../grpc-dotnet/output/InteropTestsWebsite'
         self.safename = str(self)
 
     def cloud_to_prod_env(self):
@@ -331,7 +333,7 @@ class GoLanguage:
         return ['go', 'run', 'server.go'] + args
 
     def global_env(self):
-        return {}
+        return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION
@@ -483,39 +485,11 @@ class NodePureJSLanguage:
         return 'nodepurejs'
 
 
-class PHPLanguage:
-
-    def __init__(self):
-        self.client_cwd = None
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['src/php/bin/interop_client.sh'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return []
-
-    def __str__(self):
-        return 'php'
-
-
 class PHP7Language:
 
     def __init__(self):
         self.client_cwd = None
+        self.server_cwd = None
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -524,18 +498,20 @@ class PHP7Language:
     def cloud_to_prod_env(self):
         return {}
 
+    def server_cmd(self, args):
+        return ['src/php/bin/interop_server.sh'] + args
+
     def global_env(self):
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'php7'
@@ -734,7 +710,6 @@ _LANGUAGES = {
     'javaokhttp': JavaOkHttpClient(),
     'node': NodeLanguage(),
     'nodepurejs': NodePureJSLanguage(),
-    'php': PHPLanguage(),
     'php7': PHP7Language(),
     'objc': ObjcLanguage(),
     'ruby': RubyLanguage(),
@@ -745,7 +720,7 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
     'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio'
+    'ruby', 'python', 'dart', 'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [
@@ -786,9 +761,9 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 
@@ -879,7 +854,7 @@ def auth_options(language, test_case, google_default_creds_use_key_file,
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
-                'csharp', 'csharpcoreclr', 'aspnetcore', 'node', 'php', 'php7',
+                'csharp', 'csharpcoreclr', 'aspnetcore', 'node', 'php7',
                 'python', 'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
@@ -1161,12 +1136,6 @@ def build_interop_image_jobspec(language, tag=None):
     }
     if not args.travis:
         env['TTY_FLAG'] = '-t'
-    # This env variable is used to get around the github rate limit
-    # error when running the PHP `composer install` command
-    host_file = '%s/.composer/auth.json' % os.environ['HOME']
-    if language.safename == 'php' and os.path.exists(host_file):
-        env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
-          '-v %s:/root/.composer/auth.json:ro' % host_file
     build_job = jobset.JobSpec(
         cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
         environ=env,

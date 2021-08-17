@@ -14,38 +14,20 @@
 import logging
 import unittest
 
-import grpc
 
-from grpc.experimental import aio
-from tests_aio.unit._test_server import start_test_server
-from tests_aio.unit._test_base import AioTestBase
+class TestInit(unittest.TestCase):
 
+    def test_grpc(self):
+        import grpc  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('phony')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
-class TestInsecureChannel(AioTestBase):
-
-    async def test_insecure_channel(self):
-        server_target, _ = await start_test_server()  # pylint: disable=unused-variable
-
-        channel = aio.insecure_channel(server_target)
-        self.assertIsInstance(channel, aio.Channel)
-
-
-class TestSecureChannel(AioTestBase):
-    """Test a secure channel connected to a secure server"""
-
-    def test_secure_channel(self):
-
-        async def coro():
-            server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
-            credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.LOCAL_TCP)
-            secure_channel = aio.secure_channel(server_target, credentials)
-
-            self.assertIsInstance(secure_channel, aio.Channel)
-
-        self.loop.run_until_complete(coro())
+    def test_grpc_dot_aio(self):
+        import grpc.aio  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('phony')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

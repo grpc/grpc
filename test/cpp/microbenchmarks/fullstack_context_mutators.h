@@ -52,24 +52,22 @@ auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
 class NoOpMutator {
  public:
   template <class ContextType>
-  NoOpMutator(ContextType* /*context*/) {}
+  explicit NoOpMutator(ContextType* /*context*/) {}
 };
 
 template <int length>
 class RandomBinaryMetadata {
  public:
-  static const grpc::string& Key() { return kKey; }
+  static const std::string& Key() { return kKey; }
 
-  static const grpc::string& Value() {
-    return kValues[rand() % kValues.size()];
-  }
+  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
 
  private:
-  static const grpc::string kKey;
-  static const std::vector<grpc::string> kValues;
+  static const std::string kKey;
+  static const std::vector<std::string> kValues;
 
-  static grpc::string GenerateOneString() {
-    grpc::string s;
+  static std::string GenerateOneString() {
+    std::string s;
     s.reserve(length + 1);
     for (int i = 0; i < length; i++) {
       s += static_cast<char>(rand());
@@ -81,18 +79,16 @@ class RandomBinaryMetadata {
 template <int length>
 class RandomAsciiMetadata {
  public:
-  static const grpc::string& Key() { return kKey; }
+  static const std::string& Key() { return kKey; }
 
-  static const grpc::string& Value() {
-    return kValues[rand() % kValues.size()];
-  }
+  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
 
  private:
-  static const grpc::string kKey;
-  static const std::vector<grpc::string> kValues;
+  static const std::string kKey;
+  static const std::vector<std::string> kValues;
 
-  static grpc::string GenerateOneString() {
-    grpc::string s;
+  static std::string GenerateOneString() {
+    std::string s;
     s.reserve(length + 1);
     for (int i = 0; i < length; i++) {
       s += static_cast<char>(rand() % 26 + 'a');
@@ -104,7 +100,7 @@ class RandomAsciiMetadata {
 template <class Generator, int kNumKeys>
 class Client_AddMetadata : public NoOpMutator {
  public:
-  Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
+  explicit Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddMetadata(Generator::Key(), Generator::Value());
     }
@@ -114,7 +110,8 @@ class Client_AddMetadata : public NoOpMutator {
 template <class Generator, int kNumKeys>
 class Server_AddInitialMetadata : public NoOpMutator {
  public:
-  Server_AddInitialMetadata(ServerContext* context) : NoOpMutator(context) {
+  explicit Server_AddInitialMetadata(ServerContext* context)
+      : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddInitialMetadata(Generator::Key(), Generator::Value());
     }
@@ -124,17 +121,17 @@ class Server_AddInitialMetadata : public NoOpMutator {
 // static initialization
 
 template <int length>
-const grpc::string RandomBinaryMetadata<length>::kKey = "foo-bin";
+const std::string RandomBinaryMetadata<length>::kKey = "foo-bin";
 
 template <int length>
-const std::vector<grpc::string> RandomBinaryMetadata<length>::kValues =
+const std::vector<std::string> RandomBinaryMetadata<length>::kValues =
     MakeVector(kPregenerateKeyCount, GenerateOneString);
 
 template <int length>
-const grpc::string RandomAsciiMetadata<length>::kKey = "foo";
+const std::string RandomAsciiMetadata<length>::kKey = "foo";
 
 template <int length>
-const std::vector<grpc::string> RandomAsciiMetadata<length>::kValues =
+const std::vector<std::string> RandomAsciiMetadata<length>::kValues =
     MakeVector(kPregenerateKeyCount, GenerateOneString);
 
 }  // namespace testing

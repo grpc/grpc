@@ -49,7 +49,7 @@ class Slice final {
   Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 
   /// Allocate a slice of specified size
-  Slice(size_t len)
+  explicit Slice(size_t len)
       : slice_(g_core_codegen_interface->grpc_slice_malloc(len)) {}
 
   /// Construct a slice from a copied buffer
@@ -58,7 +58,8 @@ class Slice final {
             reinterpret_cast<const char*>(buf), len)) {}
 
   /// Construct a slice from a copied string
-  Slice(const grpc::string& str)
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
+  Slice(const std::string& str)
       : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
             str.c_str(), str.length())) {}
 
@@ -72,6 +73,11 @@ class Slice final {
   /// Copy constructor, adds a reference.
   Slice(const Slice& other)
       : slice_(g_core_codegen_interface->grpc_slice_ref(other.slice_)) {}
+
+  /// Move constructor, steals a reference.
+  Slice(Slice&& other) noexcept : slice_(other.slice_) {
+    other.slice_ = g_core_codegen_interface->grpc_empty_slice();
+  }
 
   /// Assignment, reference count is unchanged.
   Slice& operator=(Slice other) {
@@ -106,6 +112,12 @@ class Slice final {
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
   const uint8_t* end() const { return GRPC_SLICE_END_PTR(slice_); }
 
+  /// Returns a substring of the `slice` as another slice.
+  Slice sub(size_t begin, size_t end) const {
+    return Slice(g_core_codegen_interface->grpc_slice_sub(slice_, begin, end),
+                 STEAL_REF);
+  }
+
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
   grpc_slice c_slice() const {
     return g_core_codegen_interface->grpc_slice_ref(slice_);
@@ -123,17 +135,17 @@ inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
       GRPC_SLICE_LENGTH(*slice));
 }
 
-inline grpc::string StringFromCopiedSlice(grpc_slice slice) {
-  return grpc::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                      GRPC_SLICE_LENGTH(slice));
+inline std::string StringFromCopiedSlice(grpc_slice slice) {
+  return std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
+                     GRPC_SLICE_LENGTH(slice));
 }
 
-inline grpc_slice SliceReferencingString(const grpc::string& str) {
+inline grpc_slice SliceReferencingString(const std::string& str) {
   return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
                                                                  str.length());
 }
 
-inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
+inline grpc_slice SliceFromCopiedString(const std::string& str) {
   return g_core_codegen_interface->grpc_slice_from_copied_buffer(str.data(),
                                                                  str.length());
 }

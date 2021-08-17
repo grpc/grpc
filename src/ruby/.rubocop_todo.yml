@@ -449,7 +449,7 @@ Style/ParallelAssignment:
 # Configuration parameters: PreferredDelimiters.
 Style/PercentLiteralDelimiters:
   Exclude:
-    - 'end2end/grpc_class_init_driver.rb'
+    - 'end2end/grpc_class_init_test.rb'
     - 'spec/client_server_spec.rb'
     - 'spec/generic/active_call_spec.rb'
     - 'spec/generic/client_stub_spec.rb'

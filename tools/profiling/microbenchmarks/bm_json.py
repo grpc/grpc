@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,7 +121,8 @@ _BM_SPECS = {
 
 def numericalize(s):
     """Convert abbreviations like '100M' or '10k' to a number."""
-    if not s: return ''
+    if not s:
+        return ''
     if s[-1] == 'k':
         return float(s[:-1]) * 1024
     if s[-1] == 'M':
@@ -177,8 +179,10 @@ def parse_name(name):
 
 
 def expand_json(js, js2=None):
-    if not js and not js2: raise StopIteration()
-    if not js: js = js2
+    if not js and not js2:
+        raise StopIteration()
+    if not js:
+        js = js2
     for bm in js['benchmarks']:
         if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'):
             continue

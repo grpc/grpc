@@ -31,20 +31,20 @@ Core by extension, support for server certificate rotation.
 
 import abc
 import collections
+from concurrent import futures
+import logging
 import os
-import six
 import threading
 import unittest
-import logging
-
-from concurrent import futures
 
 import grpc
-from tests.unit import resources
-from tests.unit import test_common
+import six
+
 from tests.testing import _application_common
 from tests.testing import _server_application
 from tests.testing.proto import services_pb2_grpc
+from tests.unit import resources
+from tests.unit import test_common
 
 CA_1_PEM = resources.cert_hier_1_root_ca_cert()
 CA_2_PEM = resources.cert_hier_2_root_ca_cert()
@@ -161,8 +161,14 @@ class _ServerSSLCertReloadTest(
         else:
             with self.assertRaises(grpc.RpcError) as exception_context:
                 client_stub.UnUn(request)
-            self.assertEqual(exception_context.exception.code(),
-                             grpc.StatusCode.UNAVAILABLE)
+            # If TLS 1.2 is used, then the client receives an alert message
+            # before the handshake is complete, so the status is UNAVAILABLE. If
+            # TLS 1.3 is used, then the client receives the alert message after
+            # the handshake is complete, so the TSI handshaker returns the
+            # TSI_PROTOCOL_FAILURE result. This result does not have a
+            # corresponding status code, so this yields an UNKNOWN status.
+            self.assertTrue(exception_context.exception.code(
+            ) in [grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.UNKNOWN])
 
     def _do_one_shot_client_rpc(self,
                                 expect_success,

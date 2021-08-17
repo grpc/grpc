@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.7
+FROM alpine:3.11
 
-RUN apk add --update build-base linux-headers python python-dev py-pip
+RUN apk add --update build-base linux-headers python3 python3-dev py3-pip
 
-RUN pip install --upgrade pip==19.3.1
+RUN pip3 install --upgrade pip==19.3.1
 
-RUN pip install virtualenv
+RUN pip3 install virtualenv
 
 # bash is required for our test script invocation
 # ideally, we want to fix the invocation mechanism

@@ -27,6 +27,8 @@
 #include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
@@ -121,10 +123,40 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   EXPECT_TRUE(send_buffer.Valid());
 }
 
+TEST_F(ByteBufferTest, TrySingleSliceWithSingleSlice) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  ByteBuffer buffer(&slices[0], 1);
+  Slice slice;
+  EXPECT_TRUE(buffer.TrySingleSlice(&slice).ok());
+  EXPECT_EQ(slice.size(), slices[0].size());
+  EXPECT_EQ(memcmp(slice.begin(), slices[0].begin(), slice.size()), 0);
+}
+
+TEST_F(ByteBufferTest, TrySingleSliceWithMultipleSlices) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
+  ByteBuffer buffer(&slices[0], 2);
+  Slice slice;
+  EXPECT_FALSE(buffer.TrySingleSlice(&slice).ok());
+}
+
+TEST_F(ByteBufferTest, DumpToSingleSlice) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
+  ByteBuffer buffer(&slices[0], 2);
+  Slice slice;
+  EXPECT_TRUE(buffer.DumpToSingleSlice(&slice).ok());
+  EXPECT_EQ(strlen(kContent1) + strlen(kContent2), slice.size());
+}
+
 }  // namespace
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -17,7 +17,7 @@
 require_relative './end2end_common'
 
 # Calls '#close' on a Channel when "shutdown" called. This tries to
-# trigger a hang or crash bug by closing a channel actively being watched
+# trigger a freeze or crash bug by closing a channel actively being watched
 class ChannelClosingClientController < ClientControl::ClientController::Service
   def initialize(ch)
     @ch = ch
@@ -30,11 +30,11 @@ class ChannelClosingClientController < ClientControl::ClientController::Service
 end
 
 def main
-  client_control_port = ''
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do |p|
-      client_control_port = p
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
@@ -46,7 +46,8 @@ def main
 
   srv = new_rpc_server_for_testing
   thd = Thread.new do
-    srv.add_http2_port("0.0.0.0:#{client_control_port}", :this_port_is_insecure)
+    port = srv.add_http2_port('localhost:0', :this_port_is_insecure)
+    report_controller_port_to_parent(parent_controller_port, port)
     srv.handle(ChannelClosingClientController.new(ch))
     srv.run
   end

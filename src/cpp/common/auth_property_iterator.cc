@@ -61,7 +61,7 @@ bool AuthPropertyIterator::operator!=(const AuthPropertyIterator& rhs) const {
   return !operator==(rhs);
 }
 
-const AuthProperty AuthPropertyIterator::operator*() {
+AuthProperty AuthPropertyIterator::operator*() {
   return std::pair<grpc::string_ref, grpc::string_ref>(
       property_->name,
       grpc::string_ref(property_->value, property_->value_length));

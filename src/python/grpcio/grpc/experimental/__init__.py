@@ -16,11 +16,13 @@
 These APIs are subject to be removed during any minor version release.
 """
 
+import copy
 import functools
 import sys
 import warnings
 
 import grpc
+from grpc._cython import cygrpc as _cygrpc
 
 _EXPERIMENTAL_APIS_USED = set()
 
@@ -40,19 +42,18 @@ class UsageError(Exception):
     """Raised by the gRPC library to indicate usage not allowed by the API."""
 
 
-_insecure_channel_credentials = object()
+# It's important that there be a single insecure credentials object so that its
+# hash is deterministic and can be used for indexing in the simple stubs cache.
+_insecure_channel_credentials = grpc.ChannelCredentials(
+    _cygrpc.channel_credentials_insecure())
 
 
 def insecure_channel_credentials():
     """Creates a ChannelCredentials for use with an insecure channel.
 
     THIS IS AN EXPERIMENTAL API.
-
-    This is not for use with secure_channel function. Intead, this should be
-    used with grpc.unary_unary, grpc.unary_stream, grpc.stream_unary, or
-    grpc.stream_stream.
     """
-    return grpc.ChannelCredentials(_insecure_channel_credentials)
+    return _insecure_channel_credentials
 
 
 class ExperimentalApiWarning(Warning):
@@ -78,13 +79,50 @@ def experimental_api(f):
     return _wrapper
 
 
+def wrap_server_method_handler(wrapper, handler):
+    """Wraps the server method handler function.
+
+    The server implementation requires all server handlers being wrapped as
+    RpcMethodHandler objects. This helper function ease the pain of writing
+    server handler wrappers.
+
+    Args:
+        wrapper: A wrapper function that takes in a method handler behavior
+          (the actual function) and returns a wrapped function.
+        handler: A RpcMethodHandler object to be wrapped.
+
+    Returns:
+        A newly created RpcMethodHandler.
+    """
+    if not handler:
+        return None
+
+    if not handler.request_streaming:
+        if not handler.response_streaming:
+            # NOTE(lidiz) _replace is a public API:
+            #   https://docs.python.org/dev/library/collections.html
+            return handler._replace(unary_unary=wrapper(handler.unary_unary))
+        else:
+            return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    else:
+        if not handler.response_streaming:
+            return handler._replace(stream_unary=wrapper(handler.stream_unary))
+        else:
+            return handler._replace(
+                stream_stream=wrapper(handler.stream_stream))
+
+
 __all__ = (
     'ChannelOptions',
     'ExperimentalApiWarning',
     'UsageError',
     'insecure_channel_credentials',
+    'wrap_server_method_handler',
 )
 
-if sys.version_info[0] >= 3:
-    from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
+if sys.version_info > (3, 6):
+    from grpc._simple_stubs import stream_stream
+    from grpc._simple_stubs import stream_unary
+    from grpc._simple_stubs import unary_stream
+    from grpc._simple_stubs import unary_unary
     __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)

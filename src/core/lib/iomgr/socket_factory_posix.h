@@ -26,7 +26,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /** The virtual table of grpc_socket_factory */
-typedef struct {
+struct grpc_socket_factory_vtable {
   /** Replacement for socket(2) */
   int (*socket)(grpc_socket_factory* factory, int domain, int type,
                 int protocol);
@@ -37,8 +37,7 @@ typedef struct {
   int (*compare)(grpc_socket_factory* a, grpc_socket_factory* b);
   /** Destroys the socket factory instance */
   void (*destroy)(grpc_socket_factory* factory);
-} grpc_socket_factory_vtable;
-
+};
 /** The Socket Factory interface allows changes on socket options */
 struct grpc_socket_factory {
   const grpc_socket_factory_vtable* vtable;

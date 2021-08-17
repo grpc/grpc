@@ -29,7 +29,10 @@ grpc_cc_library(
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:endpoint_tests",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -234,17 +237,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "sockaddr_utils_test",
-    srcs = ["sockaddr_utils_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     language = "C++",
@@ -363,6 +355,26 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "stranded_event_test",
+    srcs = ["stranded_event_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
+        # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
+        "no_windows",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
 )

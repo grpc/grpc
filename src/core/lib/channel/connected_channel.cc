@@ -38,13 +38,12 @@ typedef struct connected_channel_channel_data {
   grpc_transport* transport;
 } channel_data;
 
-typedef struct {
+struct callback_state {
   grpc_closure closure;
   grpc_closure* original_closure;
   grpc_core::CallCombiner* call_combiner;
   const char* reason;
-} callback_state;
-
+};
 typedef struct connected_channel_call_data {
   grpc_core::CallCombiner* call_combiner;
   // Closures used for returning results on the call combiner.
@@ -54,13 +53,13 @@ typedef struct connected_channel_call_data {
   callback_state recv_trailing_metadata_ready;
 } call_data;
 
-static void run_in_call_combiner(void* arg, grpc_error* error) {
+static void run_in_call_combiner(void* arg, grpc_error_handle error) {
   callback_state* state = static_cast<callback_state*>(arg);
   GRPC_CALL_COMBINER_START(state->call_combiner, state->original_closure,
                            GRPC_ERROR_REF(error), state->reason);
 }
 
-static void run_cancel_in_call_combiner(void* arg, grpc_error* error) {
+static void run_cancel_in_call_combiner(void* arg, grpc_error_handle error) {
   run_in_call_combiner(arg, error);
   gpr_free(arg);
 }
@@ -91,9 +90,12 @@ static callback_state* get_state_for_batch(
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
    cache line requests */
-#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream*)((calld) + 1))
+#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) \
+  ((grpc_stream*)(((char*)(calld)) +           \
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 #define CALL_DATA_FROM_TRANSPORT_STREAM(transport_stream) \
-  (((call_data*)(transport_stream)) - 1)
+  ((call_data*)(((char*)(transport_stream)) -             \
+                GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
@@ -144,7 +146,7 @@ static void connected_channel_start_transport_op(grpc_channel_element* elem,
 }
 
 /* Constructor for call_data */
-static grpc_error* connected_channel_init_call_elem(
+static grpc_error_handle connected_channel_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -177,7 +179,7 @@ static void connected_channel_destroy_call_elem(
 }
 
 /* Constructor for channel_data */
-static grpc_error* connected_channel_init_channel_elem(
+static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);

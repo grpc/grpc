@@ -166,7 +166,13 @@ message LoadStatsRequest {
 // [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 message LoadStatsResponse {
   // Clusters to report stats for.
+  // Not populated if *send_all_clusters* is true.
   repeated string clusters = 1;
+
+  // If true, the client should send all clusters it knows about.
+  // Only clients that advertise the "envoy.lrs.supports_send_all_clusters" capability in their
+  // :ref:`client_features<envoy_api_field_core.Node.client_features>` field will honor this field.
+  bool send_all_clusters = 4;
 
   // The minimum interval of time to collect stats over. This is only a minimum for two reasons:
   // 1. There may be some delay from when the timer fires until stats sampling occurs.

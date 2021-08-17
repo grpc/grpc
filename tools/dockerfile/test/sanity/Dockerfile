@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
-  
+FROM debian:bullseye
+
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -37,9 +37,6 @@ RUN apt-get update && apt-get install -y \
   make \
   perl \
   strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
   telnet \
   unzip \
   wget \
@@ -49,13 +46,25 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client oauth2client
+# Install Python 3.7 from source (and installed as a default python3)
+# (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
+RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+                                 libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
+RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
+    tar -xf Python-3.7.9.tar.xz && \
+    cd Python-3.7.9 && \
+    ./configure && \
+    make -j 4 && \
+    make install
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
 # Install Python 2.7
-RUN apt-get update && apt-get install -y python2.7 python-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN apt-get update && apt-get install -y python2 python2-dev
+RUN ln -s /usr/bin/python2 /usr/bin/python
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2
+
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 RUN mkdir /var/local/jenkins
@@ -68,11 +77,7 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
-# Make Python 3.7 the default Python 3 version
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
 RUN apt-get update && apt-get install -y \
       autoconf \
       automake \
@@ -80,24 +85,23 @@ RUN apt-get update && apt-get install -y \
       curl \
       shellcheck
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
-RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
+RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
-# Install clang & clang-format
-RUN apt-get install -y clang clang-format
+# Upgrade Python's YAML library
+RUN python2 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
-# Install clang-tidy 6.0
-# This is because clang-tidy 7.0 started treating compiler errors as tidy errors
-# and there are a couple of files which are not properly compiled via tidy so it
-# should be using 6.0 version until all compilation errors are addressed.
-RUN apt-get install -y clang-tidy-6.0
-ENV CLANG_TIDY=clang-tidy-6.0
+# Install clang, clang-format, and clang-tidy
+RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
+ENV CLANG_FORMAT=clang-format-11
+ENV CLANG_TIDY=clang-tidy-11
 
 
 #========================
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 1.0.0
+ENV BAZEL_VERSION 3.7.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

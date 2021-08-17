@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 
+#ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64
 #if GPR_LINUX
 static bool read_freq_from_kernel(double* freq) {
@@ -147,8 +148,9 @@ gpr_cycle_counter gpr_get_cycle_counter() {
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   gpr_timespec ts;
-  ts.tv_sec = cycles / GPR_US_PER_SEC;
-  ts.tv_nsec = (cycles - ts.tv_sec * GPR_US_PER_SEC) * GPR_NS_PER_US;
+  ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
+  ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
+                                    GPR_NS_PER_US);
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
@@ -163,3 +165,4 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
                       gpr_cycle_counter_to_time(b));
 }
 #endif /* GPR_CYCLE_COUNTER_FALLBACK */
+#endif /* !GPR_CYCLE_COUNTER_CUSTOM */

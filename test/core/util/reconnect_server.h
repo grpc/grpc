@@ -32,7 +32,7 @@ typedef struct reconnect_server {
   test_tcp_server tcp_server;
   timestamp_list* head;
   timestamp_list* tail;
-  char* peer;
+  std::string* peer;
   int max_reconnect_backoff_ms;
 } reconnect_server;
 

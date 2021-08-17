@@ -46,10 +46,10 @@ struct grpc_chttp2_incoming_metadata_buffer {
 void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch);
 
-grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
+grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
     grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) GRPC_MUST_USE_RESULT;
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(

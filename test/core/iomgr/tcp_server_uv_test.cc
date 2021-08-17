@@ -33,9 +33,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -74,7 +74,7 @@ static void on_connect_result_set(on_connect_result* result,
   result->fd_index = acceptor->fd_index;
 }
 
-static void server_weak_ref_shutdown(void* arg, grpc_error* error) {
+static void server_weak_ref_shutdown(void* arg, grpc_error_handle error) {
   server_weak_ref* weak_ref = static_cast<server_weak_ref*>(arg);
   weak_ref->server = NULL;
 }
@@ -282,7 +282,7 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(weak_ref.server == NULL);
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error_handle error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

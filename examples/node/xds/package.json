@@ -1,0 +1,10 @@
+{
+  "name": "grpc-examples-xds",
+  "version": "0.1.0",
+  "dependencies": {
+    "@grpc/proto-loader": "^0.5.0",
+    "@grpc/grpc-js": "^1.2.0",
+    "@grpc/grpc-js-xds": "^1.2.0",
+    "minimist": "^1.2.0"
+  }
+}

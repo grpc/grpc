@@ -37,9 +37,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -54,29 +55,25 @@ void TryConnectAndDestroy() {
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   // Return a grpclb address with an IP address on the IPv6 discard prefix
   // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "hang",
+  // the behavior we want in this test is for a TCP connect attempt to "freeze",
   // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in
   // "network unreachable" errors in some test runtime environments.
-  char* uri_str;
-  gpr_asprintf(&uri_str, "ipv6:[0100::1234]:443");
-  grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
-  gpr_free(uri_str);
-  GPR_ASSERT(lb_uri != nullptr);
+  absl::StatusOr<grpc_core::URI> lb_uri =
+      grpc_core::URI::Parse("ipv6:[0100::1234]:443");
+  ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
-  GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-  std::vector<grpc_arg> address_args_to_add = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1),
-  };
+  ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
-  grpc_channel_args* address_args = grpc_channel_args_copy_and_add(
-      nullptr, address_args_to_add.data(), address_args_to_add.size());
-  addresses.emplace_back(address.addr, address.len, address_args);
+  addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;
-  lb_address_result.addresses = addresses;
-  grpc_uri_destroy(lb_uri);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  lb_address_result.service_config = grpc_core::ServiceConfig::Create(
+      nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
+  lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
   args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -95,9 +92,9 @@ void TryConnectAndDestroy() {
   // unreachable balancer to begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
-  GPR_ASSERT(
-      !channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  GPR_ASSERT("grpclb" == channel->GetLoadBalancingPolicyName());
+  ASSERT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
 
@@ -113,7 +110,7 @@ TEST(DestroyGrpclbChannelWithActiveConnectStressTest,
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(new std::thread(TryConnectAndDestroy));
   }
-  for (int i = 0; i < threads.size(); i++) {
+  for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();
   }
   grpc_shutdown();

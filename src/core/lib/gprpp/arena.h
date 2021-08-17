@@ -96,7 +96,8 @@ class Arena {
   //   where we wish to create an arena and then perform an immediate
   //   allocation.
   explicit Arena(size_t initial_size, size_t initial_alloc = 0)
-      : total_used_(initial_alloc), initial_zone_size_(initial_size) {}
+      : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
+        initial_zone_size_(initial_size) {}
 
   ~Arena();
 
@@ -105,7 +106,7 @@ class Arena {
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
   Atomic<size_t> total_used_;
-  size_t initial_zone_size_;
+  const size_t initial_zone_size_;
   gpr_spinlock arena_growth_spinlock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   // If the initial arena allocation wasn't enough, we allocate additional zones
   // in a reverse linked list. Each additional zone consists of (1) a pointer to

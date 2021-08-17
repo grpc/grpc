@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.11.2'
+  v = '3.15.8'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     The generated code will have a dependency on the Protobuf Objective-C runtime of the same
     version. The runtime can be obtained as the "Protobuf" pod.
   DESC
-  s.homepage = 'https://github.com/google/protobuf'
+  s.homepage = 'https://github.com/protocolbuffers/protobuf'
   s.license  = {
     :type => 'New BSD',
     :text => <<-LICENSE
@@ -110,8 +110,8 @@ Pod::Spec.new do |s|
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
   s.dependency 'Protobuf', '~> 3.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
 

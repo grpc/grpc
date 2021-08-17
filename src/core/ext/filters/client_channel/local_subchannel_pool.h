@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
@@ -34,21 +36,21 @@ namespace grpc_core {
 // Thread-unsafe.
 class LocalSubchannelPool final : public SubchannelPoolInterface {
  public:
-  LocalSubchannelPool();
-  ~LocalSubchannelPool() override;
+  LocalSubchannelPool() {}
+  ~LocalSubchannelPool() override {}
 
   // Implements interface methods.
-  // Thread-unsafe. Intended to be invoked within the client_channel combiner.
-  Subchannel* RegisterSubchannel(SubchannelKey* key,
-                                 Subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key) override;
-  Subchannel* FindSubchannel(SubchannelKey* key) override;
+  // Thread-unsafe. Intended to be invoked within the client_channel work
+  // serializer.
+  RefCountedPtr<Subchannel> RegisterSubchannel(
+      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
+  void UnregisterSubchannel(const SubchannelKey& key,
+                            Subchannel* subchannel) override;
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:
-  // The vtable for subchannel operations in an AVL tree.
-  static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
-  grpc_avl subchannel_map_;
+  std::map<SubchannelKey, Subchannel*> subchannel_map_;
 };
 
 }  // namespace grpc_core

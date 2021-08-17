@@ -47,11 +47,11 @@ namespace grpc_python_generator {
 namespace {
 
 typedef vector<const Descriptor*> DescriptorVector;
-typedef vector<grpc::string> StringVector;
+typedef vector<std::string> StringVector;
 
-static grpc::string StripModulePrefixes(
-    const grpc::string& raw_module_name,
-    const std::vector<grpc::string>& prefixes_to_filter) {
+static std::string StripModulePrefixes(
+    const std::string& raw_module_name,
+    const std::vector<std::string>& prefixes_to_filter) {
   for (const auto& prefix : prefixes_to_filter) {
     if (raw_module_name.rfind(prefix, 0) == 0) {
       return raw_module_name.substr(prefix.size(),
@@ -61,26 +61,26 @@ static grpc::string StripModulePrefixes(
   return raw_module_name;
 }
 
-// TODO(https://github.com/google/protobuf/issues/888):
+// TODO(https://github.com/protocolbuffers/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleName(const grpc::string& filename,
-                        const grpc::string& import_prefix,
-                        const std::vector<grpc::string>& prefixes_to_filter) {
-  grpc::string basename = StripProto(filename);
+std::string ModuleName(const std::string& filename,
+                       const std::string& import_prefix,
+                       const std::vector<std::string>& prefixes_to_filter) {
+  std::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
   return StripModulePrefixes(import_prefix + basename + "_pb2",
                              prefixes_to_filter);
 }
 
-// TODO(https://github.com/google/protobuf/issues/888):
+// TODO(https://github.com/protocolbuffers/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-grpc::string ModuleAlias(const grpc::string& filename,
-                         const grpc::string& import_prefix,
-                         const std::vector<grpc::string>& prefixes_to_filter) {
-  grpc::string module_name =
+std::string ModuleAlias(const std::string& filename,
+                        const std::string& import_prefix,
+                        const std::vector<std::string>& prefixes_to_filter) {
+  std::string module_name =
       ModuleName(filename, import_prefix, prefixes_to_filter);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
@@ -91,29 +91,29 @@ grpc::string ModuleAlias(const grpc::string& filename,
 }
 
 bool GetModuleAndMessagePath(
-    const Descriptor* type, grpc::string* out, grpc::string generator_file_name,
-    bool generate_in_pb2_grpc, grpc::string& import_prefix,
-    const std::vector<grpc::string>& prefixes_to_filter) {
+    const Descriptor* type, std::string* out, std::string generator_file_name,
+    bool generate_in_pb2_grpc, std::string& import_prefix,
+    const std::vector<std::string>& prefixes_to_filter) {
   const Descriptor* path_elem_type = type;
   DescriptorVector message_path;
   do {
     message_path.push_back(path_elem_type);
     path_elem_type = path_elem_type->containing_type();
   } while (path_elem_type);  // implicit nullptr comparison; don't be explicit
-  grpc::string file_name = type->file()->name();
+  std::string file_name = type->file()->name();
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
         file_name.find_last_of(".proto") == file_name.size() - 1)) {
     return false;
   }
 
-  grpc::string module;
+  std::string module;
   if (generator_file_name != file_name || generate_in_pb2_grpc) {
     module = ModuleAlias(file_name, import_prefix, prefixes_to_filter) + ".";
   } else {
     module = "";
   }
-  grpc::string message_type;
+  std::string message_type;
   for (DescriptorVector::reverse_iterator path_iter = message_path.rbegin();
        path_iter != message_path.rend(); ++path_iter) {
     message_type += (*path_iter)->name() + ".";
@@ -136,13 +136,22 @@ StringVector get_all_comments(const DescriptorType* descriptor) {
   return comments;
 }
 
-inline void Split(const grpc::string& s, char delim,
-                  std::vector<grpc::string>* append_to) {
-  auto current = s.begin();
-  while (current <= s.end()) {
-    auto next = std::find(current, s.end(), delim);
-    append_to->emplace_back(current, next);
-    current = next + 1;
+inline void Split(const std::string& s, char delim,
+                  std::vector<std::string>* append_to) {
+  if (s.empty()) {
+    // splitting an empty string logically produces a single-element list
+    append_to->emplace_back();
+  } else {
+    auto current = s.begin();
+    while (current < s.end()) {
+      const auto next = std::find(current, s.end(), delim);
+      append_to->emplace_back(current, next);
+      current = next;
+      if (current != s.end()) {
+        // it was the delimiter - need to be at the start of the next entry
+        ++current;
+      }
+    }
   }
 }
 

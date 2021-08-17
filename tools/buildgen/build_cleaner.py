@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 import collections
 import os
 import sys
+
 import yaml
 
 TEST = (os.environ.get('TEST', 'false') == 'true')
@@ -32,7 +33,8 @@ _ELEM_KEYS = [
 
 
 def repr_ordered_dict(dumper, odict):
-    return dumper.represent_mapping(u'tag:yaml.org,2002:map', odict.items())
+    return dumper.represent_mapping('tag:yaml.org,2002:map',
+                                    list(odict.items()))
 
 
 yaml.add_representer(collections.OrderedDict, repr_ordered_dict)
@@ -47,15 +49,18 @@ def _rebuild_as_ordered_dict(indict, special_keys):
         if key in indict:
             outdict[key] = indict[key]
     for key in sorted(indict.keys()):
-        if key in special_keys: continue
-        if '#' in key: continue
+        if key in special_keys:
+            continue
+        if '#' in key:
+            continue
         outdict[key] = indict[key]
     return outdict
 
 
 def _clean_elem(indict):
     for name in ['public_headers', 'headers', 'src']:
-        if name not in indict: continue
+        if name not in indict:
+            continue
         inlist = indict[name]
         protos = list(x for x in inlist if os.path.splitext(x)[1] == '.proto')
         others = set(x for x in inlist if x not in protos)
@@ -67,7 +72,8 @@ def cleaned_build_yaml_dict_as_string(indict):
     """Takes dictionary which represents yaml file and returns the cleaned-up yaml string"""
     js = _rebuild_as_ordered_dict(indict, _TOP_LEVEL_KEYS)
     for grp in ['filegroups', 'libs', 'targets']:
-        if grp not in js: continue
+        if grp not in js:
+            continue
         js[grp] = sorted([_clean_elem(x) for x in js[grp]],
                          key=lambda x: (x.get('language', '_'), x['name']))
     output = yaml.dump(js, indent=2, width=80, default_flow_style=False)
@@ -82,7 +88,7 @@ def cleaned_build_yaml_dict_as_string(indict):
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
         with open(filename) as f:
-            js = yaml.load(f)
+            js = yaml.load(f, Loader=yaml.FullLoader)
         output = cleaned_build_yaml_dict_as_string(js)
         if TEST:
             with open(filename) as f:

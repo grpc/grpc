@@ -76,8 +76,8 @@ of _compression levels_ (such as "low", "medium", "high").
 Levels map to concrete algorithms and/or their settings (such as "low" mapping
 to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a
 peer is known to support. A server is always aware of what its clients support,
-as clients disclose it in their Message-Accept-Encoding header as part of their
-initial call. A client doesn't a priori (presently) know which algorithms a
+as clients disclose it in the Message-Accept-Encoding header as part of the
+RPC. A client doesn't a priori (presently) know which algorithms a
 server supports. This issue can be addressed with an initial negotiation of
 capabilities or an automatic retry mechanism. These features will be implemented
 in the future. Currently however, compression levels are only supported at the

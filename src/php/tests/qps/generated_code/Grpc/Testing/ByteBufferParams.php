@@ -16,15 +16,25 @@ class ByteBufferParams extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int32 req_size = 1;</code>
      */
-    private $req_size = 0;
+    protected $req_size = 0;
     /**
      * Generated from protobuf field <code>int32 resp_size = 2;</code>
      */
-    private $resp_size = 0;
+    protected $resp_size = 0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type int $req_size
+     *     @type int $resp_size
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Payloads::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

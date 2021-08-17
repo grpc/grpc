@@ -25,3 +25,66 @@ py_library(
         "//src/proto/grpc/testing:stats_py_pb2",
     ],
 )
+
+py_library(
+    name = "benchmark_client",
+    srcs = ["benchmark_client.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_library(
+    name = "benchmark_server",
+    srcs = ["benchmark_server.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+    ],
+)
+
+py_library(
+    name = "client_runner",
+    srcs = ["client_runner.py"],
+    srcs_version = "PY2AND3",
+)
+
+py_library(
+    name = "worker_server",
+    srcs = ["worker_server.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":benchmark_client",
+        ":benchmark_server",
+        ":client_runner",
+        ":histogram",
+        "//src/proto/grpc/core:stats_py_pb2",
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:control_py_pb2",
+        "//src/proto/grpc/testing:payloads_py_pb2",
+        "//src/proto/grpc/testing:stats_py_pb2",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_binary(
+    name = "qps_worker",
+    srcs = ["qps_worker.py"],
+    imports = ["../.."],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":worker_server",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)

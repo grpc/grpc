@@ -13,12 +13,11 @@
 # limitations under the License.
 """Test of gRPC Python's application-layer API."""
 
-import unittest
 import logging
-
-import six
+import unittest
 
 import grpc
+import six
 
 from tests.unit import _from_grpc_import_star
 
@@ -63,6 +62,8 @@ class AllTest(unittest.TestCase):
             'LocalConnectionType',
             'local_channel_credentials',
             'local_server_credentials',
+            'alts_channel_credentials',
+            'alts_server_credentials',
             'unary_unary_rpc_method_handler',
             'unary_stream_rpc_method_handler',
             'stream_unary_rpc_method_handler',
@@ -82,6 +83,12 @@ class AllTest(unittest.TestCase):
             'secure_channel',
             'intercept_channel',
             'server',
+            'protos',
+            'services',
+            'protos_and_services',
+            'xds_channel_credentials',
+            'xds_server_credentials',
+            'insecure_server_credentials',
         )
 
         six.assertCountEqual(self, expected_grpc_code_elements,

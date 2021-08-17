@@ -25,7 +25,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 
 #include "test/core/bad_ssl/server_common.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 
 /* This server will present an untrusted cert to the connecting client,
  * causing the SSL handshake to fail */

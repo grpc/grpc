@@ -24,7 +24,7 @@
    weighted mean.  It is designed for batch operations where we do many adds
    before updating the average. */
 
-typedef struct {
+struct grpc_time_averaged_stats {
   /* The initial average value.  This is the reported average until the first
      grpc_time_averaged_stats_update_average call.  If a positive regress_weight
      is used, we also regress towards this value on each update. */
@@ -56,8 +56,7 @@ typedef struct {
   /* A time-decayed average of the (batch_total_value_ / batch_num_samples_),
      computed by decaying the samples_in_avg_ weight in the weighted average. */
   double aggregate_weighted_avg;
-} grpc_time_averaged_stats;
-
+};
 /* See the comments on the members above for an explanation of init_avg,
    regress_weight, and persistence_factor. */
 void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,

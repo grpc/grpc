@@ -21,6 +21,11 @@ grpc_package(name = "test/cpp/client")
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -37,7 +42,12 @@ grpc_cc_test(
     srcs = ["client_channel_stress_test.cc"],
     # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
     # reenable the tests once it works reliably on Win RBE.
+    # TODO(roth): Test marked as manual for now due to variable duration
+    # problem triggered by https://github.com/grpc/grpc/pull/22481.
+    # Once we figure out the problem, either re-enable or just decide to
+    # remove this test.  Tracked internally in b/153136407.
     tags = [
+        "manual",
         "no_test_android",  # fails on android due to "Too many open files".
         "no_windows",
     ],

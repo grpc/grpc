@@ -22,8 +22,16 @@
 
 #ifdef GPR_CPU_IPHONE
 
-/* Probably 2 instead of 1, but see comment on gpr_cpu_current_cpu. */
-unsigned gpr_cpu_num_cores(void) { return 1; }
+#include <sys/sysctl.h>
+
+unsigned gpr_cpu_num_cores(void) {
+  size_t len;
+  unsigned int ncpu;
+  len = sizeof(ncpu);
+  sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0);
+
+  return ncpu;
+}
 
 /* Most code that's using this is using it to shard across work queues. So
    unless profiling shows it's a problem or there appears a way to detect the

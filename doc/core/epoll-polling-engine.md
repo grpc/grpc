@@ -104,7 +104,7 @@ void grpc_use_signal(int signal_num)
 
 If the calling application does not provide a signal number, then the gRPC library will relegate to using a model similar to the current implementation (where every thread does a blocking `poll()` on its `wakeup_fd` and the `epoll_fd`).  The function` psi_wait() `in figure 2 implements this logic.
 
-**>> **(**NOTE**: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling `epoll_wait()` on the epoll set at any time - which all other threads call poll on their `wakeup_fds`) 
+**>> **(**NOTE**: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling `epoll_wait()` on the epoll set at any time - which all other threads call poll on their `wakeup_fds`)
 in case of not getting a signal number from the applications.
 
 

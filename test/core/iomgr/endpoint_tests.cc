@@ -118,14 +118,15 @@ struct read_and_write_test_state {
   grpc_closure write_scheduler;
 };
 
-static void read_scheduler(void* data, grpc_error* /* error */) {
+static void read_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
                      /*urgent=*/false);
 }
 
-static void read_and_write_test_read_handler(void* data, grpc_error* error) {
+static void read_and_write_test_read_handler(void* data,
+                                             grpc_error_handle error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
 
@@ -146,14 +147,15 @@ static void read_and_write_test_read_handler(void* data, grpc_error* error) {
   }
 }
 
-static void write_scheduler(void* data, grpc_error* /* error */) {
+static void write_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
                       nullptr);
 }
 
-static void read_and_write_test_write_handler(void* data, grpc_error* error) {
+static void read_and_write_test_write_handler(void* data,
+                                              grpc_error_handle error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_slice* slices = nullptr;
@@ -272,7 +274,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_destroy(state.write_ep);
 }
 
-static void inc_on_failure(void* arg, grpc_error* error) {
+static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
   *static_cast<int*>(arg) += (error != GRPC_ERROR_NONE);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));

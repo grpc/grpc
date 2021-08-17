@@ -40,17 +40,17 @@ bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
-  if (options->key_materials_config() == nullptr &&
-      options->credential_reload_config() == nullptr) {
-    gpr_log(GPR_ERROR,
-            "TLS credentials options must specify either key materials or "
-            "credential reload config.");
-    return false;
-  }
+  // TODO(ZhenLian): remove this when it is also supported on server side.
   if (!is_client && options->server_authorization_check_config() != nullptr) {
     gpr_log(GPR_INFO,
             "Server's credentials options should not contain server "
             "authorization check config.");
+  }
+  if (options->server_verification_option() != GRPC_TLS_SERVER_VERIFICATION &&
+      options->server_authorization_check_config() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Should provider custom verifications if bypassing default ones.");
+    return false;
   }
   return true;
 }
@@ -85,14 +85,16 @@ TlsCredentials::create_security_connector(
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
-          this->Ref(), std::move(call_creds), target_name,
+          this->Ref(), options_, std::move(call_creds), target_name,
           overridden_target_name, ssl_session_cache);
   if (sc == nullptr) {
     return nullptr;
   }
-  grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
-  *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  if (args != nullptr) {
+    grpc_arg new_arg = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
+    *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  }
   return sc;
 }
 
@@ -104,10 +106,13 @@ TlsServerCredentials::TlsServerCredentials(
 TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-TlsServerCredentials::create_security_connector() {
+TlsServerCredentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_core::TlsServerSecurityConnector::
-      CreateTlsServerSecurityConnector(this->Ref());
+      CreateTlsServerSecurityConnector(this->Ref(), options_);
 }
+
+/** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {

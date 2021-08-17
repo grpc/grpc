@@ -151,8 +151,6 @@ class TestAio(setuptools.Command):
 
     def run(self):
         self._add_eggs_to_path()
-        from grpc.experimental.aio import init_grpc_aio
-        init_grpc_aio()
 
         import tests
         loader = tests.Loader()
@@ -222,11 +220,20 @@ class TestGevent(setuptools.Command):
         'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
         'unit._local_credentials_test.LocalCredentialsTest',
+        # TODO(https://github.com/grpc/grpc/issues/22020) LocalCredentials
+        # aren't supported with custom io managers.
+        'unit._contextvars_propagation_test',
         'testing._time_test.StrictRealTimeTest',
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
-        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._server_test.ServerTest.test_failed_port_binding_exception',
+    )
+    BANNED_MACOS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._dynamic_stubs_test.DynamicStubTest',)
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 
@@ -241,19 +248,21 @@ class TestGevent(setuptools.Command):
         from gevent import monkey
         monkey.patch_all()
 
-        import tests
-
         import grpc.experimental.gevent
+
+        import tests
         grpc.experimental.gevent.init_gevent()
 
         import gevent
 
         import tests
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests'])
+        loader.loadTestsFromNames(['tests', 'tests_gevent'])
         runner = tests.Runner()
         if sys.platform == 'win32':
             runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
+        elif sys.platform == 'darwin':
+            runner.skip_tests(self.BANNED_TESTS + self.BANNED_MACOS_TESTS)
         else:
             runner.skip_tests(self.BANNED_TESTS)
         result = gevent.spawn(runner.run, loader.suite)
@@ -299,6 +308,7 @@ class RunInterop(test.test):
         # edit the Python system path.
         if self.use_asyncio:
             import asyncio
+
             from tests_aio.interop import server
             sys.argv[1:] = self.args.split()
             asyncio.get_event_loop().run_until_complete(server.serve())

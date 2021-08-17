@@ -29,7 +29,6 @@
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 using grpc_core::testing::grpc_fuzzer_get_next_byte;
 using grpc_core::testing::grpc_fuzzer_get_next_string;
@@ -68,7 +67,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
   grpc_init();
-  grpc_test_only_control_plane_credentials_force_init();
   bool is_on_gcp = grpc_alts_is_running_on_gcp();
   while (inp.cur != inp.end) {
     bool enable_untrusted_alts = grpc_fuzzer_get_next_byte(&inp) & 0x01;
@@ -107,7 +105,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
     gpr_free(handshaker_service_url);
   }
-  grpc_test_only_control_plane_credentials_destroy();
   grpc_shutdown();
   return 0;
 }

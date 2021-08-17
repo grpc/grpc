@@ -16,6 +16,8 @@
  *
  */
 
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
@@ -31,6 +33,7 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1 "A@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
+#define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
 const size_t kHandshakerClientOpNum = 4;
 const size_t kMaxRpcVersionMajor = 3;
@@ -135,10 +138,7 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
 }
 
 static bool is_recv_status_op(const grpc_op* op, size_t nops) {
-  if (nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
-    return true;
-  }
-  return false;
+  return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
 /**
@@ -155,8 +155,8 @@ static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
 /**
  * A mock grpc_caller used to check correct execution of client_start operation.
  * It checks if the client_start handshaker request is populated with correct
- * handshake_security_protocol, application_protocol, and record_protocol, and
- * op is correctly populated.
+ * handshake_security_protocol, application_protocol, record_protocol and
+ * max_frame_size, and op is correctly populated.
  */
 static grpc_call_error check_client_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
@@ -196,7 +196,8 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   GPR_ASSERT(upb_strview_eql(
       grpc_gcp_StartClientHandshakeReq_target_name(client_start),
       upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
-
+  GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start) ==
+             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
 }
@@ -204,8 +205,8 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
 /**
  * A mock grpc_caller used to check correct execution of server_start operation.
  * It checks if the server_start handshaker request is populated with correct
- * handshake_security_protocol, application_protocol, and record_protocol, and
- * op is correctly populated.
+ * handshake_security_protocol, application_protocol, record_protocol and
+ * max_frame_size, and op is correctly populated.
  */
 static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
@@ -228,23 +229,19 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                              nullptr);
   GPR_ASSERT(upb_strview_eql(application_protocols[0],
                              upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
-  size_t handshake_parameters_count;
-  const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* const*
-      handshake_parameters =
-          grpc_gcp_StartServerHandshakeReq_handshake_parameters(
-              server_start, &handshake_parameters_count);
-  GPR_ASSERT(handshake_parameters_count == 1);
-  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_key(
-                 handshake_parameters[0]) == grpc_gcp_ALTS);
-  const grpc_gcp_ServerHandshakeParameters* value =
-      grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_value(
-          handshake_parameters[0]);
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
+                 server_start) == 1);
+  grpc_gcp_ServerHandshakeParameters* value;
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
+      server_start, grpc_gcp_ALTS, &value));
   upb_strview const* record_protocols =
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
   GPR_ASSERT(upb_strview_eql(record_protocols[0],
                              upb_strview_makez(ALTS_RECORD_PROTOCOL)));
   validate_rpc_protocol_versions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
+  GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start) ==
+             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
 }
@@ -321,12 +318,14 @@ static alts_handshaker_client_test_config* create_config() {
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, nullptr, false);
+      nullptr, nullptr, nullptr, nullptr, false,
+      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   config->client = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, nullptr, true);
+      nullptr, nullptr, nullptr, nullptr, true,
+      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(config->client != nullptr);
   GPR_ASSERT(config->server != nullptr);
   grpc_alts_credentials_options_destroy(client_options);
@@ -438,10 +437,10 @@ static void schedule_request_success_test() {
   destroy_config(config);
 }
 
-static void tsi_cb_assert_tsi_internal_error(tsi_result status, void* user_data,
-                                             const unsigned char* bytes_to_send,
-                                             size_t bytes_to_send_size,
-                                             tsi_handshaker_result* result) {
+static void tsi_cb_assert_tsi_internal_error(
+    tsi_result status, void* /*user_data*/,
+    const unsigned char* /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
+    tsi_handshaker_result* /*result*/) {
   GPR_ASSERT(status == TSI_INTERNAL_ERROR);
 }
 

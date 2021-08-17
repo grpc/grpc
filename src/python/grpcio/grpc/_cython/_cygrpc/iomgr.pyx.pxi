@@ -15,20 +15,21 @@
 
 from libc cimport string
 from libc.stdlib cimport malloc
+from libcpp.string cimport string as cppstring
 
-cdef grpc_error* grpc_error_none():
-  return <grpc_error*>0
+cdef grpc_error_handle grpc_error_none():
+  return <grpc_error_handle>0
 
-cdef grpc_error* socket_error(str syscall, str err):
+cdef grpc_error_handle socket_error(str syscall, str err):
   error_str = "{} failed: {}".format(syscall, err)
   error_bytes = str_to_bytes(error_str)
   return grpc_socket_error(error_bytes)
 
 cdef resolved_addr_to_tuple(grpc_resolved_address* address):
-  cdef char* res_str
+  cdef cppstring res_str
   port = grpc_sockaddr_get_port(address)
-  str_len = grpc_sockaddr_to_string(&res_str, address, 0) 
-  byte_str = _decode(<bytes>res_str[:str_len])
+  res_str = grpc_sockaddr_to_string(address, False)
+  byte_str = _decode(res_str)
   if byte_str.endswith(':' + str(port)):
     byte_str = byte_str[:(0 - len(str(port)) - 1)]
   byte_str = byte_str.lstrip('[')

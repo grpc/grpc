@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="route_guide_db.json" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="route_guide_db.json" />
   </ItemGroup>
 
 </Project>

@@ -27,7 +27,7 @@
 
 #include "test/core/util/test_config.h"
 
-static void pollset_destroy(void* ps, grpc_error* /*error*/) {
+static void pollset_destroy(void* ps, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
   gpr_free(ps);
 }

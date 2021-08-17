@@ -31,7 +31,7 @@ namespace grpc {
 namespace testing {
 
 template <class R>
-class MockClientReader : public ::grpc_impl::ClientReaderInterface<R> {
+class MockClientReader : public ::grpc::ClientReaderInterface<R> {
  public:
   MockClientReader() = default;
 
@@ -47,7 +47,7 @@ class MockClientReader : public ::grpc_impl::ClientReaderInterface<R> {
 };
 
 template <class W>
-class MockClientWriter : public ::grpc_impl::ClientWriterInterface<W> {
+class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
  public:
   MockClientWriter() = default;
 
@@ -63,7 +63,7 @@ class MockClientWriter : public ::grpc_impl::ClientWriterInterface<W> {
 
 template <class W, class R>
 class MockClientReaderWriter
-    : public ::grpc_impl::ClientReaderWriterInterface<W, R> {
+    : public ::grpc::ClientReaderWriterInterface<W, R> {
  public:
   MockClientReaderWriter() = default;
 
@@ -86,10 +86,12 @@ class MockClientReaderWriter
 
 template <class R>
 class MockClientAsyncResponseReader
-    : public ::grpc_impl::ClientAsyncResponseReaderInterface<R> {
+    : public ::grpc::ClientAsyncResponseReaderInterface<R> {
  public:
   MockClientAsyncResponseReader() = default;
 
+  /// ClientAsyncResponseReaderInterface
+  MOCK_METHOD0_T(StartCall, void());
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD3_T(Finish, void(R*, Status*, void*));
 };
@@ -100,6 +102,7 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
   MockClientAsyncReader() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
@@ -108,17 +111,18 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
 };
 
 template <class W>
-class MockClientAsyncWriter
-    : public ::grpc_impl::ClientAsyncWriterInterface<W> {
+class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
  public:
   MockClientAsyncWriter() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
+  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
 
   /// ClientAsyncWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
@@ -131,17 +135,60 @@ class MockClientAsyncReaderWriter
   MockClientAsyncReaderWriter() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
+  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
 
   /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
 
   /// ClientAsyncReaderWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
+};
+
+template <class R>
+class MockServerReader : public ::grpc::ServerReaderInterface<R> {
+ public:
+  MockServerReader() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+};
+
+template <class W>
+class MockServerWriter : public ::grpc::ServerWriterInterface<W> {
+ public:
+  MockServerWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+};
+
+template <class W, class R>
+class MockServerReaderWriter : public grpc::ServerReaderWriterInterface<W, R> {
+ public:
+  MockServerReaderWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
 };
 
 }  // namespace testing

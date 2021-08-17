@@ -15,9 +15,19 @@ class LoadParams extends \Google\Protobuf\Internal\Message
 {
     protected $load;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Testing\ClosedLoopParams $closed_loop
+     *     @type \Grpc\Testing\PoissonParams $poisson
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

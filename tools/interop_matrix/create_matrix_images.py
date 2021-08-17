@@ -325,6 +325,19 @@ def checkout_grpc_stack(lang, release):
                    '%s: %s' % (str(output), commit_log),
                    do_newline=True)
 
+    # git submodule update
+    jobset.message('START',
+                   'git submodule update --init at %s from %s' %
+                   (release, stack_base),
+                   do_newline=True)
+    subprocess.check_call(['git', 'submodule', 'update', '--init'],
+                          cwd=stack_base,
+                          stderr=subprocess.STDOUT)
+    jobset.message('SUCCESS',
+                   'git submodule update --init',
+                   '%s: %s' % (str(output), commit_log),
+                   do_newline=True)
+
     # Write git log to commit_log so it can be packaged with the docker image.
     with open(os.path.join(stack_base, 'commit_log'), 'w') as f:
         f.write(commit_log)

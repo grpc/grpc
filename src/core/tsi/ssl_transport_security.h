@@ -21,7 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/string_view.h"
+#include <grpc/grpc_security_constants.h>
+#include "absl/strings/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern "C" {
@@ -36,12 +37,13 @@ extern "C" {
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
-
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
-
 #define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
-
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
+#define TSI_X509_DNS_PEER_PROPERTY "x509_dns"
+#define TSI_X509_URI_PEER_PROPERTY "x509_uri"
+#define TSI_X509_EMAIL_PEER_PROPERTY "x509_email"
+#define TSI_X509_IP_PEER_PROPERTY "x509_ip"
 
 /* --- tsi_ssl_root_certs_store object ---
 
@@ -81,7 +83,7 @@ typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
-typedef struct {
+struct tsi_ssl_pem_key_cert_pair {
   /* private_key is the NULL-terminated string containing the PEM encoding of
      the client's private key. */
   const char* private_key;
@@ -89,8 +91,7 @@ typedef struct {
   /* cert_chain is the NULL-terminated string containing the PEM encoding of
      the client's certificate chain. */
   const char* cert_chain;
-} tsi_ssl_pem_key_cert_pair;
-
+};
 /* TO BE DEPRECATED.
    Creates a client handshaker factory.
    - pem_key_cert_pair is a pointer to the object containing client's private
@@ -151,6 +152,10 @@ struct tsi_ssl_client_handshaker_options {
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
 
+  /* The min and max TLS versions that will be negotiated by the handshaker. */
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -159,7 +164,9 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
-        skip_server_certificate_verification(false) {}
+        skip_server_certificate_verification(false),
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a client handshaker factory.
@@ -173,7 +180,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_client_handshaker_factory** factory);
 
 /* Creates a client handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is
     trying to connect to which will be relayed to the server using the SNI
     extension.
@@ -182,8 +189,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker);
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
@@ -275,6 +282,9 @@ struct tsi_ssl_server_handshaker_options {
   const char* session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
+  /* The min and max TLS versions that will be negotiated by the handshaker. */
+  tsi_tls_version min_tls_version;
+  tsi_tls_version max_tls_version;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -285,7 +295,9 @@ struct tsi_ssl_server_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_ticket_key(nullptr),
-        session_ticket_key_size(0) {}
+        session_ticket_key_size(0),
+        min_tls_version(tsi_tls_version::TSI_TLS1_2),
+        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
 };
 
 /* Creates a server handshaker factory.
@@ -299,25 +311,25 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     tsi_ssl_server_handshaker_factory** factory);
 
 /* Creates a server handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* self, tsi_handshaker** handshaker);
+    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory* self);
+    tsi_ssl_server_handshaker_factory* factory);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, grpc_core::StringView name);
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name);
 
 /* --- Testing support. ---
 
@@ -332,10 +344,9 @@ typedef void (*tsi_ssl_handshaker_factory_destructor)(
     tsi_ssl_handshaker_factory* factory);
 
 /* Virtual table for tsi_ssl_handshaker_factory. */
-typedef struct {
+struct tsi_ssl_handshaker_factory_vtable {
   tsi_ssl_handshaker_factory_destructor destroy;
-} tsi_ssl_handshaker_factory_vtable;
-
+};
 /* Set destructor of handshaker_factory to new_destructor, returns previous
    destructor. */
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(

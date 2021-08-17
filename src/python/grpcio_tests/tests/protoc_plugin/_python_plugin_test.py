@@ -24,17 +24,16 @@ import tempfile
 import threading
 import unittest
 
-from six import moves
-
 import grpc
 import grpc.experimental
-from tests.unit import test_common
-from tests.unit.framework.common import test_constants
+from six import moves
 
 import tests.protoc_plugin.protos.payload.test_payload_pb2 as payload_pb2
 import tests.protoc_plugin.protos.requests.r.test_requests_pb2 as request_pb2
 import tests.protoc_plugin.protos.responses.test_responses_pb2 as response_pb2
 import tests.protoc_plugin.protos.service.test_service_pb2_grpc as service_pb2_grpc
+from tests.unit import test_common
+from tests.unit.framework.common import test_constants
 
 # Identifiers of entities we expect to find in the generated module.
 STUB_IDENTIFIER = 'TestServiceStub'
@@ -504,7 +503,8 @@ class PythonPluginTest(unittest.TestCase):
         service.server.stop(None)
 
 
-@unittest.skipIf(sys.version_info[0] < 3, "Unsupported on Python 2.")
+@unittest.skipIf(sys.version_info[0] < 3 or sys.version_info[1] < 6,
+                 "Unsupported on Python 2.")
 class SimpleStubsPluginTest(unittest.TestCase):
     servicer_methods = _ServicerMethods()
 
@@ -551,6 +551,16 @@ class SimpleStubsPluginTest(unittest.TestCase):
             channel_credentials=grpc.experimental.insecure_channel_credentials(
             ),
             wait_for_ready=True)
+        expected_response = self.servicer_methods.UnaryCall(
+            request, 'not a real context!')
+        self.assertEqual(expected_response, response)
+
+    def testUnaryCallInsecureSugar(self):
+        request = request_pb2.SimpleRequest(response_size=13)
+        response = service_pb2_grpc.TestService.UnaryCall(request,
+                                                          self._target,
+                                                          insecure=True,
+                                                          wait_for_ready=True)
         expected_response = self.servicer_methods.UnaryCall(
             request, 'not a real context!')
         self.assertEqual(expected_response, response)
@@ -615,6 +625,37 @@ class SimpleStubsPluginTest(unittest.TestCase):
         for expected_response, response in moves.zip_longest(
                 expected_responses, responses):
             self.assertEqual(expected_response, response)
+
+
+class ModuleMainTest(unittest.TestCase):
+    """Test case for running `python -m grpc_tools.protoc`.
+    """
+
+    def test_clean_output(self):
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on a interpreter that cannot be invoked from the CLI.")
+        proto_dir_path = os.path.join("src", "proto")
+        test_proto_path = os.path.join(proto_dir_path, "grpc", "testing",
+                                       "empty.proto")
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        work_dir = tempfile.mkdtemp()
+        try:
+            invocation = (sys.executable, "-m", "grpc_tools.protoc",
+                          "--proto_path", proto_dir_path, "--python_out",
+                          work_dir, "--grpc_python_out", work_dir,
+                          test_proto_path)
+            proc = subprocess.Popen(invocation,
+                                    stdout=streams[0],
+                                    stderr=streams[1])
+            proc.wait()
+            outs = []
+            for stream in streams:
+                stream.seek(0)
+                self.assertEqual(0, len(stream.read()))
+            self.assertEqual(0, proc.returncode)
+        except Exception:  # pylint: disable=broad-except
+            shutil.rmtree(work_dir)
 
 
 if __name__ == '__main__':

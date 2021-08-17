@@ -16,8 +16,8 @@
 set -e
 cd $(dirname $0)/../../..
 
-ALL_IMAGES=( grpc-ext grpc-src alpine php5 php-src php-future php-zts
-             fork-support )
+ALL_IMAGES=( grpc-ext grpc-src alpine centos7 php-src php-future php-zts
+             fork-support i386 php8 )
 
 if [[ "$1" == "--cmds" ]]; then
   for arg in "${ALL_IMAGES[@]}"

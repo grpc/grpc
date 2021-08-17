@@ -153,7 +153,7 @@ fi
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
 # TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
+curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | $VENV_PYTHON
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -165,24 +165,34 @@ pip_install_dir() {
   cd "$PWD"
 }
 
+# On library/version/platforms combo that do not have a binary
+# published, we may end up building a dependency from source. In that
+# case, several of our build environment variables may disrupt the
+# third-party build process. This function pipes through only the
+# minimal environment necessary.
+pip_install() {
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+}
+
 case "$VENV" in
   *py36_gevent*)
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
-  $VENV_PYTHON -m pip install gevent==1.3.b1
+  pip_install gevent==1.3.b1
   ;;
   *gevent*)
-  $VENV_PYTHON -m pip install -U gevent
+  pip_install -U gevent
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip==19.3.1
-$VENV_PYTHON -m pip install --upgrade setuptools
-$VENV_PYTHON -m pip install --upgrade cython
-$VENV_PYTHON -m pip install --upgrade six enum34 protobuf
+
+pip_install --upgrade setuptools==44.1.1
+pip_install --upgrade pip==19.3.1
+pip_install --upgrade cython
+pip_install --upgrade six protobuf
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
-  $VENV_PYTHON -m pip install futures
+  pip_install --upgrade futures enum34
 fi
 
 pip_install_dir "$ROOT"
@@ -210,13 +220,19 @@ $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
+# Build/install csds
+pip_install_dir "$ROOT/src/python/grpcio_csds"
+
+# Build/install admin
+pip_install_dir "$ROOT/src/python/grpcio_admin"
+
 # Install testing
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
-$VENV_PYTHON -m pip install coverage==4.4 oauth2client==4.1.0 \
-                            google-auth==1.0.0 requests==2.14.2 \
-                            googleapis-common-protos==1.5.5
+pip_install coverage==4.4 oauth2client==4.1.0 \
+            google-auth>=1.17.2 requests==2.14.2 \
+            googleapis-common-protos>=1.5.5 rsa==4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

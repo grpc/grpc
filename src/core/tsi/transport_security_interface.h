@@ -64,6 +64,11 @@ typedef enum {
   TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
 } tsi_client_certificate_request_type;
 
+typedef enum {
+  TSI_TLS1_2,
+  TSI_TLS1_3,
+} tsi_tls_version;
+
 const char* tsi_result_to_string(tsi_result result);
 const char* tsi_security_level_to_string(tsi_security_level security_level);
 
@@ -208,11 +213,10 @@ typedef struct tsi_peer_property {
   } value;
 } tsi_peer_property;
 
-typedef struct {
+struct tsi_peer {
   tsi_peer_property* properties;
   size_t property_count;
-} tsi_peer;
-
+};
 /* Destructs the tsi_peer object. */
 void tsi_peer_destruct(tsi_peer* self);
 
@@ -243,7 +247,7 @@ tsi_result tsi_handshaker_result_create_frame_protector(
    consequence, the caller must not free the bytes.  */
 tsi_result tsi_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
-    size_t* byte_size);
+    size_t* bytes_size);
 
 /* This method releases the tsi_handshaker_handshaker object. After this method
    is called, no other method can be called on the object.  */

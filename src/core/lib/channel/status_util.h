@@ -34,6 +34,11 @@ bool grpc_status_code_from_string(const char* status_str,
 /// Returns the string form of \a status, or "UNKNOWN" if invalid.
 const char* grpc_status_code_to_string(grpc_status_code status);
 
+// Converts an int to grpc_status_code. If the int is not a valid status code,
+// sets the code to GRPC_STATUS_UNKNOWN and returns false. Otherwise, returns
+// true.
+bool grpc_status_code_from_int(int status_int, grpc_status_code* status);
+
 namespace grpc_core {
 namespace internal {
 
@@ -46,6 +51,10 @@ class StatusCodeSet {
 
   bool Contains(grpc_status_code status) const {
     return status_code_mask_ & (1 << status);
+  }
+
+  bool operator==(const StatusCodeSet& other) const {
+    return status_code_mask_ == other.status_code_mask_;
   }
 
  private:

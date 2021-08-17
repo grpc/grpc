@@ -54,7 +54,7 @@ static void finish_connection() {
   gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(void* arg, grpc_error* error) {
+static void must_succeed(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -64,7 +64,7 @@ static void must_succeed(void* arg, grpc_error* error) {
   finish_connection();
 }
 
-static void must_fail(void* arg, grpc_error* error) {
+static void must_fail(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == NULL);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   finish_connection();
@@ -95,7 +95,7 @@ void test_succeeds(void) {
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   GPR_ASSERT(0 == uv_tcp_init(uv_default_loop(), svr_handle));
   GPR_ASSERT(0 == uv_tcp_bind(svr_handle, (struct sockaddr*)addr, 0));
   GPR_ASSERT(0 == uv_listen((uv_stream_t*)svr_handle, 1, connection_cb));
@@ -166,7 +166,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_timespec_to_millis_round_up(now);
-      // fallthrough
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
             "pollset_work",
@@ -182,7 +182,7 @@ void test_fails(void) {
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error_handle error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

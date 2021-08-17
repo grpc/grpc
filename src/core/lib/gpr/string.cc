@@ -28,6 +28,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -50,16 +52,10 @@ char* gpr_strdup(const char* src) {
   return dst;
 }
 
-typedef struct {
-  size_t capacity;
-  size_t length;
-  char* data;
-} dump_out;
-
-char* gpr_format_timespec(gpr_timespec tm) {
+std::string gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
-  struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
+  struct tm* tm_info = localtime(reinterpret_cast<time_t*>(&tm.tv_sec));
   strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
   snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
   // This loop trims off trailing zeros by inserting a null character that the
@@ -77,10 +73,14 @@ char* gpr_format_timespec(gpr_timespec tm) {
       break;
     }
   }
-  char* full_time_str;
-  gpr_asprintf(&full_time_str, "%s%sZ", time_buffer, ns_buffer);
-  return full_time_str;
+  return absl::StrCat(time_buffer, ns_buffer, "Z");
 }
+
+struct dump_out {
+  size_t capacity;
+  size_t length;
+  char* data;
+};
 
 static dump_out dump_out_create(void) {
   dump_out r = {0, 0, nullptr};
@@ -119,7 +119,8 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
     dump_out_append(out, '\'');
   }
   for (cur = beg; cur != end; ++cur) {
-    dump_out_append(out, (isprint(*cur) ? *(char*)cur : '.'));
+    dump_out_append(
+        out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');
@@ -172,51 +173,51 @@ void gpr_reverse_bytes(char* str, int len) {
   }
 }
 
-int gpr_ltoa(long value, char* string) {
+int gpr_ltoa(long value, char* output) {
   long sign;
   int i = 0;
 
   if (value == 0) {
-    string[0] = '0';
-    string[1] = 0;
+    output[0] = '0';
+    output[1] = 0;
     return 1;
   }
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    string[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + sign * (value % 10));
     value /= 10;
   }
-  if (sign < 0) string[i++] = '-';
-  gpr_reverse_bytes(string, i);
-  string[i] = 0;
+  if (sign < 0) output[i++] = '-';
+  gpr_reverse_bytes(output, i);
+  output[i] = 0;
   return i;
 }
 
-int int64_ttoa(int64_t value, char* string) {
+int int64_ttoa(int64_t value, char* output) {
   int64_t sign;
   int i = 0;
 
   if (value == 0) {
-    string[0] = '0';
-    string[1] = 0;
+    output[0] = '0';
+    output[1] = 0;
     return 1;
   }
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    string[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + sign * (value % 10));
     value /= 10;
   }
-  if (sign < 0) string[i++] = '-';
-  gpr_reverse_bytes(string, i);
-  string[i] = 0;
+  if (sign < 0) output[i++] = '-';
+  gpr_reverse_bytes(output, i);
+  output[i] = 0;
   return i;
 }
 
 int gpr_parse_nonnegative_int(const char* value) {
   char* end;
-  long result = strtol(value, &end, 0);
+  long result = strtol(value, &end, 10);
   if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
   return static_cast<int>(result);
 }
@@ -266,29 +267,6 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
   return out;
 }
 
-void gpr_strvec_init(gpr_strvec* sv) { memset(sv, 0, sizeof(*sv)); }
-
-void gpr_strvec_destroy(gpr_strvec* sv) {
-  size_t i;
-  for (i = 0; i < sv->count; i++) {
-    gpr_free(sv->strs[i]);
-  }
-  gpr_free(sv->strs);
-}
-
-void gpr_strvec_add(gpr_strvec* sv, char* str) {
-  if (sv->count == sv->capacity) {
-    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
-    sv->strs = static_cast<char**>(
-        gpr_realloc(sv->strs, sizeof(char*) * sv->capacity));
-  }
-  sv->strs[sv->count++] = str;
-}
-
-char* gpr_strvec_flatten(gpr_strvec* sv, size_t* final_length) {
-  return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
-}
-
 int gpr_strincmp(const char* a, const char* b, size_t n) {
   int ca, cb;
   do {
@@ -334,7 +312,7 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
 
 void* gpr_memrchr(const void* s, int c, size_t n) {
   if (s == nullptr) return nullptr;
-  char* b = (char*)s;
+  char* b = const_cast<char*>(reinterpret_cast<const char*>(s));
   size_t i;
   for (i = 0; i < n; i++) {
     if (b[n - i - 1] == c) {
@@ -344,19 +322,19 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
   return nullptr;
 }
 
-bool gpr_parse_bool_value(const char* s, bool* dst) {
+bool gpr_parse_bool_value(const char* value, bool* dst) {
   const char* kTrue[] = {"1", "t", "true", "y", "yes"};
   const char* kFalse[] = {"0", "f", "false", "n", "no"};
   static_assert(sizeof(kTrue) == sizeof(kFalse), "true_false_equal");
 
-  if (s == nullptr) {
+  if (value == nullptr) {
     return false;
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kTrue); ++i) {
-    if (gpr_stricmp(s, kTrue[i]) == 0) {
+    if (gpr_stricmp(value, kTrue[i]) == 0) {
       *dst = true;
       return true;
-    } else if (gpr_stricmp(s, kFalse[i]) == 0) {
+    } else if (gpr_stricmp(value, kFalse[i]) == 0) {
       *dst = false;
       return true;
     }

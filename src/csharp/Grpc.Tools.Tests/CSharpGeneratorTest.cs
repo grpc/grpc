@@ -84,5 +84,15 @@ namespace Grpc.Tools.Tests
             Assert.AreEqual(1, poss.Length);
             Assert.That(poss[0], Is.EqualTo("out/Foo.cs") | Is.EqualTo("out\\Foo.cs"));
         }
+
+        [Test]
+        public void OutputDirPatched()
+        {
+            var item = Utils.MakeItem("sub/foo.proto", "OutputDir", "out");
+            var output = _generator.PatchOutputDirectory(item);
+            var poss = _generator.GetPossibleOutputs(output);
+            Assert.AreEqual(1, poss.Length);
+            Assert.That(poss[0], Is.EqualTo("out/sub/Foo.cs") | Is.EqualTo("out\\sub\\Foo.cs"));
+        }
     };
 }

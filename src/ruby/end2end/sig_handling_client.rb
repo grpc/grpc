@@ -45,11 +45,11 @@ class SigHandlingClientController < ClientControl::ClientController::Service
 end
 
 def main
-  client_control_port = ''
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do |p|
-      client_control_port = p
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
@@ -67,8 +67,8 @@ def main
   # The "shutdown" RPC should end very quickly.
   # Allow a few seconds to be safe.
   srv = new_rpc_server_for_testing(poll_period: 3)
-  srv.add_http2_port("0.0.0.0:#{client_control_port}",
-                     :this_port_is_insecure)
+  port = srv.add_http2_port('localhost:0',
+                            :this_port_is_insecure)
   stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
                                     :this_channel_is_insecure)
   control_service = SigHandlingClientController.new(srv, stub)
@@ -77,8 +77,8 @@ def main
     srv.run
   end
   srv.wait_till_running
-  # send a first RPC to notify the parent process that we've started
-  stub.echo(Echo::EchoRequest.new(request: 'client/child started'))
+  # notify the parent process that we're ready
+  report_controller_port_to_parent(parent_controller_port, port)
   server_thread.join
   control_service.join_shutdown_thread
 end

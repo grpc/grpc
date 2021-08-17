@@ -50,7 +50,7 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
   grpc_channel_credentials* creds = grpc_local_credentials_create(type);
   grpc_end2end_local_fullstack_fixture_data* ffd =
       static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.get(),
+  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
                                          client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
@@ -63,7 +63,7 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
  */
 static bool fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
-  if (server_args == nullptr) return 0;
+  if (server_args == nullptr) return false;
   for (i = 0; i < server_args->num_args; i++) {
     if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
         0) {
@@ -98,8 +98,8 @@ void grpc_end2end_local_chttp2_init_server_fullstack(
                                               nullptr};
     grpc_server_credentials_set_auth_metadata_processor(creds, processor);
   }
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(),
-                                               creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server,
+                                               ffd->localaddr.c_str(), creds));
   grpc_server_credentials_release(creds);
   grpc_server_start(f->server);
 }

@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "upb/upb.hpp"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -46,23 +48,25 @@ struct alts_tsi_handshaker {
   tsi_handshaker base;
   grpc_slice target_name;
   bool is_client;
-  bool has_sent_start_message;
-  bool has_created_handshaker_client;
+  bool has_sent_start_message = false;
+  bool has_created_handshaker_client = false;
   char* handshaker_service_url;
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
-  alts_handshaker_client_vtable* client_vtable_for_testing;
-  grpc_channel* channel;
+  alts_handshaker_client_vtable* client_vtable_for_testing = nullptr;
+  grpc_channel* channel = nullptr;
   bool use_dedicated_cq;
   // mu synchronizes all fields below. Note these are the
   // only fields that can be concurrently accessed (due to
   // potential concurrency of tsi_handshaker_shutdown and
   // tsi_handshaker_next).
-  gpr_mu mu;
-  alts_handshaker_client* client;
+  grpc_core::Mutex mu;
+  alts_handshaker_client* client = nullptr;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
-  bool shutdown;
+  bool shutdown = false;
+  // Maximum frame size used by frame protector.
+  size_t max_frame_size;
 };
 
 /* Main struct for ALTS TSI handshaker result. */
@@ -75,6 +79,8 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice rpc_versions;
   bool is_client;
   grpc_slice serialized_context;
+  // Peer's maximum frame size.
+  size_t max_frame_size;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -156,6 +162,26 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
+
+  // In case the peer does not send max frame size (e.g. peer is gRPC Go or
+  // peer uses an old binary), the negotiated frame size is set to
+  // kTsiAltsMinFrameSize (ignoring max_output_protected_frame_size value if
+  // present). Otherwise, it is based on peer and user specified max frame
+  // size (if present).
+  size_t max_frame_size = kTsiAltsMinFrameSize;
+  if (result->max_frame_size) {
+    size_t peer_max_frame_size = result->max_frame_size;
+    max_frame_size = std::min<size_t>(peer_max_frame_size,
+                                      max_output_protected_frame_size == nullptr
+                                          ? kTsiAltsMaxFrameSize
+                                          : *max_output_protected_frame_size);
+    max_frame_size = std::max<size_t>(max_frame_size, kTsiAltsMinFrameSize);
+  }
+  max_output_protected_frame_size = &max_frame_size;
+  gpr_log(GPR_DEBUG,
+          "After Frame Size Negotiation, maximum frame size used by frame "
+          "protector equals %zu",
+          *max_output_protected_frame_size);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
       reinterpret_cast<const uint8_t*>(result->key_data),
       kAltsAes128GcmRekeyKeyLength, /*is_rekey=*/true, result->is_client,
@@ -227,8 +253,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
 
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
-                                             tsi_handshaker_result** self) {
-  if (self == nullptr || resp == nullptr) {
+                                             tsi_handshaker_result** result) {
+  if (result == nullptr || resp == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
   }
@@ -279,18 +305,19 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
-  alts_tsi_handshaker_result* result =
-      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
-  result->key_data =
+  alts_tsi_handshaker_result* sresult =
+      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*sresult)));
+  sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
-  memcpy(result->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
-  result->peer_identity =
+  memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
+  sresult->peer_identity =
       static_cast<char*>(gpr_zalloc(peer_service_account.size + 1));
-  memcpy(result->peer_identity, peer_service_account.data,
+  memcpy(sresult->peer_identity, peer_service_account.data,
          peer_service_account.size);
+  sresult->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
-      peer_rpc_version, rpc_versions_arena.ptr(), &result->rpc_versions);
+      peer_rpc_version, rpc_versions_arena.ptr(), &sresult->rpc_versions);
   if (!serialized) {
     gpr_log(GPR_ERROR, "Failed to serialize peer's RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
@@ -307,6 +334,28 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                                  local_service_account);
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
+  grpc_gcp_Identity* peer_identity = const_cast<grpc_gcp_Identity*>(identity);
+  if (peer_identity == nullptr) {
+    gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
+    return TSI_FAILED_PRECONDITION;
+  }
+  if (grpc_gcp_Identity_has_attributes(identity)) {
+    size_t iter = UPB_MAP_BEGIN;
+    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
+        grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    while (peer_attributes_entry != nullptr) {
+      upb_strview key = grpc_gcp_Identity_AttributesEntry_key(
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
+      upb_strview val = grpc_gcp_Identity_AttributesEntry_value(
+          const_cast<grpc_gcp_Identity_AttributesEntry*>(
+              peer_attributes_entry));
+      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                               context_arena.ptr());
+      peer_attributes_entry =
+          grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    }
+  }
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
@@ -314,16 +363,17 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Failed to serialize peer's ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-  result->serialized_context =
+  sresult->serialized_context =
       grpc_slice_from_copied_buffer(serialized_ctx, serialized_ctx_length);
-  result->is_client = is_client;
-  result->base.vtable = &result_vtable;
-  *self = &result->base;
+  sresult->is_client = is_client;
+  sresult->base.vtable = &result_vtable;
+  *result = &sresult->base;
   return TSI_OK;
 }
 
 /* gRPC provided callback used when gRPC thread model is applied. */
-static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
+static void on_handshaker_service_resp_recv(void* arg,
+                                            grpc_error_handle error) {
   alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
   if (client == nullptr) {
     gpr_log(GPR_ERROR, "ALTS handshaker client is nullptr");
@@ -333,7 +383,7 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);
@@ -341,13 +391,14 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.
  * It serves to safely bring the control back to application. */
-static void on_handshaker_service_resp_recv_dedicated(void* arg,
-                                                      grpc_error* /*error*/) {
+static void on_handshaker_service_resp_recv_dedicated(
+    void* arg, grpc_error_handle /*error*/) {
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
-  grpc_cq_end_op(resource->cq, arg, GRPC_ERROR_NONE,
-                 [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {},
-                 nullptr, &resource->storage);
+  grpc_cq_end_op(
+      resource->cq, arg, GRPC_ERROR_NONE,
+      [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {}, nullptr,
+      &resource->storage);
 }
 
 /* Returns TSI_OK if and only if no error is encountered. */
@@ -374,7 +425,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
-        handshaker->client_vtable_for_testing, handshaker->is_client);
+        handshaker->client_vtable_for_testing, handshaker->is_client,
+        handshaker->max_frame_size);
     if (client == nullptr) {
       gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
       return TSI_FAILED_PRECONDITION;
@@ -429,8 +481,8 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
   grpc_closure closure;
 };
 
-static void alts_tsi_handshaker_create_channel(void* arg,
-                                               grpc_error* /* unused_error */) {
+static void alts_tsi_handshaker_create_channel(
+    void* arg, grpc_error_handle /* unused_error */) {
   alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
@@ -541,8 +593,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
     grpc_channel_destroy_internal(handshaker->channel);
   }
   gpr_free(handshaker->handshaker_service_url);
-  gpr_mu_destroy(&handshaker->mu);
-  gpr_free(handshaker);
+  delete handshaker;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
@@ -570,48 +621,48 @@ bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self) {
+    grpc_pollset_set* interested_parties, tsi_handshaker** self,
+    size_t user_specified_max_frame_size) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_tsi_handshaker* handshaker =
-      static_cast<alts_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
-  gpr_mu_init(&handshaker->mu);
-  handshaker->use_dedicated_cq = interested_parties == nullptr;
-  handshaker->client = nullptr;
-  handshaker->is_client = is_client;
-  handshaker->has_sent_start_message = false;
+  bool use_dedicated_cq = interested_parties == nullptr;
+  alts_tsi_handshaker* handshaker = new alts_tsi_handshaker();
+  memset(&handshaker->base, 0, sizeof(handshaker->base));
+  handshaker->base.vtable =
+      use_dedicated_cq ? &handshaker_vtable_dedicated : &handshaker_vtable;
   handshaker->target_name = target_name == nullptr
                                 ? grpc_empty_slice()
                                 : grpc_slice_from_static_string(target_name);
-  handshaker->interested_parties = interested_parties;
-  handshaker->has_created_handshaker_client = false;
+  handshaker->is_client = is_client;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
+  handshaker->interested_parties = interested_parties;
   handshaker->options = grpc_alts_credentials_options_copy(options);
-  handshaker->base.vtable = handshaker->use_dedicated_cq
-                                ? &handshaker_vtable_dedicated
-                                : &handshaker_vtable;
+  handshaker->use_dedicated_cq = use_dedicated_cq;
+  handshaker->max_frame_size = user_specified_max_frame_size != 0
+                                   ? user_specified_max_frame_size
+                                   : kTsiAltsMaxFrameSize;
   *self = &handshaker->base;
   return TSI_OK;
 }
 
-void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* self,
+void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed) {
-  GPR_ASSERT(recv_bytes != nullptr && self != nullptr);
+  GPR_ASSERT(recv_bytes != nullptr && result != nullptr);
   if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
     return;
   }
-  alts_tsi_handshaker_result* result =
-      reinterpret_cast<alts_tsi_handshaker_result*>(self);
-  result->unused_bytes_size = GRPC_SLICE_LENGTH(*recv_bytes) - bytes_consumed;
-  result->unused_bytes =
-      static_cast<unsigned char*>(gpr_zalloc(result->unused_bytes_size));
-  memcpy(result->unused_bytes,
+  alts_tsi_handshaker_result* sresult =
+      reinterpret_cast<alts_tsi_handshaker_result*>(result);
+  sresult->unused_bytes_size = GRPC_SLICE_LENGTH(*recv_bytes) - bytes_consumed;
+  sresult->unused_bytes =
+      static_cast<unsigned char*>(gpr_zalloc(sresult->unused_bytes_size));
+  memcpy(sresult->unused_bytes,
          GRPC_SLICE_START_PTR(*recv_bytes) + bytes_consumed,
-         result->unused_bytes_size);
+         sresult->unused_bytes_size);
 }
 
 namespace grpc_core {

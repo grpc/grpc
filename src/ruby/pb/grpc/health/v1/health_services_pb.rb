@@ -28,7 +28,7 @@ module Grpc
       module Health
         class Service
 
-          include GRPC::GenericService
+          include ::GRPC::GenericService
 
           self.marshal_class_method = :encode
           self.unmarshal_class_method = :decode
@@ -36,7 +36,7 @@ module Grpc
 
           # If the requested service is unknown, the call will fail with status
           # NOT_FOUND.
-          rpc :Check, HealthCheckRequest, HealthCheckResponse
+          rpc :Check, ::Grpc::Health::V1::HealthCheckRequest, ::Grpc::Health::V1::HealthCheckResponse
           # Performs a watch for the serving status of the requested service.
           # The server will immediately send back a message indicating the current
           # serving status.  It will then subsequently send a new message whenever
@@ -52,7 +52,7 @@ module Grpc
           # should assume this method is not supported and should not retry the
           # call.  If the call terminates with any other status (including OK),
           # clients should retry the call with appropriate exponential backoff.
-          rpc :Watch, HealthCheckRequest, stream(HealthCheckResponse)
+          rpc :Watch, ::Grpc::Health::V1::HealthCheckRequest, stream(::Grpc::Health::V1::HealthCheckResponse)
         end
 
         Stub = Service.rpc_stub_class

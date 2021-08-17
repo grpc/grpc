@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <grpcpp/server_builder_impl.h>
+#include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
@@ -42,7 +42,7 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
 }  // namespace
 
 ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
-    const grpc::string& name,
+    const std::string& name,
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {

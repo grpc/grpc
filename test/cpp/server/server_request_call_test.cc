@@ -65,7 +65,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
         std::lock_guard<std::mutex> lock(mu);
         if (!shutting_down) {
           service.RequestEcho(&ctx, &req, &responder, cq.get(), cq.get(),
-                              (void*)1);
+                              reinterpret_cast<void*>(1));
         }
       }
 
@@ -106,7 +106,8 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
           continue;
         }
         gpr_log(GPR_INFO, "Finishing request %d", n);
-        responder.Finish(response, grpc::Status::OK, (void*)2);
+        responder.Finish(response, grpc::Status::OK,
+                         reinterpret_cast<void*>(2));
         if (!cq->Next(&tag, &ok)) {
           break;
         }
@@ -137,7 +138,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     ctx.set_deadline(std::chrono::system_clock::now() +
                      std::chrono::milliseconds(1));
     grpc::Status status = stub->Echo(&ctx, request, &response);
-    EXPECT_EQ(DEADLINE_EXCEEDED, status.error_code());
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     gpr_log(GPR_INFO, "Success.");
   }
   gpr_log(GPR_INFO, "Done sending RPCs.");

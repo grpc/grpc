@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # Docker file for building gRPC artifacts.
+# Updated: 2020-10-08
 
 ##################
 # Base
@@ -31,22 +32,12 @@ RUN gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.6
-RUN /bin/bash -l -c "rvm install ruby-2.6"
+RUN /bin/bash -l -c "rvm install ruby-2.6 --32"
 RUN /bin/bash -l -c "rvm use --default ruby-2.6"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.6' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler"
-
-
-##################
-# PHP dependencies
-
-RUN yum -y install php5 php5-dev php-pear
-
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
 
 # Clean yum
 RUN yum clean all

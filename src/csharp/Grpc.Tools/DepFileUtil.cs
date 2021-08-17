@@ -148,31 +148,63 @@ namespace Grpc.Tools
         /// "out/deadbeef12345678_file.protodep"
         /// </returns>
         /// <remarks>
-        /// Since a project may contain proto files with the same filename but in different
-        /// directories, a unique filename for the dependency file is constructed based on the
-        /// proto file name both name and directory. The directory path can be arbitrary,
-        /// for example, it can be outside of the project, or an absolute path including
-        /// a drive letter, or a UNC network path. A name constructed from such a path by,
-        /// for example, replacing disallowed name characters with an underscore, may well
-        /// be over filesystem's allowed path length, since it will be located under the
-        /// project and solution directories, which are also some level deep from the root.
-        /// Instead of creating long and unwieldy names for these proto sources, we cache
-        /// the full path of the name without the filename, and append the filename to it,
-        /// as in e. g. "foo/file.proto" will yield the name "deadbeef12345678_file", where
-        /// "deadbeef12345678" is a presumed hash value of the string "foo/". This allows
-        /// the file names be short, unique (up to a hash collision), and still allowing
-        /// the user to guess their provenance.
+        /// See <see cref="GetDirectoryHash"/> for notes on directory hash.
         /// </remarks>
         public static string GetDepFilenameForProto(string protoDepDir, string proto)
+        {
+            string dirhash = GetDirectoryHash(proto);
+            string filename = Path.GetFileNameWithoutExtension(proto);
+            return Path.Combine(protoDepDir, $"{dirhash}_{filename}.protodep");
+        }
+
+        /// <summary>
+        /// Construct relative output directory with directory hash
+        /// </summary>
+        /// <param name="outputDir">Relative path to the output directory, e. g. "out"</param>
+        /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
+        /// <returns>
+        /// Full relative path to the directory, e. g. "out/deadbeef12345678"
+        /// </returns>
+        /// <remarks>
+        /// See <see cref="GetDirectoryHash"/> for notes on directory hash.
+        /// </remarks>
+        public static string GetOutputDirWithHash(string outputDir, string proto)
+        {
+            string dirhash = GetDirectoryHash(proto);
+            return Path.Combine(outputDir, dirhash);
+        }
+
+        /// <summary>
+        /// Construct the directory hash from a relative file name
+        /// </summary>
+        /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
+        /// <returns>
+        /// Directory hash based on the file name, e. g. "deadbeef12345678"
+        /// </returns>
+        /// <remarks>
+        /// Since a project may contain proto files with the same filename but in different
+        /// directories, a unique directory for the generated files is constructed based on the
+        /// proto file names directory. The directory path can be arbitrary, for example,
+        /// it can be outside of the project, or an absolute path including a drive letter,
+        /// or a UNC network path. A name constructed from such a path by, for example,
+        /// replacing disallowed name characters with an underscore, may well be over
+        /// filesystem's allowed path length, since it will be located under the project
+        /// and solution directories, which are also some level deep from the root.
+        /// Instead of creating long and unwieldy names for these proto sources, we cache
+        /// the full path of the name without the filename, as in e. g. "foo/file.proto"
+        /// will yield the name "deadbeef12345678", where that is a presumed hash value
+        /// of the string "foo". This allows the path to be short, unique (up to a hash
+        /// collision), and still allowing the user to guess their provenance.
+        /// </remarks>
+        private static string GetDirectoryHash(string proto)
         {
             string dirname = Path.GetDirectoryName(proto);
             if (Platform.IsFsCaseInsensitive)
             {
                 dirname = dirname.ToLowerInvariant();
             }
-            string dirhash = HashString64Hex(dirname);
-            string filename = Path.GetFileNameWithoutExtension(proto);
-            return Path.Combine(protoDepDir, $"{dirhash}_{filename}.protodep");
+
+            return HashString64Hex(dirname);
         }
 
         // Get a 64-bit hash for a directory string. We treat it as if it were

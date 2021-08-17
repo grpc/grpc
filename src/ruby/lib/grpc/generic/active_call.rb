@@ -23,13 +23,12 @@ class Struct
     # is non-nil and not OK.
     def check_status
       return nil if status.nil?
-      fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
       if status.code != GRPC::Core::StatusCodes::OK
         GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
-        md = status.metadata
         fail GRPC::BadStatus.new_status_exception(
-          status.code, status.details, md)
+          status.code, status.details, status.metadata,
+          status.debug_error_string)
       end
       status
     end

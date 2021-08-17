@@ -37,7 +37,7 @@ namespace testing {
 class Reporter {
  public:
   /** Construct a reporter with the given \a name. */
-  Reporter(const string& name) : name_(name) {}
+  explicit Reporter(const string& name) : name_(name) {}
 
   virtual ~Reporter() {}
 
@@ -94,7 +94,7 @@ class CompositeReporter : public Reporter {
 /** Reporter to gpr_log(GPR_INFO). */
 class GprLogReporter : public Reporter {
  public:
-  GprLogReporter(const string& name) : Reporter(name) {}
+  explicit GprLogReporter(const string& name) : Reporter(name) {}
 
  private:
   void ReportQPS(const ScenarioResult& result) override;

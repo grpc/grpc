@@ -22,11 +22,10 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-typedef struct {
+struct status_string_entry {
   const char* str;
   grpc_status_code status;
-} status_string_entry;
-
+};
 static const status_string_entry g_status_string_entries[] = {
     {"OK", GRPC_STATUS_OK},
     {"CANCELLED", GRPC_STATUS_CANCELLED},
@@ -76,8 +75,6 @@ const char* grpc_status_code_to_string(grpc_status_code status) {
       return "ALREADY_EXISTS";
     case GRPC_STATUS_PERMISSION_DENIED:
       return "PERMISSION_DENIED";
-    case GRPC_STATUS_UNAUTHENTICATED:
-      return "UNAUTHENTICATED";
     case GRPC_STATUS_RESOURCE_EXHAUSTED:
       return "RESOURCE_EXHAUSTED";
     case GRPC_STATUS_FAILED_PRECONDITION:
@@ -94,7 +91,19 @@ const char* grpc_status_code_to_string(grpc_status_code status) {
       return "UNAVAILABLE";
     case GRPC_STATUS_DATA_LOSS:
       return "DATA_LOSS";
+    case GRPC_STATUS_UNAUTHENTICATED:
+      return "UNAUTHENTICATED";
     default:
       return "UNKNOWN";
   }
+}
+
+bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
+  // The range of status code enum is [0, 16], 0 is OK, 16 is UNAUTHENTICATED.
+  if (status_int < GRPC_STATUS_OK || status_int > GRPC_STATUS_UNAUTHENTICATED) {
+    *status = GRPC_STATUS_UNKNOWN;
+    return false;
+  }
+  *status = static_cast<grpc_status_code>(status_int);
+  return true;
 }

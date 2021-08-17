@@ -16,7 +16,6 @@
 
 # TODO: This should ideally be in upb submodule to avoid hardcoding this here.
 
-from __future__ import print_function
 import re
 import os
 import sys
@@ -30,22 +29,38 @@ try:
         'build': 'all',
         'language': 'c',
         'src': [
+            "third_party/upb/upb/decode_fast.c",
             "third_party/upb/upb/decode.c",
+            "third_party/upb/upb/def.c",
             "third_party/upb/upb/encode.c",
             "third_party/upb/upb/msg.c",
-            "third_party/upb/upb/port.c",
+            "third_party/upb/upb/reflection.c",
             "third_party/upb/upb/table.c",
+            "third_party/upb/upb/text_encode.c",
             "third_party/upb/upb/upb.c",
+            "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
+            "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
         ],
         'headers': [
+            "third_party/upb/upb/decode_fast.h",
+            "third_party/upb/upb/decode_internal.h",
             "third_party/upb/upb/decode.h",
+            "third_party/upb/upb/def.h",
+            "third_party/upb/upb/def.hpp",
             "third_party/upb/upb/encode.h",
-            "third_party/upb/upb/generated_util.h",
+            "third_party/upb/upb/msg_internal.h",
             "third_party/upb/upb/msg.h",
             "third_party/upb/upb/port_def.inc",
             "third_party/upb/upb/port_undef.inc",
-            "third_party/upb/upb/table.int.h",
+            "third_party/upb/upb/reflection.h",
+            "third_party/upb/upb/reflection.hpp",
+            "third_party/upb/upb/table_internal.h",
+            "third_party/upb/upb/text_encode.h",
+            "third_party/upb/upb/upb_internal.h",
             "third_party/upb/upb/upb.h",
+            "third_party/upb/upb/upb.hpp",
+            "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
+            "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h",
         ],
         'secure': False,
     }]

@@ -31,7 +31,10 @@
 // Using gpr_get_cycle_counter() is preferred to using ExecCtx::Get()->Now()
 // whenever possible.
 
-#if GPR_CYCLE_COUNTER_RDTSC_32
+#if GPR_CYCLE_COUNTER_CUSTOM
+typedef int64_t gpr_cycle_counter;
+gpr_cycle_counter gpr_get_cycle_counter();
+#elif GPR_CYCLE_COUNTER_RDTSC_32
 typedef int64_t gpr_cycle_counter;
 inline gpr_cycle_counter gpr_get_cycle_counter() {
   int64_t ret;
@@ -54,7 +57,8 @@ gpr_cycle_counter gpr_get_cycle_counter();
 #else
 #error Must define exactly one of \
     GPR_CYCLE_COUNTER_RDTSC_32, \
-    GPR_CYCLE_COUNTER_RDTSC_64, or \
+    GPR_CYCLE_COUNTER_RDTSC_64, \
+    GPR_CYCLE_COUNTER_CUSTOM, or \
     GPR_CYCLE_COUNTER_FALLBACK
 #endif
 

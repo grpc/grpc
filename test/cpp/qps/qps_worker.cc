@@ -34,6 +34,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
@@ -108,6 +110,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   Status RunClient(
       ServerContext* ctx,
       ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
+    gpr_log(GPR_INFO, "RunClient: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
@@ -122,6 +125,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   Status RunServer(
       ServerContext* ctx,
       ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
+    gpr_log(GPR_INFO, "RunServer: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
@@ -153,7 +157,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    InstanceGuard(WorkerServiceImpl* impl)
+    explicit InstanceGuard(WorkerServiceImpl* impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {
@@ -230,7 +234,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
     }
-    if (server_port_ > 0) {
+    if (server_port_ > 0 && args.setup().port() == 0) {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
@@ -273,21 +277,30 @@ class WorkerServiceImpl final : public WorkerService::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type) {
-  impl_.reset(new WorkerServiceImpl(server_port, this));
+                     const std::string& credential_type) {
+  impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+  builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
-    grpc_core::UniquePtr<char> server_address;
-    grpc_core::JoinHostPort(&server_address, "::", driver_port);
+    std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
-        server_address.get(),
+        server_address.c_str(),
         GetCredentialsProvider()->GetServerCredentials(credential_type));
   }
   builder->RegisterService(impl_.get());
 
   server_ = builder->BuildAndStart();
+  if (server_ == nullptr) {
+    gpr_log(GPR_ERROR,
+            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
+            driver_port, server_port);
+  } else {
+    gpr_log(GPR_INFO,
+            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
+            driver_port, server_port);
+  }
 }
 
 QpsWorker::~QpsWorker() {}

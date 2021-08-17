@@ -40,6 +40,11 @@ echo "2) some change that was just merged in the submodule head has caused the f
 echo ""
 echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
 
+if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
+then
+  src/abseil-cpp/preprocessed_builds.yaml.gen.py
+fi
+
 tools/buildgen/generate_projects.sh
 
 if [ "${SUBMODULE_NAME}" == "protobuf" ]
@@ -50,4 +55,4 @@ fi
 # commit so that changes are passed to Docker
 git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 4 -j 4 --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 8 -j 4 --internal_ci --build_only

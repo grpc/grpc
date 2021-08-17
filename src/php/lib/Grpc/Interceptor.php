@@ -23,7 +23,6 @@ namespace Grpc;
  * Represents an interceptor that intercept RPC invocations before call starts.
  * There is one proposal related to the argument $deserialize under the review.
  * The proposal link is https://github.com/grpc/proposal/pull/86.
- * This is an EXPERIMENTAL API.
  */
 class Interceptor
 {
@@ -31,9 +30,9 @@ class Interceptor
         $method,
         $argument,
         $deserialize,
+        $continuation,
         array $metadata = [],
-        array $options = [],
-        $continuation
+        array $options = []
     ) {
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
@@ -41,9 +40,9 @@ class Interceptor
     public function interceptStreamUnary(
         $method,
         $deserialize,
+        $continuation,
         array $metadata = [],
-        array $options = [],
-        $continuation
+        array $options = []
     ) {
         return $continuation($method, $deserialize, $metadata, $options);
     }
@@ -52,9 +51,9 @@ class Interceptor
         $method,
         $argument,
         $deserialize,
+        $continuation,
         array $metadata = [],
-        array $options = [],
-        $continuation
+        array $options = []
     ) {
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
@@ -62,9 +61,9 @@ class Interceptor
     public function interceptStreamStream(
         $method,
         $deserialize,
+        $continuation,
         array $metadata = [],
-        array $options = [],
-        $continuation
+        array $options = []
     ) {
         return $continuation($method, $deserialize, $metadata, $options);
     }

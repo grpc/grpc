@@ -13,14 +13,31 @@
 # limitations under the License.
 # distutils: language=c++
 
+cdef class _AioState:
+    cdef object lock  # threading.RLock
+    cdef int refcount
+    cdef object engine  # AsyncIOEngine
+    cdef BaseCompletionQueue cq
+
+
+cdef grpc_completion_queue *global_completion_queue()
+
+
+cpdef init_grpc_aio()
+
+
+cpdef shutdown_grpc_aio()
+
 
 cdef extern from "src/core/lib/iomgr/timer_manager.h":
-  void grpc_timer_manager_set_threading(bint enabled);
+  void grpc_timer_manager_set_threading(bint enabled)
+
 
 cdef extern from "src/core/lib/iomgr/iomgr_internal.h":
-  void grpc_set_default_iomgr_platform();
+  void grpc_set_default_iomgr_platform()
+
 
 cdef extern from "src/core/lib/iomgr/executor.h" namespace "grpc_core":
     cdef cppclass Executor:
         @staticmethod
-        void SetThreadingAll(bint enable);
+        void SetThreadingAll(bint enable)

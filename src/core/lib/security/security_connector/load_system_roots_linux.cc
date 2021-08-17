@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -41,7 +43,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/load_file.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
@@ -62,7 +63,7 @@ grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kLinuxCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
     if (error == GRPC_ERROR_NONE) {
       return valid_bundle_slice;
@@ -100,7 +101,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     char path[MAXPATHLEN];
     off_t size;
   };
-  InlinedVector<FileData, 2> roots_filenames;
+  absl::InlinedVector<FileData, 2> roots_filenames;
   size_t total_bundle_size = 0;
   struct dirent* directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {

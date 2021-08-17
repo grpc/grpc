@@ -63,9 +63,9 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static grpc_error* pollset_work(grpc_pollset* pollset,
-                                grpc_pollset_worker** /*worker_hdl*/,
-                                grpc_millis deadline) {
+static grpc_error_handle pollset_work(grpc_pollset* pollset,
+                                      grpc_pollset_worker** /*worker_hdl*/,
+                                      grpc_millis deadline) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&pollset->mu);
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
@@ -77,18 +77,18 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  poller_vtable->poll(static_cast<size_t>(timeout));
+  grpc_error* err = poller_vtable->poll(static_cast<size_t>(timeout));
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&pollset->mu);
-  return GRPC_ERROR_NONE;
+  return err;
 }
 
-static grpc_error* pollset_kick(grpc_pollset* /*pollset*/,
-                                grpc_pollset_worker* /*specific_worker*/) {
+static grpc_error_handle pollset_kick(
+    grpc_pollset* /*pollset*/, grpc_pollset_worker* /*specific_worker*/) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   poller_vtable->kick();
   return GRPC_ERROR_NONE;

@@ -53,6 +53,10 @@
 
    ALL functions here may be implemented as macros. */
 
+#ifdef GPR_STDCPP_TLS
+#include "src/core/lib/gpr/tls_stdcpp.h"
+#endif
+
 #ifdef GPR_GCC_TLS
 #include "src/core/lib/gpr/tls_gcc.h"
 #endif

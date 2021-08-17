@@ -23,9 +23,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
@@ -113,19 +114,17 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
   tbl->max_bytes = max_bytes;
 }
 
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
-                                                     uint32_t bytes) {
+grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(
+    grpc_chttp2_hptbl* tbl, uint32_t bytes) {
   if (tbl->current_table_bytes == bytes) {
     return GRPC_ERROR_NONE;
   }
   if (bytes > tbl->max_bytes) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "Attempt to make hpack table %d bytes when max is %d bytes",
-                 bytes, tbl->max_bytes);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat(
+            "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
+            tbl->max_bytes)
+            .c_str());
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
@@ -146,22 +145,20 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
+grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
+                                        grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
-    char* msg;
-    gpr_asprintf(
-        &msg,
-        "HPACK max table size reduced to %d but not reflected by hpack "
-        "stream (still at %d)",
-        tbl->max_bytes, tbl->current_table_bytes);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat(
+            "HPACK max table size reduced to %d but not reflected by hpack "
+            "stream (still at %d)",
+            tbl->max_bytes, tbl->current_table_bytes)
+            .c_str());
   }
 
   /* we can't add elements bigger than the max table size */

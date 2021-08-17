@@ -226,7 +226,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                      initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
                        NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
                        // Test the regex is correct
-                       NSString *expectedUserAgent = @"Foo grpc-objc/";
+                       NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
                        expectedUserAgent =
                            [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
                        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
@@ -235,12 +235,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
                        expectedUserAgent =
                            [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-                       expectedUserAgent =
-                           [expectedUserAgent stringByAppendingString:@"; chttp2; "];
-                       expectedUserAgent = [expectedUserAgent
-                           stringByAppendingString:[NSString
-                                                       stringWithUTF8String:grpc_g_stands_for()]];
-                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];
+                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2)"];
                        XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
                        NSError *error = nil;
@@ -401,6 +396,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.timeout = 0.001;
+  options.transportType = GRPCTransportTypeInsecure;
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:kHostAddress
                                           path:kFullDuplexCallMethod.HTTPPath
@@ -434,10 +430,10 @@ static const NSTimeInterval kInvertedTimeout = 2;
   const double kMargin = 0.1;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"127.0.0.1:10000"];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"127.0.0.1:10000"];
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kDummyAddress
-                                          path:@"/dummy/path"
+      [[GRPCRequestOptions alloc] initWithHost:kPhonyAddress
+                                          path:@"/phony/path"
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.connectMinTimeout = timeout;

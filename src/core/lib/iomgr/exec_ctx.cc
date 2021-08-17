@@ -20,14 +20,17 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
+static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
@@ -46,9 +49,14 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
+static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
+#if defined(GRPC_USE_EVENT_ENGINE) && \
+    defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
+  grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
+#else
   grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
                            error);
+#endif
 }
 
 static gpr_timespec g_start_time;
@@ -58,7 +66,9 @@ static grpc_millis timespan_to_millis_round_down(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
-  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE)) {
+    return GRPC_MILLIS_INF_FUTURE;
+  }
   return static_cast<grpc_millis>(x);
 }
 
@@ -72,7 +82,9 @@ static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
              static_cast<double>(GPR_NS_PER_SEC - 1) /
                  static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
-  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE)) {
+    return GRPC_MILLIS_INF_FUTURE;
+  }
   return static_cast<grpc_millis>(x);
 }
 
@@ -140,7 +152,7 @@ void ExecCtx::GlobalInit(void) {
 }
 
 bool ExecCtx::Flush() {
-  bool did_something = 0;
+  bool did_something = false;
   GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {
@@ -148,7 +160,7 @@ bool ExecCtx::Flush() {
       closure_list_.head = closure_list_.tail = nullptr;
       while (c != nullptr) {
         grpc_closure* next = c->next_data.next;
-        grpc_error* error = c->error_data.error;
+        grpc_error_handle error = c->error_data.error;
         did_something = true;
         exec_ctx_run(c, error);
         c = next;
@@ -170,7 +182,7 @@ grpc_millis ExecCtx::Now() {
 }
 
 void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error* error) {
+                  grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
     GRPC_ERROR_UNREF(error);

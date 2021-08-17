@@ -1,7 +1,7 @@
 [![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
 gRPC Objective C library provides Objective C API for users to make gRPC calls on iOS or OS X
-platforms. Currently, the minimum supported iOS version is 7.0 and OS X version is 10.9 (Mavericks).
+platforms. Currently, the minimum supported iOS version is 9.0 and OS X version is 10.10 (Yosemite).
 
 While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
 usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
@@ -43,8 +43,8 @@ Pod::Spec.new do |s|
   s.summary = '...'
   s.source = { :git => 'https://github.com/...' }
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
 
   # Base directory where the .proto files are.
   src = '.'
@@ -176,8 +176,8 @@ This will download and run the [gRPC install script][].
 ### Install _protoc_ and the gRPC plugin without using Homebrew
 
 First install v3 of the Protocol Buffers compiler (_protoc_), by cloning
-[its Git repository](https://github.com/google/protobuf) and following these
-[installation instructions](https://github.com/google/protobuf#c-installation---unix)
+[its Git repository](https://github.com/protocolbuffers/protobuf) and following these
+[installation instructions](https://github.com/protocolbuffers/protobuf#c-installation---unix)
 (the ones titled C++; don't miss the note for Mac users).
 
 Then clone this repository and execute the following commands from the root directory where it was
@@ -212,7 +212,7 @@ files:
 
 * [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
 library. This can be tedious to configure manually.
-* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
+* [Podspec](https://github.com/protocolbuffers/protobuf/blob/master/Protobuf.podspec) for the
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/

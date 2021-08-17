@@ -120,7 +120,12 @@ function main() {
     Sum: Sum,
     DivMany: DivMany,
   });
-  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
+  server.bind('0.0.0.0:50052', grpc.ServerCredentials.createInsecure());
+  var fs = require('fs');
+  var key_data = fs.readFileSync(__dirname + '/../data/server1.key');
+  var pem_data = fs.readFileSync(__dirname + '/../data/server1.pem');
+  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createSsl(null, [{private_key: key_data,
+    cert_chain: pem_data}]));     
   server.start();
 }
 

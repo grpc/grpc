@@ -25,6 +25,7 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -63,6 +64,7 @@ static void BM_SliceReIntern(benchmark::State& state) {
   for (auto _ : state) {
     grpc_slice_unref(grpc_core::ManagedMemorySlice(&slice));
   }
+  grpc_slice_unref(slice);
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SliceReIntern);
@@ -294,6 +296,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

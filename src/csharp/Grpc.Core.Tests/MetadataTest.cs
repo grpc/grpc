@@ -18,7 +18,9 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -240,6 +242,110 @@ namespace Grpc.Core.Tests
             Assert.Throws<InvalidOperationException>(() => metadata.Add("new-key-bin", new byte[] { 0xaa }));
             Assert.Throws<InvalidOperationException>(() => metadata.Clear());
             Assert.Throws<InvalidOperationException>(() => metadata.Remove(metadata[0]));
+        }
+
+        [Test]
+        public void GetAll()
+        {
+            var metadata = new Metadata
+            {
+                { "abc", "abc-value1" },
+                { "abc", "abc-value2" },
+                { "xyz", "xyz-value1" },
+            };
+
+            var abcEntries = metadata.GetAll("abc").ToList();
+            Assert.AreEqual(2, abcEntries.Count);
+            Assert.AreEqual("abc-value1", abcEntries[0].Value);
+            Assert.AreEqual("abc-value2", abcEntries[1].Value);
+
+            var xyzEntries = metadata.GetAll("xyz").ToList();
+            Assert.AreEqual(1, xyzEntries.Count);
+            Assert.AreEqual("xyz-value1", xyzEntries[0].Value);
+        }
+
+        [Test]
+        public void Get()
+        {
+            var metadata = new Metadata
+            {
+                { "abc", "abc-value1" },
+                { "abc", "abc-value2" },
+                { "xyz", "xyz-value1" },
+            };
+
+            var abcEntry = metadata.Get("abc");
+            Assert.AreEqual("abc-value2", abcEntry.Value);
+
+            var xyzEntry = metadata.Get("xyz");
+            Assert.AreEqual("xyz-value1", xyzEntry.Value);
+
+            var notFound = metadata.Get("not-found");
+            Assert.AreEqual(null, notFound);
+        }
+
+        [Test]
+        public void GetValue()
+        {
+            var metadata = new Metadata
+            {
+                { "abc", "abc-value1" },
+                { "abc", "abc-value2" },
+                { "xyz", "xyz-value1" },
+                { "xyz-bin", Encoding.ASCII.GetBytes("xyz-value1") },
+            };
+
+            var abcValue = metadata.GetValue("abc");
+            Assert.AreEqual("abc-value2", abcValue);
+
+            var xyzValue = metadata.GetValue("xyz");
+            Assert.AreEqual("xyz-value1", xyzValue);
+
+            var notFound = metadata.GetValue("not-found");
+            Assert.AreEqual(null, notFound);
+        }
+
+        [Test]
+        public void GetValue_BytesValue()
+        {
+            var metadata = new Metadata
+            {
+                { "xyz-bin", Encoding.ASCII.GetBytes("xyz-value1") },
+            };
+
+            Assert.Throws<InvalidOperationException>(() => metadata.GetValue("xyz-bin"));
+        }
+
+        [Test]
+        public void GetValueBytes()
+        {
+            var metadata = new Metadata
+            {
+                { "abc-bin", Encoding.ASCII.GetBytes("abc-value1") },
+                { "abc-bin", Encoding.ASCII.GetBytes("abc-value2") },
+                { "xyz-bin", Encoding.ASCII.GetBytes("xyz-value1") },
+            };
+
+            var abcValue = metadata.GetValueBytes("abc-bin");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("abc-value2"), abcValue);
+
+            var xyzValue = metadata.GetValueBytes("xyz-bin");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzValue);
+
+            var notFound = metadata.GetValueBytes("not-found");
+            Assert.AreEqual(null, notFound);
+        }
+
+        [Test]
+        public void GetValueBytes_StringValue()
+        {
+            var metadata = new Metadata
+            {
+                { "xyz", "xyz-value1" },
+            };
+
+            var xyzValue = metadata.GetValueBytes("xyz");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzValue);
         }
 
         private Metadata CreateMetadata()

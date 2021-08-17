@@ -165,13 +165,26 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
     creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL, NULL);
   } else {
+    if (pem_private_key == Qnil) {
+      rb_raise(
+          rb_eRuntimeError,
+          "could not create a credentials because pem_private_key is NULL");
+    }
+    if (pem_cert_chain == Qnil) {
+      rb_raise(rb_eRuntimeError,
+               "could not create a credentials because pem_cert_chain is NULL");
+    }
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
     creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,
                                         NULL, NULL);
   }
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_ssl_credentials_create() failed, could not "
+             "create a credentials, see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;
@@ -261,7 +274,13 @@ void Init_grpc_channel_credentials() {
 /* Gets the wrapped grpc_channel_credentials from the ruby wrapper */
 grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v) {
   grpc_rb_channel_credentials* wrapper = NULL;
+  Check_TypedStruct(v, &grpc_rb_channel_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_channel_credentials,
                        &grpc_rb_channel_credentials_data_type, wrapper);
   return wrapper->wrapped;
+}
+
+/* Check if v is kind of ChannelCredentials */
+bool grpc_rb_is_channel_credentials(VALUE v) {
+  return rb_typeddata_is_kind_of(v, &grpc_rb_channel_credentials_data_type);
 }

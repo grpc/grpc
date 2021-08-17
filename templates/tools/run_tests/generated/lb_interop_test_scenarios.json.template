@@ -1,6 +1,0 @@
-%YAML 1.2
---- |
-  <%!
-  import json
-  %>
-  ${json.dumps(lb_interop_test_scenarios, indent=4, sort_keys=True)}

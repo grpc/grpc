@@ -14,12 +14,12 @@
 """Test of gRPC Python interceptors."""
 
 import collections
+from concurrent import futures
 import itertools
-import threading
-import unittest
 import logging
 import os
-from concurrent import futures
+import threading
+import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
@@ -547,10 +547,6 @@ class InterceptorTest(unittest.TestCase):
             's1:intercept_service', 's2:intercept_service'
         ])
 
-    # NOTE: The single-threaded unary-stream path does not support the
-    # grpc.Future interface, so this test does not apply.
-    @unittest.skipIf(os.getenv("GRPC_SINGLE_THREADED_UNARY_STREAM"),
-                     "Not supported.")
     def testInterceptedUnaryRequestStreamResponseWithError(self):
         request = _EXCEPTION_REQUEST
 

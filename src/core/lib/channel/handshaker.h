@@ -21,12 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/string_util.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -76,8 +77,8 @@ struct HandshakerArgs {
 
 class Handshaker : public RefCounted<Handshaker> {
  public:
-  virtual ~Handshaker() = default;
-  virtual void Shutdown(grpc_error* why) = 0;
+  ~Handshaker() override = default;
+  virtual void Shutdown(grpc_error_handle why) = 0;
   virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                            grpc_closure* on_handshake_done,
                            HandshakerArgs* args) = 0;
@@ -91,20 +92,7 @@ class Handshaker : public RefCounted<Handshaker> {
 class HandshakeManager : public RefCounted<HandshakeManager> {
  public:
   HandshakeManager();
-  ~HandshakeManager();
-
-  /// Add \a mgr to the server side list of all pending handshake managers, the
-  /// list starts with \a *head.
-  // Not thread-safe. Caller needs to synchronize.
-  void AddToPendingMgrList(HandshakeManager** head);
-
-  /// Remove \a mgr from the server side list of all pending handshake managers.
-  // Not thread-safe. Caller needs to synchronize.
-  void RemoveFromPendingMgrList(HandshakeManager** head);
-
-  /// Shutdown all pending handshake managers starting at head on the server
-  /// side. Not thread-safe. Caller needs to synchronize.
-  void ShutdownAllPending(grpc_error* why);
+  ~HandshakeManager() override;
 
   /// Adds a handshaker to the handshake manager.
   /// Takes ownership of \a handshaker.
@@ -112,7 +100,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   /// Shuts down the handshake manager (e.g., to clean up when the operation is
   /// aborted in the middle).
-  void Shutdown(grpc_error* why);
+  void Shutdown(grpc_error_handle why);
 
   /// Invokes handshakers in the order they were added.
   /// Takes ownership of \a endpoint, and then passes that ownership to
@@ -132,21 +120,22 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
  private:
-  bool CallNextHandshakerLocked(grpc_error* error);
+  bool CallNextHandshakerLocked(grpc_error_handle error);
 
   // A function used as the handshaker-done callback when chaining
   // handshakers together.
-  static void CallNextHandshakerFn(void* arg, grpc_error* error);
+  static void CallNextHandshakerFn(void* arg, grpc_error_handle error);
 
   // Callback invoked when deadline is exceeded.
-  static void OnTimeoutFn(void* arg, grpc_error* error);
+  static void OnTimeoutFn(void* arg, grpc_error_handle error);
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 
-  gpr_mu mu_;
+  Mutex mu_;
   bool is_shutdown_ = false;
   // An array of handshakers added via grpc_handshake_manager_add().
-  InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE> handshakers_;
+  absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
+      handshakers_;
   // The index of the handshaker to invoke next and closure to invoke it.
   size_t index_ = 0;
   grpc_closure call_next_handshaker_;
@@ -159,10 +148,6 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   grpc_closure on_handshake_done_;
   // Handshaker args.
   HandshakerArgs args_;
-  // Links to the previous and next managers in a list of all pending handshakes
-  // Used at server side only.
-  HandshakeManager* prev_ = nullptr;
-  HandshakeManager* next_ = nullptr;
 };
 
 }  // namespace grpc_core

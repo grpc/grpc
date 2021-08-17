@@ -21,11 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -37,7 +40,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -118,30 +121,30 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-  arg.value.string = const_cast<char*>(
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" }\n"
-      "    ],\n"
-      "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 3,\n"
-      "      \"initialBackoff\": \"1s\",\n"
-      "      \"maxBackoff\": \"120s\",\n"
-      "      \"backoffMultiplier\": 1.6,\n"
-      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-      "    },\n"
-      "    \"timeout\": \"5s\"\n"
-      "  } ]\n"
-      "}");
-  grpc_channel_args client_args = {1, &arg};
-  char* name;
-  gpr_asprintf(&name, "retry_cancellation/%s", mode.name);
-  grpc_end2end_test_fixture f = begin_test(config, name, &client_args, nullptr);
-  gpr_free(name);
+  grpc_arg args[] = {
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 3,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    },\n"
+              "    \"timeout\": \"5s\"\n"
+              "  } ]\n"
+              "}")),
+  };
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
+  std::string name = absl::StrCat("retry_cancellation/", mode.name);
+  grpc_end2end_test_fixture f =
+      begin_test(config, name.c_str(), &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -184,7 +187,8 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call and fails with retryable status.
@@ -217,7 +221,8 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
@@ -244,7 +249,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

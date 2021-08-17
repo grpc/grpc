@@ -15,26 +15,29 @@
 """Starts a local DNS server for use in tests"""
 
 import argparse
-import sys
-import yaml
-import signal
 import os
+import platform
+import signal
+import sys
 import threading
 import time
 
 import twisted
 import twisted.internet
-import twisted.internet.reactor
-import twisted.internet.threads
 import twisted.internet.defer
 import twisted.internet.protocol
+import twisted.internet.reactor
+import twisted.internet.threads
 import twisted.names
+from twisted.names import authority
+from twisted.names import client
+from twisted.names import common
+from twisted.names import dns
+from twisted.names import server
 import twisted.names.client
 import twisted.names.dns
 import twisted.names.server
-from twisted.names import client, server, common, authority, dns
-import argparse
-import platform
+import yaml
 
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp'  # missing end '.' for twisted syntax
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
@@ -53,6 +56,7 @@ def start_local_dns_server(args):
     all_records = {}
 
     def _push_record(name, r):
+        name = name.encode('ascii')
         print('pushing record: |%s|' % name)
         if all_records.get(name) is not None:
             all_records[name].append(r)
@@ -60,6 +64,7 @@ def start_local_dns_server(args):
         all_records[name] = [r]
 
     def _maybe_split_up_txt_data(name, txt_data, r_ttl):
+        txt_data = txt_data.encode('ascii')
         start = 0
         txt_data_list = []
         while len(txt_data[start:]) > 0:
@@ -93,8 +98,8 @@ def start_local_dns_server(args):
                     p = int(p)
                     w = int(w)
                     port = int(port)
-                    target_full_name = '%s.%s' % (target, common_zone_name)
-                    r_data = '%s %s %s %s' % (p, w, port, target_full_name)
+                    target_full_name = (
+                        '%s.%s' % (target, common_zone_name)).encode('ascii')
                     _push_record(
                         record_full_name,
                         dns.Record_SRV(p, w, port, target_full_name, ttl=r_ttl))
@@ -107,9 +112,9 @@ def start_local_dns_server(args):
     # Server health check record
     _push_record(_SERVER_HEALTH_CHECK_RECORD_NAME,
                  dns.Record_A(_SERVER_HEALTH_CHECK_RECORD_DATA, ttl=0))
-    soa_record = dns.Record_SOA(mname=common_zone_name)
+    soa_record = dns.Record_SOA(mname=common_zone_name.encode('ascii'))
     test_domain_com = NoFileAuthority(
-        soa=(common_zone_name, soa_record),
+        soa=(common_zone_name.encode('ascii'), soa_record),
         records=all_records,
     )
     server = twisted.names.server.DNSServerFactory(

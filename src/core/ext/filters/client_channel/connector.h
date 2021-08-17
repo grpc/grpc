@@ -66,7 +66,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
   // Cancels any in-flight connection attempt and shuts down the
   // connector.
-  virtual void Shutdown(grpc_error* error) = 0;
+  virtual void Shutdown(grpc_error_handle error) = 0;
 
   void Orphan() override {
     Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));

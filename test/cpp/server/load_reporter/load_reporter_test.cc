@@ -25,6 +25,8 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/constants.h"
@@ -42,9 +44,6 @@ using ::grpc::lb::v1::LoadBalancingFeedback;
 using ::grpc::load_reporter::CensusViewProvider;
 using ::grpc::load_reporter::CpuStatsProvider;
 using ::grpc::load_reporter::LoadReporter;
-using ::opencensus::stats::View;
-using ::opencensus::stats::ViewData;
-using ::opencensus::stats::ViewDataImpl;
 using ::opencensus::stats::ViewDescriptor;
 using ::testing::DoubleNear;
 using ::testing::Return;
@@ -59,7 +58,7 @@ class MockCensusViewProvider : public CensusViewProvider {
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
 
   const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
-      const grpc::string& view_name) {
+      const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
     GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;
@@ -98,29 +97,29 @@ class LoadReporterTest : public ::testing::Test {
 
   std::unique_ptr<LoadReporter> load_reporter_;
 
-  const grpc::string kHostname1 = "kHostname1";
-  const grpc::string kHostname2 = "kHostname2";
-  const grpc::string kHostname3 = "kHostname3";
+  const std::string kHostname1 = "kHostname1";
+  const std::string kHostname2 = "kHostname2";
+  const std::string kHostname3 = "kHostname3";
   // Pad to the length of a valid LB ID.
-  const grpc::string kLbId1 = "kLbId111";
-  const grpc::string kLbId2 = "kLbId222";
-  const grpc::string kLbId3 = "kLbId333";
-  const grpc::string kLbId4 = "kLbId444";
-  const grpc::string kLoadKey1 = "kLoadKey1";
-  const grpc::string kLoadKey2 = "kLoadKey2";
-  const grpc::string kLoadKey3 = "kLoadKey3";
-  const grpc::string kLbTag1 = "kLbTag1";
-  const grpc::string kLbTag2 = "kLbTag2";
-  const grpc::string kLbToken1 = "kLbId111kLbTag1";
-  const grpc::string kLbToken2 = "kLbId222kLbTag2";
-  const grpc::string kUser1 = "kUser1";
-  const grpc::string kUser2 = "kUser2";
-  const grpc::string kUser3 = "kUser3";
-  const grpc::string kClientIp0 = "00";
-  const grpc::string kClientIp1 = "0800000001";
-  const grpc::string kClientIp2 = "3200000000000000000000000000000002";
-  const grpc::string kMetric1 = "kMetric1";
-  const grpc::string kMetric2 = "kMetric2";
+  const std::string kLbId1 = "kLbId111";
+  const std::string kLbId2 = "kLbId222";
+  const std::string kLbId3 = "kLbId333";
+  const std::string kLbId4 = "kLbId444";
+  const std::string kLoadKey1 = "kLoadKey1";
+  const std::string kLoadKey2 = "kLoadKey2";
+  const std::string kLoadKey3 = "kLoadKey3";
+  const std::string kLbTag1 = "kLbTag1";
+  const std::string kLbTag2 = "kLbTag2";
+  const std::string kLbToken1 = "kLbId111kLbTag1";
+  const std::string kLbToken2 = "kLbId222kLbTag2";
+  const std::string kUser1 = "kUser1";
+  const std::string kUser2 = "kUser2";
+  const std::string kUser3 = "kUser3";
+  const std::string kClientIp0 = "00";
+  const std::string kClientIp1 = "0800000001";
+  const std::string kClientIp2 = "3200000000000000000000000000000002";
+  const std::string kMetric1 = "kMetric1";
+  const std::string kMetric2 = "kMetric2";
 
  private:
   void SetUp() override {
@@ -140,10 +139,10 @@ class LoadReporterTest : public ::testing::Test {
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
-    load_reporter_ = std::unique_ptr<LoadReporter>(
-        new LoadReporter(kFeedbackSampleWindowSeconds,
-                         std::unique_ptr<CensusViewProvider>(mock_census),
-                         std::unique_ptr<CpuStatsProvider>(mock_cpu)));
+    load_reporter_ = absl::make_unique<LoadReporter>(
+        kFeedbackSampleWindowSeconds,
+        std::unique_ptr<CensusViewProvider>(mock_census),
+        std::unique_ptr<CpuStatsProvider>(mock_cpu));
   }
 };
 

@@ -55,12 +55,12 @@ class TrackCounters {
   TrackCounters() { grpc_stats_collect(&stats_begin_); }
   virtual ~TrackCounters() {}
   virtual void Finish(benchmark::State& state);
-  virtual void AddLabel(const grpc::string& label);
+  virtual void AddLabel(const std::string& label);
   virtual void AddToLabel(std::ostream& out, benchmark::State& state);
 
  private:
   grpc_stats_data stats_begin_;
-  std::vector<grpc::string> labels_;
+  std::vector<std::string> labels_;
 #ifdef GPR_LOW_LEVEL_COUNTERS
   const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
   const size_t atm_cas_at_start_ =

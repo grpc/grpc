@@ -36,13 +36,13 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-void SendCallbackUnaryPingPong(benchmark::State* state, ClientContext* cli_ctx,
-                               EchoRequest* request, EchoResponse* response,
-                               EchoTestService::Stub* stub_, bool* done,
-                               std::mutex* mu, std::condition_variable* cv) {
+inline void SendCallbackUnaryPingPong(
+    benchmark::State* state, ClientContext* cli_ctx, EchoRequest* request,
+    EchoResponse* response, EchoTestService::Stub* stub_, bool* done,
+    std::mutex* mu, std::condition_variable* cv) {
   int response_msgs_size = state->range(1);
-  cli_ctx->AddMetadata(kServerMessageSize, grpc::to_string(response_msgs_size));
-  stub_->experimental_async()->Echo(
+  cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
+  stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
         GPR_ASSERT(s.ok());

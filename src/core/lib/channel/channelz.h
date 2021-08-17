@@ -23,14 +23,16 @@
 
 #include <grpc/grpc.h>
 
+#include <set>
 #include <string>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -41,8 +43,9 @@
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"
 
-// Channel arg key to encode the channelz uuid of the channel's parent.
-#define GRPC_ARG_CHANNELZ_PARENT_UUID "grpc.channelz_parent_uuid"
+// Channel arg key for indicating an internal channel.
+#define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
+  "grpc.channelz_is_internal_channel"
 
 /** This is the default value for whether or not to enable channelz. If
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
@@ -52,15 +55,11 @@
  * events per channel trace node. If
  * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
  * this default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 1024 * 4
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
 
 namespace channelz {
-
-// Helpers for getting and setting GRPC_ARG_CHANNELZ_PARENT_UUID.
-grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
-intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 
 class SocketNode;
 class ListenSocketNode;
@@ -88,7 +87,7 @@ class BaseNode : public RefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  virtual ~BaseNode();
+  ~BaseNode() override;
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
@@ -167,7 +166,7 @@ class CallCountingHelper {
   void CollectData(CounterData* out);
 
   // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -175,13 +174,11 @@ class CallCountingHelper {
 class ChannelNode : public BaseNode {
  public:
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
-              intptr_t parent_uuid);
+              bool is_internal_channel);
 
   // Returns the string description of the given connectivity state.
   static const char* GetChannelConnectivityStateChangeString(
       grpc_connectivity_state state);
-
-  intptr_t parent_uuid() const { return parent_uuid_; }
 
   Json RenderJson() override;
 
@@ -212,32 +209,28 @@ class ChannelNode : public BaseNode {
   void RemoveChildSubchannel(intptr_t child_uuid);
 
  private:
-  void PopulateChildRefs(Json::Object* json);
-
-  // to allow the channel trace test to access trace_.
+  // Allows the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
+
+  void PopulateChildRefs(Json::Object* json);
 
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
-  const intptr_t parent_uuid_;
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
   Atomic<int> connectivity_state_{0};
 
-  Mutex child_mu_;  // Guards child maps below.
-  // TODO(roth): We don't actually use the values here, only the keys, so
-  // these should be sets instead of maps, but we don't currently have a set
-  // implementation.  Change this if/when we have one.
-  std::map<intptr_t, bool> child_channels_;
-  std::map<intptr_t, bool> child_subchannels_;
+  Mutex child_mu_;  // Guards sets below.
+  std::set<intptr_t> child_channels_;
+  std::set<intptr_t> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+  explicit ServerNode(size_t channel_tracer_max_nodes);
 
   ~ServerNode() override;
 
@@ -276,10 +269,40 @@ class ServerNode : public BaseNode {
   std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
+#define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
+
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(std::string local, std::string remote, std::string name);
+  struct Security : public RefCounted<Security> {
+    struct Tls {
+      // This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=50346
+      Tls() {}
+
+      enum class NameType { kUnset = 0, kStandardName = 1, kOtherName = 2 };
+      NameType type = NameType::kUnset;
+      // Holds the value of standard_name or other_names if type is not kUnset.
+      std::string name;
+      std::string local_certificate;
+      std::string remote_certificate;
+
+      Json RenderJson();
+    };
+    enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
+    ModelType type = ModelType::kUnset;
+    absl::optional<Tls> tls;
+    absl::optional<Json> other;
+
+    Json RenderJson();
+
+    grpc_arg MakeChannelArg() const;
+
+    static RefCountedPtr<Security> GetFromChannelArgs(
+        const grpc_channel_args* args);
+  };
+
+  SocketNode(std::string local, std::string remote, std::string name,
+             RefCountedPtr<Security> security);
   ~SocketNode() override {}
 
   Json RenderJson() override;
@@ -313,6 +336,7 @@ class SocketNode : public BaseNode {
   Atomic<gpr_cycle_counter> last_message_received_cycle_{0};
   std::string local_;
   std::string remote_;
+  RefCountedPtr<Security> const security_;
 };
 
 // Handles channelz bookkeeping for listen sockets

@@ -90,7 +90,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 @end
 
 @implementation GenericTest {
-  grpc::string server_host_;
+  std::string server_host_;
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
   std::unique_ptr<GenericStub> generic_stub_;
@@ -164,7 +164,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 }
 
 - (void)SendRpc:(int)num_rpcs check_deadline:(bool)check_deadline deadline:(gpr_timespec)deadline {
-  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
   for (int i = 0; i < num_rpcs; i++) {
     Status recv_status;
 

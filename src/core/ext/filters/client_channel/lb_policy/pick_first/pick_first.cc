@@ -26,10 +26,11 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -54,7 +55,7 @@ class PickFirst : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  ~PickFirst();
+  ~PickFirst() override;
 
   class PickFirstSubchannelList;
 
@@ -83,9 +84,9 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
-                            const ServerAddressList& addresses,
+                            ServerAddressList addresses,
                             const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses,
+        : SubchannelList(policy, tracer, std::move(addresses),
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -93,7 +94,7 @@ class PickFirst : public LoadBalancingPolicy {
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
     }
 
-    ~PickFirstSubchannelList() {
+    ~PickFirstSubchannelList() override {
       PickFirst* p = static_cast<PickFirst*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
@@ -113,10 +114,7 @@ class PickFirst : public LoadBalancingPolicy {
         : subchannel_(std::move(subchannel)) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      PickResult result;
-      result.type = PickResult::PICK_COMPLETE;
-      result.subchannel = subchannel_;
-      return result;
+      return PickResult::Complete(subchannel_);
     }
 
    private:
@@ -196,12 +194,10 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     // (If we are idle, then this will happen in ExitIdleLocked() if we
     // haven't gotten a non-empty update by the time the application tries
     // to start a new call.)
-    grpc_error* error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    absl::Status status = absl::UnavailableError("Empty update");
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
     return;
   }
   // If one of the subchannels in the new list is already in state
@@ -313,17 +309,16 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
-        grpc_error* error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "selected subchannel failed; switching to pending update"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+        absl::Status status = absl::UnavailableError(
+            "selected subchannel failed; switching to pending update");
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_TRANSIENT_FAILURE,
-            absl::make_unique<TransientFailurePicker>(error));
+            GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+            absl::make_unique<TransientFailurePicker>(status));
       } else {
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::make_unique<QueuePicker>(p->Ref(
-                                         DEBUG_LOCATION, "QueuePicker")));
+            GRPC_CHANNEL_CONNECTING, absl::Status(),
+            absl::make_unique<QueuePicker>(
+                p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
     } else {
       if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -338,20 +333,22 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->selected_ = nullptr;
         p->subchannel_list_.reset();
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_IDLE, absl::make_unique<QueuePicker>(
-                                   p->Ref(DEBUG_LOCATION, "QueuePicker")));
+            GRPC_CHANNEL_IDLE, absl::Status(),
+            absl::make_unique<QueuePicker>(
+                p->Ref(DEBUG_LOCATION, "QueuePicker")));
       } else {
         // This is unlikely but can happen when a subchannel has been asked
         // to reconnect by a different channel and this channel has dropped
         // some connectivity state notifications.
         if (connectivity_state == GRPC_CHANNEL_READY) {
           p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_READY,
+              GRPC_CHANNEL_READY, absl::Status(),
               absl::make_unique<Picker>(subchannel()->Ref()));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
-              connectivity_state, absl::make_unique<QueuePicker>(
-                                      p->Ref(DEBUG_LOCATION, "QueuePicker")));
+              connectivity_state, absl::Status(),
+              absl::make_unique<QueuePicker>(
+                  p->Ref(DEBUG_LOCATION, "QueuePicker")));
         }
       }
     }
@@ -389,13 +386,11 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         subchannel_list()->set_in_transient_failure(true);
         // Only report new state in case 1.
         if (subchannel_list() == p->subchannel_list_.get()) {
-          grpc_error* error = grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "failed to connect to all addresses"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          absl::Status status =
+              absl::UnavailableError("failed to connect to all addresses");
           p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_TRANSIENT_FAILURE,
-              absl::make_unique<TransientFailurePicker>(error));
+              GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+              absl::make_unique<TransientFailurePicker>(status));
         }
       }
       sd->CheckConnectivityStateAndStartWatchingLocked();
@@ -406,8 +401,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Only update connectivity state in case 1.
       if (subchannel_list() == p->subchannel_list_.get()) {
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::make_unique<QueuePicker>(p->Ref(
-                                         DEBUG_LOCATION, "QueuePicker")));
+            GRPC_CHANNEL_CONNECTING, absl::Status(),
+            absl::make_unique<QueuePicker>(
+                p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       break;
     }
@@ -446,7 +442,8 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   }
   p->selected_ = this;
   p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, absl::make_unique<Picker>(subchannel()->Ref()));
+      GRPC_CHANNEL_READY, absl::Status(),
+      absl::make_unique<Picker>(subchannel()->Ref()));
   for (size_t i = 0; i < subchannel_list()->num_subchannels(); ++i) {
     if (i != Index()) {
       subchannel_list()->subchannel(i)->ShutdownLocked();
@@ -491,7 +488,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

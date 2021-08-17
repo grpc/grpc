@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -201,7 +201,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
     GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9) ||
                grpc_slice_buf_start_eq(call_details.host, "127.0.0.1", 9));
   }
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

@@ -41,6 +41,14 @@ namespace Grpc.Tools
         public ITaskItem[] Protobuf { get; set; }
 
         /// <summary>
+        /// All Proto files in the project. A patched copy of all items from
+        /// Protobuf that might contain updated OutputDir and GrpcOutputDir
+        /// attributes.
+        /// </summary>
+        [Output]
+        public ITaskItem[] PatchedProtobuf { get; set; }
+
+        /// <summary>
         /// Output items per each potential output. We do not look at existing
         /// cached dependency even if they exist, since file may be refactored,
         /// affecting whether or not gRPC code file is generated from a given proto.
@@ -68,16 +76,22 @@ namespace Grpc.Tools
             // Get language-specific possible output. The generator expects certain
             // metadata be set on the proto item.
             var possible = new List<ITaskItem>();
+            var patched = new List<ITaskItem>();
             foreach (var proto in Protobuf)
             {
-                var outputs = generator.GetPossibleOutputs(proto);
+                var patchedProto = generator.PatchOutputDirectory(proto);
+                patched.Add(patchedProto);
+
+                var outputs = generator.GetPossibleOutputs(patchedProto);
                 foreach (string output in outputs)
                 {
                     var ti = new TaskItem(output);
-                    ti.SetMetadata(Metadata.Source, proto.ItemSpec);
+                    ti.SetMetadata(Metadata.Source, patchedProto.ItemSpec);
                     possible.Add(ti);
                 }
             }
+
+            PatchedProtobuf = patched.ToArray();
             PossibleOutputs = possible.ToArray();
 
             return !Log.HasLoggedErrors;

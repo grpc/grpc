@@ -31,13 +31,13 @@ cdef grpc_custom_poller_vtable asyncio_pollset_vtable
 cdef bint so_reuse_port
 
 
-cdef grpc_error* asyncio_socket_init(
+cdef grpc_error_handle asyncio_socket_init(
         grpc_custom_socket* grpc_socket,
         int domain) with gil:
     socket = _AsyncioSocket.create(grpc_socket, None, None)
     Py_INCREF(socket)
     grpc_socket.impl = <void*>socket
-    return <grpc_error*>0
+    return <grpc_error_handle>0
 
 
 cdef void asyncio_socket_destroy(grpc_custom_socket* grpc_socket) with gil:
@@ -84,7 +84,7 @@ cdef void asyncio_socket_read(
     socket.read(buffer_, length, read_cb)
 
 
-cdef grpc_error* asyncio_socket_getpeername(
+cdef grpc_error_handle asyncio_socket_getpeername(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         int* length) with gil:
@@ -99,7 +99,7 @@ cdef grpc_error* asyncio_socket_getpeername(
     return grpc_error_none()
 
 
-cdef grpc_error* asyncio_socket_getsockname(
+cdef grpc_error_handle asyncio_socket_getsockname(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         int* length) with gil:
@@ -118,7 +118,7 @@ cdef grpc_error* asyncio_socket_getsockname(
     return grpc_error_none()
 
 
-cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil:
+cdef grpc_error_handle asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil:
     (<_AsyncioSocket>grpc_socket.impl).listen()
     return grpc_error_none()
 
@@ -134,7 +134,7 @@ def _asyncio_apply_socket_options(object s, int flags):
     s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
-cdef grpc_error* asyncio_socket_bind(
+cdef grpc_error_handle asyncio_socket_bind(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         size_t len, int flags) with gil:
@@ -166,9 +166,9 @@ cdef void asyncio_socket_accept(
     (<_AsyncioSocket>grpc_socket.impl).accept(grpc_socket_client, accept_cb)
 
 
-cdef grpc_error* asyncio_resolve(
-        char* host,
-        char* port,
+cdef grpc_error_handle asyncio_resolve(
+        const char* host,
+        const char* port,
         grpc_resolved_addresses** res) with gil:
     result = native_socket.getaddrinfo(host, port)
     res[0] = tuples_to_resolvaddr(result)
@@ -176,8 +176,8 @@ cdef grpc_error* asyncio_resolve(
 
 cdef void asyncio_resolve_async(
         grpc_custom_resolver* grpc_resolver,
-        char* host,
-        char* port) with gil:
+        const char* host,
+        const char* port) with gil:
     resolver = _AsyncioResolver.create(grpc_resolver)
     resolver.resolve(host, port)
 
@@ -188,6 +188,7 @@ cdef void asyncio_timer_start(grpc_custom_timer* grpc_timer) with gil:
 
 
 cdef void asyncio_timer_stop(grpc_custom_timer* grpc_timer) with gil:
+    # TODO(https://github.com/grpc/grpc/issues/22278) remove this if condition
     if grpc_timer.timer == NULL:
         return
     else:
@@ -207,11 +208,22 @@ cdef void asyncio_kick_loop() with gil:
     pass
 
 
-cdef void asyncio_run_loop(size_t timeout_ms) with gil:
-    pass
+cdef grpc_error* asyncio_run_loop(size_t timeout_ms) with gil:
+    return grpc_error_none()
+
+
+def _auth_plugin_callback_wrapper(object cb,
+                                  str service_url,
+                                  str method_name,
+                                  object callback):
+    get_working_loop().call_soon(cb, service_url, method_name, callback)
 
 
 def install_asyncio_iomgr():
+    # Auth plugins invoke user provided logic in another thread by default. We
+    # need to override that behavior by registering the call to the event loop.
+    set_async_callback_func(_auth_plugin_callback_wrapper)
+
     asyncio_resolver_vtable.resolve = asyncio_resolve
     asyncio_resolver_vtable.resolve_async = asyncio_resolve_async
 

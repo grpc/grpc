@@ -28,6 +28,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 /* This test does a sanity check that grpc_socket_mutator's
  * are used by servers. It's meant to protect code and end-to-end
@@ -45,6 +46,7 @@ const grpc_socket_mutator_vtable mock_socket_mutator_vtable = {
     mock_socket_mutator_mutate_fd,
     mock_socket_mutator_compare,
     mock_socket_mutator_destroy,
+    nullptr,
 };
 
 class MockSocketMutator : public grpc_socket_mutator {
@@ -63,7 +65,7 @@ bool mock_socket_mutator_mutate_fd(int /*fd*/, grpc_socket_mutator* m) {
 
 int mock_socket_mutator_compare(grpc_socket_mutator* a,
                                 grpc_socket_mutator* b) {
-  return (uintptr_t)a - (uintptr_t)b;
+  return reinterpret_cast<uintptr_t>(a) - reinterpret_cast<uintptr_t>(b);
 }
 
 void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
@@ -73,7 +75,8 @@ void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
 
 class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
  public:
-  MockSocketMutatorServerBuilderOption(MockSocketMutator* mock_socket_mutator)
+  explicit MockSocketMutatorServerBuilderOption(
+      MockSocketMutator* mock_socket_mutator)
       : mock_socket_mutator_(mock_socket_mutator) {}
 
   void UpdateArguments(ChannelArguments* args) override {
@@ -115,6 +118,7 @@ TEST_F(ServerBuilderWithSocketMutatorTest, CreateServerWithSocketMutator) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

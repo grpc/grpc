@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -77,7 +77,7 @@ static void test_early_server_shutdown_finishes_tags(
   grpc_end2end_test_fixture f = begin_test(
       config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
-  grpc_call* s = (grpc_call*)static_cast<uintptr_t>(1);
+  grpc_call* s = reinterpret_cast<grpc_call*>(1);
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
 

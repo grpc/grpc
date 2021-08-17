@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/grpc_shadow_boringssl.h"
-
 #include <grpc/slice.h>
 #include <openssl/rsa.h>
 
@@ -34,14 +32,13 @@
 
 /* --- auth_json_key parsing. --- */
 
-typedef struct {
+struct grpc_auth_json_key {
   const char* type;
   char* private_key_id;
   char* client_id;
   char* client_email;
   RSA* private_key;
-} grpc_auth_json_key;
-
+};
 /* Returns 1 if the object is valid, 0 otherwise. */
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key);
 

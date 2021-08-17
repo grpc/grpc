@@ -43,7 +43,7 @@ static void finish_connection() {
   gpr_mu_unlock(&g_mu);
 }
 
-static void must_succeed(void* arg, grpc_error* error) {
+static void must_succeed(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
@@ -52,11 +52,10 @@ static void must_succeed(void* arg, grpc_error* error) {
   finish_connection();
 }
 
-static void must_fail(void* arg, grpc_error* error) {
+static void must_fail(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == nullptr);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  const char* error_str = grpc_error_string(error);
-  NSLog(@"%s", error_str);
+  NSLog(@"%s", grpc_error_std_string(error).c_str());
   finish_connection();
 }
 
@@ -90,7 +89,7 @@ static void must_fail(void* arg, grpc_error* error) {
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
   GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
@@ -181,7 +180,7 @@ static void must_fail(void* arg, grpc_error* error) {
 
 #else  // GRPC_CFSTREAM
 
-// Dummy test suite
+// Phony test suite
 @interface CFStreamClientTests : XCTestCase
 
 @end

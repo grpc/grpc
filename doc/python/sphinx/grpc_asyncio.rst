@@ -1,7 +1,7 @@
 gRPC AsyncIO API
 ================
 
-.. module:: grpc.experimental.aio
+.. module:: grpc.aio
 
 Overview
 --------
@@ -11,8 +11,8 @@ tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
 as existing stack, and it replaces all gRPC IO operations with methods provided
 by the AsyncIO library.
 
-This stack currently is under active development. Feel free to offer
-suggestions by opening issues on our GitHub repo `grpc/grpc <https://github.com/grpc/grpc>`_.
+This API is stable. Feel free to open issues on our GitHub repo
+`grpc/grpc <https://github.com/grpc/grpc>`_ for bugs or suggestions.
 
 The design doc can be found here as `gRFC <https://github.com/grpc/proposal/pull/155>`_.
 
@@ -24,27 +24,16 @@ gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn't provide thread safety for most of its APIs.
 
 
+Blocking Code in AsyncIO
+------------------------
+
+Making blocking function calls in coroutines or in the thread running event
+loop will block the event loop, potentially starving all RPCs in the process.
+Refer to the Python language documentation on AsyncIO for more details (`running-blocking-code <https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code>`_).
+
+
 Module Contents
 ---------------
-
-Enable AsyncIO in gRPC
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. function:: init_grpc_aio
-
-    Enable AsyncIO for gRPC Python.
-
-    This function is idempotent and it should be invoked before creation of
-    AsyncIO stack objects. Otherwise, the application might deadlock.
-
-    This function configurates the gRPC C-Core to invoke AsyncIO methods for IO
-    operations (e.g., socket read, write). The configuration applies to the
-    entire process.
-
-    After invoking this function, making blocking function calls in coroutines
-    or in the thread running event loop will block the event loop, potentially
-    starving all RPCs in the process. Refer to the Python language
-    documentation on AsyncIO for more details (`running-blocking-code <https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code>`_).
 
 
 Create Channel
@@ -87,6 +76,11 @@ gRPC Exceptions
 .. autoexception:: InternalError
 .. autoexception:: AioRpcError
 
+gRPC Metadata
+^^^^^^^^^^^^^
+
+.. autoclass:: Metadata
+
 
 Shared Context
 ^^^^^^^^^^^^^^^^^^^^
@@ -111,16 +105,20 @@ Server-Side Context
 
 
 Client-Side Interceptor
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: ClientCallDetails
 .. autoclass:: InterceptedUnaryUnaryCall
+.. autoclass:: ClientInterceptor
 .. autoclass:: UnaryUnaryClientInterceptor
+.. autoclass:: UnaryStreamClientInterceptor
+.. autoclass:: StreamUnaryClientInterceptor
+.. autoclass:: StreamStreamClientInterceptor
 
-.. Service-Side Context
-.. ^^^^^^^^^^^^^^^^^^^^
+Server-Side Interceptor
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. .. autoclass:: ServicerContext
+.. autoclass:: ServerInterceptor
 
 
 Multi-Callable Interfaces

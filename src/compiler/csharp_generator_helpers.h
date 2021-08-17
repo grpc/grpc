@@ -25,17 +25,17 @@
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
-                             grpc::string* file_name_or_error) {
-  *file_name_or_error =
-      grpc_generator::FileNameInUpperCamel(file, false) + "Grpc.cs";
+                             const std::string& file_suffix,
+                             std::string& out_file_name_or_error) {
+  out_file_name_or_error =
+      grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
   return true;
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetCsharpComments(const DescriptorType* desc,
-                                      bool leading) {
+inline std::string GetCsharpComments(const DescriptorType* desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 

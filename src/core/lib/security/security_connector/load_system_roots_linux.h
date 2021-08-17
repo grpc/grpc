@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/slice.h>
+
 #ifdef GPR_LINUX
 
 namespace grpc_core {

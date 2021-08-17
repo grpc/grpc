@@ -28,13 +28,17 @@ sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
 # -- Project information -----------------------------------------------------
 
 project = 'gRPC Python'
-copyright = '2018, The gRPC Authors'
+copyright = '2020, The gRPC Authors'
 author = 'The gRPC Authors'
 
 # Import generated grpc_version after the path been modified
 import grpc_version
-version = ".".join(grpc_version.VERSION.split(".")[:3])
+version = '.'.join(grpc_version.VERSION.split('.')[:3])
 release = grpc_version.VERSION
+if 'dev' in grpc_version.VERSION:
+    branch = 'master'
+else:
+    branch = 'v%s.%s.x' % tuple(grpc_version.VERSION.split('.')[:2])
 
 # -- General configuration ---------------------------------------------------
 
@@ -100,3 +104,7 @@ epub_exclude_files = ['search.html']
 # -- Options for todo extension ----------------------------------------------
 
 todo_include_todos = True
+
+# -- Options for substitutions -----------------------------------------------
+
+rst_epilog = '.. |grpc_types_link| replace:: https://github.com/grpc/grpc/blob/%s/include/grpc/impl/codegen/grpc_types.h' % branch

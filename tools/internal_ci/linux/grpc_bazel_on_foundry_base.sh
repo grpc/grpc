@@ -34,7 +34,6 @@ tools/bazel \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
   --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
-  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   $@ \
   -- //test/... || FAILED="true"
 

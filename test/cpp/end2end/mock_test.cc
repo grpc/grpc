@@ -29,6 +29,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
 
+#include "absl/types/optional.h"
+
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
@@ -48,11 +50,9 @@ using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
 using grpc::testing::MockClientReaderWriter;
 using std::vector;
-using std::chrono::system_clock;
 using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::DoAll;
-using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArgPointee;
@@ -81,8 +81,8 @@ class FakeClient {
     EchoResponse response;
 
     ClientContext context;
-    grpc::string msg("hello");
-    grpc::string exp(msg);
+    std::string msg("hello");
+    std::string exp(msg);
 
     std::unique_ptr<ClientWriterInterface<EchoRequest>> cstream =
         stub_->RequestStream(&context, &response);
@@ -111,7 +111,7 @@ class FakeClient {
     std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
         stub_->ResponseStream(&context, request);
 
-    grpc::string exp = "";
+    std::string exp = "";
     EXPECT_TRUE(cstream->Read(&response));
     exp.append(response.message() + " ");
 
@@ -129,7 +129,7 @@ class FakeClient {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    grpc::string msg("hello");
+    std::string msg("hello");
 
     std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
         stream = stub_->BidiStream(&context);
@@ -162,12 +162,11 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
     // mocked service should just use the original service methods, but we are
@@ -191,36 +190,38 @@ class MockCallbackTest : public ::testing::Test {
 };
 
 TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
-  grpc::internal::Mutex mu;
-  grpc::internal::CondVar cv;
-  grpc::Status status;
-  bool status_set = false;
+  struct {
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
+  } status;
   DefaultReactorTestPeer peer(&ctx, [&](::grpc::Status s) {
-    grpc::internal::MutexLock l(&mu);
-    status_set = true;
-    status = std::move(s);
-    cv.Signal();
+    grpc::internal::MutexLock l(&status.mu);
+    status.status = std::move(s);
+    status.cv.Signal();
   });
 
   req.set_message("mock 1");
   auto* reactor = service_.Echo(&ctx, &req, &resp);
-  cv.WaitUntil(&mu, [&] {
-    grpc::internal::MutexLock l(&mu);
-    return status_set;
-  });
+
+  grpc::internal::MutexLock l(&status.mu);
+  while (!status.status.has_value()) {
+    status.cv.Wait(&status.mu);
+  }
+
   EXPECT_EQ(reactor, peer.reactor());
   EXPECT_TRUE(peer.test_status_set());
   EXPECT_TRUE(peer.test_status().ok());
-  EXPECT_TRUE(status_set);
-  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(status.status.has_value());
+  EXPECT_TRUE(status.status.value().ok());
   EXPECT_EQ(req.message(), resp.message());
 }
 
 TEST_F(MockCallbackTest, MockedCallSucceeds) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
@@ -233,7 +234,7 @@ TEST_F(MockCallbackTest, MockedCallSucceeds) {
 }
 
 TEST_F(MockCallbackTest, MockedCallFails) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
@@ -256,7 +257,7 @@ class TestServiceImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
-    grpc::string resp("");
+    std::string resp("");
     while (reader->Read(&request)) {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       resp.append(request.message());
@@ -268,8 +269,8 @@ class TestServiceImpl : public EchoTestService::Service {
   Status ResponseStream(ServerContext* /*context*/, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
-    vector<grpc::string> tokens = split(request->message());
-    for (const grpc::string& token : tokens) {
+    vector<std::string> tokens = split(request->message());
+    for (const std::string& token : tokens) {
       response.set_message(token);
       writer->Write(response);
     }
@@ -290,20 +291,20 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
  private:
-  const vector<grpc::string> split(const grpc::string& input) {
-    grpc::string buff("");
-    vector<grpc::string> result;
+  vector<std::string> split(const std::string& input) {
+    std::string buff("");
+    vector<std::string> result;
 
     for (auto n : input) {
       if (n != ' ') {
         buff += n;
         continue;
       }
-      if (buff == "") continue;
+      if (buff.empty()) continue;
       result.push_back(buff);
       buff = "";
     }
-    if (buff != "") result.push_back(buff);
+    if (!buff.empty()) result.push_back(buff);
 
     return result;
   }

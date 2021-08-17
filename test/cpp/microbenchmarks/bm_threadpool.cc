@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "src/core/lib/iomgr/executor/threadpool.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -36,7 +37,7 @@ namespace testing {
 // the count reaches 0.
 class BlockingCounter {
  public:
-  BlockingCounter(int count) : count_(count) {}
+  explicit BlockingCounter(int count) : count_(count) {}
   void DecrementCount() {
     std::lock_guard<std::mutex> l(mu_);
     count_--;
@@ -61,7 +62,7 @@ class BlockingCounter {
 // number passed in (num_add) is greater than 0. Otherwise, it will decrement
 // the counter to indicate that task is finished. This functor will suicide at
 // the end, therefore, no need for caller to do clean-ups.
-class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
+class AddAnotherFunctor : public grpc_completion_queue_functor {
  public:
   AddAnotherFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
                     int num_add)
@@ -73,7 +74,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddAnotherFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(new AddAnotherFunctor(
@@ -127,16 +128,16 @@ BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
     ->RangePair(524288, 524288, 1, 1024);
 
 // A functor class that will delete self on end of running.
-class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
+class SuicideFunctorForAdd : public grpc_completion_queue_functor {
  public:
-  SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
+  explicit SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
     inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
 
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     // On running, the first argument would be itself.
     auto* callback = static_cast<SuicideFunctorForAdd*>(cb);
     callback->counter_->DecrementCount();
@@ -178,7 +179,7 @@ BENCHMARK(BM_ThreadPoolExternalAdd)
 
 // Functor (closure) that adds itself into pool repeatedly. By adding self, the
 // overhead would be low and can measure the time of add more accurately.
-class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
+class AddSelfFunctor : public grpc_completion_queue_functor {
  public:
   AddSelfFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
                  int num_add)
@@ -190,7 +191,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddSelfFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(cb);
@@ -257,8 +258,7 @@ BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 2048)->RangePair(524288, 524288, 1, 1024);
 
 // A functor (closure) that simulates closures with small but non-trivial amount
 // of work.
-class ShortWorkFunctorForAdd
-    : public grpc_experimental_completion_queue_functor {
+class ShortWorkFunctorForAdd : public grpc_completion_queue_functor {
  public:
   BlockingCounter* counter_;
 
@@ -269,7 +269,7 @@ class ShortWorkFunctorForAdd
     internal_success = 0;
     val_ = 0;
   }
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
     // Uses pad to avoid compiler complaining unused variable error.
     callback->pad[0] = 0;
@@ -320,6 +320,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

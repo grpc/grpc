@@ -52,7 +52,7 @@ static gpr_cv g_server_code_cv;
 static grpc_status_code g_client_status_code;
 static grpc_status_code g_server_status_code;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -275,8 +275,8 @@ static void server_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error_handle init_call_elem(grpc_call_element* elem,
+                                        const grpc_call_element_args* args) {
   final_status_data* data = static_cast<final_status_data*>(elem->call_data);
   data->call = args->call_stack;
   return GRPC_ERROR_NONE;
@@ -312,8 +312,8 @@ static void server_destroy_call_elem(grpc_call_element* elem,
   gpr_mu_unlock(&g_mu);
 }
 
-static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -376,15 +376,15 @@ static void init_plugin(void) {
   g_client_code_recv = false;
   g_server_code_recv = false;
 
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_server_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_client_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_client_filter));
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_server_filter));
 }
 
 static void destroy_plugin(void) {

@@ -19,15 +19,21 @@
 #ifndef GRPCPP_SERVER_POSIX_H
 #define GRPCPP_SERVER_POSIX_H
 
-#include <grpcpp/server_posix_impl.h>
+#include <memory>
+
+#include <grpc/support/port_platform.h>
+#include <grpcpp/server.h>
 
 namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-static inline void AddInsecureChannelFromFd(Server* server, int fd) {
-  ::grpc_impl::AddInsecureChannelFromFd(server, fd);
-}
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
+///
+/// \param server The server to add the client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(Server* server, int fd);
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 

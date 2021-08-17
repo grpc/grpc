@@ -38,6 +38,6 @@ typedef struct grpc_custom_timer_vtable {
 
 void grpc_custom_timer_init(grpc_custom_timer_vtable* impl);
 
-void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error);
+void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error_handle error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H */

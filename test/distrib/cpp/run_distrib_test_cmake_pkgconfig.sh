@@ -41,6 +41,13 @@ cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
 make -j4 install
 popd
 
+# Install re2
+mkdir -p "third_party/re2/cmake/build"
+pushd "third_party/re2/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
+
 # Install zlib
 mkdir -p "third_party/zlib/cmake/build"
 pushd "third_party/zlib/cmake/build"
@@ -64,14 +71,23 @@ cmake \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..
 make -j4 install
 popd
 
-# Build helloworld example using Makefiles and pkg-config
-cd examples/cpp/helloworld
+# Build helloworld example using Makefile and pkg-config
+pushd examples/cpp/helloworld
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
 make
+popd
+
+# Build route_guide example using Makefile and pkg-config
+pushd examples/cpp/route_guide
+export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
+export PATH=$PATH:/usr/local/grpc/bin
+make
+popd

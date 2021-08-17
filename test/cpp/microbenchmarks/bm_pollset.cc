@@ -29,6 +29,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -40,7 +41,7 @@
 #include <unistd.h>
 #endif
 
-static void shutdown_ps(void* ps, grpc_error* /*error*/) {
+static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
 
@@ -166,7 +167,7 @@ template <class F>
 TestClosure* MakeTestClosure(F f) {
   struct C : public TestClosure {
     explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
-    static void cbfn(void* arg, grpc_error* /*error*/) {
+    static void cbfn(void* arg, grpc_error_handle /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }
@@ -258,6 +259,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

@@ -25,8 +25,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
 
-static grpc_error* recursively_find_error_with_field(grpc_error* error,
-                                                     grpc_error_ints which) {
+static grpc_error_handle recursively_find_error_with_field(
+    grpc_error_handle error, grpc_error_ints which) {
   intptr_t unused;
   // If the error itself has a status code, return it.
   if (grpc_error_get_int(error, which, &unused)) {
@@ -38,14 +38,15 @@ static grpc_error* recursively_find_error_with_field(grpc_error* error,
   while (slot != UINT8_MAX) {
     grpc_linked_error* lerr =
         reinterpret_cast<grpc_linked_error*>(error->arena + slot);
-    grpc_error* result = recursively_find_error_with_field(lerr->err, which);
+    grpc_error_handle result =
+        recursively_find_error_with_field(lerr->err, which);
     if (result) return result;
     slot = lerr->next;
   }
   return nullptr;
 }
 
-void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
+void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
                            grpc_status_code* code, grpc_slice* slice,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
@@ -71,9 +72,9 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
 
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
-  grpc_error* found_error =
+  grpc_error_handle found_error =
       recursively_find_error_with_field(error, GRPC_ERROR_INT_GRPC_STATUS);
-  if (found_error == nullptr) {
+  if (found_error == GRPC_ERROR_NONE) {
     /// If no grpc-status exists, retry through the tree to find a http2 error
     /// code
     found_error =
@@ -82,7 +83,7 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
 
   // If we found an error with a status code above, use that; otherwise,
   // fall back to using the parent error.
-  if (found_error == nullptr) found_error = error;
+  if (found_error == GRPC_ERROR_NONE) found_error = error;
 
   grpc_status_code status = GRPC_STATUS_UNKNOWN;
   intptr_t integer;
@@ -96,7 +97,7 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
   if (code != nullptr) *code = status;
 
   if (error_string != nullptr && status != GRPC_STATUS_OK) {
-    *error_string = gpr_strdup(grpc_error_string(error));
+    *error_string = gpr_strdup(grpc_error_std_string(error).c_str());
   }
 
   if (http_error != nullptr) {
@@ -123,7 +124,30 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
   }
 }
 
-bool grpc_error_has_clear_grpc_status(grpc_error* error) {
+absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
+  grpc_status_code status;
+  // TODO(yashykt): This should be updated once we decide on how to use the
+  // absl::Status payload to capture all the contents of grpc_error.
+  grpc_slice message;
+  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status, &message,
+                        nullptr /* http_error */, nullptr /* error_string */);
+  return absl::Status(static_cast<absl::StatusCode>(status),
+                      absl::string_view(reinterpret_cast<const char*>(
+                                            GRPC_SLICE_START_PTR(message)),
+                                        GRPC_SLICE_LENGTH(message)));
+}
+
+grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
+  // Special error checks
+  if (status.ok()) {
+    return GRPC_ERROR_NONE;
+  }
+  return grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),
+      GRPC_ERROR_INT_GRPC_STATUS, static_cast<grpc_status_code>(status.code()));
+}
+
+bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   intptr_t unused;
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {
     return true;

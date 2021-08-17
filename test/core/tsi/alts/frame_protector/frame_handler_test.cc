@@ -107,7 +107,7 @@ static void frame_n_deframe(frame_handler* handler, unsigned char* payload,
 
 static void frame_handler_test_frame_deframe() {
   unsigned char payload[] = "hello world";
-  size_t payload_length = strlen((char*)payload) + 1;
+  size_t payload_length = strlen(reinterpret_cast<char*>(payload)) + 1;
   frame_handler* handler = create_frame_handler();
   frame_n_deframe(handler, payload, payload_length,
                   frame_length(payload_length), frame_length(payload_length));

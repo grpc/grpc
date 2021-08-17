@@ -330,6 +330,13 @@ static void test_moved_string_slice(void) {
   grpc_shutdown();
 }
 
+void test_string_view_from_slice() {
+  constexpr char kStr[] = "foo";
+  absl::string_view sv(
+      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
+  GPR_ASSERT(std::string(sv) == kStr);
+}
+
 int main(int argc, char** argv) {
   unsigned length;
   grpc::testing::TestEnvironment env(argc, argv);
@@ -348,6 +355,7 @@ int main(int argc, char** argv) {
   test_static_slice_interning();
   test_static_slice_copy_interning();
   test_moved_string_slice();
+  test_string_view_from_slice();
   grpc_shutdown();
   return 0;
 }

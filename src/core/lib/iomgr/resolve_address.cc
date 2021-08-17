@@ -15,11 +15,15 @@
  * limitations under the License.
  *
  */
-
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include "src/core/lib/iomgr/resolve_address.h"
+
+namespace grpc_core {
+const char* kDefaultSecurePort = "https";
+}  // namespace grpc_core
 
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 
@@ -35,16 +39,16 @@ void grpc_resolve_address(const char* addr, const char* default_port,
       addr, default_port, interested_parties, on_done, addresses);
 }
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
-  if (addrs != nullptr) {
-    gpr_free(addrs->addrs);
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
   }
-  gpr_free(addrs);
+  gpr_free(addresses);
 }
 
-grpc_error* grpc_blocking_resolve_address(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses) {
+grpc_error_handle grpc_blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
                                                              addresses);
 }

@@ -17,6 +17,7 @@ cdef class _AsyncioTimer:
         grpc_custom_timer * _grpc_timer
         object _timer_future
         bint _active
+        object _loop
 
     @staticmethod
     cdef _AsyncioTimer create(grpc_custom_timer * grpc_timer, float timeout)

@@ -33,6 +33,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_slice res = grpc_base64_decode_with_len(
       reinterpret_cast<const char*>(data + 1), size - 1, url_safe);
   grpc_slice_unref(res);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   return 0;
 }

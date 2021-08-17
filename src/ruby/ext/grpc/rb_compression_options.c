@@ -142,7 +142,7 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
            "Unrecognized compression level name."
            "Valid compression level names are none, low, medium, and high.");
 
-  /* Dummy return statement. */
+  /* Phony return statement. */
   return GRPC_COMPRESS_LEVEL_NONE;
 }
 

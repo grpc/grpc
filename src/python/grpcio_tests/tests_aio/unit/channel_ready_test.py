@@ -16,13 +16,15 @@
 import asyncio
 import gc
 import logging
+import socket
 import time
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from tests.unit.framework.common import get_socket, test_constants
+from tests.unit.framework.common import get_socket
+from tests.unit.framework.common import test_constants
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
@@ -31,7 +33,8 @@ from tests_aio.unit._test_server import start_test_server
 class TestChannelReady(AioTestBase):
 
     async def setUp(self):
-        address, self._port, self._socket = get_socket(listen=False)
+        address, self._port, self._socket = get_socket(
+            listen=False, sock_options=(socket.SO_REUSEADDR,))
         self._channel = aio.insecure_channel(f"{address}:{self._port}")
         self._socket.close()
 

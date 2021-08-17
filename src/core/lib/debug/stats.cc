@@ -23,6 +23,11 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <vector>
+
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -140,39 +145,28 @@ double grpc_stats_histo_percentile(const grpc_stats_data* stats,
       static_cast<double>(count) * percentile / 100.0);
 }
 
-char* grpc_stats_data_as_json(const grpc_stats_data* data) {
-  gpr_strvec v;
-  char* tmp;
-  bool is_first = true;
-  gpr_strvec_init(&v);
-  gpr_strvec_add(&v, gpr_strdup("{"));
+std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
+  std::vector<std::string> parts;
+  parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    gpr_asprintf(&tmp, "%s\"%s\": %" PRIdPTR, is_first ? "" : ", ",
-                 grpc_stats_counter_name[i], data->counters[i]);
-    gpr_strvec_add(&v, tmp);
-    is_first = false;
+    parts.push_back(absl::StrFormat(
+        "\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
   }
   for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    gpr_asprintf(&tmp, "%s\"%s\": [", is_first ? "" : ", ",
-                 grpc_stats_histogram_name[i]);
-    gpr_strvec_add(&v, tmp);
+    parts.push_back(absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      gpr_asprintf(&tmp, "%s%" PRIdPTR, j == 0 ? "" : ",",
-                   data->histograms[grpc_stats_histo_start[i] + j]);
-      gpr_strvec_add(&v, tmp);
+      parts.push_back(
+          absl::StrFormat("%s%" PRIdPTR, j == 0 ? "" : ",",
+                          data->histograms[grpc_stats_histo_start[i] + j]));
     }
-    gpr_asprintf(&tmp, "], \"%s_bkt\": [", grpc_stats_histogram_name[i]);
-    gpr_strvec_add(&v, tmp);
+    parts.push_back(
+        absl::StrFormat("], \"%s_bkt\": [", grpc_stats_histogram_name[i]));
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      gpr_asprintf(&tmp, "%s%d", j == 0 ? "" : ",",
-                   grpc_stats_histo_bucket_boundaries[i][j]);
-      gpr_strvec_add(&v, tmp);
+      parts.push_back(absl::StrFormat(
+          "%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
     }
-    gpr_strvec_add(&v, gpr_strdup("]"));
-    is_first = false;
+    parts.push_back("]");
   }
-  gpr_strvec_add(&v, gpr_strdup("}"));
-  tmp = gpr_strvec_flatten(&v, nullptr);
-  gpr_strvec_destroy(&v);
-  return tmp;
+  parts.push_back("}");
+  return absl::StrJoin(parts, "");
 }

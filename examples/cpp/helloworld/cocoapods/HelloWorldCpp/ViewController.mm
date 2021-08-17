@@ -18,14 +18,15 @@
 
 #import "ViewController.h"
 #import <grpcpp/grpcpp.h>
-#include <grpcpp/generic/generic_stub.h>
+
 #include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/generic/generic_stub.h>
 
 static void* tag(int i) { return (void*)(intptr_t)i; }
 
 // Serialized Proto bytes of Hello World example
-const uint8_t kMessage[] =
-    {0x0A, 0x0B, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x2D, 0x43};
+const uint8_t kMessage[] = {0x0A, 0x0B, 0x4F, 0x62, 0x6A, 0x65, 0x63,
+                            0x74, 0x69, 0x76, 0x65, 0x2D, 0x43};
 
 @interface ViewController ()
 
@@ -44,7 +45,7 @@ const uint8_t kMessage[] =
       CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
   generic_stub_.reset(new grpc::GenericStub(channel));
 
-  const grpc::string kMethodName("/helloworld.Greeter/SayHello");
+  const std::string kMethodName("/helloworld.Greeter/SayHello");
   void* got_tag;
   bool ok;
 
@@ -57,7 +58,7 @@ const uint8_t kMessage[] =
     abort();
   }
   grpc::Slice send_slice = grpc::Slice(kMessage, sizeof(kMessage) / sizeof(kMessage[0]));
-      std::unique_ptr<grpc::ByteBuffer> send_buffer(new grpc::ByteBuffer(&send_slice, 1));
+  std::unique_ptr<grpc::ByteBuffer> send_buffer(new grpc::ByteBuffer(&send_slice, 1));
   call->Write(*send_buffer, tag(2));
   cq_.Next(&got_tag, &ok);
   if (!ok || got_tag != tag(2)) {
@@ -85,17 +86,17 @@ const uint8_t kMessage[] =
   }
   std::vector<grpc::Slice> slices;
   recv_buffer.Dump(&slices);
-  NSString *recvBytes = [[NSString alloc] init];
+  NSString* recvBytes = [[NSString alloc] init];
   for (auto slice : slices) {
     auto p = slice.begin();
     while (p != slice.end()) {
-      recvBytes =
-          [recvBytes stringByAppendingString:[NSString stringWithFormat:@"%02x ", *p]];
+      recvBytes = [recvBytes stringByAppendingString:[NSString stringWithFormat:@"%02x ", *p]];
       p++;
     }
   }
   NSLog(@"Hello World succeeded.\nReceived bytes: %@\n"
-        "Expected bytes: 0a 11 48 65 6c 6c 6f 20 4f 62 6a 65 63 74 69 76 65 2d 43", recvBytes);
+         "Expected bytes: 0a 11 48 65 6c 6c 6f 20 4f 62 6a 65 63 74 69 76 65 2d 43",
+        recvBytes);
 }
 
 @end

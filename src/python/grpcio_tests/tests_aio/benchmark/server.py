@@ -36,7 +36,6 @@ async def _start_async_server():
 
 
 def main():
-    aio.init_grpc_aio()
     loop = asyncio.get_event_loop()
     loop.create_task(_start_async_server())
     loop.run_forever()

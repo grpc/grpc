@@ -29,11 +29,11 @@ namespace grpc {
 namespace testing {
 /* This interceptor does nothing. Just keeps a global count on the number of
  * times it was invoked. */
-class DummyInterceptor : public experimental::Interceptor {
+class PhonyInterceptor : public experimental::Interceptor {
  public:
-  DummyInterceptor() {}
+  PhonyInterceptor() {}
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       num_times_run_++;
@@ -67,19 +67,55 @@ class DummyInterceptor : public experimental::Interceptor {
   static std::atomic<int> num_times_cancel_;
 };
 
-class DummyInterceptorFactory
+class PhonyInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* /*info*/) override {
-    return new DummyInterceptor();
+    return new PhonyInterceptor();
   }
 
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* /*info*/) override {
-    return new DummyInterceptor();
+    return new PhonyInterceptor();
   }
+};
+
+/* This interceptor can be used to test the interception mechanism. */
+class TestInterceptor : public experimental::Interceptor {
+ public:
+  TestInterceptor(const std::string& method, const char* suffix_for_stats,
+                  experimental::ClientRpcInfo* info) {
+    EXPECT_EQ(info->method(), method);
+
+    if (suffix_for_stats == nullptr || info->suffix_for_stats() == nullptr) {
+      EXPECT_EQ(info->suffix_for_stats(), suffix_for_stats);
+    } else {
+      EXPECT_EQ(strcmp(info->suffix_for_stats(), suffix_for_stats), 0);
+    }
+  }
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    methods->Proceed();
+  }
+};
+
+class TestInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  TestInterceptorFactory(const std::string& method,
+                         const char* suffix_for_stats)
+      : method_(method), suffix_for_stats_(suffix_for_stats) {}
+
+  experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new TestInterceptor(method_, suffix_for_stats_, info);
+  }
+
+ private:
+  std::string method_;
+  const char* suffix_for_stats_;
 };
 
 /* This interceptor factory returns nullptr on interceptor creation */
@@ -87,12 +123,12 @@ class NullInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* /*info*/) override {
     return nullptr;
   }
 
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* /*info*/) override {
     return nullptr;
   }
@@ -101,6 +137,16 @@ class NullInterceptorFactory
 class EchoTestServiceStreamingImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceStreamingImpl() override {}
+
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    auto client_metadata = context->client_metadata();
+    for (const auto& pair : client_metadata) {
+      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    }
+    response->set_message(request->message());
+    return Status::OK;
+  }
 
   Status BidiStream(
       ServerContext* context,
@@ -154,7 +200,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
 
 constexpr int kNumStreamingMessages = 10;
 
-void MakeCall(const std::shared_ptr<Channel>& channel);
+void MakeCall(const std::shared_ptr<Channel>& channel,
+              const StubOptions& options = StubOptions());
 
 void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel);
 
@@ -162,18 +209,26 @@ void MakeServerStreamingCall(const std::shared_ptr<Channel>& channel);
 
 void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel);
 
+void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel);
+
+void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& channel);
+
+void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel);
+
+void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel);
+
 void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
 
 bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
                    const string& key, const string& value);
 
-bool CheckMetadata(const std::multimap<grpc::string, grpc::string>& map,
+bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value);
 
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-CreateDummyClientInterceptors();
+CreatePhonyClientInterceptors();
 
-inline void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+inline void* tag(int i) { return reinterpret_cast<void*>(i); }
 inline int detag(void* p) {
   return static_cast<int>(reinterpret_cast<intptr_t>(p));
 }

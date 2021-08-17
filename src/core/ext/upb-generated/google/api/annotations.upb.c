@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "google/api/annotations.upb.h"
 #include "google/api/http.upb.h"
 #include "google/protobuf/descriptor.upb.h"

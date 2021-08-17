@@ -23,7 +23,8 @@
 
 #include <string>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -71,8 +72,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
   using CallCredentialsList =
-      grpc_core::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>,
-                               2>;
+      absl::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>, 2>;
 
   grpc_composite_call_credentials(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
@@ -83,10 +83,10 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;

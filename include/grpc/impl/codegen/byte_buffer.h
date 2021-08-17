@@ -53,7 +53,7 @@ GRPCAPI grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb);
 GRPCAPI size_t grpc_byte_buffer_length(grpc_byte_buffer* bb);
 
 /** Destroys \a byte_buffer deallocating all its memory. */
-GRPCAPI void grpc_byte_buffer_destroy(grpc_byte_buffer* byte_buffer);
+GRPCAPI void grpc_byte_buffer_destroy(grpc_byte_buffer* bb);
 
 /** Reader for byte buffers. Iterates over slices in the byte buffer */
 struct grpc_byte_buffer_reader;

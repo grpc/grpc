@@ -190,6 +190,13 @@ grpc_end2end_nosec_tests()
 grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
     srcs = ["h2_ssl_session_reuse_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],

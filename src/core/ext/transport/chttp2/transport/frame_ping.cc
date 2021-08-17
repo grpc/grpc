@@ -23,9 +23,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 static bool g_disable_ping_ack = false;
 
@@ -54,15 +55,12 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   return slice;
 }
 
-grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
-                                                uint32_t length,
-                                                uint8_t flags) {
+grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
+    grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags) {
   if (flags & 0xfe || length != 8) {
-    char* msg;
-    gpr_asprintf(&msg, "invalid ping: length=%d, flags=%02x", length, flags);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("invalid ping: length=%d, flags=%02x", length, flags)
+            .c_str());
   }
   parser->byte = 0;
   parser->is_ack = flags;
@@ -70,11 +68,11 @@ grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
-                                          grpc_chttp2_transport* t,
-                                          grpc_chttp2_stream* /*s*/,
-                                          const grpc_slice& slice,
-                                          int is_last) {
+grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* /*s*/,
+                                                const grpc_slice& slice,
+                                                int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;

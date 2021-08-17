@@ -33,7 +33,7 @@ class ProtoServerReflection final
   ProtoServerReflection();
 
   // Add the full names of registered services
-  void SetServiceList(const std::vector<grpc::string>* services);
+  void SetServiceList(const std::vector<std::string>* services);
 
   // implementation of ServerReflectionInfo(stream ServerReflectionRequest) rpc
   // in ServerReflection service
@@ -47,11 +47,11 @@ class ProtoServerReflection final
   Status ListService(ServerContext* context,
                      reflection::v1alpha::ListServiceResponse* response);
 
-  Status GetFileByName(ServerContext* context, const grpc::string& file_name,
+  Status GetFileByName(ServerContext* context, const std::string& file_name,
                        reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingSymbol(
-      ServerContext* context, const grpc::string& symbol,
+      ServerContext* context, const std::string& symbol,
       reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingExtension(
@@ -60,13 +60,13 @@ class ProtoServerReflection final
       reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetAllExtensionNumbers(
-      ServerContext* context, const grpc::string& type,
+      ServerContext* context, const std::string& type,
       reflection::v1alpha::ExtensionNumberResponse* response);
 
   void FillFileDescriptorResponse(
       const protobuf::FileDescriptor* file_desc,
       reflection::v1alpha::ServerReflectionResponse* response,
-      std::unordered_set<grpc::string>* seen_files);
+      std::unordered_set<std::string>* seen_files);
 
   void FillErrorResponse(const Status& status,
                          reflection::v1alpha::ErrorResponse* error_response);

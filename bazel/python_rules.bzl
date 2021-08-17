@@ -1,3 +1,16 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
@@ -53,7 +66,7 @@ def _generate_py_impl(context):
 
     imports = []
     if out_dir.import_path:
-        imports.append("__main__/%s" % out_dir.import_path)
+        imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
 
     return [
         DefaultInfo(files = depset(direct = out_files)),
@@ -164,15 +177,12 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
-    imports = []
-    if out_dir.import_path:
-        imports.append("__main__/%s" % out_dir.import_path)
-
     return [
         DefaultInfo(files = depset(direct = out_files)),
         PyInfo(
             transitive_sources = depset(),
-            imports = depset(direct = imports),
+            # Imports are already configured by the generated py impl
+            imports = depset(),
         ),
     ]
 

@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import yaml
 import argparse
-import datetime
 import csv
+import datetime
+
+import yaml
 
 argp = argparse.ArgumentParser(description='Convert cloc yaml to bigquery csv')
 argp.add_argument('-i', '--input', type=str)
@@ -32,9 +33,12 @@ with open(args.output, 'w') as outf:
     writer = csv.DictWriter(
         outf, ['date', 'name', 'language', 'code', 'comment', 'blank'])
     for key, value in data.iteritems():
-        if key == 'header': continue
-        if key == 'SUM': continue
-        if key.startswith('third_party/'): continue
+        if key == 'header':
+            continue
+        if key == 'SUM':
+            continue
+        if key.startswith('third_party/'):
+            continue
         row = {'name': key, 'date': args.date}
         row.update(value)
         writer.writerow(row)

@@ -58,6 +58,10 @@ void grpcsharp_batch_context_recv_status_on_client_details() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_batch_context_recv_status_on_client_error_string() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_batch_context_recv_status_on_client_trailing_metadata() {
   fprintf(stderr, "Should never reach here");
   abort();

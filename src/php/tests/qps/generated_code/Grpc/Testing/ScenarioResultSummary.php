@@ -17,107 +17,156 @@ use Google\Protobuf\Internal\GPBUtil;
 class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Total number of operations per second over all clients.
+     * Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+     * For unary benchmarks, an operation is processing of a single unary RPC. 
+     * For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
      *
      * Generated from protobuf field <code>double qps = 1;</code>
      */
-    private $qps = 0.0;
+    protected $qps = 0.0;
     /**
-     * QPS per one server core.
+     * QPS per server core.
      *
      * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
      */
-    private $qps_per_server_core = 0.0;
+    protected $qps_per_server_core = 0.0;
     /**
-     * server load based on system_time (0.85 => 85%)
+     * The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+     * For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+     * processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+     * Same explanation for the total client cpu load below.
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
      */
-    private $server_system_time = 0.0;
+    protected $server_system_time = 0.0;
     /**
-     * server load based on user_time (0.85 => 85%)
+     * The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
      */
-    private $server_user_time = 0.0;
+    protected $server_user_time = 0.0;
     /**
-     * client load based on system_time (0.85 => 85%)
+     * The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
      */
-    private $client_system_time = 0.0;
+    protected $client_system_time = 0.0;
     /**
-     * client load based on user_time (0.85 => 85%)
+     * The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
      */
-    private $client_user_time = 0.0;
+    protected $client_user_time = 0.0;
     /**
      * X% latency percentiles (in nanoseconds)
      *
      * Generated from protobuf field <code>double latency_50 = 7;</code>
      */
-    private $latency_50 = 0.0;
+    protected $latency_50 = 0.0;
     /**
      * Generated from protobuf field <code>double latency_90 = 8;</code>
      */
-    private $latency_90 = 0.0;
+    protected $latency_90 = 0.0;
     /**
      * Generated from protobuf field <code>double latency_95 = 9;</code>
      */
-    private $latency_95 = 0.0;
+    protected $latency_95 = 0.0;
     /**
      * Generated from protobuf field <code>double latency_99 = 10;</code>
      */
-    private $latency_99 = 0.0;
+    protected $latency_99 = 0.0;
     /**
      * Generated from protobuf field <code>double latency_999 = 11;</code>
      */
-    private $latency_999 = 0.0;
+    protected $latency_999 = 0.0;
     /**
      * server cpu usage percentage
      *
      * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
      */
-    private $server_cpu_usage = 0.0;
+    protected $server_cpu_usage = 0.0;
     /**
      * Number of requests that succeeded/failed
      *
      * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
      */
-    private $successful_requests_per_second = 0.0;
+    protected $successful_requests_per_second = 0.0;
     /**
      * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
      */
-    private $failed_requests_per_second = 0.0;
+    protected $failed_requests_per_second = 0.0;
     /**
      * Number of polls called inside completion queue per request
      *
      * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
      */
-    private $client_polls_per_request = 0.0;
+    protected $client_polls_per_request = 0.0;
     /**
      * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
      */
-    private $server_polls_per_request = 0.0;
+    protected $server_polls_per_request = 0.0;
     /**
      * Queries per CPU-sec over all servers or clients
      *
      * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
      */
-    private $server_queries_per_cpu_sec = 0.0;
+    protected $server_queries_per_cpu_sec = 0.0;
     /**
      * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
      */
-    private $client_queries_per_cpu_sec = 0.0;
+    protected $client_queries_per_cpu_sec = 0.0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type float $qps
+     *           Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+     *           For unary benchmarks, an operation is processing of a single unary RPC. 
+     *           For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
+     *     @type float $qps_per_server_core
+     *           QPS per server core.
+     *     @type float $server_system_time
+     *           The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+     *           For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+     *           processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+     *           Same explanation for the total client cpu load below.
+     *     @type float $server_user_time
+     *           The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+     *     @type float $client_system_time
+     *           The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+     *     @type float $client_user_time
+     *           The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+     *     @type float $latency_50
+     *           X% latency percentiles (in nanoseconds)
+     *     @type float $latency_90
+     *     @type float $latency_95
+     *     @type float $latency_99
+     *     @type float $latency_999
+     *     @type float $server_cpu_usage
+     *           server cpu usage percentage
+     *     @type float $successful_requests_per_second
+     *           Number of requests that succeeded/failed
+     *     @type float $failed_requests_per_second
+     *     @type float $client_polls_per_request
+     *           Number of polls called inside completion queue per request
+     *     @type float $server_polls_per_request
+     *     @type float $server_queries_per_cpu_sec
+     *           Queries per CPU-sec over all servers or clients
+     *     @type float $client_queries_per_cpu_sec
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**
-     * Total number of operations per second over all clients.
+     * Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+     * For unary benchmarks, an operation is processing of a single unary RPC. 
+     * For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
      *
      * Generated from protobuf field <code>double qps = 1;</code>
      * @return float
@@ -128,7 +177,9 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Total number of operations per second over all clients.
+     * Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+     * For unary benchmarks, an operation is processing of a single unary RPC. 
+     * For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
      *
      * Generated from protobuf field <code>double qps = 1;</code>
      * @param float $var
@@ -143,7 +194,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * QPS per one server core.
+     * QPS per server core.
      *
      * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
      * @return float
@@ -154,7 +205,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * QPS per one server core.
+     * QPS per server core.
      *
      * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
      * @param float $var
@@ -169,7 +220,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on system_time (0.85 => 85%)
+     * The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+     * For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+     * processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+     * Same explanation for the total client cpu load below.
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
      * @return float
@@ -180,7 +234,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on system_time (0.85 => 85%)
+     * The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
+     * For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+     * processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
+     * Same explanation for the total client cpu load below.
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
      * @param float $var
@@ -195,7 +252,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on user_time (0.85 => 85%)
+     * The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
      * @return float
@@ -206,7 +263,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on user_time (0.85 => 85%)
+     * The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
      * @param float $var
@@ -221,7 +278,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on system_time (0.85 => 85%)
+     * The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
      * @return float
@@ -232,7 +289,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on system_time (0.85 => 85%)
+     * The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
      * @param float $var
@@ -247,7 +304,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on user_time (0.85 => 85%)
+     * The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
      * @return float
@@ -258,7 +315,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on user_time (0.85 => 85%)
+     * The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
      * @param float $var

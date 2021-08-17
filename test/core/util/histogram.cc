@@ -124,23 +124,23 @@ int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
   return 1;
 }
 
-void grpc_histogram_merge_contents(grpc_histogram* dst, const uint32_t* data,
-                                   size_t data_count, double min_seen,
-                                   double max_seen, double sum,
+void grpc_histogram_merge_contents(grpc_histogram* histogram,
+                                   const uint32_t* data, size_t data_count,
+                                   double min_seen, double max_seen, double sum,
                                    double sum_of_squares, double count) {
   size_t i;
-  GPR_ASSERT(dst->num_buckets == data_count);
-  dst->sum += sum;
-  dst->sum_of_squares += sum_of_squares;
-  dst->count += count;
-  if (min_seen < dst->min_seen) {
-    dst->min_seen = min_seen;
+  GPR_ASSERT(histogram->num_buckets == data_count);
+  histogram->sum += sum;
+  histogram->sum_of_squares += sum_of_squares;
+  histogram->count += count;
+  if (min_seen < histogram->min_seen) {
+    histogram->min_seen = min_seen;
   }
-  if (max_seen > dst->max_seen) {
-    dst->max_seen = max_seen;
+  if (max_seen > histogram->max_seen) {
+    histogram->max_seen = max_seen;
   }
-  for (i = 0; i < dst->num_buckets; i++) {
-    dst->buckets[i] += data[i];
+  for (i = 0; i < histogram->num_buckets; i++) {
+    histogram->buckets[i] += data[i];
   }
 }
 
@@ -224,7 +224,8 @@ double grpc_histogram_sum_of_squares(grpc_histogram* h) {
   return h->sum_of_squares;
 }
 
-const uint32_t* grpc_histogram_get_contents(grpc_histogram* h, size_t* size) {
-  *size = h->num_buckets;
-  return h->buckets;
+const uint32_t* grpc_histogram_get_contents(grpc_histogram* histogram,
+                                            size_t* count) {
+  *count = histogram->num_buckets;
+  return histogram->buckets;
 }

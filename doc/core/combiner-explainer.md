@@ -41,9 +41,9 @@ Instead, get a new property:
 class combiner {
   mpscq q; // multi-producer single-consumer queue can be made non-blocking
   state s; // is it empty or executing
-  
+
   run(f) {
-    if (q.push(f)) { 
+    if (q.push(f)) {
       // q.push returns true if it's the first thing
       while (q.pop(&f)) { // modulo some extra work to avoid races
         f();
@@ -73,9 +73,9 @@ class combiner {
   mpscq q; // multi-producer single-consumer queue can be made non-blocking
   state s; // is it empty or executing
   queue finally; // you can only do run_finally when you are already running something from the combiner
-  
+
   run(f) {
-    if (q.push(f)) { 
+    if (q.push(f)) {
       // q.push returns true if it's the first thing
       loop:
       while (q.pop(&f)) { // modulo some extra work to avoid races
@@ -127,7 +127,7 @@ tries to spray events onto as many threads as possible to get as much concurrenc
 
 So `offload` really does:
 
-``` 
+```
   workqueue.run(continue_from_while_loop);
   break;
 ```

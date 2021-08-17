@@ -59,7 +59,7 @@ GPRAPI void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b);
 GPRAPI void grpc_slice_buffer_move_into(grpc_slice_buffer* src,
                                         grpc_slice_buffer* dst);
 /** remove n bytes from the end of a slice buffer */
-GPRAPI void grpc_slice_buffer_trim_end(grpc_slice_buffer* src, size_t n,
+GPRAPI void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
                                        grpc_slice_buffer* garbage);
 /** move the first n bytes of src into dst */
 GPRAPI void grpc_slice_buffer_move_first(grpc_slice_buffer* src, size_t n,
@@ -72,9 +72,9 @@ GPRAPI void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src,
 GPRAPI void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src,
                                                      size_t n, void* dst);
 /** take the first slice in the slice buffer */
-GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* src);
+GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb);
 /** undo the above with (a possibly different) \a slice */
-GPRAPI void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* src,
+GPRAPI void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
                                               grpc_slice slice);
 
 #ifdef __cplusplus

@@ -50,7 +50,7 @@ class grpc_local_server_credentials final : public grpc_server_credentials {
   ~grpc_local_server_credentials() override = default;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   grpc_local_connect_type connect_type() const { return connect_type_; }
 

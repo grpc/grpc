@@ -28,6 +28,9 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "absl/strings/str_join.h"
+
+// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -38,7 +41,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 SecureChannelCredentials::SecureChannelCredentials(
@@ -48,7 +51,7 @@ SecureChannelCredentials::SecureChannelCredentials(
 }
 
 std::shared_ptr<Channel> SecureChannelCredentials::CreateChannelImpl(
-    const grpc::string& target, const ChannelArguments& args) {
+    const std::string& target, const ChannelArguments& args) {
   return CreateChannelWithInterceptors(
       target, args,
       std::vector<std::unique_ptr<
@@ -57,7 +60,7 @@ std::shared_ptr<Channel> SecureChannelCredentials::CreateChannelImpl(
 
 std::shared_ptr<Channel>
 SecureChannelCredentials::CreateChannelWithInterceptors(
-    const grpc::string& target, const ChannelArguments& args,
+    const std::string& target, const ChannelArguments& args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
@@ -79,13 +82,18 @@ bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
   return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
 }
 
-namespace {
+namespace internal {
+
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
   return creds == nullptr ? nullptr
                           : std::shared_ptr<ChannelCredentials>(
                                 new SecureChannelCredentials(creds));
 }
+
+}  // namespace internal
+
+namespace {
 
 std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds) {
@@ -97,7 +105,15 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(grpc_google_default_credentials_create());
+  return internal::WrapChannelCredentials(
+      grpc_google_default_credentials_create(nullptr));
+}
+
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  return WrapCallCredentials(grpc_external_account_credentials_create(
+      json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
 
 // Builds SSL Credentials given SSL specific options
@@ -111,7 +127,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
       nullptr);
-  return WrapChannelCredentials(c_creds);
+  return internal::WrapChannelCredentials(c_creds);
 }
 
 namespace experimental {
@@ -134,14 +150,14 @@ void ClearStsCredentialsOptions(StsCredentialsOptions* options) {
 }  // namespace
 
 // Builds STS credentials options from JSON.
-grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
+grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                                            StsCredentialsOptions* options) {
   if (options == nullptr) {
     return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json json = grpc_core::Json::Parse(json_string.c_str(), &error);
   if (error != GRPC_ERROR_NONE ||
       json.type() != grpc_core::Json::Type::OBJECT) {
@@ -199,7 +215,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
   auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
     grpc_slice_unref_internal(json_string);
@@ -216,7 +232,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   error = grpc_load_file(sts_creds_path, 1, &json_string);
   if (error != GRPC_ERROR_NONE) {
     status =
-        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_string(error));
+        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();
   }
   status = StsCredentialsOptionsFromJson(
@@ -276,20 +292,20 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   }
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
-  return WrapChannelCredentials(c_creds);
+  return internal::WrapChannelCredentials(c_creds);
 }
 
 // Builds Local Credentials
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(grpc_local_credentials_create(type));
+  return internal::WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
-    const TlsCredentialsOptions& options) {
-  return WrapChannelCredentials(
+    const TlsChannelCredentialsOptions& options) {
+  return internal::WrapChannelCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
@@ -304,7 +320,7 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
 
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const grpc::string& json_key, long token_lifetime_seconds) {
+    const std::string& json_key, long token_lifetime_seconds) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
@@ -319,7 +335,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
 
 // Builds refresh token credentials.
 std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
-    const grpc::string& json_refresh_token) {
+    const std::string& json_refresh_token) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapCallCredentials(grpc_google_refresh_token_credentials_create(
       json_refresh_token.c_str(), nullptr));
@@ -327,7 +343,7 @@ std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
 
 // Builds access token credentials.
 std::shared_ptr<CallCredentials> AccessTokenCredentials(
-    const grpc::string& access_token) {
+    const std::string& access_token) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapCallCredentials(
       grpc_access_token_credentials_create(access_token.c_str(), nullptr));
@@ -335,8 +351,8 @@ std::shared_ptr<CallCredentials> AccessTokenCredentials(
 
 // Builds IAM credentials.
 std::shared_ptr<CallCredentials> GoogleIAMCredentials(
-    const grpc::string& authorization_token,
-    const grpc::string& authority_selector) {
+    const std::string& authorization_token,
+    const std::string& authority_selector) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapCallCredentials(grpc_google_iam_credentials_create(
       authorization_token.c_str(), authority_selector.c_str(), nullptr));
@@ -355,8 +371,10 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       channel_creds->AsSecureCredentials();
   SecureCallCredentials* s_call_creds = call_creds->AsSecureCredentials();
   if (s_channel_creds && s_call_creds) {
-    return WrapChannelCredentials(grpc_composite_channel_credentials_create(
-        s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(), nullptr));
+    return internal::WrapChannelCredentials(
+        grpc_composite_channel_credentials_create(
+            s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(),
+            nullptr));
   }
   return nullptr;
 }
@@ -387,11 +405,8 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 
-}  // namespace grpc_impl
-
-namespace grpc {
 namespace {
-void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
+void DeleteWrapper(void* wrapper, grpc_error_handle /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
@@ -463,7 +478,7 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
     void* user_data, grpc_metadata creds_md[4], size_t* num_creds_md,
     grpc_status_code* status_code, const char** error_details) {
-  std::multimap<grpc::string, grpc::string> metadata;
+  std::multimap<std::string, std::string> metadata;
 
   // const_cast is safe since the SecureAuthContext only inc/dec the refcount
   // and the object is passed as a const ref to plugin_->GetMetadata.
@@ -477,7 +492,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_metadata md_entry;
     md_entry.key = SliceFromCopiedString(metadatum.first);
     md_entry.value = SliceFromCopiedString(metadatum.second);
-    md_entry.flags = 0;
     md.push_back(md_entry);
   }
   if (creds_md != nullptr) {
@@ -492,7 +506,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
       for (const auto& elem : md) {
         creds_md[*num_creds_md].key = elem.key;
         creds_md[*num_creds_md].value = elem.value;
-        creds_md[*num_creds_md].flags = elem.flags;
         ++(*num_creds_md);
       }
       *status_code = static_cast<grpc_status_code>(status.error_code());

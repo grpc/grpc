@@ -246,8 +246,10 @@ namespace Grpc.IntegrationTesting
         private void CheckRejected()
         {
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { ResponseSize = 10 }));
-            Assert.AreEqual(StatusCode.Unavailable, ex.Status.StatusCode);
-        }
+        if (ex.Status.StatusCode != StatusCode.Unavailable & ex.Status.StatusCode != StatusCode.Unknown) {
+                Assert.Fail("Expect status to be either Unavailable or Unknown");
+            }
+	}
 
         private async Task CheckAuthContextIsPopulated()
         {

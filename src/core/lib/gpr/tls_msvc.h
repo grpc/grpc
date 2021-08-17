@@ -24,6 +24,8 @@
 
    #include tls.h to use this - and see that file for documentation */
 
+#include <cstdint>
+
 struct gpr_msvc_thread_local {
   intptr_t value;
 };

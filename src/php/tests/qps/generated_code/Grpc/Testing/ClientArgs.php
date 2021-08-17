@@ -15,9 +15,19 @@ class ClientArgs extends \Google\Protobuf\Internal\Message
 {
     protected $argtype;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Testing\ClientConfig $setup
+     *     @type \Grpc\Testing\Mark $mark
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

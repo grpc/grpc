@@ -15,8 +15,9 @@
 
 import argparse
 import asyncio
-import enum
 import collections
+import datetime
+import enum
 import inspect
 import json
 import os
@@ -24,14 +25,16 @@ import threading
 import time
 from typing import Any, Optional, Union
 
-import grpc
 from google import auth as google_auth
 from google.auth import environment_vars as google_auth_environment_vars
 from google.auth.transport import grpc as google_auth_transport_grpc
 from google.auth.transport import requests as google_auth_transport_requests
+import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import empty_pb2, messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import empty_pb2
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
@@ -59,10 +62,10 @@ async def _validate_status_code_and_details(call: aio.Call,
     await _expect_status_details(call, expected_details)
 
 
-def _validate_payload_type_and_length(
-        response: Union[messages_pb2.SimpleResponse, messages_pb2.
-                        StreamingOutputCallResponse], expected_type: Any,
-        expected_length: int) -> None:
+def _validate_payload_type_and_length(response: Union[
+    messages_pb2.SimpleResponse, messages_pb2.StreamingOutputCallResponse],
+                                      expected_type: Any,
+                                      expected_length: int) -> None:
     if response.payload.type is not expected_type:
         raise ValueError('expected payload type %s, got %s' %
                          (expected_type, type(response.payload.type)))
@@ -72,8 +75,8 @@ def _validate_payload_type_and_length(
 
 
 async def _large_unary_common_behavior(
-        stub: test_pb2_grpc.TestServiceStub, fill_username: bool,
-        fill_oauth_scope: bool, call_credentials: Optional[grpc.CallCredentials]
+    stub: test_pb2_grpc.TestServiceStub, fill_username: bool,
+    fill_oauth_scope: bool, call_credentials: Optional[grpc.CallCredentials]
 ) -> messages_pb2.SimpleResponse:
     size = 314159
     request = messages_pb2.SimpleRequest(
@@ -220,12 +223,15 @@ async def _cancel_after_first_response(stub: test_pb2_grpc.TestServiceStub):
 
 async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
     request_payload_size = 27182
+    time_limit = datetime.timedelta(seconds=1)
 
-    call = stub.FullDuplexCall(timeout=0.001)
+    call = stub.FullDuplexCall(timeout=time_limit.total_seconds())
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
-        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
+        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size),
+        response_parameters=(messages_pb2.ResponseParameters(
+            interval_us=int(time_limit.total_seconds() * 2 * 10**6)),))
     await call.write(request)
     await call.done_writing()
     try:
@@ -267,6 +273,10 @@ async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
                                                 message=details))
     await call.write(request)  # sends the initial request.
     await call.done_writing()
+    try:
+        await call.read()
+    except aio.AioRpcError as rpc_error:
+        assert rpc_error.code() == status
     await _validate_status_code_and_details(call, status, details)
 
 
@@ -283,16 +293,19 @@ async def _unimplemented_service(stub: test_pb2_grpc.UnimplementedServiceStub):
 async def _custom_metadata(stub: test_pb2_grpc.TestServiceStub):
     initial_metadata_value = "test_initial_metadata_value"
     trailing_metadata_value = b"\x0a\x0b\x0a\x0b\x0a\x0b"
-    metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
-                (_TRAILING_METADATA_KEY, trailing_metadata_value))
+    metadata = aio.Metadata(
+        (_INITIAL_METADATA_KEY, initial_metadata_value),
+        (_TRAILING_METADATA_KEY, trailing_metadata_value),
+    )
 
     async def _validate_metadata(call):
-        initial_metadata = dict(await call.initial_metadata())
+        initial_metadata = await call.initial_metadata()
         if initial_metadata[_INITIAL_METADATA_KEY] != initial_metadata_value:
             raise ValueError('expected initial metadata %s, got %s' %
                              (initial_metadata_value,
                               initial_metadata[_INITIAL_METADATA_KEY]))
-        trailing_metadata = dict(await call.trailing_metadata())
+
+        trailing_metadata = await call.trailing_metadata()
         if trailing_metadata[_TRAILING_METADATA_KEY] != trailing_metadata_value:
             raise ValueError('expected trailing metadata %s, got %s' %
                              (trailing_metadata_value,
@@ -425,10 +438,10 @@ _TEST_CASE_IMPLEMENTATION_MAPPING = {
 }
 
 
-async def test_interoperability(case: TestCase,
-                                stub: test_pb2_grpc.TestServiceStub,
-                                args: Optional[argparse.Namespace] = None
-                               ) -> None:
+async def test_interoperability(
+        case: TestCase,
+        stub: test_pb2_grpc.TestServiceStub,
+        args: Optional[argparse.Namespace] = None) -> None:
     method = _TEST_CASE_IMPLEMENTATION_MAPPING.get(case)
     if method is None:
         raise NotImplementedError(f'Test case "{case}" not implemented!')

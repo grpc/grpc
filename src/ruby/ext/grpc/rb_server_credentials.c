@@ -42,7 +42,7 @@ typedef struct grpc_rb_server_credentials {
 } grpc_rb_server_credentials;
 
 /* Destroys the server credentials instances. */
-static void grpc_rb_server_credentials_free(void* p) {
+static void grpc_rb_server_credentials_free_internal(void* p) {
   grpc_rb_server_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
@@ -57,6 +57,12 @@ static void grpc_rb_server_credentials_free(void* p) {
   }
 
   xfree(p);
+}
+
+/* Destroys the server credentials instances. */
+static void grpc_rb_server_credentials_free(void* p) {
+  grpc_rb_server_credentials_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
@@ -87,9 +93,9 @@ static const rb_data_type_t grpc_rb_server_credentials_data_type = {
 };
 
 /* Allocates ServerCredential instances.
-
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_server_credentials* wrapper = ALLOC(grpc_rb_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
@@ -202,7 +208,11 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   }
   xfree(key_cert_pairs);
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_ssl_server_credentials_create_ex() failed, "
+             "could not create a credentials, see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;
@@ -237,7 +247,13 @@ void Init_grpc_server_credentials() {
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
 grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v) {
   grpc_rb_server_credentials* wrapper = NULL;
+  Check_TypedStruct(v, &grpc_rb_server_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_server_credentials,
                        &grpc_rb_server_credentials_data_type, wrapper);
   return wrapper->wrapped;
+}
+
+/* Check if v is kind of ServerCredentials */
+bool grpc_rb_is_server_credentials(VALUE v) {
+  return rb_typeddata_is_kind_of(v, &grpc_rb_server_credentials_data_type);
 }

@@ -14,10 +14,11 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the naming tests."""
 
-import yaml
 import collections
 import hashlib
 import json
+
+import yaml
 
 _LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
 
@@ -44,6 +45,8 @@ def _resolver_test_cases(resolver_component_data):
                 target_name,
             'arg_names_and_values': [
                 ('target_name', target_name),
+                ('do_ordered_address_comparison',
+                 test_case['do_ordered_address_comparison']),
                 ('expected_addrs',
                  _build_expected_addrs_cmd_arg(test_case['expected_addrs'])),
                 ('expected_chosen_service_config',
@@ -63,7 +66,7 @@ def _resolver_test_cases(resolver_component_data):
 def main():
     resolver_component_data = ''
     with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
-        resolver_component_data = yaml.load(f)
+        resolver_component_data = yaml.load(f, Loader=yaml.FullLoader)
 
     json = {
         'resolver_tests_common_zone_name':

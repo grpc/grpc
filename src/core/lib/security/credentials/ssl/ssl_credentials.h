@@ -38,6 +38,11 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
+  // version should be done for testing purposes only.
+  void set_min_tls_version(grpc_tls_version min_tls_version);
+  void set_max_tls_version(grpc_tls_version max_tls_version);
+
  private:
   void build_config(const char* pem_root_certs,
                     grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
@@ -59,12 +64,12 @@ struct grpc_ssl_server_certificate_config_fetcher {
 
 class grpc_ssl_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_ssl_server_credentials(
+  explicit grpc_ssl_server_credentials(
       const grpc_ssl_server_credentials_options& options);
   ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   bool has_cert_config_fetcher() const {
     return certificate_config_fetcher_.cb != nullptr;
@@ -76,6 +81,11 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
                                           config);
   }
+
+  // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
+  // version should be done for testing purposes only.
+  void set_min_tls_version(grpc_tls_version min_tls_version);
+  void set_max_tls_version(grpc_tls_version max_tls_version);
 
   const grpc_ssl_server_config& config() const { return config_; }
 

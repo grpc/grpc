@@ -20,8 +20,8 @@ option objc_class_prefix = "RMT";
 import "imported-with-dash.proto";
 
 message TestMessage {
-  int32 dummy = 1;
+  int32 phony = 1;
 }
 
-service DummyService {
+service PhonyService {
 }

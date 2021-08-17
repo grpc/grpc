@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -56,8 +58,8 @@ typedef struct grpc_combiner grpc_combiner;
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
-grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
-grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts);
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts);
 grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
 
@@ -111,7 +113,7 @@ class ExecCtx {
   }
 
   /** Parameterised Constructor */
-  ExecCtx(uintptr_t fl) : flags_(fl) {
+  explicit ExecCtx(uintptr_t fl) : flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       grpc_core::Fork::IncExecCtxCount();
     }
@@ -132,7 +134,12 @@ class ExecCtx {
   ExecCtx(const ExecCtx&) = delete;
   ExecCtx& operator=(const ExecCtx&) = delete;
 
-  unsigned starting_cpu() const { return starting_cpu_; }
+  unsigned starting_cpu() {
+    if (starting_cpu_ == std::numeric_limits<unsigned>::max()) {
+      starting_cpu_ = gpr_cpu_current_cpu();
+    }
+    return starting_cpu_;
+  }
 
   struct CombinerData {
     /* currently active combiner: updated only via combiner.c */
@@ -221,7 +228,7 @@ class ExecCtx {
   }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error* error);
+                  grpc_error_handle error);
 
   static void RunList(const DebugLocation& location, grpc_closure_list* list);
 
@@ -239,7 +246,7 @@ class ExecCtx {
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
 
-  unsigned starting_cpu_ = gpr_cpu_current_cpu();
+  unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
@@ -301,7 +308,9 @@ class ApplicationCallbackExecCtx {
   ApplicationCallbackExecCtx() { Set(this, flags_); }
 
   /** Parameterised Constructor */
-  ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) { Set(this, flags_); }
+  explicit ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) {
+    Set(this, flags_);
+  }
 
   ~ApplicationCallbackExecCtx() {
     if (reinterpret_cast<ApplicationCallbackExecCtx*>(
@@ -324,9 +333,15 @@ class ApplicationCallbackExecCtx {
     }
   }
 
+  uintptr_t Flags() { return flags_; }
+
+  static ApplicationCallbackExecCtx* Get() {
+    return reinterpret_cast<ApplicationCallbackExecCtx*>(
+        gpr_tls_get(&callback_exec_ctx_));
+  }
+
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
-    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
-            gpr_tls_get(&callback_exec_ctx_)) == nullptr) {
+    if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
         grpc_core::Fork::IncExecCtxCount();
       }
@@ -334,13 +349,11 @@ class ApplicationCallbackExecCtx {
     }
   }
 
-  static void Enqueue(grpc_experimental_completion_queue_functor* functor,
-                      int is_success) {
+  static void Enqueue(grpc_completion_queue_functor* functor, int is_success) {
     functor->internal_success = is_success;
     functor->internal_next = nullptr;
 
-    auto* ctx = reinterpret_cast<ApplicationCallbackExecCtx*>(
-        gpr_tls_get(&callback_exec_ctx_));
+    ApplicationCallbackExecCtx* ctx = Get();
 
     if (ctx->head_ == nullptr) {
       ctx->head_ = functor;
@@ -357,10 +370,12 @@ class ApplicationCallbackExecCtx {
   /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
   static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
+  static bool Available() { return Get() != nullptr; }
+
  private:
   uintptr_t flags_{0u};
-  grpc_experimental_completion_queue_functor* head_{nullptr};
-  grpc_experimental_completion_queue_functor* tail_{nullptr};
+  grpc_completion_queue_functor* head_{nullptr};
+  grpc_completion_queue_functor* tail_{nullptr};
   GPR_TLS_CLASS_DECL(callback_exec_ctx_);
 };
 }  // namespace grpc_core

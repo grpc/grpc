@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -44,36 +45,24 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
-// should be skipped based on a decision made at SetUp time. In particular, any
-// callback tests can only be run if the iomgr can run in the background or if
-// the transport is in-process.
-#define MAYBE_SKIP_TEST \
-  do {                  \
-    if (do_not_test_) { \
-      return;           \
-    }                   \
-  } while (0)
-
 namespace grpc {
 namespace testing {
 namespace {
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
   explicit CallbackTestServiceImpl() {}
 
   void SetAllocatorMutator(
-      std::function<void(experimental::RpcAllocatorState* allocator_state,
+      std::function<void(RpcAllocatorState* allocator_state,
                          const EchoRequest* req, EchoResponse* resp)>
           mutator) {
-    allocator_mutator_ = mutator;
+    allocator_mutator_ = std::move(mutator);
   }
 
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
       allocator_mutator_(context->GetRpcAllocatorState(), request, response);
@@ -84,8 +73,8 @@ class CallbackTestServiceImpl
   }
 
  private:
-  std::function<void(experimental::RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp)>
+  std::function<void(RpcAllocatorState* allocator_state, const EchoRequest* req,
+                     EchoResponse* resp)>
       allocator_mutator_;
 };
 
@@ -93,11 +82,11 @@ enum class Protocol { INPROC, TCP };
 
 class TestScenario {
  public:
-  TestScenario(Protocol protocol, const grpc::string& creds_type)
+  TestScenario(Protocol protocol, const std::string& creds_type)
       : protocol(protocol), credentials_type(creds_type) {}
   void Log() const;
   Protocol protocol;
-  const grpc::string credentials_type;
+  const std::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -116,20 +105,11 @@ void TestScenario::Log() const {
 class MessageAllocatorEnd2endTestBase
     : public ::testing::TestWithParam<TestScenario> {
  protected:
-  MessageAllocatorEnd2endTestBase() {
-    GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
-  }
+  MessageAllocatorEnd2endTestBase() { GetParam().Log(); }
 
-  ~MessageAllocatorEnd2endTestBase() = default;
+  ~MessageAllocatorEnd2endTestBase() override = default;
 
-  void CreateServer(
-      experimental::MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -143,7 +123,13 @@ class MessageAllocatorEnd2endTestBase
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();
-    is_server_started_ = true;
+  }
+
+  void DestroyServer() {
+    if (server_) {
+      server_->Shutdown();
+      server_.reset();
+    }
   }
 
   void ResetStub() {
@@ -165,30 +151,28 @@ class MessageAllocatorEnd2endTestBase
   }
 
   void TearDown() override {
-    if (is_server_started_) {
-      server_->Shutdown();
-    }
+    DestroyServer();
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);
     }
   }
 
   void SendRpcs(int num_rpcs) {
-    grpc::string test_string("");
+    std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;
       ClientContext cli_ctx;
 
-      test_string += grpc::string(1024, 'x');
+      test_string += std::string(1024, 'x');
       request.set_message(test_string);
-      grpc::string val;
+      std::string val;
       cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());
@@ -205,8 +189,6 @@ class MessageAllocatorEnd2endTestBase
     }
   }
 
-  bool do_not_test_{false};
-  bool is_server_started_{false};
   int picked_port_{0};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -218,7 +200,6 @@ class MessageAllocatorEnd2endTestBase
 class NullAllocatorTest : public MessageAllocatorEnd2endTestBase {};
 
 TEST_P(NullAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   CreateServer(nullptr);
   ResetStub();
   SendRpcs(1);
@@ -226,14 +207,12 @@ TEST_P(NullAllocatorTest, SimpleRpc) {
 
 class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class SimpleAllocator
-      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
+  class SimpleAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
-      MessageHolderImpl(int* request_deallocation_count,
-                        int* messages_deallocation_count)
+      MessageHolderImpl(std::atomic_int* request_deallocation_count,
+                        std::atomic_int* messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
         set_request(new EchoRequest);
@@ -258,39 +237,39 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       }
 
      private:
-      int* request_deallocation_count_;
-      int* messages_deallocation_count_;
+      std::atomic_int* const request_deallocation_count_;
+      std::atomic_int* const messages_deallocation_count_;
     };
-    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl(&request_deallocation_count,
                                    &messages_deallocation_count);
     }
     int allocation_count = 0;
-    int request_deallocation_count = 0;
-    int messages_deallocation_count = 0;
+    std::atomic_int request_deallocation_count{0};
+    std::atomic_int messages_deallocation_count{0};
   };
 };
 
 TEST_P(SimpleAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(0, allocator->request_deallocation_count);
 }
 
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  auto mutator = [](experimental::RpcAllocatorState* allocator_state,
-                    const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
+                    EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -302,19 +281,21 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(kRpcCount, allocator->request_deallocation_count);
 }
 
 TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](
-                     experimental::RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
+                                      const EchoRequest* req,
+                                      EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -326,6 +307,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
+  // messages_deallocaton_count is updated in Release after server side OnDone.
+  // Destroy server to make sure it has been updated.
+  DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(0, allocator->request_deallocation_count);
@@ -337,11 +321,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
 
 class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class ArenaAllocator
-      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
+  class ArenaAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
         set_request(
@@ -355,8 +337,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
      private:
       google::protobuf::Arena arena_;
     };
-    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl;
     }
@@ -365,7 +346,6 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
 };
 
 TEST_P(ArenaAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<ArenaAllocator> allocator(new ArenaAllocator);
   CreateServer(allocator.get());
@@ -376,7 +356,7 @@ TEST_P(ArenaAllocatorTest, SimpleRpc) {
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types{
+  std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the
@@ -416,10 +396,7 @@ INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  // The grpc_init is to cover the MAYBE_SKIP_TEST.
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

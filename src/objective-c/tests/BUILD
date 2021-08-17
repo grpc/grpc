@@ -174,7 +174,7 @@ grpc_objc_testing_library(
 
 ios_unit_test(
     name = "UnitTests",
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     test_host = ":ios-host",
     deps = [
         ":APIv2Tests-lib",
@@ -188,7 +188,7 @@ ios_unit_test(
 
 ios_unit_test(
     name = "InteropTests",
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     test_host = ":ios-host",
     deps = [
         ":InteropTestsLocalCleartext-lib",
@@ -199,7 +199,7 @@ ios_unit_test(
 
 macos_unit_test(
     name = "MacTests",
-    minimum_os_version = "10.9",
+    minimum_os_version = "10.10",
     deps = [
         ":APIv2Tests-lib",
         ":InteropTestsLocalCleartext-lib",

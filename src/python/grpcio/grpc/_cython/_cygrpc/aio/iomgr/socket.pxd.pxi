@@ -24,10 +24,14 @@ cdef class _AsyncioSocket:
         object _task_read
         object _task_write
         object _task_connect
+        object _task_listen
         char * _read_buffer
         # Caches the picked event loop, so we can avoid the 30ns overhead each
         # time we need access to the event loop.
         object _loop
+        # TODO(lidiz) Drop after 3.6 deprecation. Python 3.7 introduces methods
+        # like `is_closing()` to help graceful shutdown.
+        bint _closed
 
         # Client-side attributes
         grpc_custom_connect_callback _grpc_connect_cb
