@@ -94,6 +94,7 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/test_config.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 #include "src/cpp/server/csds/csds.h"
