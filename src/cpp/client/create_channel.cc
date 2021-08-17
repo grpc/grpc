@@ -16,10 +16,11 @@
  *
  */
 
+#include <grpcpp/create_channel.h>
+
 #include <memory>
 
 #include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>

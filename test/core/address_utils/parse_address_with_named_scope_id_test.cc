@@ -19,24 +19,23 @@
 #include <net/if.h>
 #include <string.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
-
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
+#endif
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
     const char* target, const struct sockaddr_in6 result_from_getaddrinfo) {

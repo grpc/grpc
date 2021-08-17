@@ -17,10 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpcpp/alarm.h>
+
 #include <memory>
 
 #include <grpc/support/log.h>
-#include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>

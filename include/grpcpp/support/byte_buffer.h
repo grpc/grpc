@@ -20,6 +20,7 @@
 #define GRPCPP_SUPPORT_BYTE_BUFFER_H
 
 #include <grpc/byte_buffer.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>

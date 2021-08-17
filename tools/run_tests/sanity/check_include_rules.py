@@ -17,26 +17,32 @@
 import os
 import re
 import sys
+import collections
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
 fixed = []
 
 
-def is_own_header(filename, header):
+def is_own_header(filename, header, header_type):
     (f_dirname, f_basename) = os.path.split(filename)
     (f_basename, f_ext) = os.path.splitext(f_basename)
 
     (h_dirname, h_basename) = os.path.split(header)
     (h_basename, h_ext) = os.path.splitext(h_basename)
 
-    if f_dirname == h_dirname and f_basename == h_basename:
-        return True
-    if f_dirname.startswith('test'):
-        if f_basename.endswith('_test'):
-            f_basename = f_basename[:-len('_test')]
-        if f_basename == h_basename:
+    if header_type == 'project':
+        if f_dirname == h_dirname and f_basename == h_basename:
             return True
+        if f_dirname.startswith('test'):
+            if f_basename.endswith('_test'):
+                f_basename = f_basename[:-len('_test')]
+            if f_basename == h_basename:
+                return True
+    elif header_type == 'system':
+        if h_dirname in ['grpcpp', 'grpc']:
+            if f_basename == h_basename:
+                return True
     return False
 
 
@@ -48,18 +54,23 @@ def fix(filename):
     if filename in [
             'include/grpc/support/port_platform.h',
             'include/grpc/impl/codegen/port_platform.h',
-            'test/core/end2end/end2end_tests.cc',
+            'test/core/end2end/end2end_nosec_tests.cc',
             'test/core/surface/public_headers_must_be_c89.c'
     ]:
         return
-    system_includes = []
-    project_includes = []
     with open(filename) as f:
         text = f.read()
     state = "preamble"
+    # text before includes
     preamble = []
+    # text after includes
     postamble = []
+    # currently buffering comment
     comment = []
+    # one include file
+    Include = collections.namedtuple(
+        "Include", ["path", "category", "comments_above", "comment_right"])
+    # list of all includes
     includes = []
     warned_about_skipping = False
     for line in text.splitlines():
@@ -80,10 +91,11 @@ def fix(filename):
                 comment = [line for line in comment if line != '']
                 if m:
                     includes.append(
-                        (m.group(1), "project", comment, m.group(2)))
+                        Include(m.group(1), "project", comment, m.group(2)))
                 m = re.search(r'<([^>]*)>(.*)', line)
                 if m:
-                    includes.append((m.group(1), "system", comment, m.group(2)))
+                    includes.append(
+                        Include(m.group(1), "system", comment, m.group(2)))
                 comment = []
             else:
                 state = "postamble"
@@ -107,14 +119,16 @@ def fix(filename):
 
     new_includes = []
     for include in includes:
-        if include[1] == "project" and include[0].startswith('include/grpc'):
-            include = (include[0][len('include/'):], "system", include[2],
-                       include[3])
-        if include[1] == "project" and include[0].startswith('grpc'):
-            include = (include[0], "system", include[2], include[3])
+        if include.category == "project" and include.path.startswith(
+                'include/grpc'):
+            include = Include(include.path[len('include/'):], "system",
+                              include.comments_above, include.comment_right)
+        if include.category == "project" and include.path.startswith('grpc'):
+            include = Include(include.path, "system", include.comments_above,
+                              include.comment_right)
         found = False
         for new_include in new_includes:
-            if new_include[0] == include[0] and new_include[1] == include[1]:
+            if new_include.path == include.path and new_include.category == include.category:
                 found = True
         if not found:
             new_includes.append(include)
@@ -122,23 +136,23 @@ def fix(filename):
 
     # first thing must be port_platform
     new_includes = []
-    has_port_platform = False
+    needs_port_platform = False
     for include in includes:
-        if include[1] == "system" and include[
+        if include.category == "system" and include[
                 0] == 'grpc/support/port_platform.h':
-            has_port_platform = True
+            needs_port_platform = True
             continue
-        if include[1] == "system" and include[
+        if include.category == "system" and include[
                 0] == 'grpc/impl/codegen/port_platform.h':
-            has_port_platform = True
+            needs_port_platform = True
             continue
         new_includes.append(include)
     includes = new_includes
     if filename.startswith('include/grpc/'):
-        has_port_platform = True
+        needs_port_platform = True
     if filename.startswith('src/core/'):
-        has_port_platform = True
-    if has_port_platform:
+        needs_port_platform = True
+    if needs_port_platform:
         if '/impl/codegen/' in filename:
             out += '\n#include <grpc/impl/codegen/port_platform.h>\n'
         else:
@@ -147,8 +161,13 @@ def fix(filename):
     # Then own header
     new_includes = []
     for include in includes:
-        if include[1] == "project" and is_own_header(filename, include[0]):
-            out += '\n#include "%s"%s\n' % (include[0], include[3])
+        if is_own_header(filename, include.path, include.category):
+            if include.category == "project":
+                out += '\n#include "%s"%s\n' % (include.path,
+                                                include.comment_right)
+            else:
+                out += '\n#include <%s>%s\n' % (include.path,
+                                                include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes
@@ -157,14 +176,14 @@ def fix(filename):
     new_includes = []
     first = True
     for include in includes:
-        if include[1] == "system" and os.path.splitext(
-                include[0])[1] != '' and not include[0].startswith('grpc'):
+        if include.category == "system" and os.path.splitext(
+                include.path)[1] != '' and not include.path.startswith('grpc'):
             if first:
                 out += '\n'
                 first = False
-            for line in include[2]:
+            for line in include.comments_above:
                 out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include[0], include[3])
+            out += '#include <%s>%s\n' % (include.path, include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes
@@ -173,14 +192,14 @@ def fix(filename):
     new_includes = []
     first = True
     for include in includes:
-        if include[1] == "system" and os.path.splitext(
-                include[0])[1] == '' and not include[0].startswith('grpc'):
+        if include.category == "system" and os.path.splitext(
+                include.path)[1] == '' and not include.path.startswith('grpc'):
             if first:
                 out += '\n'
                 first = False
-            for line in include[2]:
+            for line in include.comments_above:
                 out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include[0], include[3])
+            out += '#include <%s>%s\n' % (include.path, include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes
@@ -189,16 +208,17 @@ def fix(filename):
     new_includes = []
     first = True
     for include in includes:
-        if (include[1] == "project" and not include[0].startswith('src/') and
-                not include[0].startswith('test/') and
-                not include[0].startswith('grpc/') and
-                not include[0].startswith('grpcpp/')):
+        if (include.category == "project" and
+                not include.path.startswith('src/') and
+                not include.path.startswith('test/') and
+                not include.path.startswith('grpc/') and
+                not include.path.startswith('grpcpp/')):
             if first:
                 out += '\n'
                 first = False
-            for line in include[2]:
+            for line in include.comments_above:
                 out += '%s\n' % line
-            out += '#include "%s"%s\n' % (include[0], include[3])
+            out += '#include "%s"%s\n' % (include.path, include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes
@@ -207,13 +227,13 @@ def fix(filename):
     new_includes = []
     first = True
     for include in includes:
-        if include[1] == "system" and include[0].startswith('grpc'):
+        if include.category == "system" and include.path.startswith('grpc'):
             if first:
                 out += '\n'
                 first = False
-            for line in include[2]:
+            for line in include.comments_above:
                 out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include[0], include[3])
+            out += '#include <%s>%s\n' % (include.path, include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes
@@ -222,13 +242,13 @@ def fix(filename):
     new_includes = []
     first = True
     for include in includes:
-        if include[1] == "project":
+        if include.category == "project":
             if first:
                 out += '\n'
                 first = False
-            for line in include[2]:
+            for line in include.comments_above:
                 out += '%s\n' % line
-            out += '#include "%s"%s\n' % (include[0], include[3])
+            out += '#include "%s"%s\n' % (include.path, include.comment_right)
         else:
             new_includes.append(include)
     includes = new_includes

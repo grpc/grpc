@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/compression.h>
+
 #include <stdlib.h>
 #include <string.h>
-
-#include <grpc/compression.h>
 
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/server_builder.h>
+
 #include <utility>
 
 #include <grpc/support/cpu.h>
@@ -23,7 +25,6 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
