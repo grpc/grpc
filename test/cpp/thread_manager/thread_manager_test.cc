@@ -16,6 +16,12 @@
  *is % allowed in string
  */
 
+#include <grpc/support/port_platform.h>
+
+#include "src/cpp/thread_manager/thread_manager.h"
+
+#include <gtest/gtest.h>
+
 #include <atomic>
 #include <chrono>
 #include <climits>
@@ -23,13 +29,9 @@
 #include <thread>
 
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/cpp/thread_manager/thread_manager.h"
 #include "test/core/util/test_config.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace {

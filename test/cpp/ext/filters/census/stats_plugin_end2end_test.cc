@@ -24,13 +24,15 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"

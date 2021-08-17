@@ -16,7 +16,13 @@
  *
  */
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <climits>
+#include <iostream>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -28,21 +34,13 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
-
-#include "absl/types/optional.h"
+#include <grpcpp/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include <grpcpp/test/mock_stream.h>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
 
 using grpc::testing::DefaultReactorTestPeer;
 using grpc::testing::EchoRequest;

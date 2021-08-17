@@ -15,13 +15,14 @@
 //
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <memory>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
-#include <gtest/gtest.h>
-
-#include <memory>
 
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"

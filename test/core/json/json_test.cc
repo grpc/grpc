@@ -16,19 +16,18 @@
  *
  */
 
+#include "src/core/lib/json/json.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/json/json.h"
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

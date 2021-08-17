@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_api.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -89,7 +91,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"

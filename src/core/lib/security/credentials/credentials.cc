@@ -23,6 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
@@ -30,12 +36,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/api_trace.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 /* -- Common. -- */
 

@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -28,6 +26,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/timer.h"

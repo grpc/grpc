@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/ext/filters/census/client_filter.h"
+
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "src/cpp/ext/filters/census/client_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -30,6 +30,7 @@
 #include "opencensus/tags/context_util.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"

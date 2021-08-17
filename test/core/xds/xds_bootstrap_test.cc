@@ -14,19 +14,20 @@
 // limitations under the License.
 //
 
+#include "src/core/ext/xds/xds_bootstrap.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <regex>
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/test_config.h"

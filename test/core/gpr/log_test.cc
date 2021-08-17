@@ -16,10 +16,9 @@
  *
  */
 
+#include <gtest/gtest.h>
 #include <stdbool.h>
 #include <string.h>
-
-#include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 

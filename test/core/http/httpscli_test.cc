@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -28,6 +26,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/util/port.h"

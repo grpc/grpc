@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/health/health_check_client.h"
+
 #include <stdint.h>
 #include <stdio.h>
-
-#include "src/core/ext/filters/client_channel/health/health_check_client.h"
 
 #include "upb/upb.hpp"
 

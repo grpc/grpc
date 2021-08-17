@@ -19,7 +19,7 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 

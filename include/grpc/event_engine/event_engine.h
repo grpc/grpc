@@ -23,9 +23,9 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "grpc/event_engine/endpoint_config.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {

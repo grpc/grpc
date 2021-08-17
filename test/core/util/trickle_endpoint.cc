@@ -16,10 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "test/core/util/passthru_endpoint.h"
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -28,7 +24,9 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/util/passthru_endpoint.h"
 
 #define WRITE_BUFFER_SIZE (2 * 1024 * 1024)
 

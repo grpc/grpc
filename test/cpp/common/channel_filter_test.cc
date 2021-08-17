@@ -16,10 +16,10 @@
 
 #include "src/cpp/common/channel_filter.h"
 
+#include <gtest/gtest.h>
 #include <limits.h>
 
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {

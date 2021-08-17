@@ -15,13 +15,14 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
+
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
 
 namespace grpc_binder {

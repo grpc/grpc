@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <thread>
 
@@ -36,8 +38,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {

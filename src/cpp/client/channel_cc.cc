@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpcpp/channel.h>
-
 #include <cstring>
 #include <memory>
 
@@ -27,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>

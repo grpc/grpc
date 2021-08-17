@@ -14,10 +14,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <list>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <list>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"

@@ -23,7 +23,9 @@
 
 #ifndef GRPC_CUSTOM_MESSAGE
 #ifdef GRPC_USE_PROTO_LITE
+
 #include <google/protobuf/message_lite.h>
+
 #define GRPC_CUSTOM_MESSAGE ::google::protobuf::MessageLite
 #define GRPC_CUSTOM_MESSAGELITE ::google::protobuf::MessageLite
 #else

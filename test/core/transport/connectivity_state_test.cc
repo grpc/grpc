@@ -18,9 +18,8 @@
 
 #include "src/core/lib/transport/connectivity_state.h"
 
-#include <string.h>
-
 #include <gtest/gtest.h>
+#include <string.h>
 
 #include <grpc/support/log.h>
 

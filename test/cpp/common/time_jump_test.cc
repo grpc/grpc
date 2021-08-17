@@ -16,15 +16,18 @@
  *
  */
 
+#include <gtest/gtest.h>
 #include <spawn.h>
+
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "absl/time/time.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -33,8 +36,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
-
-#include "absl/time/time.h"
 
 extern char** environ;
 

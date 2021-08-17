@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll
    epoll_create() or epoll_create1() */

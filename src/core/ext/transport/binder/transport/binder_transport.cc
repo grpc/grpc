@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <memory>
@@ -27,6 +24,9 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"

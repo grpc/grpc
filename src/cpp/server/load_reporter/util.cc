@@ -16,13 +16,12 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpcpp/ext/server_load_reporting.h>
+#include <grpc/support/port_platform.h>
 
 #include <cmath>
 
 #include <grpc/support/log.h>
+#include <grpcpp/ext/server_load_reporting.h>
 
 namespace grpc {
 namespace load_reporter {

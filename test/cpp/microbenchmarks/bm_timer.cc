@@ -18,6 +18,7 @@
 
 #include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <atomic>
 #include <vector>
 

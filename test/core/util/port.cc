@@ -17,7 +17,9 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
+
 #include "test/core/util/test_config.h"
+
 #if defined(GRPC_TEST_PICK_PORT)
 
 #include "test/core/util/port.h"

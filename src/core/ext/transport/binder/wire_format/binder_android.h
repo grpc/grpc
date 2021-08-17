@@ -17,7 +17,7 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
@@ -28,6 +28,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 

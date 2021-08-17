@@ -16,11 +16,11 @@
  *
  */
 
+#include "test/core/util/subprocess.h"
+
 #include "test/cpp/util/subprocess.h"
 
 #include <vector>
-
-#include "test/core/util/subprocess.h"
 
 namespace grpc {
 

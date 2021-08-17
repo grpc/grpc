@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
-
-#include <grpc/support/log.h>
 
 #include <functional>
 #include <limits>
@@ -26,6 +24,9 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"

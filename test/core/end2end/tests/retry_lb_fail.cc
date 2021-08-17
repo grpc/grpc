@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +31,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 namespace grpc_core {

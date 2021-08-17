@@ -19,8 +19,9 @@
 #ifndef TEST_QPS_HISTOGRAM_H
 #define TEST_QPS_HISTOGRAM_H
 
-#include "src/proto/grpc/testing/stats.pb.h"
 #include "test/core/util/histogram.h"
+
+#include "src/proto/grpc/testing/stats.pb.h"
 
 namespace grpc {
 namespace testing {

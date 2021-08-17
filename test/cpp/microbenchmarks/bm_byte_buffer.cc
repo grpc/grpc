@@ -18,9 +18,10 @@
 
 /* This benchmark exists to show that byte-buffer copy is size-independent */
 
+#include <benchmark/benchmark.h>
+
 #include <memory>
 
-#include <benchmark/benchmark.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
 

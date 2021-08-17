@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 

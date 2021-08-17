@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include <string.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <string.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"

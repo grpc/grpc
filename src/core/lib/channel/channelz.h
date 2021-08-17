@@ -19,15 +19,15 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include <set>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"

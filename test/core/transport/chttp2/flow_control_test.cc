@@ -18,14 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+
+#include <gmock/gmock.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <functional>
 #include <set>
 #include <thread>
-
-#include <gmock/gmock.h>
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -36,11 +37,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/channel.h"
-
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

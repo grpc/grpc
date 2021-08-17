@@ -19,13 +19,12 @@
 
 /* This file is auto-generated */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
 
+#include "test/core/end2end/end2end_tests.h"
 
 static bool g_pre_init_called = false;
 

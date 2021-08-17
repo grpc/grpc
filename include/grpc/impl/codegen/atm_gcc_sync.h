@@ -21,6 +21,7 @@
 
 /* variant of atm_platform.h for gcc and gcc-like compiers with __sync_*
    interface */
+
 #include <grpc/impl/codegen/port_platform.h>
 
 typedef intptr_t gpr_atm;

@@ -21,11 +21,10 @@
 #include "src/core/lib/compression/message_compress.h"
 
 #include <string.h>
+#include <zlib.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include <zlib.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 

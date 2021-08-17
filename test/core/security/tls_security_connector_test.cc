@@ -19,12 +19,13 @@
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
 #include <gmock/gmock.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"

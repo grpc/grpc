@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -24,7 +26,6 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,11 +36,10 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/util/passthru_endpoint.h"
-#include "test/core/util/port.h"
-
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/passthru_endpoint.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {

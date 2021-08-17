@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 #include <memory>
 
 #include <grpc/grpc.h>

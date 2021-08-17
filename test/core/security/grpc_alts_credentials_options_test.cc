@@ -16,14 +16,14 @@
  *
  */
 
+#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_1 "abc@google.com"
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_2 "def@google.com"

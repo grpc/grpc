@@ -19,19 +19,19 @@
 #ifndef GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 
+#include <gtest/gtest.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
-
-#include <string>
-#include <thread>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"

@@ -16,6 +16,9 @@
  *
  */
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -25,9 +28,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"

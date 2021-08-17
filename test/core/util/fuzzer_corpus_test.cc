@@ -17,15 +17,17 @@
  */
 
 #include <dirent.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <gtest/gtest.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"

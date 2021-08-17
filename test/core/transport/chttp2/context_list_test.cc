@@ -16,19 +16,20 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 
 #include <gtest/gtest.h>
+
 #include <new>
 #include <vector>
 
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
-
-#include <grpc/grpc.h>
 
 namespace grpc_core {
 namespace testing {

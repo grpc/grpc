@@ -16,14 +16,15 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>

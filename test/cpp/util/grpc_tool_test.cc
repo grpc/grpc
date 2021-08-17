@@ -18,6 +18,14 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
+#include <gtest/gtest.h>
+
+#include <chrono>
+#include <sstream>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -27,13 +35,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <chrono>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
-
 #include "src/core/ext/xds/certificate_provider_registry.h"
+
+#include <gmock/gmock.h>
 
 #include "test/core/util/test_config.h"
 

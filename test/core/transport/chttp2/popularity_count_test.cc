@@ -16,11 +16,13 @@
  *
  */
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 
 #include <gtest/gtest.h>
+
 #include <array>
-#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 
 namespace grpc_core {
 namespace testing {

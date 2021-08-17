@@ -16,12 +16,13 @@
  *
  */
 
+#include <net/if.h>
+#include <string.h>
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#include <net/if.h>
-#include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif

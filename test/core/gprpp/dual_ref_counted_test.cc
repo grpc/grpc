@@ -16,10 +16,10 @@
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 
-#include <set>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <set>
 
 #include "test/core/util/test_config.h"
 

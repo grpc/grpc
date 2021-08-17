@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EPOLL_CREATE1
 

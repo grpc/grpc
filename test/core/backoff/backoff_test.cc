@@ -18,12 +18,13 @@
 
 #include "src/core/lib/backoff/backoff.h"
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 
 namespace grpc {

@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <thread>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <thread>
 
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>

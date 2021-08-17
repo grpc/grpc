@@ -55,10 +55,10 @@
 // using that endpoint. Because of various transitive includes in uv.h,
 // including windows.h on Windows, uv.h must be included before other system
 // headers. Therefore, sockaddr.h must always be included first.
+
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -69,7 +69,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
-
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer_reader.h>
@@ -81,7 +80,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
@@ -101,6 +99,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"

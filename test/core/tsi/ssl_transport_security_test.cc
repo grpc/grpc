@@ -18,13 +18,14 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"

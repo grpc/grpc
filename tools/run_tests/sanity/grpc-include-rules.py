@@ -48,6 +48,8 @@ def fix(filename):
     if filename in [
             'include/grpc/support/port_platform.h',
             'include/grpc/impl/codegen/port_platform.h',
+            'test/core/end2end/end2end_tests.cc',
+            'test/core/surface/public_headers_must_be_c89.c'
     ]:
         return
     system_includes = []

@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -23,8 +25,6 @@
 
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 

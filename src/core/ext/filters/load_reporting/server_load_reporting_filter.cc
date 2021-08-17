@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+
 #include <string.h>
 
 #include <string>
@@ -31,7 +33,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
-#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"

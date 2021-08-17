@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <gmock/gmock.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,7 +26,9 @@
 #include <set>
 #include <thread>
 
-#include <gmock/gmock.h>
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -35,10 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -51,12 +50,10 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 

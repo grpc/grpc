@@ -18,10 +18,10 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 
-#include <set>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <set>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"

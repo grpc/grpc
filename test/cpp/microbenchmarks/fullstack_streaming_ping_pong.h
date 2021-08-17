@@ -22,7 +22,9 @@
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
 
 #include <benchmark/benchmark.h>
+
 #include <sstream>
+
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"

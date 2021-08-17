@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include "src/core/lib/gprpp/global_config_custom.h"
 // --------------------------------------------------------------------
 // How to use global configuration variables:
 //
@@ -68,7 +69,6 @@
 // between test cases because grpc init and shutdown can ignore changes.
 // It's considered safe to set global configs before the first call to
 // grpc_init().
-
 // --------------------------------------------------------------------
 // How to customize the global configuration system:
 //
@@ -88,9 +88,6 @@
 //
 //   bool gpr_global_config_get_test();
 //   void gpr_global_config_set_test(bool value);
-
 #include "src/core/lib/gprpp/global_config_env.h"
-
-#include "src/core/lib/gprpp/global_config_custom.h"
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H */

@@ -20,10 +20,9 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <grpc/grpc.h>
-
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

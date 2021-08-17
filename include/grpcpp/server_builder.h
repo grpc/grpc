@@ -19,12 +19,12 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <climits>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>

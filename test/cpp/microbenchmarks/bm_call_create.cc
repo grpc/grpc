@@ -21,6 +21,7 @@
 
 #include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <sstream>
 
 #include <grpc/grpc.h>

@@ -17,6 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_TEST_PICK_PORT

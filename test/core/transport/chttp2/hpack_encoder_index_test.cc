@@ -16,12 +16,14 @@
  *
  */
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 #include <gtest/gtest.h>
+
 #include <random>
 #include <unordered_map>
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {
 namespace testing {

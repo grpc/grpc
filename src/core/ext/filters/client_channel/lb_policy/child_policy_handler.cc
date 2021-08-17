@@ -16,9 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstring>
-
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+
+#include <cstring>
 
 #include "absl/strings/str_cat.h"
 

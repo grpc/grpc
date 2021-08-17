@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/alts/crypt/gsec.h"
-
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/err.h>
@@ -28,6 +26,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+
+#include "src/core/tsi/alts/crypt/gsec.h"
 
 constexpr size_t kKdfKeyLen = 32;
 constexpr size_t kKdfCounterLen = 6;

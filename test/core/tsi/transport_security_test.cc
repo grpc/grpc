@@ -18,6 +18,7 @@
 
 #include "src/core/tsi/transport_security.h"
 
+#include <openssl/crypto.h>
 #include <string.h>
 
 #include <string>
@@ -27,8 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
-#include <openssl/crypto.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"

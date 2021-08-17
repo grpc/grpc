@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <string.h>
 
@@ -27,6 +26,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 static bool g_disable_ping_ack = false;
 

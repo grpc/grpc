@@ -16,6 +16,11 @@
  *
  */
 
+#include <gtest/gtest.h>
+
+#include <mutex>
+#include <thread>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -28,10 +33,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
-
-#include <mutex>
-#include <thread>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint.h"

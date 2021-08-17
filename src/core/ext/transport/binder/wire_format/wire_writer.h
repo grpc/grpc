@@ -15,12 +15,12 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_WRITER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_WRITER_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include <string>
 #include <vector>
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/transaction.h"

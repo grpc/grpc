@@ -19,11 +19,13 @@
 /* Microbenchmarks around CHTTP2 HPACK operations */
 
 #include <benchmark/benchmark.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <string.h>
+
 #include <memory>
 #include <sstream>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -32,7 +34,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

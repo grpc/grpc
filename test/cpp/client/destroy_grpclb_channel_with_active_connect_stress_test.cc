@@ -16,14 +16,14 @@
  *
  */
 
+#include <gmock/gmock.h>
+
 #include <atomic>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <thread>
-
-#include <gmock/gmock.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -44,7 +44,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

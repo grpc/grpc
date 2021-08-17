@@ -16,12 +16,12 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <thread>
-
-#include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

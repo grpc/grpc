@@ -20,8 +20,6 @@
    using that endpoint. Because of various transitive includes in uv.h,
    including windows.h on Windows, uv.h must be included before other system
    headers. Therefore, sockaddr.h must always be included first */
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <string.h>
 
@@ -37,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

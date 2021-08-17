@@ -19,14 +19,17 @@
 /* Microbenchmarks around CHTTP2 transport operations */
 
 #include <benchmark/benchmark.h>
+#include <string.h>
+
+#include <memory>
+#include <queue>
+#include <sstream>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <string.h>
-#include <memory>
-#include <queue>
-#include <sstream>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"

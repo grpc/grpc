@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <functional>
 #include <set>
 #include <thread>
@@ -41,7 +42,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
@@ -53,13 +53,11 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 

@@ -20,6 +20,7 @@
 #define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 
 /** Win32 variant of atm_platform.h */
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #ifdef GPR_WINDOWS

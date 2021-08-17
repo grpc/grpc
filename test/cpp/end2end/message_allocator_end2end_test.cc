@@ -16,6 +16,9 @@
  *
  */
 
+#include <google/protobuf/arena.h>
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -25,11 +28,7 @@
 #include <sstream>
 #include <thread>
 
-#include <google/protobuf/arena.h>
-
 #include <grpc/impl/codegen/log.h>
-#include <gtest/gtest.h>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
