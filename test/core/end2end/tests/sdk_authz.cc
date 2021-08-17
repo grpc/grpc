@@ -187,7 +187,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
@@ -205,7 +205,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
-  GPR_ASSERT(GRPC_STATUS_UNIMPLEMENTED == status);
+  GPR_ASSERT(GRPC_STATUS_OK == status);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
 
   grpc_slice_unref(details);
