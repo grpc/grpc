@@ -5119,6 +5119,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: core_configuration_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/config/core_configuration.h
+  src:
+  - src/core/lib/config/core_configuration.cc
+  - test/core/config/core_configuration_test.cc
+  deps: []
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -5681,6 +5692,21 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: if_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/if_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
 - name: init_test
   gtest: true
   build: test
