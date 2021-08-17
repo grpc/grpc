@@ -110,7 +110,7 @@ endif()
 
 # Builds gRPC based on locally checked-out sources and set arguments so that all the dependencies
 # are correctly located.
-#[[ExternalProject_Add(grpc
+ExternalProject_Add(grpc
   PREFIX grpc
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../.."
   BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/grpc"
@@ -136,7 +136,7 @@ endif()
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
   DEPENDS c-ares protobuf re2 zlib absl s2a_core
 )
-]]
+
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
 # have already been installed.
@@ -145,7 +145,7 @@ endif()
 # to locate all the dependencies (if we were building helloworld directly in this build we,
 # we would have needed to manually import the libraries as opposed to reusing targets exported by
 # gRPC and protobuf).
-#[[ExternalProject_Add(helloworld
+ExternalProject_Add(helloworld
   PREFIX helloworld
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.."
   BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/helloworld"
@@ -162,4 +162,4 @@ endif()
         -DgRPC_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc/lib/cmake/grpc
   DEPENDS protobuf grpc
 )
-]]
+
