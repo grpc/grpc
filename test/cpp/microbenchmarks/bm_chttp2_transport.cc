@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -51,14 +52,11 @@ class PhonyEndpoint : public grpc_endpoint {
                                                    delete_from_pollset_set,
                                                    shutdown,
                                                    destroy,
-                                                   get_resource_user,
                                                    get_peer,
                                                    get_local_address,
                                                    get_fd,
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create(LibraryInitializer::get().rq(),
-                                    "phony_endpoint");
   }
 
   void PushInput(grpc_slice slice) {
@@ -74,7 +72,6 @@ class PhonyEndpoint : public grpc_endpoint {
   }
 
  private:
-  grpc_resource_user* ru_;
   grpc_closure* read_cb_ = nullptr;
   grpc_slice_buffer* slices_ = nullptr;
   bool have_slice_ = false;
@@ -112,19 +109,14 @@ class PhonyEndpoint : public grpc_endpoint {
                                       grpc_pollset_set* /*pollset*/) {}
 
   static void shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-    grpc_resource_user_shutdown(static_cast<PhonyEndpoint*>(ep)->ru_);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                             static_cast<PhonyEndpoint*>(ep)->read_cb_, why);
   }
 
   static void destroy(grpc_endpoint* ep) {
-    grpc_resource_user_unref(static_cast<PhonyEndpoint*>(ep)->ru_);
     delete static_cast<PhonyEndpoint*>(ep);
   }
 
-  static grpc_resource_user* get_resource_user(grpc_endpoint* ep) {
-    return static_cast<PhonyEndpoint*>(ep)->ru_;
-  }
   static absl::string_view get_peer(grpc_endpoint* /*ep*/) { return "test"; }
   static absl::string_view get_local_address(grpc_endpoint* /*ep*/) {
     return "test";
@@ -138,7 +130,8 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
+                                      grpc_resource_user_create_unlimited());
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
@@ -262,8 +255,8 @@ class Stream {
 std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
+  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
@@ -294,9 +287,9 @@ class RepresentativeClientInitialMetadata {
     return {
         GRPC_MDELEM_SCHEME_HTTP,
         GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
+        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "/foo/bar/bm_chttp2_transport"))),
         grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
                                 grpc_slice_intern(grpc_slice_from_static_string(
                                     "foo.test.google.fr:1234"))),
