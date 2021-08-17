@@ -209,11 +209,19 @@ void test_fails_bad_addr_no_leak(void) {
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(g_pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              grpc_timeout_seconds_to_deadline(5)))));
+    grpc_millis polling_deadline = test_deadline();
+    switch (grpc_timer_check(&polling_deadline)) {
+      case GRPC_TIMERS_FIRED:
+        break;
+      case GRPC_TIMERS_NOT_CHECKED:
+        polling_deadline = 0;
+        ABSL_FALLTHROUGH_INTENDED;
+      case GRPC_TIMERS_CHECKED_AND_EMPTY:
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(g_pollset, &worker, polling_deadline)));
+        break;
+    }
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
