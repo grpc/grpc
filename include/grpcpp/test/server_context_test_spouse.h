@@ -26,13 +26,14 @@
 namespace grpc {
 namespace testing {
 
-/// A test-only class to access private members and methods of ServerContext.
+/// A test-only class to access private members and methods of
+/// ServerContextBase and derived classes.
 class ServerContextTestSpouse {
  public:
-  explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
+  explicit ServerContextTestSpouse(ServerContextBase* ctx) : ctx_(ctx) {}
 
-  /// Inject client metadata to the ServerContext for the test. The test spouse
-  /// must be alive when \a ServerContext::client_metadata is called.
+  /// Inject client metadata to the ServerContextBase for the test. The test
+  /// spouse must be alive when \a ServerContextBase::client_metadata is called.
   void AddClientMetadata(const std::string& key, const std::string& value) {
     client_metadata_storage_.insert(
         std::pair<std::string, std::string>(key, value));
@@ -54,7 +55,7 @@ class ServerContextTestSpouse {
   }
 
  private:
-  ServerContext* ctx_;  // not owned
+  ServerContextBase* ctx_;  // not owned
   std::multimap<std::string, std::string> client_metadata_storage_;
 };
 
