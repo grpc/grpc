@@ -323,7 +323,7 @@ class DualRefCounted : public Orphanable {
 #ifndef NDEBUG
   const char* trace_;
 #endif
-  std::atomic<uint64_t> refs_;
+  std::atomic<uint64_t> refs_{0};
 };
 
 }  // namespace grpc_core

@@ -172,7 +172,7 @@ class TcpZerocopySendRecord {
   }
 
   grpc_slice_buffer buf_;
-  std::atomic<intptr_t> ref_;
+  std::atomic<intptr_t> ref_{0};
   OutgoingOffset out_offset_;
 };
 
@@ -339,7 +339,7 @@ class TcpZerocopySendCtx {
   int free_send_records_size_;
   Mutex lock_;
   uint32_t last_send_ = 0;
-  std::atomic<bool> shutdown_;
+  std::atomic<bool> shutdown_{false};
   bool enabled_ = false;
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;

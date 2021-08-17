@@ -35,7 +35,7 @@ class MultiProducerSingleConsumerQueue {
  public:
   // List node.  Application node types can inherit from this.
   struct Node {
-    std::atomic<Node*> next;
+    std::atomic<Node*> next{nullptr};
   };
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
@@ -61,7 +61,7 @@ class MultiProducerSingleConsumerQueue {
   // make sure head & tail don't share a cacheline
   union {
     char padding_[GPR_CACHELINE_SIZE];
-    std::atomic<Node*> head_;
+    std::atomic<Node*> head_{nullptr};
   };
   Node* tail_;
   Node stub_;

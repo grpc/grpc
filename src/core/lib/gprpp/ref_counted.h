@@ -199,7 +199,7 @@ class RefCount {
 #ifndef NDEBUG
   const char* trace_;
 #endif
-  std::atomic<Value> value_;
+  std::atomic<Value> value_{0};
 };
 
 // PolymorphicRefCount enforces polymorphic destruction of RefCounted.

@@ -131,7 +131,7 @@ class ConnectivityStateTracker {
 
  private:
   const char* name_;
-  std::atomic<grpc_connectivity_state> state_;
+  std::atomic<grpc_connectivity_state> state_{grpc_connectivity_state()};
   absl::Status status_;
   // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
   // be a set instead of a map.

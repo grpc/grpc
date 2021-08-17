@@ -348,7 +348,7 @@ class ClientChannel {
   // Fields accessed from both data plane mutex and control plane
   // work_serializer.
   //
-  std::atomic<grpc_error_handle> disconnect_error_;
+  std::atomic<grpc_error_handle> disconnect_error_{GRPC_ERROR_NONE};
 
   //
   // Fields guarded by a mutex, since they need to be accessed

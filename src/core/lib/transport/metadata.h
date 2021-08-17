@@ -203,8 +203,8 @@ typedef void (*destroy_user_data_func)(void* data);
 
 struct UserData {
   Mutex mu_user_data;
-  std::atomic<destroy_user_data_func> destroy_user_data;
-  std::atomic<void*> data;
+  std::atomic<destroy_user_data_func> destroy_user_data{nullptr};
+  std::atomic<void*> data{nullptr};
 };
 
 class StaticMetadata {
@@ -276,7 +276,7 @@ class RefcountedMdBase {
   /* must be byte compatible with grpc_mdelem_data */
   grpc_slice key_;
   grpc_slice value_;
-  std::atomic<intptr_t> refcnt_;
+  std::atomic<intptr_t> refcnt_{0};
   uint32_t hash_ = 0;
 };
 
