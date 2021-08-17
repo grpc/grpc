@@ -243,7 +243,7 @@ def fix(filename):
     for line in postamble:
         out += '%s\n' % line
 
-    if out != text:
+    if out.strip() != text.strip():
         fixed.append(filename)
         with open(filename, 'w') as f:
             f.write(out)
