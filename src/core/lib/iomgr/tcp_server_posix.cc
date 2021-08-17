@@ -60,10 +60,9 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static grpc_error_handle tcp_server_create(
-    grpc_closure* shutdown_complete, const grpc_channel_args* args,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_tcp_server** server) {
+static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
+                                           const grpc_channel_args* args,
+                                           grpc_tcp_server** server) {
   grpc_tcp_server* s =
       static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
@@ -75,7 +74,6 @@ static grpc_error_handle tcp_server_create(
                           (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
-        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
                                                     " must be an integer");
       }
@@ -84,7 +82,6 @@ static grpc_error_handle tcp_server_create(
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
-        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
       }
@@ -105,7 +102,6 @@ static grpc_error_handle tcp_server_create(
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
   s->fd_handler = nullptr;
-  s->slice_allocator_factory = slice_allocator_factory;
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -119,15 +115,17 @@ static void finish_shutdown(grpc_tcp_server* s) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
                             GRPC_ERROR_NONE);
   }
+
   gpr_mu_destroy(&s->mu);
+
   while (s->head) {
     grpc_tcp_listener* sp = s->head;
     s->head = sp->next;
     gpr_free(sp);
   }
-  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
   grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
+
   gpr_free(s);
 }
 
@@ -171,8 +169,10 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
 
 static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
+
   GPR_ASSERT(!s->shutdown);
   s->shutdown = true;
+
   /* shutdown all fd's */
   if (s->active_ports) {
     grpc_tcp_listener* sp;
@@ -267,13 +267,10 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
     acceptor->external_connection = false;
+
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str(),
-                        grpc_slice_allocator_factory_create_slice_allocator(
-                            sp->server->slice_allocator_factory,
-                            absl::StrCat("tcp_server_posix:", addr_str),
-                            sp->server->channel_args)),
+        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str()),
         read_notifier_pollset, acceptor);
   }
 
@@ -616,13 +613,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
-    s_->on_accept_cb(
-        s_->on_accept_cb_arg,
-        grpc_tcp_create(
-            fdobj, s_->channel_args, addr_str.c_str(),
-            grpc_slice_allocator_factory_create_slice_allocator(
-                s_->slice_allocator_factory, addr_str, s_->channel_args)),
-        read_notifier_pollset, acceptor);
+    s_->on_accept_cb(s_->on_accept_cb_arg,
+                     grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str()),
+                     read_notifier_pollset, acceptor);
   }
 
  private:

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef PASSTHRU_ENDPOINT_H
-#define PASSTHRU_ENDPOINT_H
+#ifndef MOCK_ENDPOINT_H
+#define MOCK_ENDPOINT_H
 
 #include <grpc/support/atm.h>
 
@@ -33,10 +33,11 @@ typedef struct {
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
+                                   grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
-#endif  // PASSTHRU_ENDPOINT_H
+#endif

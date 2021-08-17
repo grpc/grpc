@@ -30,7 +30,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 // static int g_connections_complete = 0;
@@ -103,8 +102,8 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, nullptr, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
 
   /* await the connection */
   do {
@@ -158,8 +157,8 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, nullptr, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
 
   grpc_core::ExecCtx::Get()->Flush();
 

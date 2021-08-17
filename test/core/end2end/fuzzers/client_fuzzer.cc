@@ -46,24 +46,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::Executor::SetThreadingAll(false);
 
     grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("context_list_test");
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
-        discard_write,
-        grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
+        grpc_resource_quota_create("client_fuzzer");
+    grpc_endpoint* mock_endpoint =
+        grpc_mock_endpoint_create(discard_write, resource_quota);
+    grpc_resource_quota_unref_internal(resource_quota);
+
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_transport* transport = grpc_create_chttp2_transport(
-        nullptr, mock_endpoint, true,
-        grpc_resource_user_create(resource_quota, "mock_transport"));
-    grpc_resource_quota_unref(resource_quota);
+    grpc_transport* transport =
+        grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
     grpc_channel_args* args =
         grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    grpc_channel* channel =
-        grpc_channel_create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            transport, nullptr, 0, nullptr);
+    grpc_channel* channel = grpc_channel_create(
+        "test-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
     grpc_call* call = grpc_channel_create_call(

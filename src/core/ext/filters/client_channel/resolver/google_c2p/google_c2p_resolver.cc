@@ -132,6 +132,7 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   grpc_httpcli_get(&context_, pollent, resource_quota, &request,
                    ExecCtx::Get()->Now() + 10000,  // 10s timeout
                    &on_done_, &response_);
+  grpc_resource_quota_unref_internal(resource_quota);
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {

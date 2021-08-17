@@ -117,11 +117,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
 static void test_no_op(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(NULL, NULL,
-                                    grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)),
-                                    &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(s);
   grpc_core::ExecCtx::Get()->Flush();
 }
@@ -129,11 +125,7 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(NULL, NULL,
-                                    grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)) &
-                                        s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(s);
@@ -145,11 +137,7 @@ static void test_no_op_with_port(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(NULL, NULL,
-                                    grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)) &
-                                        s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -169,11 +157,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(NULL, NULL,
-                                    grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)) &
-                                        s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port;
 
@@ -243,11 +227,7 @@ static void test_connect(unsigned n) {
   int svr_port;
   int svr1_port;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(NULL, NULL,
-                                    grpc_slice_allocator_factory_create(
-                                        grpc_resource_quota_create(nullptr)) &
-                                        s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   unsigned i;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);

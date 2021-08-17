@@ -174,6 +174,7 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -223,6 +224,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -285,6 +287,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
