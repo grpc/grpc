@@ -20,11 +20,12 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -231,30 +232,30 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 }
 
 bool ValidateUrl(URI url) {
-  absl::string_view scheme(url.scheme());
-  auto string_matcher_scheme =
-      StringMatcher::Create(StringMatcher::Type::kExact, "https", false);
-  if (!string_matcher_scheme->Match(scheme)) {
+  std::string scheme(url.scheme());
+  absl::AsciiStrToLower(&scheme);
+  if (strcmp(scheme.c_str(), "https") != 0) {
     return false;
   }
-  std::vector<std::string> v = absl::StrSplit(url.authority(), ':');
-  absl::string_view host = v[0];
-  auto string_matcher_host =
-      StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                            "^("
-                            "([^\\.\\s\\/\\\\]+\\.sts)|"
-                            "(sts)|"
-                            "(sts\\.[^\\.\\s\\/\\\\]+)|"
-                            "([^\\.\\s\\/\\\\]+-sts)|"
-                            "([^\\.\\s\\/\\\\]+\\.iamcredentials)|"
-                            "(iamcredentials)|"
-                            "(iamcredentials\\.[^\\.\\s\\/\\\\]+)|"
-                            "([^\\.\\s\\/\\\\]+-iamcredentials)"
-                            ")\\.googleapis\\.com$");
-  if (!string_matcher_host->Match(host)) {
-    return false;
+  absl::string_view host;
+  absl::string_view port;
+  SplitHostPort(url.authority(), &host, &port);
+  if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
+    if (strcmp(std::string(host).c_str(), "sts") == 0 ||
+        strcmp(std::string(host).c_str(), "iamcredentials") == 0) {
+      return true;
+    } else if (absl::StartsWith(host, "sts.") ||
+               absl::StartsWith(host, "iamcredentials.")) {
+      return true;
+    } else if (absl::EndsWith(host, ".sts") ||
+               absl::EndsWith(host, ".iamcredentials")) {
+      return true;
+    } else if (absl::EndsWith(host, "-sts") ||
+               absl::EndsWith(host, "-iamcredentials")) {
+      return true;
+    }
   }
-  return true;
+  return false;
 }
 
 void ExternalAccountCredentials::ExchangeToken(
