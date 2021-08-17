@@ -61,6 +61,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "race_test",
+    srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:race",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_factory_test",
     srcs = ["promise_factory_test.cc"],
     external_deps = [
