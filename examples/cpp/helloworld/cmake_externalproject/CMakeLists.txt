@@ -71,7 +71,7 @@ ExternalProject_Add(re2
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
 )
 
-# if OPENSSL_ROOT_DIR is set, propagate that hint path to the external projects with OpenSSL dependency.
+# If OPENSSL_ROOT_DIR is set, propagate that hint path to the external projects with OpenSSL dependency.
 set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "")
 if (OPENSSL_ROOT_DIR)
   set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "-DOPENSSL_ROOT_DIR:PATH=${OPENSSL_ROOT_DIR}")
@@ -81,7 +81,6 @@ endif()
 ExternalProject_Add(s2a_core
   PREFIX s2a_core
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a_core"
-  BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/s2a_core"
   PATCH_COMMAND git submodule update --init
   CMAKE_CACHE_ARGS
   	-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
@@ -112,7 +111,6 @@ endif()
 ExternalProject_Add(grpc
   PREFIX grpc
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../.."
-  BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/grpc"
   CMAKE_CACHE_ARGS
         -DgRPC_INSTALL:BOOL=ON
         -DgRPC_BUILD_TESTS:BOOL=OFF
