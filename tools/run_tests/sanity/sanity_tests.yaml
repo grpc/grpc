@@ -6,7 +6,7 @@
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py
 - script: tools/run_tests/sanity/check_illegal_terms.sh
 - script: tools/run_tests/sanity/check_owners.sh
-- script: tools/run_tests/sanity/check_port_platform.py
+- script: tools/run_tests/sanity/grpc-include-rules.py
 - script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh

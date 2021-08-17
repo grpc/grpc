@@ -756,6 +756,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
 )
 
