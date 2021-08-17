@@ -5531,6 +5531,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_reflection
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux
@@ -5562,6 +5563,7 @@ targets:
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux
@@ -7035,6 +7037,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux
