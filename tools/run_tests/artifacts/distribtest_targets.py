@@ -65,7 +65,11 @@ def create_jobspec(name,
     """Creates jobspec."""
     environ = environ.copy()
     if use_workspace:
-        environ['WORKSPACE_NAME'] = 'workspace_%s' % name
+        print('********workspace name is: ' + name)
+        if name is 'cpp_windows_x86_cmake_as_externalproject':
+          environ['WORKSPACE_NAME'] = 'foo'
+        else:
+          environ['WORKSPACE_NAME'] = 'workspace_%s' % name
         cmdline = ['bash', 'tools/run_tests/artifacts/run_in_workspace.sh'
                   ] + cmdline
     jobspec = jobset.JobSpec(cmdline=cmdline,
