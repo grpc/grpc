@@ -72,6 +72,7 @@ const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
     case PercentEncodingType::Compatible:
       return g_compatible_table;
   }
+  GPR_UNREACHABLE_CODE(abort());
 }
 }  // namespace
 
