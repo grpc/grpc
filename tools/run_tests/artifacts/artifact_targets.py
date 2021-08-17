@@ -72,8 +72,8 @@ def create_jobspec(name,
     """Creates jobspec."""
     environ = environ.copy()
     if use_workspace:
-      if name is "workspace_cpp_windows_x86_cmake_as_externalproject":
-        print("name is workspace_cpp_windows_x86_cmake_as_externalproject!!!!!")
+      if name is 'cpp_windows_x86_cmake_as_externalproject':
+        print('name is cpp_windows_x86_cmake_as_externalproject!!!!!')
         environ['WORKSPACE_NAME'] = 'foo'
       else:
         environ['WORKSPACE_NAME'] = 'workspace_%s' % name
