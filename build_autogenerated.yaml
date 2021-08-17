@@ -5119,6 +5119,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: core_configuration_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/config/core_configuration.h
+  src:
+  - src/core/lib/config/core_configuration.cc
+  - test/core/config/core_configuration_test.cc
+  deps: []
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
