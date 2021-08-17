@@ -3579,7 +3579,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr,
                                 "incorrect_server_name");
