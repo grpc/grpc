@@ -197,7 +197,7 @@ void test_fails_bad_addr_no_leak(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   // force `grpc_tcp_client_prepare_fd` to fail. contrived, but effective.
-  addr->sin_family = AF_BLUETOOTH;
+  addr->sin_family = AF_IPX;
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
