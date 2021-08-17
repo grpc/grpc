@@ -862,6 +862,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",

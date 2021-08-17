@@ -126,33 +126,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)cancel;
 
-/**
- * Finish the RPC request and half-close the call. The server may still send messages and/or
- * trailers to the client. This method should only be used when flow control is enabled. If flow
- * control is not enabled, It will be automatically called upon message received.
- */
-- (void)finish;
-
-/**
- * Tell gRPC to receive another message.
- *
- * This method should only be used when flow control is enabled. If flow control is enabled, gRPC
- * will only receive additional messages after the user indicates so by using either
- * receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages
- * will be automatically received after the previous one is delivered.
- */
-- (void)receiveNextMessage;
-
-/**
- * Tell gRPC to receive another N message.
- *
- * This method should only be used when flow control is enabled. If flow control is enabled, the
- * messages received from the server are buffered in gRPC until the user want to receive the next
- * message. If flow control is not enabled, messages will be automatically received after the
- * previous one is delivered.
- */
-- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
-
 @end
 
 /** A client-streaming RPC call with Protobuf. */

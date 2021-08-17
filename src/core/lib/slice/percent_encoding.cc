@@ -65,6 +65,7 @@ class CompatibleTable : public BitSet<256> {
 
 static GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
 
+// Map PercentEncodingType to a lookup table of legal symbols for that encoding.
 const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
   switch (type) {
     case PercentEncodingType::URL:
@@ -72,6 +73,8 @@ const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
     case PercentEncodingType::Compatible:
       return g_compatible_table;
   }
+  // Crash if a bad PercentEncodingType was passed in.
+  GPR_UNREACHABLE_CODE(abort());
 }
 }  // namespace
 
