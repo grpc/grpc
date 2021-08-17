@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import os
 import re
 import sys
-import collections
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
