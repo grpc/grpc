@@ -357,6 +357,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
                                           &fd)) != GRPC_ERROR_NONE) {
+    grpc_slice_allocator_destroy(slice_allocator);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
