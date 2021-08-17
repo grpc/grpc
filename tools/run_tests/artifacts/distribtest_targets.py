@@ -66,12 +66,12 @@ def create_jobspec(name,
     environ = environ.copy()
     if use_workspace:
         if name == 'cpp_windows_x86_cmake_as_externalproject':
-          # An abbreviated workspace name is needed in this case because
-          # the Windows distrib test for this workspace hits the MSBuild
-          # max path length limitation.
-          environ['WORKSPACE_NAME'] = 'cwx'
+            # An abbreviated workspace name is needed in this case because
+            # the Windows distrib test for this workspace hits the MSBuild
+            # max path length limitation.
+            environ['WORKSPACE_NAME'] = 'cwx'
         else:
-          environ['WORKSPACE_NAME'] = 'workspace_%s' % name
+            environ['WORKSPACE_NAME'] = 'workspace_%s' % name
         cmdline = ['bash', 'tools/run_tests/artifacts/run_in_workspace.sh'
                   ] + cmdline
     jobspec = jobset.JobSpec(cmdline=cmdline,
