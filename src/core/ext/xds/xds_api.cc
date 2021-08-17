@@ -2087,13 +2087,13 @@ grpc_error_handle CommonTlsContextParse(
             "CertificateValidationContext: "
             "require_signed_certificate_timestamp unsupported"));
       }
-      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_crl(
-              default_validation_context) != nullptr) {
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_crl(
+              default_validation_context)) {
         errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "CertificateValidationContext: crl unsupported"));
       }
-      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_custom_validator_config(
-              default_validation_context) != nullptr) {
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_custom_validator_config(
+              default_validation_context)) {
         errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "CertificateValidationContext: custom_validator_config "
             "unsupported"));
@@ -2107,7 +2107,7 @@ grpc_error_handle CommonTlsContextParse(
           context, validation_context_certificate_provider_instance,
           &common_tls_context->combined_validation_context
                .validation_context_certificate_provider_instance);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
   }
   auto* tls_certificate_certificate_provider_instance =
@@ -2117,7 +2117,7 @@ grpc_error_handle CommonTlsContextParse(
     grpc_error_handle error = CertificateProviderInstanceParse(
         context, tls_certificate_certificate_provider_instance,
         &common_tls_context->tls_certificate_certificate_provider_instance);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing CommonTlsContext",
                                        &errors);
