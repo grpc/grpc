@@ -53,14 +53,16 @@ out['libs'] = [{
             if ((not os.path.basename(src_file).endswith('_test.cc')) and
                 (src_file not in _SOURCE_FILES_TO_IGNORE))
         ] + glob.glob(
-            'third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/*.c')),
+            'third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/*.c'
+        )),
     'headers':
         sorted([
             header_file
             for header_file in glob.glob('third_party/s2a_core/s2a/src/**/*.h')
             if (header_file not in _HEADER_FILES_TO_IGNORE)
         ] + glob.glob('third_party/s2a_core/s2a/include/*.h') + glob.glob(
-            'third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/*.h')),
+            'third_party/s2a_core/s2a/src/proto/upb-generated/s2a/src/proto/*.h'
+        )),
 }]
 
 print(yaml.dump(out))

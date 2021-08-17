@@ -78,7 +78,7 @@ if (OPENSSL_ROOT_DIR)
 endif()
 
 # Builds s2a_core project from the git submodule.
-ExternalProject_Add(s2a_core
+#[[ExternalProject_Add(s2a_core
   PREFIX s2a_core
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a_core"
   BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/s2a_core"
@@ -91,6 +91,7 @@ ExternalProject_Add(s2a_core
 	-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/s2a_core
 	${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
 )
+]]
 
 # Builds zlib project from the git submodule.
 ExternalProject_Add(zlib
