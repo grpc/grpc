@@ -347,8 +347,7 @@ JsonReader::Status JsonReader::Run() {
             }
             if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
-            /* The missing break here is intentional. */
-            /* fallthrough */
+            ABSL_FALLTHROUGH_INTENDED;
 
           case State::GRPC_JSON_STATE_VALUE_END:
           case State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN:

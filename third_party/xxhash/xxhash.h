@@ -266,7 +266,7 @@ extern "C" {
 ***************************************/
 #define XXH_VERSION_MAJOR    0
 #define XXH_VERSION_MINOR    8
-#define XXH_VERSION_RELEASE  0
+#define XXH_VERSION_RELEASE  1
 #define XXH_VERSION_NUMBER  (XXH_VERSION_MAJOR *100*100 + XXH_VERSION_MINOR *100 + XXH_VERSION_RELEASE)
 
 /*!
@@ -275,7 +275,7 @@ extern "C" {
  * This is only useful when xxHash is compiled as a shared library, as it is
  * independent of the version defined in the header.
  *
- * @return `XXH_VERSION_NUMBER` as of when the function was compiled.
+ * @return `XXH_VERSION_NUMBER` as of when the libray was compiled.
  */
 XXH_PUBLIC_API unsigned XXH_versionNumber (void);
 
@@ -1394,6 +1394,27 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size)
 /* note: use after variable declarations */
 #define XXH_STATIC_ASSERT(c)  do { enum { XXH_sa = 1/(int)(!!(c)) }; } while (0)
 
+/*!
+ * @internal
+ * @def XXH_COMPILER_GUARD(var)
+ * @brief Used to prevent unwanted optimizations for @p var.
+ *
+ * It uses an empty GCC inline assembly statement with a register constraint
+ * which forces @p var into a general purpose register (eg eax, ebx, ecx
+ * on x86) and marks it as modified.
+ *
+ * This is used in a few places to avoid unwanted autovectorization (e.g.
+ * XXH32_round()). All vectorization we want is explicit via intrinsics,
+ * and _usually_ isn't wanted elsewhere.
+ *
+ * We also use it to prevent unwanted constant folding for AArch64 in
+ * XXH3_initCustomSecret_scalar().
+ */
+#ifdef __GNUC__
+#  define XXH_COMPILER_GUARD(var) __asm__ __volatile__("" : "+r" (var))
+#else
+#  define XXH_COMPILER_GUARD(var) ((void)0)
+#endif
 
 /* *************************************
 *  Basic Types
@@ -1703,11 +1724,12 @@ XXH_PUBLIC_API unsigned XXH_versionNumber (void) { return XXH_VERSION_NUMBER; }
  * @ingroup impl
  * @{
  */
-static const xxh_u32 XXH_PRIME32_1 = 0x9E3779B1U;   /*!< 0b10011110001101110111100110110001 */
-static const xxh_u32 XXH_PRIME32_2 = 0x85EBCA77U;   /*!< 0b10000101111010111100101001110111 */
-static const xxh_u32 XXH_PRIME32_3 = 0xC2B2AE3DU;   /*!< 0b11000010101100101010111000111101 */
-static const xxh_u32 XXH_PRIME32_4 = 0x27D4EB2FU;   /*!< 0b00100111110101001110101100101111 */
-static const xxh_u32 XXH_PRIME32_5 = 0x165667B1U;   /*!< 0b00010110010101100110011110110001 */
+ /* #define instead of static const, to be used as initializers */
+#define XXH_PRIME32_1  0x9E3779B1U  /*!< 0b10011110001101110111100110110001 */
+#define XXH_PRIME32_2  0x85EBCA77U  /*!< 0b10000101111010111100101001110111 */
+#define XXH_PRIME32_3  0xC2B2AE3DU  /*!< 0b11000010101100101010111000111101 */
+#define XXH_PRIME32_4  0x27D4EB2FU  /*!< 0b00100111110101001110101100101111 */
+#define XXH_PRIME32_5  0x165667B1U  /*!< 0b00010110010101100110011110110001 */
 
 #ifdef XXH_OLD_NAMES
 #  define PRIME32_1 XXH_PRIME32_1
@@ -1733,13 +1755,12 @@ static xxh_u32 XXH32_round(xxh_u32 acc, xxh_u32 input)
     acc += input * XXH_PRIME32_2;
     acc  = XXH_rotl32(acc, 13);
     acc *= XXH_PRIME32_1;
-#if defined(__GNUC__) && defined(__SSE4_1__) && !defined(XXH_ENABLE_AUTOVECTORIZE)
+#if (defined(__SSE4_1__) || defined(__aarch64__)) && !defined(XXH_ENABLE_AUTOVECTORIZE)
     /*
      * UGLY HACK:
-     * This inline assembly hack forces acc into a normal register. This is the
-     * only thing that prevents GCC and Clang from autovectorizing the XXH32
-     * loop (pragmas and attributes don't work for some reason) without globally
-     * disabling SSE4.1.
+     * A compiler fence is the only thing that prevents GCC and Clang from
+     * autovectorizing the XXH32 loop (pragmas and attributes don't work for some
+     * reason) without globally disabling SSE4.1.
      *
      * The reason we want to avoid vectorization is because despite working on
      * 4 integers at a time, there are multiple factors slowing XXH32 down on
@@ -1764,22 +1785,11 @@ static xxh_u32 XXH32_round(xxh_u32 acc, xxh_u32 input)
      *   can load data, while v3 can multiply. SSE forces them to operate
      *   together.
      *
-     * How this hack works:
-     * __asm__(""       // Declare an assembly block but don't declare any instructions
-     *          :       // However, as an Input/Output Operand,
-     *          "+r"    // constrain a read/write operand (+) as a general purpose register (r).
-     *          (acc)   // and set acc as the operand
-     * );
-     *
-     * Because of the 'r', the compiler has promised that seed will be in a
-     * general purpose register and the '+' says that it will be 'read/write',
-     * so it has to assume it has changed. It is like volatile without all the
-     * loads and stores.
-     *
-     * Since the argument has to be in a normal register (not an SSE register),
-     * each time XXH32_round is called, it is impossible to vectorize.
+     * This is also enabled on AArch64, as Clang autovectorizes it incorrectly
+     * and it is pointless writing a NEON implementation that is basically the
+     * same speed as scalar for XXH32.
      */
-    __asm__("" : "+r" (acc));
+    XXH_COMPILER_GUARD(acc);
 #endif
     return acc;
 }
@@ -1910,7 +1920,7 @@ XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_alignment align)
 XXH_FORCE_INLINE xxh_u32
 XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignment align)
 {
-    const xxh_u8* bEnd = input + len;
+    const xxh_u8* bEnd = input ? input + len : NULL;
     xxh_u32 h32;
 
 #if defined(XXH_ACCEPT_NULL_INPUT_POINTER) && (XXH_ACCEPT_NULL_INPUT_POINTER>=1)
@@ -2134,35 +2144,6 @@ typedef XXH64_hash_t xxh_u64;
 #  define U64 xxh_u64
 #endif
 
-/*!
- * XXH_REROLL_XXH64:
- * Whether to reroll the XXH64_finalize() loop.
- *
- * Just like XXH32, we can unroll the XXH64_finalize() loop. This can be a
- * performance gain on 64-bit hosts, as only one jump is required.
- *
- * However, on 32-bit hosts, because arithmetic needs to be done with two 32-bit
- * registers, and 64-bit arithmetic needs to be simulated, it isn't beneficial
- * to unroll. The code becomes ridiculously large (the largest function in the
- * binary on i386!), and rerolling it saves anywhere from 3kB to 20kB. It is
- * also slightly faster because it fits into cache better and is more likely
- * to be inlined by the compiler.
- *
- * If XXH_REROLL is defined, this is ignored and the loop is always rerolled.
- */
-#ifndef XXH_REROLL_XXH64
-#  if (defined(__ILP32__) || defined(_ILP32)) /* ILP32 is often defined on 32-bit GCC family */ \
-   || !(defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) /* x86-64 */ \
-     || defined(_M_ARM64) || defined(__aarch64__) || defined(__arm64__) /* aarch64 */ \
-     || defined(__PPC64__) || defined(__PPC64LE__) || defined(__ppc64__) || defined(__powerpc64__) /* ppc64 */ \
-     || defined(__mips64__) || defined(__mips64)) /* mips64 */ \
-   || (!defined(SIZE_MAX) || SIZE_MAX < ULLONG_MAX) /* check limits */
-#    define XXH_REROLL_XXH64 1
-#  else
-#    define XXH_REROLL_XXH64 0
-#  endif
-#endif /* !defined(XXH_REROLL_XXH64) */
-
 #if (defined(XXH_FORCE_MEMORY_ACCESS) && (XXH_FORCE_MEMORY_ACCESS==3))
 /*
  * Manual byteshift. Best for old compilers which don't inline memcpy.
@@ -2285,11 +2266,12 @@ XXH_readLE64_align(const void* ptr, XXH_alignment align)
  * @ingroup impl
  * @{
  */
-static const xxh_u64 XXH_PRIME64_1 = 0x9E3779B185EBCA87ULL;   /*!< 0b1001111000110111011110011011000110000101111010111100101010000111 */
-static const xxh_u64 XXH_PRIME64_2 = 0xC2B2AE3D27D4EB4FULL;   /*!< 0b1100001010110010101011100011110100100111110101001110101101001111 */
-static const xxh_u64 XXH_PRIME64_3 = 0x165667B19E3779F9ULL;   /*!< 0b0001011001010110011001111011000110011110001101110111100111111001 */
-static const xxh_u64 XXH_PRIME64_4 = 0x85EBCA77C2B2AE63ULL;   /*!< 0b1000010111101011110010100111011111000010101100101010111001100011 */
-static const xxh_u64 XXH_PRIME64_5 = 0x27D4EB2F165667C5ULL;   /*!< 0b0010011111010100111010110010111100010110010101100110011111000101 */
+/* #define rather that static const, to be used as initializers */
+#define XXH_PRIME64_1  0x9E3779B185EBCA87ULL  /*!< 0b1001111000110111011110011011000110000101111010111100101010000111 */
+#define XXH_PRIME64_2  0xC2B2AE3D27D4EB4FULL  /*!< 0b1100001010110010101011100011110100100111110101001110101101001111 */
+#define XXH_PRIME64_3  0x165667B19E3779F9ULL  /*!< 0b0001011001010110011001111011000110011110001101110111100111111001 */
+#define XXH_PRIME64_4  0x85EBCA77C2B2AE63ULL  /*!< 0b1000010111101011110010100111011111000010101100101010111001100011 */
+#define XXH_PRIME64_5  0x27D4EB2F165667C5ULL  /*!< 0b0010011111010100111010110010111100010110010101100110011111000101 */
 
 #ifdef XXH_OLD_NAMES
 #  define PRIME64_1 XXH_PRIME64_1
@@ -2331,126 +2313,26 @@ static xxh_u64 XXH64_avalanche(xxh_u64 h64)
 static xxh_u64
 XXH64_finalize(xxh_u64 h64, const xxh_u8* ptr, size_t len, XXH_alignment align)
 {
-#define XXH_PROCESS1_64 do {                                   \
-    h64 ^= (*ptr++) * XXH_PRIME64_5;                           \
-    h64 = XXH_rotl64(h64, 11) * XXH_PRIME64_1;                 \
-} while (0)
-
-#define XXH_PROCESS4_64 do {                                   \
-    h64 ^= (xxh_u64)(XXH_get32bits(ptr)) * XXH_PRIME64_1;      \
-    ptr += 4;                                              \
-    h64 = XXH_rotl64(h64, 23) * XXH_PRIME64_2 + XXH_PRIME64_3;     \
-} while (0)
-
-#define XXH_PROCESS8_64 do {                                   \
-    xxh_u64 const k1 = XXH64_round(0, XXH_get64bits(ptr)); \
-    ptr += 8;                                              \
-    h64 ^= k1;                                             \
-    h64  = XXH_rotl64(h64,27) * XXH_PRIME64_1 + XXH_PRIME64_4;     \
-} while (0)
-
-    /* Rerolled version for 32-bit targets is faster and much smaller. */
-    if (XXH_REROLL || XXH_REROLL_XXH64) {
-        len &= 31;
-        while (len >= 8) {
-            XXH_PROCESS8_64;
-            len -= 8;
-        }
-        if (len >= 4) {
-            XXH_PROCESS4_64;
-            len -= 4;
-        }
-        while (len > 0) {
-            XXH_PROCESS1_64;
-            --len;
-        }
-         return  XXH64_avalanche(h64);
-    } else {
-        switch(len & 31) {
-           case 24: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 16: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  8: XXH_PROCESS8_64;
-                    return XXH64_avalanche(h64);
-
-           case 28: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 20: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 12: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  4: XXH_PROCESS4_64;
-                    return XXH64_avalanche(h64);
-
-           case 25: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 17: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  9: XXH_PROCESS8_64;
-                    XXH_PROCESS1_64;
-                    return XXH64_avalanche(h64);
-
-           case 29: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 21: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 13: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  5: XXH_PROCESS4_64;
-                    XXH_PROCESS1_64;
-                    return XXH64_avalanche(h64);
-
-           case 26: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 18: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 10: XXH_PROCESS8_64;
-                    XXH_PROCESS1_64;
-                    XXH_PROCESS1_64;
-                    return XXH64_avalanche(h64);
-
-           case 30: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 22: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 14: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  6: XXH_PROCESS4_64;
-                    XXH_PROCESS1_64;
-                    XXH_PROCESS1_64;
-                    return XXH64_avalanche(h64);
-
-           case 27: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 19: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 11: XXH_PROCESS8_64;
-                    XXH_PROCESS1_64;
-                    XXH_PROCESS1_64;
-                    XXH_PROCESS1_64;
-                    return XXH64_avalanche(h64);
-
-           case 31: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 23: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case 15: XXH_PROCESS8_64;
-                         /* fallthrough */
-           case  7: XXH_PROCESS4_64;
-                         /* fallthrough */
-           case  3: XXH_PROCESS1_64;
-                         /* fallthrough */
-           case  2: XXH_PROCESS1_64;
-                         /* fallthrough */
-           case  1: XXH_PROCESS1_64;
-                         /* fallthrough */
-           case  0: return XXH64_avalanche(h64);
-        }
+    len &= 31;
+    while (len >= 8) {
+        xxh_u64 const k1 = XXH64_round(0, XXH_get64bits(ptr));
+        ptr += 8;
+        h64 ^= k1;
+        h64  = XXH_rotl64(h64,27) * XXH_PRIME64_1 + XXH_PRIME64_4;
+        len -= 8;
     }
-    /* impossible to reach */
-    XXH_ASSERT(0);
-    return 0;  /* unreachable, but some compilers complain without it */
+    if (len >= 4) {
+        h64 ^= (xxh_u64)(XXH_get32bits(ptr)) * XXH_PRIME64_1;
+        ptr += 4;
+        h64 = XXH_rotl64(h64, 23) * XXH_PRIME64_2 + XXH_PRIME64_3;
+        len -= 4;
+    }
+    while (len > 0) {
+        h64 ^= (*ptr++) * XXH_PRIME64_5;
+        h64 = XXH_rotl64(h64, 11) * XXH_PRIME64_1;
+        --len;
+    }
+    return  XXH64_avalanche(h64);
 }
 
 #ifdef XXH_OLD_NAMES
@@ -2466,7 +2348,7 @@ XXH64_finalize(xxh_u64 h64, const xxh_u8* ptr, size_t len, XXH_alignment align)
 XXH_FORCE_INLINE xxh_u64
 XXH64_endian_align(const xxh_u8* input, size_t len, xxh_u64 seed, XXH_alignment align)
 {
-    const xxh_u8* bEnd = input + len;
+    const xxh_u8* bEnd = input ? input + len : NULL;
     xxh_u64 h64;
 
 #if defined(XXH_ACCEPT_NULL_INPUT_POINTER) && (XXH_ACCEPT_NULL_INPUT_POINTER>=1)
@@ -2664,7 +2546,7 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
     return XXH_readBE64(src);
 }
 
-
+#ifndef XXH_NO_XXH3
 
 /* *********************************************************************
 *  XXH3
@@ -2679,7 +2561,9 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
 
 /* ===   Compiler specifics   === */
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* >= C99 */
+#if ((defined(sun) || defined(__sun)) && __cplusplus) /* Solaris includes __STDC_VERSION__ with C++. Tested with GCC 5.5 */
+#  define XXH_RESTRICT /* disable */
+#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* >= C99 */
 #  define XXH_RESTRICT   restrict
 #else
 /* Note: it might be useful to define __restrict or __restrict__ for some C++ compilers */
@@ -3441,7 +3325,7 @@ XXH3_len_4to8_64b(const xxh_u8* input, size_t len, const xxh_u8* secret, XXH64_h
 {
     XXH_ASSERT(input != NULL);
     XXH_ASSERT(secret != NULL);
-    XXH_ASSERT(4 <= len && len < 8);
+    XXH_ASSERT(4 <= len && len <= 8);
     seed ^= (xxh_u64)XXH_swap32((xxh_u32)seed) << 32;
     {   xxh_u32 const input1 = XXH_readLE32(input);
         xxh_u32 const input2 = XXH_readLE32(input + len - 4);
@@ -3457,7 +3341,7 @@ XXH3_len_9to16_64b(const xxh_u8* input, size_t len, const xxh_u8* secret, XXH64_
 {
     XXH_ASSERT(input != NULL);
     XXH_ASSERT(secret != NULL);
-    XXH_ASSERT(8 <= len && len <= 16);
+    XXH_ASSERT(9 <= len && len <= 16);
     {   xxh_u64 const bitflip1 = (XXH_readLE64(secret+24) ^ XXH_readLE64(secret+32)) + seed;
         xxh_u64 const bitflip2 = (XXH_readLE64(secret+40) ^ XXH_readLE64(secret+48)) - seed;
         xxh_u64 const input_lo = XXH_readLE64(input)           ^ bitflip1;
@@ -3527,7 +3411,7 @@ XXH_FORCE_INLINE xxh_u64 XXH3_mix16B(const xxh_u8* XXH_RESTRICT input,
      * GCC generates much better scalar code than Clang for the rest of XXH3,
      * which is why finding a more optimal codepath is an interest.
      */
-    __asm__ ("" : "+r" (seed64));
+    XXH_COMPILER_GUARD(seed64);
 #endif
     {   xxh_u64 const input_lo = XXH_readLE64(input);
         xxh_u64 const input_hi = XXH_readLE64(input+8);
@@ -3871,12 +3755,8 @@ XXH_FORCE_INLINE XXH_TARGET_AVX2 void XXH3_initCustomSecret_avx2(void* XXH_RESTR
          * On GCC & Clang, marking 'dest' as modified will cause the compiler:
          *   - do not extract the secret from sse registers in the internal loop
          *   - use less common registers, and avoid pushing these reg into stack
-         * The asm hack causes Clang to assume that XXH3_kSecretPtr aliases with
-         * customSecret, and on aarch64, this prevented LDP from merging two
-         * loads together for free. Putting the loads together before the stores
-         * properly generates LDP.
          */
-        __asm__("" : "+r" (dest));
+        XXH_COMPILER_GUARD(dest);
 #       endif
 
         /* GCC -O2 need unroll loop manually */
@@ -3985,7 +3865,7 @@ XXH_FORCE_INLINE XXH_TARGET_SSE2 void XXH3_initCustomSecret_sse2(void* XXH_RESTR
          *   - do not extract the secret from sse registers in the internal loop
          *   - use less common registers, and avoid pushing these reg into stack
          */
-        __asm__("" : "+r" (dest));
+        XXH_COMPILER_GUARD(dest);
 #       endif
 
         for (i=0; i < nbRounds; ++i) {
@@ -4231,7 +4111,7 @@ XXH3_initCustomSecret_scalar(void* XXH_RESTRICT customSecret, xxh_u64 seed64)
      *   without hack: 2654.4 MB/s
      *   with hack:    3202.9 MB/s
      */
-    __asm__("" : "+r" (kSecretPtr));
+    XXH_COMPILER_GUARD(kSecretPtr);
 #endif
     /*
      * Note: in debug mode, this overrides the asm optimization
@@ -4396,7 +4276,7 @@ XXH3_mergeAccs(const xxh_u64* XXH_RESTRICT acc, const xxh_u8* XXH_RESTRICT secre
          *   without hack: 2063.7 MB/s
          *   with hack:    2560.7 MB/s
          */
-        __asm__("" : "+r" (result64));
+        XXH_COMPILER_GUARD(result64);
 #endif
     }
 
@@ -5431,6 +5311,8 @@ XXH128_hashFromCanonical(const XXH128_canonical_t* src)
 #endif
 
 #endif  /* XXH_NO_LONG_LONG */
+
+#endif  /* XXH_NO_XXH3 */
 
 /*!
  * @}

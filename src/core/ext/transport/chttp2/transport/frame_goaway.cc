@@ -70,7 +70,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id = (static_cast<uint32_t>(*cur)) << 24;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
@@ -78,7 +78,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
@@ -86,7 +86,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
@@ -94,7 +94,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur));
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR0:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
@@ -102,7 +102,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code = (static_cast<uint32_t>(*cur)) << 24;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
@@ -110,7 +110,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur)) << 16;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
@@ -118,7 +118,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur)) << 8;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
@@ -126,7 +126,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur));
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_DEBUG:
       if (end != cur) {
         memcpy(p->debug_data + p->debug_pos, cur,

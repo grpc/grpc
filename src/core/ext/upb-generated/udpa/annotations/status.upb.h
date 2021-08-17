@@ -9,7 +9,7 @@
 #ifndef UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -40,13 +40,19 @@ UPB_INLINE udpa_annotations_StatusAnnotation *udpa_annotations_StatusAnnotation_
 UPB_INLINE udpa_annotations_StatusAnnotation *udpa_annotations_StatusAnnotation_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   udpa_annotations_StatusAnnotation *ret = udpa_annotations_StatusAnnotation_new(arena);
-  return (ret && upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE udpa_annotations_StatusAnnotation *udpa_annotations_StatusAnnotation_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   udpa_annotations_StatusAnnotation *ret = udpa_annotations_StatusAnnotation_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *udpa_annotations_StatusAnnotation_serialize(const udpa_annotations_StatusAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_StatusAnnotation_msginit, arena, len);

@@ -773,7 +773,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   if (t->resource_user != nullptr &&
       !grpc_resource_user_safe_alloc(t->resource_user,
                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
-    gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
+    gpr_log(GPR_INFO, "Memory exhausted, rejecting the stream.");
     grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
                                              nullptr);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
@@ -1590,8 +1590,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_message(t, s);
     if (s->id != 0) {
       if (!s->read_closed && s->frame_storage.length == 0) {
-        size_t after = s->frame_storage.length +
-                       s->unprocessed_incoming_frames_buffer_cached_length;
+        size_t after = s->unprocessed_incoming_frames_buffer_cached_length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   before - after);
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
@@ -2444,7 +2443,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
       break;
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
-    // fallthrough
+      ABSL_FALLTHROUGH_INTENDED;
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;

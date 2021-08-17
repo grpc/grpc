@@ -428,7 +428,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       return PickResult::Complete(ring_[first_index].subchannel);
     case GRPC_CHANNEL_IDLE:
       ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
-      // fallthrough
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHANNEL_CONNECTING:
       return PickResult::Queue();
     default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
@@ -452,7 +452,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       switch (entry.connectivity_state) {
         case GRPC_CHANNEL_IDLE:
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
-          // fallthrough
+          ABSL_FALLTHROUGH_INTENDED;
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
         default:
