@@ -416,7 +416,6 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1653,7 +1652,6 @@ libs:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -5118,6 +5116,17 @@ targets:
   - test/core/transport/chttp2/context_list_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/promise/context.h
+  src:
+  - test/core/promise/context_test.cc
+  deps: []
   uses_polling: false
 - name: core_configuration_test
   gtest: true

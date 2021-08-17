@@ -31,6 +31,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "context_test",
+    srcs = ["context_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:context",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
     external_deps = ["gtest"],

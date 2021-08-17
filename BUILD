@@ -665,7 +665,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
-        "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
@@ -708,8 +707,15 @@ grpc_cc_library(
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "gpr_tls",
+    hdrs = ["src/core/lib/gpr/tls.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -868,6 +874,18 @@ grpc_cc_library(
         "src/core/lib/promise/poll.h",
     ],
     deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "context",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/context.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_tls",
+    ],
 )
 
 grpc_cc_library(
@@ -1350,6 +1368,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
