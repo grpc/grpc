@@ -20,11 +20,9 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
@@ -231,37 +229,10 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   }
 }
 
-bool ValidateUrl(URI url) {
-  std::string scheme(url.scheme());
-  absl::AsciiStrToLower(&scheme);
-  if (strcmp(scheme.c_str(), "https") != 0) {
-    return false;
-  }
-  absl::string_view host;
-  absl::string_view port;
-  SplitHostPort(url.authority(), &host, &port);
-  if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
-    if (strcmp(std::string(host).c_str(), "sts") == 0 ||
-        strcmp(std::string(host).c_str(), "iamcredentials") == 0) {
-      return true;
-    } else if (absl::StartsWith(host, "sts.") ||
-               absl::StartsWith(host, "iamcredentials.")) {
-      return true;
-    } else if (absl::EndsWith(host, ".sts") ||
-               absl::EndsWith(host, ".iamcredentials")) {
-      return true;
-    } else if (absl::EndsWith(host, "-sts") ||
-               absl::EndsWith(host, "-iamcredentials")) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
   absl::StatusOr<URI> uri = URI::Parse(options_.token_url);
-  if (!uri.ok() || !ValidateUrl(*uri)) {
+  if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
                         uri.status().ToString())
@@ -383,7 +354,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   std::string access_token = it->second.string_value();
   absl::StatusOr<URI> uri =
       URI::Parse(options_.service_account_impersonation_url);
-  if (!uri.ok() || !ValidateUrl(*uri)) {
+  if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat(
             "Invalid service account impersonation url: %s. Error: %s",

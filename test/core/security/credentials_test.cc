@@ -2385,98 +2385,6 @@ static void test_external_account_creds_success(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static void test_external_account_creds_success_pattern2(void) {
-  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
-  grpc_core::ExecCtx exec_ctx;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
-                                            nullptr, nullptr};
-  grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::Options options = {
-      "external_account",    // type;
-      "audience",            // audience;
-      "subject_token_type",  // subject_token_type;
-      "",                    // service_account_impersonation_url;
-      "https://test.sts.googleapis.com:5555/token_pattern2",  // token_url;
-      "https://sts.googleapis.com:5555/token_info",           // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-  };
-  TestExternalAccountCredentials creds(options, {});
-  /* Check security level. */
-  GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  /* First request: http put should be called. */
-  request_metadata_state* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            external_account_creds_httpcli_post_success);
-  run_request_metadata_test(&creds, auth_md_ctx, state);
-  grpc_core::ExecCtx::Get()->Flush();
-  grpc_httpcli_set_override(nullptr, nullptr);
-}
-
-static void test_external_account_creds_success_pattern3(void) {
-  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
-  grpc_core::ExecCtx exec_ctx;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
-                                            nullptr, nullptr};
-  grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::Options options = {
-      "external_account",    // type;
-      "audience",            // audience;
-      "subject_token_type",  // subject_token_type;
-      "",                    // service_account_impersonation_url;
-      "https://sts.test.googleapis.com:5555/token_pattern3",  // token_url;
-      "https://sts.googleapis.com:5555/token_info",           // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-  };
-  TestExternalAccountCredentials creds(options, {});
-  /* Check security level. */
-  GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  /* First request: http put should be called. */
-  request_metadata_state* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            external_account_creds_httpcli_post_success);
-  run_request_metadata_test(&creds, auth_md_ctx, state);
-  grpc_core::ExecCtx::Get()->Flush();
-  grpc_httpcli_set_override(nullptr, nullptr);
-}
-static void test_external_account_creds_success_pattern4(void) {
-  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
-  grpc_core::ExecCtx exec_ctx;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
-                                            nullptr, nullptr};
-  grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::Options options = {
-      "external_account",    // type;
-      "audience",            // audience;
-      "subject_token_type",  // subject_token_type;
-      "",                    // service_account_impersonation_url;
-      "https://test-sts.googleapis.com:5555/token_pattern4",  // token_url;
-      "https://sts.googleapis.com:5555/token_info",           // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-  };
-  TestExternalAccountCredentials creds(options, {});
-  /* Check security level. */
-  GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  /* First request: http put should be called. */
-  request_metadata_state* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            external_account_creds_httpcli_post_success);
-  run_request_metadata_test(&creds, auth_md_ctx, state);
-  grpc_core::ExecCtx::Get()->Flush();
-  grpc_httpcli_set_override(nullptr, nullptr);
-}
-
 static void test_external_account_creds_success_with_url_encode(void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3632,9 +3540,6 @@ int main(int argc, char** argv) {
   test_channel_creds_duplicate_without_call_creds();
   test_auth_metadata_context();
   test_external_account_creds_success();
-  test_external_account_creds_success_pattern2();
-  test_external_account_creds_success_pattern3();
-  test_external_account_creds_success_pattern4();
   test_external_account_creds_success_with_url_encode();
   test_external_account_creds_success_with_service_account_impersonation();
   test_external_account_creds_failure_invalid_token_url();
