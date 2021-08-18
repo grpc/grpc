@@ -452,10 +452,10 @@ def grpc_deps():
     if "com_google_s2a_core" not in native.existing_rules():
         http_archive(
             name = "com_google_s2a_core",
-            sha256 = "cf0349104d08b3f12cae6ee7b2a75f9f399cb3cc64152a8acc1397d6b4ec10a1",
-            strip_prefix = "s2a-core-2c4987a6fcd0d201168f52396f48fefed9bde970",
+            sha256 = "c874b645527a0a09ddfaba937dc9d16f8925712ef2b615b344e9f896543a7239",
+            strip_prefix = "s2a-core-af5c93239e2a6aaea1fed0e9022b07a594f6e2ed",
             urls = [
-                "https://github.com/google/s2a-core/archive/2c4987a6fcd0d201168f52396f48fefed9bde970.tar.gz",
+                "https://github.com/google/s2a-core/archive/af5c93239e2a6aaea1fed0e9022b07a594f6e2ed.tar.gz",
             ],
         )
 
