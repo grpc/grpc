@@ -5886,6 +5886,20 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: loop_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/loop_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: match_test
   gtest: true
   build: test
