@@ -12,38 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
+
+grpc_package(name = "test/core/transport/binder/end2end/fuzzers")
 
 licenses(["notice"])
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "layering_check",
-    ],
-)
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-grpc_cc_library(
-    name = "binder_transport",
-    srcs = [
-        "binder_transport.cc",
-    ],
-    hdrs = [
-        "binder_stream.h",
-        "binder_transport.h",
-    ],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/memory",
-        "absl/strings",
-    ],
+grpc_fuzzer(
+    name = "client_fuzzer",
+    srcs = ["client_fuzzer.cc"],
+    corpus = "client_fuzzer_corpus",
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
+        "//:gpr",
         "//:gpr_base",
-        "//:gpr_platform",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//:grpc_base_c",
-        "//src/core/ext/transport/binder/utils:transport_stream_receiver",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
-        "//src/core/ext/transport/binder/wire_format:wire_writer",
+        "//test/core/util:grpc_test_util",
     ],
 )

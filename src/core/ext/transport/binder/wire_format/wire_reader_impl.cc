@@ -59,7 +59,7 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
     std::string value{};
     if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&value));
     gpr_log(GPR_INFO, "value = %s", value.c_str());
-    ret.push_back({key, value});
+    ret.emplace_back(key, value);
   }
   return ret;
 }

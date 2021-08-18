@@ -69,8 +69,7 @@ class TransportStreamReceiver {
   virtual void CancelRecvMessageCallbacksDueToTrailingMetadata(
       StreamIdentifier id) = 0;
   // Remove all entries associated with stream number `id`.
-  virtual void Clear(StreamIdentifier id) = 0;
-  virtual void CancelStream(StreamIdentifier id, absl::Status error) = 0;
+  virtual void CancelStream(StreamIdentifier id) = 0;
 
   static const absl::string_view kGrpcBinderTransportCancelledGracefully;
 };
