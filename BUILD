@@ -342,6 +342,7 @@ grpc_cc_library(
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -379,6 +380,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",

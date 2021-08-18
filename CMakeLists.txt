@@ -1854,6 +1854,7 @@ add_library(grpc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
   src/core/lib/compression/stream_compression_identity.cc
+  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
@@ -2492,6 +2493,7 @@ add_library(grpc_unsecure
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
   src/core/lib/compression/stream_compression_identity.cc
+  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc

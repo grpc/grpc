@@ -1374,6 +1374,7 @@ LIBGRPC_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -1862,6 +1863,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
