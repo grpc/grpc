@@ -29,7 +29,6 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/trickle_endpoint.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -219,7 +218,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   static grpc_endpoint_pair MakeEndpoints(size_t kilobits,
                                           grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);

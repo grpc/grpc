@@ -71,13 +71,10 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
-  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
-      discard_write,
-      grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
-  grpc_transport* t = grpc_create_chttp2_transport(
-      nullptr, mock_endpoint, true,
-      grpc_resource_user_create(resource_quota, "mock_transport"));
-  grpc_resource_quota_unref(resource_quota);
+  grpc_endpoint* mock_endpoint =
+      grpc_mock_endpoint_create(discard_write, resource_quota);
+  grpc_transport* t =
+      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -103,6 +100,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     gpr_free(s[i]);
   }
   grpc_transport_destroy(t);
+  grpc_resource_quota_unref(resource_quota);
   exec_ctx.Flush();
 }
 
@@ -129,13 +127,10 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
-  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
-      discard_write,
-      grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
-  grpc_transport* t = grpc_create_chttp2_transport(
-      nullptr, mock_endpoint, true,
-      grpc_resource_user_create(resource_quota, "mock_transport"));
-  grpc_resource_quota_unref(resource_quota);
+  grpc_endpoint* mock_endpoint =
+      grpc_mock_endpoint_create(discard_write, resource_quota);
+  grpc_transport* t =
+      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -160,6 +155,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     gpr_free(s[i]);
   }
   grpc_transport_destroy(t);
+  grpc_resource_quota_unref(resource_quota);
   exec_ctx.Flush();
 }
 

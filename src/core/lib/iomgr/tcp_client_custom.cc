@@ -43,14 +43,12 @@ struct grpc_custom_tcp_connect {
   grpc_endpoint** endpoint;
   int refs;
   std::string addr_name;
-  grpc_slice_allocator* slice_allocator;
+  grpc_resource_quota* resource_quota;
 };
 
 static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
-  if (connect->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(connect->slice_allocator);
-  }
   grpc_custom_socket* socket = connect->socket;
+  grpc_resource_quota_unref_internal(connect->resource_quota);
   delete connect;
   socket->refs--;
   if (socket->refs == 0) {
@@ -89,8 +87,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   grpc_timer_cancel(&connect->alarm);
   if (error == GRPC_ERROR_NONE) {
     *connect->endpoint = custom_tcp_endpoint_create(
-        socket, connect->slice_allocator, connect->addr_name.c_str());
-    connect->slice_allocator = nullptr;
+        socket, connect->resource_quota, connect->addr_name.c_str());
   }
   done = (--connect->refs == 0);
   if (done) {
@@ -114,7 +111,6 @@ static void custom_connect_callback(grpc_custom_socket* socket,
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* resolved_addr,
@@ -122,6 +118,17 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   (void)channel_args;
   (void)interested_parties;
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
+  if (channel_args != nullptr) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_unref_internal(resource_quota);
+        resource_quota =
+            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
+                channel_args->args[i].value.pointer.p));
+      }
+    }
+  }
   grpc_custom_socket* socket =
       static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
@@ -130,7 +137,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
-  connect->slice_allocator = slice_allocator;
+  connect->resource_quota = resource_quota;
   connect->socket = socket;
   socket->connector = connect;
   socket->endpoint = nullptr;

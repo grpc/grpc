@@ -97,6 +97,9 @@ class Server : public InternallyRefCounted<Server> {
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
+  grpc_resource_user* default_resource_user() const {
+    return default_resource_user_;
+  }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
@@ -125,13 +128,11 @@ class Server : public InternallyRefCounted<Server> {
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,
       const RefCountedPtr<channelz::SocketNode>& socket_node,
-      grpc_resource_user* resource_user = nullptr,
-      size_t preallocated_bytes = 0);
+      grpc_resource_user* resource_user = nullptr);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -397,6 +398,7 @@ class Server : public InternallyRefCounted<Server> {
   }
 
   grpc_channel_args* const channel_args_;
+  grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 

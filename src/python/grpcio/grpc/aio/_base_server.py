@@ -206,7 +206,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def invocation_metadata(self) -> Optional[Metadata]:
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.

@@ -51,7 +51,6 @@
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
-#include "test/core/util/resource_user_util.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
@@ -539,7 +538,6 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          grpc_slice_allocator_create_unlimited(),
                           conn->pollset_set, nullptr,
                           &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
@@ -614,11 +612,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
-  grpc_error_handle error = grpc_tcp_server_create(
-      nullptr, proxy->channel_args,
-      grpc_slice_allocator_factory_create(
-          grpc_resource_quota_from_channel_args(args, true)),
-      &proxy->server);
+  grpc_error_handle error =
+      grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;

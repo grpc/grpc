@@ -41,7 +41,7 @@
 
 grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
-    const char* peer_string, grpc_slice_allocator* slice_allocator,
+    const char* peer_string, grpc_resource_quota* resource_quota,
     CFStreamHandle* stream_sync);
 
 #endif /* GRPC_CFSTREAM */

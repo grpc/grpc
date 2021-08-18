@@ -42,8 +42,7 @@
  */
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               const char* peer_string,
-                               grpc_slice_allocator* slice_allocator);
+                               const char* peer_string);
 
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock);
 

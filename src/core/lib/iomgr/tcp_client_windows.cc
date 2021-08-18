@@ -52,7 +52,6 @@ struct async_connect {
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
   grpc_channel_args* channel_args;
-  grpc_slice_allocator* slice_allocator;
 };
 
 static void async_connect_unlock_and_cleanup(async_connect* ac,
@@ -62,9 +61,6 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (done) {
     grpc_channel_args_destroy(ac->channel_args);
     gpr_mu_destroy(&ac->mu);
-    if (ac->slice_allocator != nullptr) {
-      grpc_slice_allocator_destroy(ac->slice_allocator);
-    }
     delete ac;
   }
   if (socket != NULL) grpc_winsocket_destroy(socket);
@@ -110,10 +106,8 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name.c_str(),
-                              ac->slice_allocator);
-        ac->slice_allocator = nullptr;
-        socket = nullptr;
+        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name.c_str());
+        socket = NULL;
       }
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket is null");
@@ -129,7 +123,6 @@ static void on_connect(void* acp, grpc_error_handle error) {
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
 static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
@@ -209,7 +202,6 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
-  ac->slice_allocator = slice_allocator;
   ac->channel_args = grpc_channel_args_copy(channel_args);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
@@ -229,7 +221,6 @@ failure:
                          GRPC_ERROR_STR_TARGET_ADDRESS,
                          grpc_slice_from_cpp_string(std::move(target_uri)));
   GRPC_ERROR_UNREF(error);
-  grpc_slice_allocator_destroy(slice_allocator);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {
