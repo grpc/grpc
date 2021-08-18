@@ -119,7 +119,7 @@ grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
   return ::grpc_call_cancel_with_status(call, status, description, reserved);
 }
 
-bool CoreCodegen::grpc_call_failed_before_recv_message(const grpc_call* c) {
+int CoreCodegen::grpc_call_failed_before_recv_message(const grpc_call* c) {
   return ::grpc_call_failed_before_recv_message(c);
 }
 void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
