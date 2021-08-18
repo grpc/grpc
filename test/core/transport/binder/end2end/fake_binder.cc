@@ -233,7 +233,8 @@ void TransactionProcessor::ProcessLoop() {
 }
 
 absl::Duration TransactionProcessor::GetRandomDelay() {
-  int64_t delay = absl::Uniform<int64_t>(bit_gen_, 0, delay_nsec_);
+  int64_t delay =
+      absl::Uniform<int64_t>(bit_gen_, delay_nsec_ / 2, delay_nsec_);
   return absl::Nanoseconds(delay);
 }
 

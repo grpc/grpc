@@ -148,7 +148,7 @@ TEST_P(End2EndBinderTransportTest,
   // Set transaction delay to a large number. This happens after the channel
   // creation so that we don't need to wait that long for client and server to
   // be connected.
-  end2end_testing::g_transaction_processor->SetDelay(absl::Seconds(10));
+  end2end_testing::g_transaction_processor->SetDelay(absl::Seconds(5));
 
   grpc::ClientContext context;
   context.set_deadline(absl::ToChronoTime(absl::Now() + absl::Seconds(1)));
