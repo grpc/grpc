@@ -50,5 +50,7 @@ void EndpointBinderPool::RemoveEndpointBinder(const std::string& service) {
   }
 }
 
+void EndpointBinderPool::Reset() { delete pool_; }
+
 }  // namespace experimental
 }  // namespace grpc

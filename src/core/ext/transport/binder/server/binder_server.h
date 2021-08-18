@@ -35,6 +35,7 @@ class EndpointBinderPool {
   static void AddEndpointBinder(const std::string& service,
                                 void* endpoint_binder);
   static void RemoveEndpointBinder(const std::string& service);
+  static void Reset();
 
  private:
   static absl::flat_hash_map<std::string, void*>* pool_;

@@ -61,7 +61,10 @@ class BinderServerTest : public ::testing::Test {
     delete grpc_binder::end2end_testing::g_transaction_processor;
   }
   static void SetUpTestSuite() { grpc_init(); }
-  static void TearDownTestSuite() { grpc_shutdown(); }
+  static void TearDownTestSuite() {
+    grpc::experimental::EndpointBinderPool::Reset();
+    grpc_shutdown();
+  }
 };
 
 TEST_F(BinderServerTest, BuildAndStart) {

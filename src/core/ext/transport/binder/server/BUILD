@@ -36,10 +36,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "//:grpc++_base",
+        "//:grpc_base_c",
         "//src/core/ext/transport/binder/transport",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:binder_android",
-        "//:grpc++_base",
-        "//:grpc_base_c",
     ],
 )
