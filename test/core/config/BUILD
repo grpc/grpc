@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_xds_url_map_python.sh"
-timeout_mins: 90
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*sponge_log.log"
-    strip_prefix: "artifacts"
-  }
-}
+licenses(["notice"])
+
+grpc_package(name = "test/core/config")
+
+grpc_cc_test(
+    name = "core_configuration_test",
+    srcs = ["core_configuration_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:config",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

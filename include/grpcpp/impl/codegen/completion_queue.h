@@ -175,9 +175,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
   bool Next(void** tag, bool* ok) {
+    // Check return type == GOT_EVENT... cases:
+    // SHUTDOWN  - queue has been shutdown, return false.
+    // TIMEOUT   - we passed infinity time => queue has been shutdown, return
+    //             false.
+    // GOT_EVENT - we actually got an event, return true.
     return (AsyncNextInternal(tag, ok,
                               ::grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
+                                  GPR_CLOCK_REALTIME)) == GOT_EVENT);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).

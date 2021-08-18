@@ -45,7 +45,9 @@ QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 
 # Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
-_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
+# With the per-run IAM change, the first xDS response has a several minutes
+# delay. We want to increase the interval, reduce the log spam.
+_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 15
 URL_MAP_TESTCASE_FILE_SUFFIX = '_test.py'
 _CLIENT_CONFIGURE_WAIT_SEC = 2
 
@@ -329,6 +331,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
+
         # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
         # cannot be used in the built-in test-skipping decorators. See the
         # official FAQs:
@@ -345,12 +348,15 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             return
         else:
             cls.skip_reason = None
-        # TODO(lidiz) concurrency is possible, pending multiple-instance change
-        GcpResourceManager().test_client_runner.cleanup(force=True)
+
+        # Create the test case's own client runner with it's own namespace,
+        # enables concurrent running with other test cases.
+        cls.test_client_runner = GcpResourceManager().create_test_client_runner(
+        )
         # Start the client, and allow the test to override the initial RPC config.
         rpc, metadata = cls.client_init_config(rpc="UnaryCall,EmptyCall",
                                                metadata="")
-        cls.test_client = GcpResourceManager().test_client_runner.run(
+        cls.test_client = cls.test_client_runner.run(
             server_target=f'xds:///{cls.hostname()}',
             rpc=rpc,
             metadata=metadata,
@@ -359,8 +365,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.skip_reason is not None:
-            GcpResourceManager().test_client_runner.cleanup(force=True)
+        if cls.skip_reason is None:
+            cls.test_client_runner.delete_namespace()
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
@@ -375,17 +381,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         self.assertIsNotNone(config)
         # Found client config, test it.
         self._xds_json_config = json_format.MessageToDict(config)
-        try:
-            self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
-        except Exception as e:
-            # Log the exception for debugging purposes.
-            if type(self._last_xds_config_exception) != type(e) or str(
-                    self._last_xds_config_exception) != str(e):
-                # Suppress repetitive exception logs
-                logging.exception(e)
-                self._last_xds_config_exception = e
-            raise
-        return
+        # Execute the child class provided validation logic
+        self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
     def run(self, result: unittest.TestResult = None) -> None:
         """Abort this test case if CSDS check is failed.
@@ -402,7 +399,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         if self.skip_reason:
             logging.info('Skipping: %s', self.skip_reason)
             self.skipTest(self.skip_reason)
-        self._last_xds_config_exception = None
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
                 seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),

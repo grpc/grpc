@@ -42,6 +42,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -1345,6 +1346,6 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   return RUN_ALL_TESTS();
 }
