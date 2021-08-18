@@ -68,6 +68,4 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_mode).c_str());
     return 1;
   }
-
-  return 0;
 }
