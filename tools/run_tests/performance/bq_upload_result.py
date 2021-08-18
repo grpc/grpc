@@ -85,8 +85,12 @@ def _insert_result(bq, dataset_id, table_id, scenario_result, flatten=True):
                                        [row])
 
 
-def _insert_scenario_result(bq, dataset_id, table_id, scenario_result,
-                            test_metadata_file, flatten=True):
+def _insert_scenario_result(bq,
+                            dataset_id,
+                            table_id,
+                            scenario_result,
+                            test_metadata_file,
+                            flatten=True):
     if flatten:
         _flatten_result_inplace(scenario_result)
     _populate_metadata_from_file(scenario_result, test_metadata_file)
@@ -174,32 +178,34 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
     with open(test_metadata_file, 'r') as f:
         test_metadata = json.loads(f.read())
 
-    """eliminate managedField from metadata set"""
+    # eliminate managedFields from metadata set
     if 'managedFields' in test_metadata:
         del test_metadata['managedFields']
-    annotations = test_metadata['annotations']
 
-    """if use kubectl apply ..., kubectl will append current configuration to
-     annotation, the field is deleted since it includes a lot of irrelevant 
-     information"""
+    # if use kubectl apply ..., kubectl will append current configuration to
+    # annotation, the field is deleted since it includes a lot of irrelevant
+    # information
+    annotations = test_metadata['annotations']
     if 'kubectl.kubernetes.io/last-applied-configuration' in annotations:
         del annotations['kubectl.kubernetes.io/last-applied-configuration']
 
     utc_timestamp = str(calendar.timegm(time.gmtime()))
     metadata = {'created': utc_timestamp}
 
-    if 'buildNumber' in metadata:
-        metadata['buildNumber'] = metadata['buildNumber']
-    if 'buildUrl' in annotations:
-        metadata['buildUrl'] = annotations['buildUrl']
-    if 'jobName' in annotations:
-        metadata['jobName'] = annotations['jobName']
-    if 'gitCommit' in annotations:
-        metadata['gitCommit'] = annotations['gitCommit']
-    """actual commit is the actual head of PR that is getting tested, use
-    same way as before to populate this field"""
-    if 'gitActualCommit' in annotations:
-        metadata['gitActualCommit'] = annotations['gitActualCommit']
+    _annotation_to_bq_metadata_key_map = {
+        'ci_' + key: key for key in (
+            'buildNumber',
+            'buildUrl',
+            'jobName',
+            'gitCommit',
+            'gitActualCommit',
+        )
+    }
+
+    for key, value in _annotation_to_bq_metadata_key_map.items():
+        if key in annotations:
+            metadata[value] = annotations[key]
+
     scenario_result['metadata'] = metadata
     scenario_result['testMetadata'] = json.dumps(test_metadata)
 
