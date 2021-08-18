@@ -229,8 +229,9 @@ namespace {
 bool ValidateUrlField(const Json& json, const std::string& field) {
   auto it = json.object_value().find(field);
   if (it == json.object_value().end() ||
-      it->second.type() != Json::Type::STRING) {
-    return false;
+      it->second.type() != Json::Type::STRING ||
+      it->second.string_value().empty()) {
+    return true;
   }
   absl::StatusOr<grpc_core::URI> url =
       grpc_core::URI::Parse(it->second.string_value());
@@ -266,7 +267,7 @@ bool ValidateExteralAccountCredentials(const Json& json) {
          ValidateUrlField(json, "token_info_url");
 }
 
-} // namespace
+}  // namespace
 
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error_handle create_default_creds_from_path(
