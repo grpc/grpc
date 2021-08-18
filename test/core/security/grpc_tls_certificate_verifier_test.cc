@@ -72,6 +72,82 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
             "UNAUTHENTICATED: SyncExternalVerifier failed");
 }
 
+TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
+  absl::Status sync_status;
+  // This is to make sure the thread has already been shut down when we exist
+  // the test.
+  gpr_event thread_shutdown_event;
+  gpr_event_init(&thread_shutdown_event);
+  // This is to make sure the callback has already been completed before we
+  // destroy ExternalCertificateVerifier object.
+  gpr_event callback_completed_event;
+  gpr_event_init(&callback_completed_event);
+  auto* async_verifier = new AsyncExternalVerifier(true, &thread_shutdown_event,
+                                                   &callback_completed_event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier->Verify(
+      &request_,
+      [](absl::Status async_status) {
+        EXPECT_TRUE(async_status.ok())
+            << async_status.code() << " " << async_status.message();
+      },
+      &sync_status));
+  void* callback_completed =
+      gpr_event_wait(&callback_completed_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(callback_completed, nullptr);
+  // We need to delete ExternalCertificateVerifier first, to trigger the
+  // destroying thread. After we are notified from the destroying thread, we can
+  // safely exit the test.
+  delete core_external_verifier;
+  void* thread_shutdown =
+      gpr_event_wait(&thread_shutdown_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(thread_shutdown, nullptr);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
+  absl::Status sync_status;
+  // This is to make sure the thread has already been shut down when we exist
+  // the test.
+  gpr_event thread_shutdown_event;
+  gpr_event_init(&thread_shutdown_event);
+  // This is to make sure the callback has already been completed before we
+  // destroy ExternalCertificateVerifier object.
+  gpr_event callback_completed_event;
+  gpr_event_init(&callback_completed_event);
+  auto* async_verifier = new AsyncExternalVerifier(
+      false, &thread_shutdown_event, &callback_completed_event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier->Verify(
+      &request_,
+      [](absl::Status async_status) {
+        gpr_log(GPR_INFO, "Callback is invoked.");
+        EXPECT_EQ(async_status.code(), absl::StatusCode::kUnauthenticated);
+        EXPECT_EQ(async_status.ToString(),
+                  "UNAUTHENTICATED: AsyncExternalVerifier failed");
+      },
+      &sync_status));
+  void* callback_completed =
+      gpr_event_wait(&callback_completed_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(callback_completed, nullptr);
+  // We need to delete ExternalCertificateVerifier first, to trigger the
+  // destroying thread. After we are notified from the destroying thread, we can
+  // safely exit the test.
+  delete core_external_verifier;
+  void* thread_shutdown =
+      gpr_event_wait(&thread_shutdown_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(thread_shutdown, nullptr);
+}
+
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
   absl::Status sync_status;
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(

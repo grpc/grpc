@@ -101,6 +101,7 @@ AsyncExternalVerifier::~AsyncExternalVerifier() {
   }
   // Wait for thread to exit.
   thread_.Join();
+  grpc_shutdown();
 }
 
 int AsyncExternalVerifier::Verify(
@@ -129,8 +130,15 @@ void AsyncExternalVerifier::Destruct(void* user_data) {
   // try to join the worker thread from within the worker thread.
   grpc_core::Thread destroy_thread(
       "DestroyExternalVerifier", DestroyExternalVerifier, self, nullptr,
-      grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
+      grpc_core::Thread::Options().set_joinable(false));
   destroy_thread.Start();
+  // Notify the caller that the thread is shut down.
+  {
+    MutexLock lock(&self->mu_);
+    if (self->thread_shutdown_event_ != nullptr) {
+      gpr_event_set(self->thread_shutdown_event_, reinterpret_cast<void*>(1));
+    }
+  }
 }
 
 void AsyncExternalVerifier::WorkerThread(void* arg) {
@@ -153,7 +161,9 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
       continue;
     }
     // If we're being told to shut down, return.
-    if (request.shutdown) return;
+    if (request.shutdown) {
+      return;
+    }
     // Process the request.
     if (self->success_) {
       request.callback(request.request, request.callback_arg, GRPC_STATUS_OK,
@@ -162,6 +172,10 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
       request.callback(request.request, request.callback_arg,
                        GRPC_STATUS_UNAUTHENTICATED,
                        "AsyncExternalVerifier failed");
+    }
+    if (self->thread_shutdown_event_ != nullptr) {
+      gpr_event_set(self->callback_completed_event_,
+                    reinterpret_cast<void*>(1));
     }
   }
 }
