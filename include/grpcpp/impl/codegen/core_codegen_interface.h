@@ -111,6 +111,7 @@ class CoreCodegenInterface {
                                                        grpc_status_code status,
                                                        const char* description,
                                                        void* reserved) = 0;
+  virtual bool grpc_call_failed_before_recv_message(const grpc_call* c) = 0;
   virtual void grpc_call_ref(grpc_call* call) = 0;
   virtual void grpc_call_unref(grpc_call* call) = 0;
   virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) = 0;
