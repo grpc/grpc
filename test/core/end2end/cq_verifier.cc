@@ -209,7 +209,6 @@ std::string ExpectationString(const Expectation& e) {
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
-      break;
   }
   return out;
 }
@@ -243,11 +242,9 @@ static void verify_matches(const Expectation& e, const grpc_event& ev) {
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "premature queue shutdown");
       abort();
-      break;
     case GRPC_QUEUE_TIMEOUT:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
-      break;
   }
 }
 
