@@ -85,12 +85,15 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                     rpc_distribution[key] += value
 
             # Log the RPC distribution
-            logging.info('RPC distribution:')
-            counts = sorted(rpc_distribution.items(),
-                            key=lambda x: x[1],
-                            reversed=True)
-            for key, value in counts:
-                logging.info("\t%s: %s", key, value)
+            server_entries = sorted(rpc_distribution.items(),
+                                    key=lambda x: -x[1])
+            logging.info('RPC distribution (len=%s): %s', len(server_entries),
+                         server_entries)
+            peak = server_entries[0]
+            mean = sum(map(lambda x: x[1],
+                           server_entries)) / len(server_entries)
+            logging.info('Peak=%d Mean=%.1f Peak-to-Mean-Ratio=%.2f', peak,
+                         mean, peak / mean)
 
 
 if __name__ == '__main__':
