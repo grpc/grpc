@@ -377,7 +377,6 @@ add_custom_target(tools_c
 add_custom_target(tools_cxx
   DEPENDS
   gen_hpack_tables
-  gen_legal_metadata_characters
 )
 
 add_custom_target(tools
@@ -3995,32 +3994,6 @@ target_link_libraries(gen_hpack_tables
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
-)
-
-
-
-add_executable(gen_legal_metadata_characters
-  tools/codegen/core/gen_legal_metadata_characters.cc
-)
-
-target_include_directories(gen_legal_metadata_characters
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(gen_legal_metadata_characters
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
