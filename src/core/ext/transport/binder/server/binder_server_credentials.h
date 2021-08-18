@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpcpp/security/server_credentials.h>
 
 #include <memory>
