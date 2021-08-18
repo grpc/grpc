@@ -17,6 +17,9 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <gtest/gtest.h>
+#include <memory>
+#include <thread>
+#include <vector>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
@@ -135,17 +138,11 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
           "example.service.multiple.connections");
   constexpr size_t kNumThreads = 128;
 
-  struct ThreadArgs {
-    void* raw_endpoint_binder;
-    size_t id;
-  };
-
-  auto thread_fn = [](void* arg) {
-    const ThreadArgs& args = *static_cast<ThreadArgs*>(arg);
+  auto thread_fn = [&](size_t id) {
     std::unique_ptr<grpc_binder::Binder> endpoint_binder =
         absl::make_unique<grpc_binder::end2end_testing::FakeBinder>(
             static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
-                args.raw_endpoint_binder));
+                raw_endpoint_binder));
     std::shared_ptr<grpc::Channel> channel =
         grpc::testing::CreateBinderChannel(std::move(endpoint_binder));
     std::unique_ptr<grpc_binder::end2end_testing::EchoService::Stub> stub =
@@ -153,27 +150,18 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
     grpc_binder::end2end_testing::EchoRequest request;
     grpc_binder::end2end_testing::EchoResponse response;
     grpc::ClientContext context;
-    request.set_text(absl::StrFormat("BinderServerBuilder-%d", args.id));
+    request.set_text(absl::StrFormat("BinderServerBuilder-%d", id));
     grpc::Status status = stub->EchoUnaryCall(&context, request, &response);
     EXPECT_TRUE(status.ok());
-    EXPECT_EQ(response.text(),
-              absl::StrFormat("BinderServerBuilder-%d", args.id));
+    EXPECT_EQ(response.text(), absl::StrFormat("BinderServerBuilder-%d", id));
   };
 
-  std::vector<ThreadArgs> args(kNumThreads);
-  std::vector<std::string> thr_names(kNumThreads);
-  std::vector<grpc_core::Thread> threads(kNumThreads);
+  std::vector<std::thread> threads(kNumThreads);
   for (size_t i = 0; i < kNumThreads; ++i) {
-    args[i].raw_endpoint_binder = raw_endpoint_binder;
-    args[i].id = i;
-    thr_names[i] = absl::StrFormat("thread-%d", i);
-    threads[i] = grpc_core::Thread(thr_names[i].c_str(), thread_fn, &args[i]);
+    threads[i] = std::thread(thread_fn, i);
   }
-  for (grpc_core::Thread& thr : threads) {
-    thr.Start();
-  }
-  for (grpc_core::Thread& thr : threads) {
-    thr.Join();
+  for (auto& thr : threads) {
+    thr.join();
   }
   server->Shutdown();
 }

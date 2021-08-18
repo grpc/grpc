@@ -4591,7 +4591,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   deps:
   - absl/random:random
-  - absl/types:variant
   - grpc++
   - grpc_test_util
 - name: binder_transport_test

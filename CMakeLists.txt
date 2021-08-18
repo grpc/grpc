@@ -8444,7 +8444,6 @@ target_link_libraries(binder_server_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::random_random
-  absl::variant
   grpc++
   grpc_test_util
 )
