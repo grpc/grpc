@@ -137,17 +137,6 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(donnadionne): Check to see if retry policy is enabled, this will be
-// removed once retry functionality is fully integration-tested and enabled by
-// default.
-bool XdsRetryEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsApi::Route::HashPolicy
 //
@@ -1839,15 +1828,13 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     }
   }
   // Get retry policy
-  if (XdsRetryEnabled()) {
-    const envoy_config_route_v3_RetryPolicy* retry_policy =
-        envoy_config_route_v3_RouteAction_retry_policy(route_action);
-    if (retry_policy != nullptr) {
-      absl::optional<XdsApi::Route::RetryPolicy> retry;
-      grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
-      if (error != GRPC_ERROR_NONE) return error;
-      route->retry_policy = retry;
-    }
+  const envoy_config_route_v3_RetryPolicy* retry_policy =
+      envoy_config_route_v3_RouteAction_retry_policy(route_action);
+  if (retry_policy != nullptr) {
+    absl::optional<XdsApi::Route::RetryPolicy> retry;
+    grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
+    if (error != GRPC_ERROR_NONE) return error;
+    route->retry_policy = retry;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1898,12 +1885,10 @@ grpc_error_handle RouteConfigParse(
     absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
-    if (XdsRetryEnabled()) {
-      if (retry_policy != nullptr) {
-        grpc_error_handle error =
-            RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
-        if (error != GRPC_ERROR_NONE) return error;
-      }
+    if (retry_policy != nullptr) {
+      grpc_error_handle error =
+          RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
+      if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse routes.
     size_t num_routes;
@@ -1939,8 +1924,7 @@ grpc_error_handle RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if (XdsRetryEnabled() && route.retry_policy == absl::nullopt &&
-          retry_policy != nullptr) {
+      if (route.retry_policy == absl::nullopt && retry_policy != nullptr) {
         route.retry_policy = virtual_host_retry_policy;
       }
       if (context.use_v3) {
