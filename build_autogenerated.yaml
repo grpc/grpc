@@ -5421,7 +5421,6 @@ targets:
   - test/core/transport/binder/end2end/testing_channel_create.cc
   deps:
   - absl/random:random
-  - absl/types:variant
   - grpc_test_util
 - name: end2end_test
   gtest: true
@@ -5531,7 +5530,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
   - absl/random:random
-  - absl/types:variant
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
