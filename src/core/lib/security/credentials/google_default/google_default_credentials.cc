@@ -224,18 +224,26 @@ static int is_metadata_server_reachable() {
   return detector.success;
 }
 
-bool ValidateUrl(grpc_core::URI url) {
-  std::string scheme(url.scheme());
-  absl::AsciiStrToLower(&scheme);
-  if (strcmp(scheme.c_str(), "https") != 0) {
+namespace {
+
+bool ValidateUrlField(const Json& json, const std::string& field) {
+  auto it = json.object_value().find(field);
+  if (it == json.object_value().end() ||
+      it->second.type() != Json::Type::STRING) {
+    return false;
+  }
+  absl::StatusOr<grpc_core::URI> url =
+      grpc_core::URI::Parse(it->second.string_value());
+  if (!url.ok()) return false;
+
+  if (!absl::EqualsIgnoreCase(url->scheme(), "https")) {
     return false;
   }
   absl::string_view host;
   absl::string_view port;
-  grpc_core::SplitHostPort(url.authority(), &host, &port);
+  grpc_core::SplitHostPort(url->authority(), &host, &port);
   if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
-    if (strcmp(std::string(host).c_str(), "sts") == 0 ||
-        strcmp(std::string(host).c_str(), "iamcredentials") == 0) {
+    if (host == "sts" || host == "iamcredentials") {
       return true;
     } else if (absl::StartsWith(host, "sts.") ||
                absl::StartsWith(host, "iamcredentials.")) {
@@ -251,43 +259,14 @@ bool ValidateUrl(grpc_core::URI url) {
   return false;
 }
 
-bool ValidateExteralAccountCredentials(Json json) {
-  if (json.type() != Json::Type::OBJECT) {
-    return false;
-  }
-  auto it = json.object_value().find("token_url");
-  if (it == json.object_value().end() ||
-      it->second.type() != Json::Type::STRING) {
-    return false;
-  }
-  absl::StatusOr<grpc_core::URI> token_url =
-      grpc_core::URI::Parse(it->second.string_value());
-  if (!token_url.ok() || !ValidateUrl(*token_url)) {
-    return false;
-  }
-  it = json.object_value().find("service_account_impersonation_url");
-  if (it == json.object_value().end() ||
-      it->second.type() != Json::Type::STRING) {
-    return false;
-  }
-  absl::StatusOr<grpc_core::URI> service_account_impersonation_url =
-      grpc_core::URI::Parse(it->second.string_value());
-  if (!service_account_impersonation_url.ok() ||
-      !ValidateUrl(*service_account_impersonation_url)) {
-    return false;
-  }
-  it = json.object_value().find("token_info_url");
-  if (it == json.object_value().end() ||
-      it->second.type() != Json::Type::STRING) {
-    return false;
-  }
-  absl::StatusOr<grpc_core::URI> token_info_url =
-      grpc_core::URI::Parse(it->second.string_value());
-  if (!token_info_url.ok() || !ValidateUrl(*token_info_url)) {
-    return false;
-  }
-  return true;
+bool ValidateExteralAccountCredentials(const Json& json) {
+  return json.type() == Json::Type::OBJECT &&
+         ValidateUrlField(json, "token_url") &&
+         ValidateUrlField(json, "service_account_impersonation_url") &&
+         ValidateUrlField(json, "token_info_url");
 }
+
+} // namespace
 
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error_handle create_default_creds_from_path(
@@ -346,9 +325,8 @@ static grpc_error_handle create_default_creds_from_path(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid external account credentials format.");
     goto end;
-  } else {
-    result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
   }
+  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
