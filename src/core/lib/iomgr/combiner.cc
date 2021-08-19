@@ -137,8 +137,9 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
   if (last == 1) {
     GRPC_STATS_INC_COMBINER_LOCKS_INITIATED();
     GPR_TIMER_MARK("combiner.initiated", 0);
-    gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null,
-                             (gpr_atm)grpc_core::ExecCtx::Get());
+    gpr_atm_no_barrier_store(
+        &lock->initiating_exec_ctx_or_null,
+        reinterpret_cast<gpr_atm>(grpc_core::ExecCtx::Get()));
     // first element on this list: add it to the list of combiner locks
     // executing within this exec_ctx
     push_last_on_exec_ctx(lock);

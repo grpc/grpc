@@ -506,7 +506,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       }
     }
   }
-  thread.join();
+  GPR_UNREACHABLE_CODE(thread.join());
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,

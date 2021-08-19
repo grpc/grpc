@@ -83,7 +83,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 MetadataVector CopyMetadataToVector(
     LoadBalancingPolicy::MetadataInterface* metadata) {
   MetadataVector result;
-  for (const auto& p : *metadata) {
+  for (auto p : *metadata) {
     result.push_back({std::string(p.first), std::string(p.second)});
   }
   return result;

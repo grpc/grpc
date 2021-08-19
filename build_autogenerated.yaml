@@ -427,7 +427,6 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -744,12 +743,14 @@ libs:
   - src/core/lib/compression/stream_compression.h
   - src/core/lib/compression/stream_compression_gzip.h
   - src/core/lib/compression/stream_compression_identity.h
+  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -1281,6 +1282,7 @@ libs:
   - src/core/lib/compression/stream_compression.cc
   - src/core/lib/compression/stream_compression_gzip.cc
   - src/core/lib/compression/stream_compression_identity.cc
+  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -1560,6 +1562,7 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1582,6 +1585,7 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -1615,6 +1619,7 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1636,6 +1641,7 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -1665,7 +1671,6 @@ libs:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1787,12 +1792,14 @@ libs:
   - src/core/lib/compression/stream_compression.h
   - src/core/lib/compression/stream_compression_gzip.h
   - src/core/lib/compression/stream_compression_identity.h
+  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -2050,6 +2057,7 @@ libs:
   - src/core/lib/compression/stream_compression.cc
   - src/core/lib/compression/stream_compression_gzip.cc
   - src/core/lib/compression/stream_compression_identity.cc
+  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -5130,6 +5138,28 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/promise/context.h
+  src:
+  - test/core/promise/context_test.cc
+  deps: []
+  uses_polling: false
+- name: core_configuration_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/config/core_configuration.h
+  src:
+  - src/core/lib/config/core_configuration.cc
+  - test/core/config/core_configuration_test.cc
+  deps: []
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -5522,6 +5552,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_reflection
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux
@@ -5553,6 +5584,7 @@ targets:
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux
@@ -5692,6 +5724,21 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: if_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/if_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
 - name: init_test
   gtest: true
   build: test
@@ -5855,6 +5902,20 @@ targets:
   - test/core/gpr/log_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: loop_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/loop_test.cc
+  deps:
+  - absl/types:variant
   uses_polling: false
 - name: match_test
   gtest: true
@@ -6229,6 +6290,18 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: race_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  src:
+  - test/core/promise/race_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -6895,6 +6968,7 @@ targets:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -6919,6 +6993,7 @@ targets:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -7024,6 +7099,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
+  - grpc++_test_config
   - grpc++_test_util
   platforms:
   - linux

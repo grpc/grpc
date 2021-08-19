@@ -348,6 +348,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\compression\\stream_compression.cc " +
     "src\\core\\lib\\compression\\stream_compression_gzip.cc " +
     "src\\core\\lib\\compression\\stream_compression_identity.cc " +
+    "src\\core\\lib\\config\\core_configuration.cc " +
     "src\\core\\lib\\debug\\stats.cc " +
     "src\\core\\lib\\debug\\stats_data.cc " +
     "src\\core\\lib\\debug\\trace.cc " +
@@ -1287,6 +1288,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\channel");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\compression");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\debug");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gpr");

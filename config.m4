@@ -382,6 +382,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -1186,6 +1187,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
