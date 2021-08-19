@@ -124,6 +124,7 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],
