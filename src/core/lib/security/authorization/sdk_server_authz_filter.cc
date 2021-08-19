@@ -94,15 +94,15 @@ void SdkServerAuthzFilter::CallData::Destroy(
 bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
   EvaluateArgs args(recv_initial_metadata_batch_,
                     &chand->per_channel_evaluate_args_);
-  AuthorizationEngines engines = chand->provider_->engines();
+  grpc_authorization_policy_provider::AuthorizationEngines engines =
+      chand->provider_->engines();
   if (engines.deny_engine != nullptr) {
     AuthorizationEngine::Decision decision =
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-        gpr_log(GPR_INFO,
-                "Request denied. matching_policy_name=%s chand=%p calld=%p",
-                decision.matching_policy_name.c_str(), chand, this);
+        gpr_log(GPR_INFO, "chand=%p calld=%p: request denied by policy %s.",
+                chand, this, decision.matching_policy_name.c_str());
       }
       return false;
     }
@@ -112,15 +112,15 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-        gpr_log(GPR_INFO,
-                "Request allowed. matching_policy_name=%s chand=%p calld=%p",
-                decision.matching_policy_name.c_str(), chand, this);
+        gpr_log(GPR_INFO, "chand=%p calld=%p: request allowed by policy %s.",
+                chand, this, decision.matching_policy_name.c_str());
       }
       return true;
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-    gpr_log(GPR_INFO, "Request denied. No match found. chand=%p calld=%p",
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p: request denied, no matching policy found.",
             chand, this);
   }
   return false;
@@ -141,9 +141,8 @@ void SdkServerAuthzFilter::CallData::RecvInitialMetadataReady(
   } else {
     GRPC_ERROR_REF(error);
   }
-  grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
-  calld->original_recv_initial_metadata_ready_ = nullptr;
-  Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
+               error);
 }
 
 const grpc_channel_filter SdkServerAuthzFilter::kFilterVtable = {

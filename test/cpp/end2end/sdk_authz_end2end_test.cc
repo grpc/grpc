@@ -309,6 +309,38 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   EXPECT_TRUE(resp.message().empty());
 }
 
+TEST_F(
+    SdkAuthzEnd2EndTest,
+    StaticInitDeniesRpcRequestWithPrincipalsFieldOnUnauthenticatedConnection) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"source\": {"
+      "        \"principals\": ["
+      "          \"foo\""
+      "        ]"
+      "      },"
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
