@@ -1018,18 +1018,18 @@ This test is configurable via a few different command line flags:
 
 * `soak_max_failures`: an inclusive upper limit on the number of RPC failures
   that should be tolerated (i.e. after which the test process should
-  exit 0). A failure is considered to be either a non-OK status or an RPC
-  whose latency exceeded `soak_per_iteration_max_acceptable_latency_ms`.
+  still exit 0). A failure is considered to be either a non-OK status or an RPC
+  whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`.
 
 * `soak_per_iteration_max_acceptable_latency_ms`: an inclusive upper limit
   on the latency of a single RPC in order for that RPC to be considered
   successful.
 
 * `soak_overall_timeout_seconds`: the overall number of seconds after which
-  the test should stop and fail if `soak_iterations` haven not yet been
+  the test should stop and fail if `soak_iterations` have not yet been
   completed.
 
-The following suggestions are optional but encouraged to improve debuggbility:
+The following suggestions are optional but encouraged to improve debuggability:
 
 * Implementations should avoid setting RPC deadlines and should instead
   wait for each RPC to complete.
