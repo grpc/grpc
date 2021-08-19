@@ -513,17 +513,6 @@ const grpc_channel_filter Server::kServerTopFilter = {
 
 namespace {
 
-grpc_resource_user* CreateDefaultResourceUser(const grpc_channel_args* args) {
-  if (args != nullptr) {
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_from_channel_args(args, false /* create */);
-    if (resource_quota != nullptr) {
-      return grpc_resource_user_create(resource_quota, "default");
-    }
-  }
-  return nullptr;
-}
-
 RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
     const grpc_channel_args* args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
@@ -545,7 +534,6 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 
 Server::Server(const grpc_channel_args* args)
     : channel_args_(grpc_channel_args_copy(args)),
-      default_resource_user_(CreateDefaultResourceUser(args)),
       channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
@@ -613,11 +601,12 @@ grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
     const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
-    grpc_resource_user* resource_user) {
+    grpc_resource_user* resource_user, size_t preallocated_bytes) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
-      nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user, &error);
+  grpc_channel* channel =
+      grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
+                          resource_user, preallocated_bytes, &error);
   if (channel == nullptr) {
     return error;
   }
@@ -865,11 +854,6 @@ void Server::Orphan() {
     MutexLock lock(&mu_global_);
     GPR_ASSERT(ShutdownCalled() || listeners_.empty());
     GPR_ASSERT(listeners_destroyed_ == listeners_.size());
-  }
-  if (default_resource_user_ != nullptr) {
-    grpc_resource_quota_unref(grpc_resource_user_quota(default_resource_user_));
-    grpc_resource_user_shutdown(default_resource_user_);
-    grpc_resource_user_unref(default_resource_user_);
   }
   Unref();
 }

@@ -55,9 +55,6 @@ typedef struct grpc_byte_buffer {
  * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
 
-/** An alarm associated with a completion queue. */
-typedef struct grpc_alarm grpc_alarm;
-
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
 

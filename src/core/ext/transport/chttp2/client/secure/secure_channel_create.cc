@@ -146,7 +146,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   grpc_channel* channel = grpc_channel_create(
-      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, error);
+      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, error);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

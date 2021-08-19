@@ -96,7 +96,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                !op->recv_message && !op->recv_trailing_metadata);
     gpr_log(GPR_INFO, "cancel_stream");
     gpr_log(
-        GPR_ERROR, "cancel_stream error = %s",
+        GPR_INFO, "cancel_stream error = %s",
         grpc_error_std_string(op->payload->cancel_stream.cancel_error).c_str());
     gbs->cancellation_error =
         grpc_error_to_absl_status(op->payload->cancel_stream.cancel_error);
@@ -329,9 +329,9 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
               GPR_ASSERT(grpc_metadata_batch_link_tail(
                              gbs->recv_trailing_metadata, glm) ==
                          GRPC_ERROR_NONE);
-              gpr_log(GPR_ERROR, "trailing_metadata = %p",
+              gpr_log(GPR_INFO, "trailing_metadata = %p",
                       gbs->recv_trailing_metadata);
-              gpr_log(GPR_ERROR, "glm = %p", glm);
+              gpr_log(GPR_INFO, "glm = %p", glm);
             }
             grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                     gbs->recv_trailing_metadata_finished,
@@ -356,6 +356,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_log(GPR_INFO, __func__);
   grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
+  grpc_core::MutexLock lock(&gbt->mu);
   // TODO(waynetu): Should we lock here to avoid data race?
   if (op->start_connectivity_watch != nullptr) {
     gbt->state_tracker.AddWatcher(op->start_connectivity_watch_state,
@@ -402,9 +403,12 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
 
 static void destroy_transport(grpc_transport* gt) {
   gpr_log(GPR_INFO, __func__);
-  // TODO(waynetu): Should we do ref-counting here?
   grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  delete gbt;
+  // Release the references held by the transport.
+  gbt->wire_reader = nullptr;
+  gbt->transport_stream_receiver = nullptr;
+  gbt->wire_writer = nullptr;
+  gbt->Unref();
 }
 
 static grpc_endpoint* get_endpoint(grpc_transport*) {
@@ -430,13 +434,25 @@ grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client)
     : is_client(is_client),
       state_tracker(is_client ? "binder_transport_client"
-                              : "binder_transport_server") {
+                              : "binder_transport_server"),
+      refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
   base.vtable = get_vtable();
   transport_stream_receiver =
-      std::make_shared<grpc_binder::TransportStreamReceiverImpl>(is_client);
+      std::make_shared<grpc_binder::TransportStreamReceiverImpl>(
+          is_client, /*accept_stream_callback=*/[this] {
+            grpc_core::ExecCtx exec_ctx;
+            grpc_core::MutexLock lock(&mu);
+            if (accept_stream_fn) {
+              // must pass in a non-null value.
+              (*accept_stream_fn)(accept_stream_user_data, &base, this);
+            }
+          });
+  // WireReader holds a ref to grpc_binder_transport.
+  Ref();
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
-      transport_stream_receiver, is_client);
+      transport_stream_receiver, is_client,
+      /*on_destruct_callback=*/[this] { Unref(); });
   wire_writer = wire_reader->SetupTransport(std::move(binder));
 }
 
@@ -453,8 +469,6 @@ grpc_transport* grpc_create_binder_transport_client(
 grpc_transport* grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder) {
   gpr_log(GPR_INFO, __func__);
-  gpr_log(GPR_ERROR,
-          "[WARNING] Creating server-side binder_transport is test-only.");
 
   grpc_binder_transport* t =
       new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);
