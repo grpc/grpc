@@ -37,13 +37,10 @@ grpc_cc_library(
         "absl/memory",
     ],
     deps = [
-        "//:gpr",
         "//:gpr_base",
         "//:gpr_platform",
-        "//:grpc",
         "//:grpc_base",
         "//:grpc_base_c",
-        "//:grpc_codegen",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
