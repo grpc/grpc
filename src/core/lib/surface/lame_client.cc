@@ -177,8 +177,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       grpc_slice_from_static_string(error_message));
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(error);
   grpc_channel_args args = {1, &error_arg};
-  grpc_channel* channel =
-      grpc_channel_create(target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  grpc_channel* channel = grpc_channel_create(
+      target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr, 0, nullptr);
   GRPC_ERROR_UNREF(error);
   return channel;
 }

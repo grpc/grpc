@@ -342,6 +342,7 @@ grpc_cc_library(
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -379,6 +380,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -975,6 +977,19 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "loop",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/loop.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
     ],
 )
 

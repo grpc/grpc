@@ -66,7 +66,9 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
   grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, nullptr, &server->tcp_server);
+      &server->shutdown_complete, nullptr,
+      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
+      &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);

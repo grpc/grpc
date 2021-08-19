@@ -112,3 +112,15 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:loop",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

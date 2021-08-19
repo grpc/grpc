@@ -67,7 +67,6 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
@@ -86,7 +85,6 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 class ScopedProfile final {
