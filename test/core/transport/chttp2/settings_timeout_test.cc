@@ -39,6 +39,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 #include "test/core/util/port.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -113,9 +114,10 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
-                            nullptr /* channel_args */, server_addresses->addrs,
-                            grpc_core::ExecCtx::Get()->Now() + 1000);
+    grpc_tcp_client_connect(
+        state.closure(), &endpoint_, grpc_slice_allocator_create_unlimited(),
+        pollset_set, nullptr /* channel_args */, server_addresses->addrs,
+        grpc_core::ExecCtx::Get()->Now() + 1000);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));

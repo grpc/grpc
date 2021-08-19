@@ -1549,6 +1549,7 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1571,6 +1572,7 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -1604,6 +1606,7 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1625,6 +1628,7 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -6926,6 +6930,7 @@ targets:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -6950,6 +6955,7 @@ targets:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc

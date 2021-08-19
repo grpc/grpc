@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -75,6 +76,7 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
    'pollset' indicates a grpc_pollset that is interested in the result
      of the get - work on this pollset may be used to progress the get
      operation
+   'resource_quota: this function takes ownership of a ref from the caller
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)
@@ -90,6 +92,7 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
    'pollset' indicates a grpc_pollset that is interested in the result
      of the post - work on this pollset may be used to progress the post
      operation
+   'resource_quota' - this function takes ownership of a ref from the caller.
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'body_bytes' and 'body_size' specify the payload for the post.

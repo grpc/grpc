@@ -69,6 +69,8 @@ extern grpc_core::TraceFlag grpc_resource_quota_trace;
 // hard coding.
 constexpr size_t GRPC_RESOURCE_QUOTA_CALL_SIZE = 15 * 1024;
 constexpr size_t GRPC_RESOURCE_QUOTA_CHANNEL_SIZE = 50 * 1024;
+constexpr size_t GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE = 256;
+constexpr size_t GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE = 4 * 1024 * 1024;
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);
@@ -87,7 +89,7 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota);
 typedef struct grpc_resource_user grpc_resource_user;
 
 grpc_resource_user* grpc_resource_user_create(
-    grpc_resource_quota* resource_quota, const char* name);
+    grpc_resource_quota* resource_quota, absl::string_view name);
 
 /* Returns a borrowed reference to the underlying resource quota for this
    resource user. */
@@ -145,7 +147,7 @@ void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
 void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user);
 
 /* Helper to allocate slices from a resource user */
-typedef struct grpc_resource_user_slice_allocator {
+typedef struct grpc_slice_allocator {
   /* Closure for when a resource user allocation completes */
   grpc_closure on_allocated;
   /* Closure to call when slices have been allocated */
@@ -154,24 +156,71 @@ typedef struct grpc_resource_user_slice_allocator {
   size_t length;
   /* Number of slices to allocate on the current request */
   size_t count;
+  /* Minimum size to allocate under memory pressure. */
+  size_t min_length;
+  /* Maximum size that can be allocated. */
+  size_t max_length;
   /* Destination for slices to allocate on the current request */
   grpc_slice_buffer* dest;
   /* Parent resource user */
   grpc_resource_user* resource_user;
-} grpc_resource_user_slice_allocator;
+} grpc_slice_allocator;
 
-/* Initialize a slice allocator.
-   When an allocation is completed, calls \a cb with arg \p. */
-void grpc_resource_user_slice_allocator_init(
-    grpc_resource_user_slice_allocator* slice_allocator,
-    grpc_resource_user* resource_user, grpc_iomgr_cb_func cb, void* p);
+/// Constructs a slice allocator using configuration from \a args.
+///
+/// Minimum and maximum limits for memory allocation size can be defined in
+/// \a args, and used to configure an allocator. See
+/// \a grpc_slice_allocator_allocate for details on how those values are used.
+///
+/// Caller is responsible for calling \a grpc_slice_allocator_destroy.
+grpc_slice_allocator* grpc_slice_allocator_create(
+    grpc_resource_quota* resource_quota, absl::string_view name,
+    const grpc_channel_args* args = nullptr);
 
-/* Allocate \a count slices of length \a length into \a dest. Only one request
-   can be outstanding at a time.
-   Returns whether the slice was allocated inline in the function. If true,
-   the \a slice_allocator->on_allocated callback will not be called. */
-bool grpc_resource_user_alloc_slices(
-    grpc_resource_user_slice_allocator* slice_allocator, size_t length,
-    size_t count, grpc_slice_buffer* dest) GRPC_MUST_USE_RESULT;
+/* Cleans up after a slice_allocator. */
+void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);
+
+enum class grpc_slice_allocator_intent {
+  kDefault,    // Default intent allocates exactly the memory required.
+  kReadBuffer  // ReadBuffer intent may return a smaller slice than requested if
+               // memory pressure is high.
+};
+
+/** Allocate \a count slices of length \a length into \a dest. Only one request
+   can be outstanding at a time. When an allocation is completed, calls \a cb
+   with arg \a p. Returns whether the slice was allocated inline in the
+   function. If true, the \a cb will not be called. The \a intent argument
+   allows allocation of smaller slices if memory pressure is high; the size is
+   implementation-dependent. */
+bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
+                                   size_t length, size_t count,
+                                   grpc_slice_allocator_intent intent,
+                                   grpc_slice_buffer* dest,
+                                   grpc_iomgr_cb_func cb,
+                                   void* p) GRPC_MUST_USE_RESULT;
+
+/* Allows creation of slice_allocators (thus resource_users) without calling
+ * code having to understand resource_user concepts. */
+typedef struct grpc_slice_allocator_factory {
+  /* Parent resource quota */
+  grpc_resource_quota* resource_quota;
+} grpc_slice_allocator_factory;
+
+/* Constructs a slice allocator factory. Takes ownership of a ref on
+ * \a resource_quota from the caller. Caller is responsible for calling \a
+ * grpc_slice_allocator_factory_destroy. */
+grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
+    grpc_resource_quota* resource_quota);
+
+/* Cleans up after a slice_allocator. */
+void grpc_slice_allocator_factory_destroy(
+    grpc_slice_allocator_factory* slice_allocator_factory);
+
+/** A factory method to create and initialize a slice_allocator using the
+  factory's resource quota. \a name is the resulting resource_user name. \a args
+  are used to configure the \a slice_allocator */
+grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    absl::string_view name, grpc_channel_args* args = nullptr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */
