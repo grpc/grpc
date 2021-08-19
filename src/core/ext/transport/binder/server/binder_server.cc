@@ -29,30 +29,52 @@
 
 namespace grpc {
 namespace experimental {
+namespace binder {
 
-absl::flat_hash_map<std::string, void*>* EndpointBinderPool::pool_ = nullptr;
-
-void* EndpointBinderPool::GetEndpointBinder(const std::string& service) {
-  if (!pool_) return nullptr;
-  auto iter = pool_->find(service);
-  return iter == pool_->end() ? nullptr : iter->second;
+void* GetEndpointBinder(const std::string& service) {
+  return grpc_get_endpoint_binder(service);
 }
 
-void EndpointBinderPool::AddEndpointBinder(const std::string& service,
-                                           void* endpoint_binder) {
-  if (!pool_) {
-    pool_ = new absl::flat_hash_map<std::string, void*>();
-  }
-  (*pool_)[service] = endpoint_binder;
+void AddEndpointBinder(const std::string& service, void* endpoint_binder) {
+  grpc_add_endpoint_binder(service, endpoint_binder);
 }
 
-void EndpointBinderPool::RemoveEndpointBinder(const std::string& service) {
-  if (pool_) {
-    pool_->erase(service);
-  }
+void RemoveEndpointBinder(const std::string& service) {
+  grpc_remove_endpoint_binder(service);
 }
 
-void EndpointBinderPool::Reset() { delete pool_; }
-
+}  // namespace binder
 }  // namespace experimental
 }  // namespace grpc
+
+grpc_core::Mutex* g_endpoint_binder_pool_mu = nullptr;
+absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool = nullptr;
+
+void grpc_endpoint_binder_pool_init() {
+  g_endpoint_binder_pool_mu = new grpc_core::Mutex();
+  g_endpoint_binder_pool = new absl::flat_hash_map<std::string, void*>();
+}
+
+void grpc_endpoint_binder_pool_shutdown() {
+  g_endpoint_binder_pool_mu->Lock();
+  delete g_endpoint_binder_pool;
+  g_endpoint_binder_pool_mu->Unlock();
+  delete g_endpoint_binder_pool_mu;
+}
+
+void grpc_add_endpoint_binder(const std::string& service,
+                              void* endpoint_binder) {
+  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  (*g_endpoint_binder_pool)[service] = endpoint_binder;
+}
+
+void grpc_remove_endpoint_binder(const std::string& service) {
+  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  g_endpoint_binder_pool->erase(service);
+}
+
+void* grpc_get_endpoint_binder(const std::string& service) {
+  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  auto iter = g_endpoint_binder_pool->find(service);
+  return iter == g_endpoint_binder_pool->end() ? nullptr : iter->second;
+}

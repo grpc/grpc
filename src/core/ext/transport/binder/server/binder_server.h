@@ -27,24 +27,32 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 
+// TODO(waynetu): This is part of the public API and should be moved to the
+// include/ folder.
 namespace grpc {
 namespace experimental {
+namespace binder {
 
-// TODO(waynetu): Is there a better way of doing this?
-class EndpointBinderPool {
- public:
-  static void* GetEndpointBinder(const std::string& service);
-  static void AddEndpointBinder(const std::string& service,
-                                void* endpoint_binder);
-  static void RemoveEndpointBinder(const std::string& service);
-  static void Reset();
+void* GetEndpointBinder(const std::string& service);
+void AddEndpointBinder(const std::string& service, void* endpoint_binder);
+void RemoveEndpointBinder(const std::string& service);
 
- private:
-  static absl::flat_hash_map<std::string, void*>* pool_;
-};
-
+}  // namespace binder
 }  // namespace experimental
 }  // namespace grpc
+
+extern grpc_core::Mutex* g_endpoint_binder_pool_mu;
+extern absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool;
+
+// TODO(waynetu): Can these two functions be called in grpc_init() and
+// grpc_shutdown()?
+void grpc_endpoint_binder_pool_init();
+void grpc_endpoint_binder_pool_shutdown();
+
+void grpc_add_endpoint_binder(const std::string& service,
+                              void* endpoint_binder);
+void grpc_remove_endpoint_binder(const std::string& service);
+void* grpc_get_endpoint_binder(const std::string& service);
 
 namespace grpc_core {
 
@@ -62,8 +70,7 @@ class BinderServerListener : public Server::ListenerInterface {
           return OnSetupTransport(code, parcel);
         });
     endpoint_binder_ = tx_receiver_->GetRawBinder();
-    grpc::experimental::EndpointBinderPool::AddEndpointBinder(addr_,
-                                                              endpoint_binder_);
+    grpc_add_endpoint_binder(addr_, endpoint_binder_);
   }
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
@@ -82,7 +89,7 @@ class BinderServerListener : public Server::ListenerInterface {
       ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
       ExecCtx::Get()->Flush();
     }
-    grpc::experimental::EndpointBinderPool::RemoveEndpointBinder(addr_);
+    grpc_remove_endpoint_binder(addr_);
   }
 
  private:

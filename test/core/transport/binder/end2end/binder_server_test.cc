@@ -63,9 +63,12 @@ class BinderServerTest : public ::testing::Test {
   ~BinderServerTest() override {
     delete grpc_binder::end2end_testing::g_transaction_processor;
   }
-  static void SetUpTestSuite() { grpc_init(); }
+  static void SetUpTestSuite() {
+    grpc_init();
+    grpc_endpoint_binder_pool_init();
+  }
   static void TearDownTestSuite() {
-    grpc::experimental::EndpointBinderPool::Reset();
+    grpc_endpoint_binder_pool_shutdown();
     grpc_shutdown();
   }
 };
@@ -77,12 +80,10 @@ TEST_F(BinderServerTest, BuildAndStart) {
   server_builder.AddListeningPort("binder://example.service",
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
-  EXPECT_NE(grpc::experimental::EndpointBinderPool::GetEndpointBinder(
-                "example.service"),
+  EXPECT_NE(grpc::experimental::binder::GetEndpointBinder("example.service"),
             nullptr);
   server->Shutdown();
-  EXPECT_EQ(grpc::experimental::EndpointBinderPool::GetEndpointBinder(
-                "example.service"),
+  EXPECT_EQ(grpc::experimental::binder::GetEndpointBinder("example.service"),
             nullptr);
 }
 
@@ -105,8 +106,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinder) {
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder =
-      grpc::experimental::EndpointBinderPool::GetEndpointBinder(
-          "example.service");
+      grpc::experimental::binder::GetEndpointBinder("example.service");
   std::unique_ptr<grpc_binder::Binder> endpoint_binder =
       absl::make_unique<grpc_binder::end2end_testing::FakeBinder>(
           static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
@@ -133,9 +133,8 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
       "binder://example.service.multiple.connections",
       grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
-  void* raw_endpoint_binder =
-      grpc::experimental::EndpointBinderPool::GetEndpointBinder(
-          "example.service.multiple.connections");
+  void* raw_endpoint_binder = grpc::experimental::binder::GetEndpointBinder(
+      "example.service.multiple.connections");
   constexpr size_t kNumThreads = 128;
 
   auto thread_fn = [&](size_t id) {
