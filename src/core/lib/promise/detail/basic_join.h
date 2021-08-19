@@ -18,6 +18,8 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <utility>
+#include <tuple>
+
 #include "absl/utility/utility.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
