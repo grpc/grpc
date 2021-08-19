@@ -116,19 +116,19 @@ PromiseFactoryImpl(F f, A&&) {
   return PromiseLike<F>(std::move(f));
 }
 
+// Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
+template <typename F>
+absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<RemoveCVRef<F>>>
+PromiseFactoryImpl(F f) {
+  return PromiseLike<F>(std::move(f));
+}
+
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
 template <typename A, typename F>
 absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>(),
                   PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
 PromiseFactoryImpl(F&& f, A&& arg) {
   return f(std::forward<A>(arg));
-}
-
-// Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
-template <typename F>
-absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<RemoveCVRef<F>>>
-PromiseFactoryImpl(F f) {
-  return PromiseLike<F>(std::move(f));
 }
 
 // Given a callable() -> Promise<T>, promote it to a
