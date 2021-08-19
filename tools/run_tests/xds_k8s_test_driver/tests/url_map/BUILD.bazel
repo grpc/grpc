@@ -1,0 +1,47 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_testonly = 1, default_visibility = ["//visibility:public"])
+
+URL_MAP_TESTS = glob(["url_map/*_test.py"])
+
+[
+    py_test(
+        name = test_file_name[:-3],
+        size = "medium",
+        timeout = "long"
+        srcs = [test_file_name],
+        data = [
+            "//src/python/grpcio_tests/tests/unit/credentials",
+        ],
+        flaky = test_file_name in _FLAKY_TESTS,
+        imports = ["../../"],
+        main = test_file_name,
+        python_version = "PY3",
+        deps = [
+            ":_common",
+            ":_constants",
+            ":_test_base",
+            ":_test_server",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+            "//src/proto/grpc/testing:py_messages_proto",
+            "//src/python/grpcio/grpc:grpcio",
+            "//src/python/grpcio_tests/tests/unit:resources",
+            "//src/python/grpcio_tests/tests/unit/framework/common",
+            "@six",
+        ],
+    )
+    for test_file_name in URL_MAP_TESTS
+]
