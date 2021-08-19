@@ -1003,16 +1003,25 @@ Status: TODO
 This test verifies that a client sending faster than a server can drain sees
 pushback (i.e., attempts to send succeed only after appropriate delays).
 
-### Experimental Tests
-
-These tests are not yet standardized, and are not yet implemented in all
-languages. Therefore they are not part of our interop matrix.
-
 #### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
+The client records the latency and status of each RPC in some data structure.
+If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
+completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
+as soon as possible. After performing all RPCs, the test should examine
+previously recorded RPC latency and status results in a second pass and fail if
+either:
 
-This test is configurable via a few different command line flags:
+a) not all `soak_iterations` RPCs were completed
+
+b) the sum of RPCs that either completed with a non-OK status or exceeded
+   `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
+
+Implementations should use a timer with sub-millisecond precision to measure
+latency.
+
+This test must be configurable via a few different command line flags:
 
 * `soak_iterations`: controls the number of RPCs to perform.
 
@@ -1021,9 +1030,8 @@ This test is configurable via a few different command line flags:
   still exit 0). A failure is considered to be either a non-OK status or an RPC
   whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`.
 
-* `soak_per_iteration_max_acceptable_latency_ms`: an inclusive upper limit
-  on the latency of a single RPC in order for that RPC to be considered
-  successful.
+* `soak_per_iteration_max_acceptable_latency_ms`: an upper limit on the latency
+  of a single RPC in order for that RPC to be considered successful.
 
 * `soak_overall_timeout_seconds`: the overall number of seconds after which
   the test should stop and fail if `soak_iterations` have not yet been
@@ -1032,17 +1040,15 @@ This test is configurable via a few different command line flags:
 The following suggestions are optional but encouraged to improve debuggability:
 
 * Implementations should avoid setting RPC deadlines and should instead
-  wait for each RPC to complete.
+  wait for each RPC to complete. Doing so provides more data for debugging in case
+  of failure. For example, if RPC deadlines are set to
+  `soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
+  deadline, it's not clear if the RPC was late by a millisecond or a minute.
 
 * Implementations should log the number of milliseconds that each RPC takes.
   Additionally, implementations should use a histogram of RPC latencies
   to log interesting latency percentiles at the end of the test (e.g. median,
   90th, and max latency percentiles).
-
-* Implementations should perform all RPCs first and then examine the number
-  of failed RPCs in a second pass. Mainly, implementations should not quit early
-  after exceeding `soak_max_failures`, since the total number of failures can
-  be interesting debug data.
 
 #### channel_soak
 
@@ -1052,8 +1058,16 @@ channel is created just before each RPC and is destroyed just after.
 This test is configured with the same command line flags that the rpc_soak test
 is configured with, with only one semantic difference: when measuring an RPCs
 latency to see if it exceeds `soak_per_iteration_max_acceptable_latency_ms` or
-not, the creation and destruction of the channel should be included in that
-latency measurement.
+not, the creation of the channel should be included in that
+latency measurement, but the teardown of that channel should <b>not</b> be
+included in that latency measurement (channel teardown semantics differ widely
+between languages). This latency measurement should also be the value that is
+logged and recorded in the latency histogram.
+
+### Experimental Tests
+
+These tests are not yet standardized, and are not yet implemented in all
+languages. Therefore they are not part of our interop matrix.
 
 #### long_lived_channel
 
