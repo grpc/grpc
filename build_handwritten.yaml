@@ -35,12 +35,6 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: gen_legal_metadata_characters
-  build: tool
-  language: c++
-  src:
-  - tools/codegen/core/gen_legal_metadata_characters.cc
-  deps: []
 configs:
   asan:
     CC: clang

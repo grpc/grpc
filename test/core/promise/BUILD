@@ -31,6 +31,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "context_test",
+    srcs = ["context_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:context",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
     external_deps = ["gtest"],
@@ -56,6 +68,18 @@ grpc_cc_test(
     deps = [
         "//:map",
         "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "race_test",
+    srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:race",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -89,6 +113,17 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:loop",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],

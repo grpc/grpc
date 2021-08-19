@@ -773,6 +773,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/stream_compression_gzip.h )
   s.files += %w( src/core/lib/compression/stream_compression_identity.cc )
   s.files += %w( src/core/lib/compression/stream_compression_identity.h )
+  s.files += %w( src/core/lib/config/core_configuration.cc )
+  s.files += %w( src/core/lib/config/core_configuration.h )
   s.files += %w( src/core/lib/debug/stats.cc )
   s.files += %w( src/core/lib/debug/stats.h )
   s.files += %w( src/core/lib/debug/stats_data.cc )

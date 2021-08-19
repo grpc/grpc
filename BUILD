@@ -342,6 +342,7 @@ grpc_cc_library(
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -379,6 +380,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -665,7 +667,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
-        "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
@@ -708,8 +709,15 @@ grpc_cc_library(
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "gpr_tls",
+    hdrs = ["src/core/lib/gpr/tls.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -784,6 +792,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "config",
+    srcs = [
+        "src/core/lib/config/core_configuration.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/config/core_configuration.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
@@ -854,6 +876,18 @@ grpc_cc_library(
         "src/core/lib/promise/poll.h",
     ],
     deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "context",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/context.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_tls",
+    ],
 )
 
 grpc_cc_library(
@@ -933,6 +967,29 @@ grpc_cc_library(
         "src/core/lib/promise/detail/status.h",
     ],
     deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "race",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/race.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "loop",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/loop.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
 )
 
 grpc_cc_library(
@@ -1366,6 +1423,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
