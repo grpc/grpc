@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <map>
 #include <memory>
 
@@ -28,7 +29,6 @@
 
 #include <grpc/grpc.h>
 
-#include <atomic>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"

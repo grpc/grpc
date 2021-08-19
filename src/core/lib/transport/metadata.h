@@ -21,12 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
+#include <atomic>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 
-#include <atomic>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"

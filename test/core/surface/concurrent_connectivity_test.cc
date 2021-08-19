@@ -24,8 +24,8 @@
 
 #include <memory.h>
 #include <stdio.h>
-#include <atomic>
 
+#include <atomic>
 #include <string>
 
 #include "absl/strings/str_cat.h"

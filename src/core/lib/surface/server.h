@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <list>
 #include <vector>
 
@@ -27,7 +28,6 @@
 
 #include <grpc/grpc.h>
 
-#include <atomic>
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"

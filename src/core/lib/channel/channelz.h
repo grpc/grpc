@@ -21,15 +21,15 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/grpc.h>
-
+#include <atomic>
 #include <set>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
-#include <atomic>
+#include <grpc/grpc.h>
+
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

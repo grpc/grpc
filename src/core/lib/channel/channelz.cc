@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <atomic>
+
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
 
@@ -32,7 +34,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <atomic>
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
