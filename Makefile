@@ -1380,6 +1380,7 @@ LIBGRPC_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -1634,7 +1635,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
-    include/grpc/impl/codegen/port_platform.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -1869,6 +1869,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -2040,7 +2041,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
-    include/grpc/impl/codegen/port_platform.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
