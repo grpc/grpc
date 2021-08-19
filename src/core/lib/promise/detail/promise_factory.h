@@ -76,8 +76,9 @@ using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
 template <typename T, typename Ignored = void>
 struct ResultOfT;
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...), absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
-                                      std::declval<Args>()...))>> {
+struct ResultOfT<F(Args...),
+                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+                     std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
