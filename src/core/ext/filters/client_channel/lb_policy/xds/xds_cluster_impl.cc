@@ -16,11 +16,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 
-#include <atomic>
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"

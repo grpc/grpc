@@ -29,7 +29,6 @@
 #include <cassert>
 #include <cinttypes>
 
-#include <atomic>
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"

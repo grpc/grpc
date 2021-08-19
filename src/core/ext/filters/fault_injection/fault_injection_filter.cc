@@ -18,12 +18,13 @@
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
+#include <atomic>
+
 #include "absl/strings/numbers.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include <atomic>
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"

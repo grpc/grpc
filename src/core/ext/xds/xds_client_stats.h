@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -28,7 +29,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <atomic>
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"

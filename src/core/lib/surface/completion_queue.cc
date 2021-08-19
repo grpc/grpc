@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <atomic>
 #include <vector>
 
 #include "absl/strings/str_format.h"
@@ -34,7 +35,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include <atomic>
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"

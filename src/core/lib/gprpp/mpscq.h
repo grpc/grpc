@@ -22,9 +22,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include "src/core/lib/gprpp/sync.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 

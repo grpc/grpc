@@ -27,13 +27,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <new>
 #include <utility>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 
-#include <atomic>
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/spinlock.h"
 
