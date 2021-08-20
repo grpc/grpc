@@ -47,6 +47,7 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_FAKE_BINDER_H
 #define GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_FAKE_BINDER_H
 
+#include <atomic>
 #include <forward_list>
 #include <memory>
 #include <queue>
@@ -64,7 +65,6 @@
 #include "absl/types/variant.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 
@@ -250,7 +250,7 @@ class TransactionProcessor {
   int64_t delay_nsec_;
   absl::BitGen bit_gen_;
   grpc_core::Thread tx_thread_;
-  grpc_core::Atomic<bool> terminated_;
+  std::atomic<bool> terminated_;
 
   grpc_core::Mutex tx_receiver_mu_;
   // Use forward_list to avoid invalid pointers resulted by reallocation in

@@ -164,9 +164,9 @@ void TransactionProcessor::SetDelay(absl::Duration delay) {
 }
 
 void TransactionProcessor::Terminate() {
-  if (!terminated_.Load(grpc_core::MemoryOrder::SEQ_CST)) {
+  if (!terminated_.load(std::memory_order_seq_cst)) {
     gpr_log(GPR_INFO, "Terminating the processor");
-    terminated_.Store(true, grpc_core::MemoryOrder::SEQ_CST);
+    terminated_.store(true, std::memory_order_seq_cst);
     tx_thread_.Join();
     gpr_log(GPR_INFO, "Processor terminated");
   }
@@ -208,7 +208,7 @@ void TransactionProcessor::Flush() {
 }
 
 void TransactionProcessor::ProcessLoop() {
-  while (!terminated_.Load(grpc_core::MemoryOrder::SEQ_CST)) {
+  while (!terminated_.load(std::memory_order_seq_cst)) {
     FakeEndpoint* target = nullptr;
     BinderTransportTxCode tx_code{};
     FakeData data;
