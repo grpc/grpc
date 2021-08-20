@@ -809,7 +809,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />

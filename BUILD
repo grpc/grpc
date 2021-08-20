@@ -330,6 +330,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "atomic_utils",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
@@ -670,7 +677,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
-        "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -777,17 +783,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_codegen",
-    ],
-)
-
-grpc_cc_library(
-    name = "atomic",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/atomic.h",
-    ],
-    deps = [
-        "gpr",
     ],
 )
 
@@ -1006,7 +1001,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
-        "atomic",
+        "atomic_utils",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -1019,7 +1014,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
     deps = [
-        "atomic",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -1400,7 +1394,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "atomic",
         "gpr_base",
         "grpc_base_c",
     ],

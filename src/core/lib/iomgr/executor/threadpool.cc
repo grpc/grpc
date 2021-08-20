@@ -72,7 +72,7 @@ size_t ThreadPool::DefaultStackSize() {
 
 void ThreadPool::AssertHasNotBeenShutDown() {
   // For debug checking purpose, using RELAXED order is sufficient.
-  GPR_DEBUG_ASSERT(!shut_down_.Load(MemoryOrder::RELAXED));
+  GPR_DEBUG_ASSERT(!shut_down_.load(std::memory_order_relaxed));
 }
 
 ThreadPool::ThreadPool(int num_threads) : num_threads_(num_threads) {
@@ -102,7 +102,7 @@ ThreadPool::ThreadPool(int num_threads, const char* thd_name,
 
 ThreadPool::~ThreadPool() {
   // For debug checking purpose, using RELAXED order is sufficient.
-  shut_down_.Store(true, MemoryOrder::RELAXED);
+  shut_down_.store(true, std::memory_order_relaxed);
 
   for (int i = 0; i < num_threads_; ++i) {
     queue_->Put(nullptr);

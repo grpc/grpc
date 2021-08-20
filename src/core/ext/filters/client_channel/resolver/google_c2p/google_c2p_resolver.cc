@@ -64,7 +64,7 @@ class GoogleCloud2ProdResolver : public Resolver {
     grpc_httpcli_context context_;
     grpc_httpcli_response response_;
     grpc_closure on_done_;
-    Atomic<bool> on_done_called_{false};
+    std::atomic<bool> on_done_called_{false};
   };
 
   // A metadata server query to get the zone.
@@ -154,8 +154,9 @@ void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
 void GoogleCloud2ProdResolver::MetadataQuery::MaybeCallOnDone(
     grpc_error_handle error) {
   bool expected = false;
-  if (!on_done_called_.CompareExchangeStrong(
-          &expected, true, MemoryOrder::RELAXED, MemoryOrder::RELAXED)) {
+  if (!on_done_called_.compare_exchange_strong(expected, true,
+                                               std::memory_order_relaxed,
+                                               std::memory_order_relaxed)) {
     // We've already called OnDone(), so just clean up.
     GRPC_ERROR_UNREF(error);
     Unref();
