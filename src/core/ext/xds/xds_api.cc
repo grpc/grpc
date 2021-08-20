@@ -1976,6 +1976,7 @@ grpc_error_handle CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
+  std::vector<grpc_error_handle> errors;
   auto* combined_validation_context =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
           common_tls_context_proto);
@@ -2023,8 +2024,9 @@ grpc_error_handle CommonTlsContextParse(
           matcher = UpbStringToStdString(
               envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
         } else {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Invalid StringMatcher specified");
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Invalid StringMatcher specified"));
+          continue;
         }
         bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
             subject_alt_names_matchers[i]);
@@ -2032,18 +2034,53 @@ grpc_error_handle CommonTlsContextParse(
             StringMatcher::Create(type, matcher,
                                   /*case_sensitive=*/!ignore_case);
         if (!string_matcher.ok()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("string matcher: ",
                            string_matcher.status().message())
-                  .c_str());
+                  .c_str()));
+          continue;
         }
         if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
+          continue;
         }
         common_tls_context->combined_validation_context
             .default_validation_context.match_subject_alt_names.push_back(
                 std::move(string_matcher.value()));
+      }
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
+              default_validation_context, nullptr) != nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "CertificateValidationContext: verify_certificate_spki "
+            "unsupported"));
+      }
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_hash(
+              default_validation_context, nullptr) != nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "CertificateValidationContext: verify_certificate_hash "
+            "unsupported"));
+      }
+      auto* require_signed_certificate_timestamp =
+          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
+              default_validation_context);
+      if (require_signed_certificate_timestamp != nullptr &&
+          google_protobuf_BoolValue_value(
+              require_signed_certificate_timestamp)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "CertificateValidationContext: "
+            "require_signed_certificate_timestamp unsupported"));
+      }
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_crl(
+              default_validation_context)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "CertificateValidationContext: crl unsupported"));
+      }
+      if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_custom_validator_config(
+              default_validation_context)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "CertificateValidationContext: custom_validator_config "
+            "unsupported"));
       }
     }
     auto* validation_context_certificate_provider_instance =
@@ -2054,7 +2091,7 @@ grpc_error_handle CommonTlsContextParse(
           context, validation_context_certificate_provider_instance,
           &common_tls_context->combined_validation_context
                .validation_context_certificate_provider_instance);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
   }
   auto* tls_certificate_certificate_provider_instance =
@@ -2064,9 +2101,10 @@ grpc_error_handle CommonTlsContextParse(
     grpc_error_handle error = CertificateProviderInstanceParse(
         context, tls_certificate_certificate_provider_instance,
         &common_tls_context->tls_certificate_certificate_provider_instance);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing CommonTlsContext",
+                                       &errors);
 }
 
 grpc_error_handle HttpConnectionManagerParse(
