@@ -155,7 +155,8 @@ TransactionProcessor::TransactionProcessor(absl::Duration delay)
             auto* self = static_cast<TransactionProcessor*>(arg);
             self->ProcessLoop();
           },
-          this) {
+          this),
+      terminated_(false) {
   tx_thread_.Start();
 }
 
