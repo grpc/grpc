@@ -17,14 +17,14 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
+
 #include <jni.h>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/channel.h>
 
 namespace grpc {
 namespace experimental {
