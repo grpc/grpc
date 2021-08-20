@@ -87,6 +87,10 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('08_log_rpc_distribution'):
             server_entries = sorted(rpc_distribution.items(),
                                     key=lambda x: -x[1])
+            # Validate if clients are receiving different sets of backends (3
+            # client received a total of 4 unique backends == FAIL, a total of 5
+            # unique backends == PASS)
+            self.assertGreater(len(server_entries), _SUBSET_SIZE)
             logging.info('RPC distribution (len=%s): %s', len(server_entries),
                          server_entries)
             peak = server_entries[0][1]
