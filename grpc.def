@@ -162,6 +162,11 @@ EXPORTS
     grpc_xds_server_credentials_create
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_release
+    grpc_tls_credentials_options_set_tls_key_log_config
+    grpc_tls_key_logger_create
+    grpc_tls_key_logger_destroy
+    grpc_tls_key_logger_registry_init
+    grpc_tls_key_logger_registry_destroy
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
