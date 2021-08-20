@@ -15,6 +15,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
+#include "src/core/ext/transport/binder/wire_format/binder_android.h"
 
 #include <grpcpp/security/server_credentials.h>
 
