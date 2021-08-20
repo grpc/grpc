@@ -145,10 +145,10 @@ AllocatedMetadata::AllocatedMetadata(
 AllocatedMetadata::~AllocatedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
+  void* user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
-        user_data_.destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED);
+        user_data_.destroy_user_data.load(std::memory_order_relaxed);
     destroy_user_data(user_data);
   }
 }
@@ -189,10 +189,10 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
 InternedMetadata::~InternedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
+  void* user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
-        user_data_.destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED);
+        user_data_.destroy_user_data.load(std::memory_order_relaxed);
     destroy_user_data(user_data);
   }
 }
@@ -560,9 +560,9 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
 }
 
 static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
-  if (user_data->destroy_user_data.Load(grpc_core::MemoryOrder::ACQUIRE) ==
+  if (user_data->destroy_user_data.load(std::memory_order_acquire) ==
       destroy_func) {
-    return user_data->data.Load(grpc_core::MemoryOrder::RELAXED);
+    return user_data->data.load(std::memory_order_relaxed);
   } else {
     return nullptr;
   }
@@ -594,16 +594,16 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
                            void* data) {
   GPR_ASSERT((data == nullptr) == (destroy_func == nullptr));
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
-  if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
+  if (ud->destroy_user_data.load(std::memory_order_relaxed)) {
     /* user data can only be set once */
     lock.Release();
     if (destroy_func != nullptr) {
       destroy_func(data);
     }
-    return ud->data.Load(grpc_core::MemoryOrder::RELAXED);
+    return ud->data.load(std::memory_order_relaxed);
   }
-  ud->data.Store(data, grpc_core::MemoryOrder::RELAXED);
-  ud->destroy_user_data.Store(destroy_func, grpc_core::MemoryOrder::RELEASE);
+  ud->data.store(data, std::memory_order_relaxed);
+  ud->destroy_user_data.store(destroy_func, std::memory_order_release);
   return data;
 }
 

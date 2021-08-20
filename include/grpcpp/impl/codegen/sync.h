@@ -144,6 +144,7 @@ class CondVar {
 #endif  // GPR_ABSEIL_SYNC
 
 template <typename Predicate>
+GRPC_DEPRECATED("incompatible with thread safety analysis")
 static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
   while (!pred()) {
     cv->Wait(mu);

@@ -24,9 +24,9 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # pre-built images in the optimization.
 gcloud auth configure-docker
 
-# Connect to benchmarks-prod cluster.
+# Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-kb3 \
+gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
 
 # List tests that have running pods and are in errored state.
@@ -58,11 +58,16 @@ DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
+# Update go version.
+TEST_INFRA_GOVERSION=go1.16.6
+go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
+"${TEST_INFRA_GOVERSION}" download
+
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
-make all-tools
+make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
 # Build test configurations.

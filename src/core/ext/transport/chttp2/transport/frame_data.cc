@@ -148,7 +148,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_1:
         s->stats.incoming.framing_bytes++;
         p->frame_size = (static_cast<uint32_t>(*cur)) << 24;
@@ -157,7 +157,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_2:
         s->stats.incoming.framing_bytes++;
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 16;
@@ -166,7 +166,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_3:
         s->stats.incoming.framing_bytes++;
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 8;
@@ -175,7 +175,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_4:
         s->stats.incoming.framing_bytes++;
         GPR_ASSERT(stream_out != nullptr);

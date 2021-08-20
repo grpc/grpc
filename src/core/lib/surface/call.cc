@@ -105,13 +105,13 @@ struct batch_control {
   } completion_data;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-  grpc_core::Atomic<intptr_t> steps_to_complete;
+  std::atomic<intptr_t> steps_to_complete{0};
   gpr_atm batch_error = reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE);
   void set_num_steps_to_complete(uintptr_t steps) {
-    steps_to_complete.Store(steps, grpc_core::MemoryOrder::RELEASE);
+    steps_to_complete.store(steps, std::memory_order_release);
   }
   bool completed_batch_step() {
-    return steps_to_complete.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1;
+    return steps_to_complete.fetch_sub(1, std::memory_order_acq_rel) == 1;
   }
 };
 

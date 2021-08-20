@@ -168,7 +168,6 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
         return 0;
     }
   }
-  return 0;
 }
 
 /* Interfaces for message compression. */
@@ -265,7 +264,6 @@ int grpc_message_compression_algorithm_parse(
   } else {
     return 0;
   }
-  return 0;
 }
 
 /* Interfaces for stream compression. */
@@ -281,5 +279,4 @@ int grpc_stream_compression_algorithm_parse(
   } else {
     return 0;
   }
-  return 0;
 }

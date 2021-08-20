@@ -68,195 +68,7 @@ namespace {
 /* don't consider adding anything bigger than this to the hpack table */
 constexpr size_t kMaxDecoderSpaceUsage = 512;
 constexpr size_t kDataFrameHeaderSize = 9;
-constexpr uint8_t kMaxFilterValue = 255;
 
-/* if the probability of this item being seen again is < 1/x then don't add
-   it to the table */
-#define ONE_ON_ADD_PROBABILITY (GRPC_CHTTP2_HPACKC_NUM_VALUES >> 1)
-/* The hpack index we encode over the wire. Meaningful to the hpack encoder and
-   parser on the remote end as well as HTTP2. *Not* the same as
-   HpackEncoderSlotHash, which is only meaningful to the hpack encoder
-   implementation (HpackEncoderSlotHash is used for the hashtable implementation
-   when mapping from metadata to HpackEncoderIndex. */
-typedef uint32_t HpackEncoderIndex;
-/* Internal-table bookkeeping (*not* the hpack index). */
-typedef uint32_t HpackEncoderSlotHash;
-
-struct SliceRefComparator {
-  typedef grpc_slice_refcount* Type;
-  static grpc_slice_refcount* Null() { return nullptr; }
-  static bool IsNull(const grpc_slice_refcount* sref) {
-    return sref == nullptr;
-  }
-  static bool Equals(const grpc_slice_refcount* s1,
-                     const grpc_slice_refcount* s2) {
-    return s1 == s2;
-  }
-  static void Ref(grpc_slice_refcount* sref) {
-    GPR_DEBUG_ASSERT(sref != nullptr);
-    sref->Ref();
-  }
-  static void Unref(grpc_slice_refcount* sref) {
-    GPR_DEBUG_ASSERT(sref != nullptr);
-    sref->Unref();
-  }
-};
-
-struct MetadataComparator {
-  typedef grpc_mdelem Type;
-  static grpc_mdelem Null() { return {0}; }
-  static bool IsNull(const grpc_mdelem md) { return md.payload == 0; }
-  static bool Equals(const grpc_mdelem md1, const grpc_mdelem md2) {
-    return md1.payload == md2.payload;
-  }
-  static void Ref(grpc_mdelem md) {
-    GPR_DEBUG_ASSERT(md.payload != 0);
-    GRPC_MDELEM_REF(md);
-  }
-  static void Unref(grpc_mdelem md) {
-    GPR_DEBUG_ASSERT(md.payload != 0);
-    GRPC_MDELEM_UNREF(md);
-  }
-};
-
-/* Index table management */
-template <typename Hashtable>
-static HpackEncoderIndex HpackIndex(const Hashtable* hashtable,
-                                    HpackEncoderSlotHash hash_index) {
-  return hashtable[hash_index].index;
-}
-
-template <typename ValueType, typename Hashtable>
-static const ValueType& GetEntry(const Hashtable* hashtable,
-                                 HpackEncoderSlotHash hash_index) {
-  return hashtable[hash_index].value;
-}
-
-template <typename Cmp, typename Hashtable>
-static bool TableEmptyAt(const Hashtable* hashtable,
-                         HpackEncoderSlotHash hash_index) {
-  return Cmp::Equals(hashtable[hash_index].value, Cmp::Null());
-}
-
-template <typename Cmp, typename Hashtable, typename ValueType>
-static bool Matches(const Hashtable* hashtable, const ValueType& value,
-                    HpackEncoderSlotHash hash_index) {
-  return Cmp::Equals(value, hashtable[hash_index].value);
-}
-
-template <typename Hashtable>
-static void UpdateIndex(Hashtable* hashtable, HpackEncoderSlotHash hash_index,
-                        HpackEncoderIndex hpack_index) {
-  hashtable[hash_index].index = hpack_index;
-}
-
-template <typename Hashtable, typename ValueType>
-static void SetIndex(Hashtable* hashtable, HpackEncoderSlotHash hash_index,
-                     const ValueType& value, HpackEncoderIndex hpack_index) {
-  hashtable[hash_index].value = value;
-  UpdateIndex(hashtable, hash_index, hpack_index);
-}
-
-template <typename Cmp, typename Hashtable, typename ValueType>
-static bool GetMatchingIndex(Hashtable* hashtable, const ValueType& value,
-                             uint32_t value_hash, HpackEncoderIndex* index) {
-  const HpackEncoderSlotHash cuckoo_first = HASH_FRAGMENT_2(value_hash);
-  if (Matches<Cmp>(hashtable, value, cuckoo_first)) {
-    *index = HpackIndex(hashtable, cuckoo_first);
-    return true;
-  }
-#if GRPC_HPACK_ENCODER_USE_CUCKOO_HASH
-  const HpackEncoderSlotHash cuckoo_second = HASH_FRAGMENT_3(value_hash);
-
-  if (Matches<Cmp>(hashtable, value, cuckoo_second)) {
-    *index = HpackIndex(hashtable, cuckoo_second);
-    return true;
-  }
-#endif
-  return false;
-}
-
-template <typename Cmp, typename Hashtable, typename ValueType>
-static ValueType ReplaceOlderIndex(Hashtable* hashtable, const ValueType& value,
-                                   HpackEncoderSlotHash hash_index_a,
-                                   HpackEncoderSlotHash hash_index_b,
-                                   HpackEncoderIndex new_index) {
-  const HpackEncoderIndex hpack_idx_a = hashtable[hash_index_a].index;
-  const HpackEncoderIndex hpack_idx_b = hashtable[hash_index_b].index;
-  const HpackEncoderSlotHash id =
-      hpack_idx_a < hpack_idx_b ? hash_index_a : hash_index_b;
-  ValueType old = GetEntry<typename Cmp::Type>(hashtable, id);
-  SetIndex(hashtable, id, value, new_index);
-  return old;
-}
-
-template <typename Cmp, typename Hashtable, typename ValueType>
-static void UpdateAddOrEvict(Hashtable hashtable, const ValueType& value,
-                             uint32_t value_hash, HpackEncoderIndex new_index) {
-  const HpackEncoderSlotHash cuckoo_first = HASH_FRAGMENT_2(value_hash);
-  if (Matches<Cmp>(hashtable, value, cuckoo_first)) {
-    UpdateIndex(hashtable, cuckoo_first, new_index);
-    return;
-  }
-  if (TableEmptyAt<Cmp>(hashtable, cuckoo_first)) {
-    Cmp::Ref(value);
-    SetIndex(hashtable, cuckoo_first, value, new_index);
-    return;
-  }
-#if GRPC_HPACK_ENCODER_USE_CUCKOO_HASH
-  const HpackEncoderSlotHash cuckoo_second = HASH_FRAGMENT_3(value_hash);
-  if (Matches<Cmp>(hashtable, value, cuckoo_second)) {
-    UpdateIndex(hashtable, cuckoo_second, new_index);
-    return;
-  }
-  Cmp::Ref(value);
-  if (TableEmptyAt<Cmp>(hashtable, cuckoo_second)) {
-    SetIndex(hashtable, cuckoo_second, value, new_index);
-    return;
-  }
-  Cmp::Unref(ReplaceOlderIndex<Cmp>(hashtable, value, cuckoo_first,
-                                    cuckoo_second, new_index));
-#else
-  ValueType old = GetEntry<typename Cmp::Type>(hashtable, cuckoo_first);
-  SetIndex(hashtable, cuckoo_first, value, new_index);
-  Cmp::Unref(old);
-#endif
-}
-
-/* halve all counts because an element reached max */
-static void HalveFilter(uint8_t /*idx*/, uint32_t* sum, uint8_t* elems) {
-  *sum = 0;
-  for (int i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
-    elems[i] /= 2;
-    (*sum) += elems[i];
-  }
-}
-
-/* increment a filter count, halve all counts if one element reaches max */
-static void IncrementFilter(uint8_t idx, uint32_t* sum, uint8_t* elems) {
-  elems[idx]++;
-  if (GPR_LIKELY(elems[idx] < kMaxFilterValue)) {
-    (*sum)++;
-  } else {
-    HalveFilter(idx, sum, elems);
-  }
-}
-
-static uint32_t UpdateHashtablePopularity(
-    grpc_chttp2_hpack_compressor* hpack_compressor, uint32_t elem_hash) {
-  const uint32_t popularity_hash = HASH_FRAGMENT_1(elem_hash);
-  IncrementFilter(popularity_hash, &hpack_compressor->filter_elems_sum,
-                  hpack_compressor->filter_elems);
-  return popularity_hash;
-}
-
-static bool CanAddToHashtable(grpc_chttp2_hpack_compressor* hpack_compressor,
-                              uint32_t popularity_hash) {
-  const bool can_add =
-      hpack_compressor->filter_elems[popularity_hash] >=
-      hpack_compressor->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
-  return can_add;
-}
 } /* namespace */
 
 struct framer_state {
@@ -434,8 +246,8 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
 static void AddKeyWithIndex(grpc_chttp2_hpack_compressor* c,
                             grpc_slice_refcount* key_ref, uint32_t new_index,
                             uint32_t key_hash) {
-  UpdateAddOrEvict<SliceRefComparator>(c->key_table.entries, key_ref, key_hash,
-                                       new_index);
+  c->key_table->Insert(
+      grpc_chttp2_hpack_compressor::KeySliceRef(key_ref, key_hash), new_index);
 }
 
 /* add an element to the decoder table */
@@ -443,8 +255,8 @@ static void AddElemWithIndex(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                              uint32_t new_index, uint32_t elem_hash,
                              uint32_t key_hash) {
   GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
-  UpdateAddOrEvict<MetadataComparator>(c->elem_table.entries, elem, elem_hash,
-                                       new_index);
+  c->elem_table->Insert(grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash),
+                        new_index);
   AddKeyWithIndex(c, GRPC_MDKEY(elem).refcount, new_index, key_hash);
 }
 
@@ -624,7 +436,7 @@ static void GPR_ATTRIBUTE_NOINLINE hpack_enc_log(grpc_mdelem elem) {
 }
 
 static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
-  return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
+  return 1 + grpc_core::HPackTable::kLastStaticEntry + c->tail_remote_index +
          c->table_elems - elem_index;
 }
 
@@ -647,19 +459,18 @@ static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
                 ->hash()
           : reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(elem))
                 ->hash();
-  /* Update filter to see if we can perhaps add this elem. */
-  const uint32_t popularity_hash = UpdateHashtablePopularity(c, elem_hash);
+  // Update filter to see if we can perhaps add this elem.
+  bool can_add_to_hashtable =
+      c->filter_elems.AddElement(HASH_FRAGMENT_1(elem_hash));
   /* is this elem currently in the decoders table? */
-  HpackEncoderIndex indices_key;
-  if (GetMatchingIndex<MetadataComparator>(c->elem_table.entries, elem,
-                                           elem_hash, &indices_key) &&
-      indices_key > c->tail_remote_index) {
-    emit_indexed(c, dynidx(c, indices_key), st);
+  auto indices_key = c->elem_table->Lookup(
+      grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash));
+  if (indices_key.has_value() && *indices_key > c->tail_remote_index) {
+    emit_indexed(c, dynidx(c, *indices_key), st);
     return EmitIndexedStatus(elem_hash, true, false);
   }
   /* Didn't hit either cuckoo index, so no emit. */
-  return EmitIndexedStatus(elem_hash, false,
-                           CanAddToHashtable(c, popularity_hash));
+  return EmitIndexedStatus(elem_hash, false, can_add_to_hashtable);
 }
 
 static void emit_maybe_add(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
@@ -719,11 +530,10 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   const uint32_t elem_hash = ret.elem_hash;
   /* no hits for the elem... maybe there's a key? */
   const uint32_t key_hash = elem_key.refcount->Hash(elem_key);
-  HpackEncoderIndex indices_key;
-  if (GetMatchingIndex<SliceRefComparator>(
-          c->key_table.entries, elem_key.refcount, key_hash, &indices_key) &&
-      indices_key > c->tail_remote_index) {
-    emit_maybe_add(c, elem, st, indices_key, should_add_elem,
+  auto indices_key = c->key_table->Lookup(
+      grpc_chttp2_hpack_compressor::KeySliceRef(elem_key.refcount, key_hash));
+  if (indices_key.has_value() && indices_key > c->tail_remote_index) {
+    emit_maybe_add(c, elem, st, *indices_key, should_add_elem,
                    decoder_space_usage, elem_hash, key_hash);
     return;
   }
@@ -766,17 +576,14 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c) {
   c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
   const size_t alloc_size = sizeof(*c->table_elem_size) * c->cap_table_elems;
   c->table_elem_size = static_cast<uint16_t*>(gpr_malloc(alloc_size));
+  c->elem_table.Init();
+  c->key_table.Init();
   memset(c->table_elem_size, 0, alloc_size);
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor* c) {
-  for (int i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
-    auto* const key = GetEntry<grpc_slice_refcount*>(c->key_table.entries, i);
-    if (key != nullptr) {
-      key->Unref();
-    }
-    GRPC_MDELEM_UNREF(GetEntry<grpc_mdelem>(c->elem_table.entries, i));
-  }
+  c->elem_table.Destroy();
+  c->key_table.Destroy();
   gpr_free(c->table_elem_size);
 }
 
@@ -871,7 +678,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index =
              reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
-                 ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+                 ->StaticIndex()) < grpc_core::HPackTable::kLastStaticEntry) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
@@ -885,7 +692,8 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
                             GRPC_MDELEM_DATA(l->md))
-                            ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+                            ->StaticIndex()) <
+            grpc_core::HPackTable::kLastStaticEntry) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);

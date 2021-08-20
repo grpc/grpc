@@ -68,6 +68,7 @@ class ABSL_LOCKABLE Mutex {
   bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     return gpr_mu_trylock(&mu_) != 0;
   }
+  void AssertHeld() ABSL_ASSERT_EXCLUSIVE_LOCK() {}
 
  private:
   gpr_mu mu_;
@@ -143,13 +144,6 @@ class CondVar {
 };
 
 #endif  // GPR_ABSEIL_SYNC
-
-template <typename Predicate>
-static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
-  while (!pred()) {
-    cv->Wait(mu);
-  }
-}
 
 // Deprecated. Prefer MutexLock
 class MutexLockForGprMu {

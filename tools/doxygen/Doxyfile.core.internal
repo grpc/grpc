@@ -1060,6 +1060,7 @@ src/core/ext/transport/chttp2/transport/frame_window_update.cc \
 src/core/ext/transport/chttp2/transport/frame_window_update.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder.h \
+src/core/ext/transport/chttp2/transport/hpack_encoder_index.h \
 src/core/ext/transport/chttp2/transport/hpack_parser.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser.h \
 src/core/ext/transport/chttp2/transport/hpack_table.cc \
@@ -1072,6 +1073,7 @@ src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
 src/core/ext/transport/chttp2/transport/incoming_metadata.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
+src/core/ext/transport/chttp2/transport/popularity_count.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/stream_map.cc \
 src/core/ext/transport/chttp2/transport/stream_map.h \
@@ -1541,6 +1543,8 @@ src/core/lib/compression/stream_compression_gzip.cc \
 src/core/lib/compression/stream_compression_gzip.h \
 src/core/lib/compression/stream_compression_identity.cc \
 src/core/lib/compression/stream_compression_identity.h \
+src/core/lib/config/core_configuration.cc \
+src/core/lib/config/core_configuration.h \
 src/core/lib/debug/stats.cc \
 src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.cc \
@@ -1588,11 +1592,6 @@ src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
 src/core/lib/gpr/tls.h \
-src/core/lib/gpr/tls_gcc.h \
-src/core/lib/gpr/tls_msvc.h \
-src/core/lib/gpr/tls_pthread.cc \
-src/core/lib/gpr/tls_pthread.h \
-src/core/lib/gpr/tls_stdcpp.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -1602,7 +1601,9 @@ src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/arena.cc \
 src/core/lib/gprpp/arena.h \
-src/core/lib/gprpp/atomic.h \
+src/core/lib/gprpp/atomic_utils.h \
+src/core/lib/gprpp/bitset.h \
+src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/examine_stack.cc \
@@ -1617,10 +1618,12 @@ src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/manual_constructor.h \
+src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/orphanable.h \
+src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \

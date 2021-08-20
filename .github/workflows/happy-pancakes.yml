@@ -1,0 +1,74 @@
+name: Happy Pancakes
+on:
+  pull_request:
+    types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
+jobs:
+  check_status:
+    name: Check Required Status or force-merge label
+    runs-on: ubuntu-latest
+    steps:
+      # Cancel current runs if they're still running
+      # (saves processing on fast pushes)
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      # Wait until our required statuses are ready or failed
+      # Unless force-merge is present, and then just be good.
+      - name: Check Status
+        uses: actions/github-script@v4
+        with:
+          script: |
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            let pull = await github.pulls.get({
+              owner: "grpc",
+              repo: "grpc",
+              pull_number: ${{ github.event.pull_request.number }}
+            });
+            for (var i = 0; i < pull.data.labels.length; i++) {
+              let label = pull.data.labels[i];
+              if (label.name == "force-merge") {
+                console.log("Saw force-merge label");
+                return;
+              }
+            }
+            while (true) {
+              var need = new Set();
+              need.add("Bazel Basic build for C/C++");
+              need.add("Portability Tests Linux [Build Only] (internal CI)");
+              for (var page=1;; page++) {
+                console.log("***** page " + page);
+                let statuses = await github.repos.listCommitStatusesForRef({
+                  owner: "grpc",
+                  repo: "grpc",
+                  ref: "${{ github.event.pull_request.head.sha }}",
+                  per_page: 100,
+                  page: page
+                });
+                for (var i = 0; i < statuses.data.length; i++) {
+                  let status = statuses.data[i];
+                  console.log(status.context, status.state, need);
+                  if (need.has(status.context)) {
+                    if (status.state == "success") {
+                      need.delete(status.context);
+                    } else if (status.state == "pending") {
+                      // do nothing
+                    } else {
+                      core.setFailed("Required status failed: " + status.context);
+                      return;
+                    }
+                  }
+                }
+                if (statuses.data.length < 100) {
+                  break;
+                }
+              }
+              if (need.size == 0) {
+                return;
+              }
+              // Sleep 15 minutes between polls
+              await sleep(15 * 60 * 1000);
+            }
+

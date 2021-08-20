@@ -943,7 +943,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
     src/core/lib/gpr/time_windows.cc \
-    src/core/lib/gpr/tls_pthread.cc \
     src/core/lib/gpr/tmpfile_msys.cc \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
@@ -1375,6 +1374,7 @@ LIBGRPC_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -1863,6 +1863,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
     src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/config/core_configuration.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \

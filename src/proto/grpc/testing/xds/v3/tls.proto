@@ -18,16 +18,78 @@ syntax = "proto3";
 
 package envoy.extensions.transport_sockets.tls.v3;
 
+import "src/proto/grpc/testing/xds/v3/base.proto";
+import "src/proto/grpc/testing/xds/v3/extension.proto";
 import "src/proto/grpc/testing/xds/v3/string.proto";
 
 import "google/protobuf/wrappers.proto";
 
 message CertificateValidationContext {
+  // An optional list of base64-encoded SHA-256 hashes. If specified, Envoy will verify that the
+  // SHA-256 of the DER-encoded Subject Public Key Information (SPKI) of the presented certificate
+  // matches one of the specified values.
+  //
+  // A base64-encoded SHA-256 of the Subject Public Key Information (SPKI) of the certificate
+  // can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -noout -pubkey
+  //     | openssl pkey -pubin -outform DER
+  //     | openssl dgst -sha256 -binary
+  //     | openssl enc -base64
+  //   NvqYIYSbgK2vCJpQhObf77vv+bQWtc5ek5RIOwPiC9A=
+  //
+  // This is the format used in HTTP Public Key Pinning.
+  //
+  // When both:
+  // :ref:`verify_certificate_hash
+  // <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.verify_certificate_hash>` and
+  // :ref:`verify_certificate_spki
+  // <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.verify_certificate_spki>` are specified,
+  // a hash matching value from either of the lists will result in the certificate being accepted.
+  //
+  // .. attention::
+  //
+  //   This option is preferred over :ref:`verify_certificate_hash
+  //   <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.verify_certificate_hash>`,
+  //   because SPKI is tied to a private key, so it doesn't change when the certificate
+  //   is renewed using the same private key.
+  repeated string verify_certificate_spki = 3;
+
+  // An optional list of hex-encoded SHA-256 hashes. If specified, Envoy will verify that
+  // the SHA-256 of the DER-encoded presented certificate matches one of the specified values.
+  //
+  // A hex-encoded SHA-256 of the certificate can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -outform DER | openssl dgst -sha256 | cut -d" " -f2
+  //   df6ff72fe9116521268f6f2dd4966f51df479883fe7037b39f75916ac3049d1a
+  //
+  // A long hex-encoded and colon-separated SHA-256 (a.k.a. "fingerprint") of the certificate
+  // can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -noout -fingerprint -sha256 | cut -d"=" -f2
+  //   DF:6F:F7:2F:E9:11:65:21:26:8F:6F:2D:D4:96:6F:51:DF:47:98:83:FE:70:37:B3:9F:75:91:6A:C3:04:9D:1A
+  //
+  // Both of those formats are acceptable.
+  //
+  // When both:
+  // :ref:`verify_certificate_hash
+  // <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.verify_certificate_hash>` and
+  // :ref:`verify_certificate_spki
+  // <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.verify_certificate_spki>` are specified,
+  // a hash matching value from either of the lists will result in the certificate being accepted.
+  repeated string verify_certificate_hash = 2;
+
   // An optional list of Subject Alternative name matchers. If specified, Envoy will verify that the
   // Subject Alternative Name of the presented certificate matches one of the specified matchers.
   //
   // When a certificate has wildcard DNS SAN entries, to match a specific client, it should be
-  // configured with exact match type in the :ref:`string matcher <envoy_api_msg_type.matcher.v3.StringMatcher>`.
+  // configured with exact match type in the :ref:`string matcher <envoy_v3_api_msg_type.matcher.v3.StringMatcher>`.
   // For example if the certificate has "\*.example.com" as DNS SAN entry, to allow only "api.example.com",
   // it should be configured as shown below.
   //
@@ -40,8 +102,29 @@ message CertificateValidationContext {
   //
   //   Subject Alternative Names are easily spoofable and verifying only them is insecure,
   //   therefore this option must be used together with :ref:`trusted_ca
-  //   <envoy_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.trusted_ca>`.
+  //   <envoy_v3_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.trusted_ca>`.
   repeated type.matcher.v3.StringMatcher match_subject_alt_names = 9;
+
+  // [#not-implemented-hide:] Must present signed certificate time-stamp.
+  google.protobuf.BoolValue require_signed_certificate_timestamp = 6;
+
+  // An optional `certificate revocation list
+  // <https://en.wikipedia.org/wiki/Certificate_revocation_list>`_
+  // (in PEM format). If specified, Envoy will verify that the presented peer
+  // certificate has not been revoked by this CRL. If this DataSource contains
+  // multiple CRLs, all of them will be used. Note that if a CRL is provided
+  // for any certificate authority in a trust chain, a CRL must be provided
+  // for all certificate authorities in that chain. Failure to do so will
+  // result in verification failure for both revoked and unrevoked certificates
+  // from that chain.
+  config.core.v3.DataSource crl = 7;
+
+  // The configuration of an extension specific certificate validator.
+  // If specified, all validation is done by the specified validator,
+  // and the behavior of all other validation settings is defined by the specified validator (and may be entirely ignored, unused, and unvalidated).
+  // Refer to the documentation for the specified validator. If you do not want a custom validation algorithm, do not set this field.
+  // [#extension-category: envoy.tls.cert_validator]
+  config.core.v3.TypedExtensionConfig custom_validator_config = 12;
 }
 
 message UpstreamTlsContext {
