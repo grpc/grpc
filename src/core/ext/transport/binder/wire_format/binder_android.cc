@@ -52,12 +52,12 @@ void f_onDestroy_delete(void* data) {
   delete user_data;
 }
 
-void* f_onCreate_noop(void* args) { return nullptr; }
-void f_onDestroy_noop(void* userData) {}
+void* f_onCreate_noop(void* /*args*/) { return nullptr; }
+void f_onDestroy_noop(void* /*userData*/) {}
 
 // TODO(mingcl): Consider if thread safety is a requirement here
 binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
-                             const AParcel* in, AParcel* out) {
+                             const AParcel* in, AParcel* /*out*/) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
 
@@ -115,8 +115,9 @@ TransactionReceiverAndroid::~TransactionReceiverAndroid() {
 
 namespace {
 
-binder_status_t f_onTransact_noop(AIBinder* binder, transaction_code_t code,
-                                  const AParcel* in, AParcel* out) {
+binder_status_t f_onTransact_noop(AIBinder* /*binder*/,
+                                  transaction_code_t /*code*/,
+                                  const AParcel* /*in*/, AParcel* /*out*/) {
   return {};
 }
 
@@ -220,7 +221,7 @@ bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
   tmp.resize(length);
   *reinterpret_cast<std::string*>(arrayData) = tmp;
   *outBuffer = reinterpret_cast<int8_t*>(
-      &((*reinterpret_cast<std::string*>(arrayData))[0]));
+      &(*reinterpret_cast<std::string*>(arrayData))[0]);
   return true;
 }
 

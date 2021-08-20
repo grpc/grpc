@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
+#define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
+
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/ext/transport/binder/wire_format/binder_constants.h"
+#include "src/core/ext/transport/binder/wire_format/binder.h"
+#include "src/core/lib/channel/channel_args.h"
 
-#if !(defined(ANDROID) || defined(__ANDROID__))
+namespace grpc {
+namespace internal {
 
-const int FIRST_CALL_TRANSACTION = 0x00000001;
-const int LAST_CALL_TRANSACTION = 0x00FFFFFF;
+grpc_channel* CreateChannelFromBinderImpl(
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    const grpc_channel_args* args);
 
-#endif  // !(defined(ANDROID) || defined(__ANDROID__))
+}  // namespace internal
+}  // namespace grpc
 
-namespace grpc_binder {
-
-const int kFirstCallId = FIRST_CALL_TRANSACTION + 1000;
-
-}  // namespace grpc_binder
+#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
