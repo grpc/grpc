@@ -80,7 +80,7 @@ void grpc_register_security_filters(void) {
 
 void grpc_security_init() {
   grpc_core::SecurityRegisterHandshakerFactories();
-  tsi_tls_key_logger_registry_init();
+  grpc_tls_key_logger_registry_init();
 }
 
-void grpc_security_cleanup(void) { tsi_tls_key_logger_registry_destroy(); }
+void grpc_security_cleanup(void) { grpc_tls_key_logger_registry_destroy(); }

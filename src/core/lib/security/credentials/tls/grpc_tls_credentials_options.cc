@@ -175,3 +175,39 @@ void grpc_tls_server_authorization_check_config_release(
   grpc_core::ExecCtx exec_ctx;
   if (config != nullptr) config->Unref();
 }
+
+void grpc_tls_credentials_options_set_tls_key_log_config(
+    grpc_tls_credentials_options* options,
+    struct grpc_tls_key_log_config* config) {
+  GRPC_API_TRACE(
+      "grpc_tls_credentials_options_set_tls_key_log_config(options=%p)", 1,
+      (options));
+  if (options != nullptr && config != nullptr) {
+    options->set_tls_key_logger_config(*config);
+  }
+}
+
+grpc_tls_key_logger* grpc_tls_key_logger_create(
+    grpc_tls_credentials_options* options) {
+  if (options != nullptr) {
+    tsi::TlsKeyLogger* tls_key_logger = options->get_tls_key_logger().release();
+    return reinterpret_cast<grpc_tls_key_logger*>(tls_key_logger);
+  }
+  return nullptr;
+}
+
+void grpc_tls_key_logger_destroy(grpc_tls_key_logger* key_logger) {
+  if (key_logger != nullptr) {
+    tsi::TlsKeyLogger* tls_key_logger =
+        reinterpret_cast<tsi::TlsKeyLogger*>(key_logger);
+    tls_key_logger->Unref();
+  }
+}
+
+void grpc_tls_key_logger_registry_init() {
+  tsi_tls_key_logger_registry_init();
+}
+
+void grpc_tls_key_logger_registry_destroy() {
+  tsi_tls_key_logger_registry_destroy();
+}

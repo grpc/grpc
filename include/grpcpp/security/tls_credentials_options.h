@@ -147,7 +147,8 @@ class TlsServerAuthorizationCheckConfig {
 };
 
 /// Configuration for Tls key logging.
-struct TlsKeyLoggerConfig {
+class TlsKeyLoggerConfig {
+ private:
   // The full path at which the TLS keys would be exported.
   std::string tls_key_log_file_path;
 
@@ -156,6 +157,7 @@ struct TlsKeyLoggerConfig {
 
   // Future extensions can include filters such as IP addresses etc.
 
+ public:
   // Constructor
   explicit TlsKeyLoggerConfig()
       : tls_key_log_file_path(""), tls_key_log_format(TLS_KEY_LOG_FORMAT_NSS){};
@@ -175,9 +177,17 @@ struct TlsKeyLoggerConfig {
   void set_tls_key_log_format(grpc_tls_key_log_format tls_key_log_format) {
     tls_key_log_format = tls_key_log_format;
   }
-};
 
-typedef struct TlsKeyLoggerConfig TlsKeyLoggerConfig;
+  // Returns the set tls key log file path.
+  std::string get_tls_key_log_file_path() const {
+    return this->tls_key_log_file_path;
+  }
+
+  // Returns the set tls key log file format.
+  grpc_tls_key_log_format get_tls_key_log_format() const {
+    return this->tls_key_log_format;
+  }
+};
 
 // Base class of configurable options specified by users to configure their
 // certain security features supported in TLS. It is used for experimental
@@ -221,11 +231,16 @@ class TlsCredentialsOptions {
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
   // Sets the Tls key logging configuration. If not set, tls key logging is
-  // disabled.
+  // disabled. Note that this should be used only for debugging purposes. It
+  // should never be used in a production environment due to security
+  // concerns. For extra protection, an environment variable
+  //      GRPC_TLS_KEY_LOGGING_ENABLED=true
+  // must also be set to enable Tls Key logging. Otherwise this config is
+  // simply ignored.
   //
   // @param tls_keylog_config Tls key logging config of the type
   // gprc::experimental::TlsKeyLoggerConfig
-  void set_tls_key_log_config(TlsKeyLoggerConfig tls_key_log_config);
+  void set_tls_key_log_config(const TlsKeyLoggerConfig& tls_key_log_config);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

@@ -25,6 +25,7 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -125,9 +126,23 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
-  const tsi::tsi_tls_key_logger_config& tls_key_logger_config() {
-    return tls_key_logger_config_;
+  // Returns the constructed tls key logger. This function is only
+  // used internally.
+  grpc_core::RefCountedPtr<tsi::TlsKeyLogger> get_tls_key_logger() {
+    if (tls_key_logger_.get() == nullptr &&
+      !tls_key_log_config_.tls_key_log_file_path.empty() &&
+      strcmp(gpr_getenv(GRPC_TLS_KEY_LOGGING_ENV_VAR), "true") == 0) {
+      // Tls key logging is assumed to be enabled if the specified log file is
+      // non-empty and GRPC_TLS_KEY_LOGGING_ENABLED environment variable is set
+      // to true.
+      gpr_log(GPR_INFO, "Enabling TLS Keylogging with keys stored at: %s",
+              tls_key_log_config_.tls_key_log_file_path.c_str());
+      tls_key_logger_ = tsi::TlsKeyLoggerRegistry::CreateTlsKeyLogger(
+        tls_key_log_config_);
+    }
+    return tls_key_logger_;
   }
+
 
   // Setters for member fields.
   void set_cert_request_type(
@@ -178,12 +193,15 @@ struct grpc_tls_credentials_options
   }
   // Sets the tls key logging path and format. TLS/SSL keys for each session
   // will be logged at the path in the format specified. Currently it enables
-  // decryption using tools like wireshark.
-  void set_tls_key_logger_config(std::string tls_key_log_file_path,
-                                 grpc_tls_key_log_format key_logging_format) {
-    tls_key_logger_config_.tls_key_log_file_path =
-        std::move(tls_key_log_file_path);
-    tls_key_logger_config_.key_logging_format = key_logging_format;
+  // decryption using tools like wireshark. Note that this should only be
+  // used for debugging purposes and should never be set in a production
+  // environment due to security concerns.
+  // For extra protection, an environment variable
+  //      GRPC_TLS_KEY_LOGGING_ENABLED=true
+  // must also be set to enable Tls Key logging. Otherwise this config is
+  // simply ignored.
+  void set_tls_key_logger_config(const grpc_tls_key_log_config& config) {
+    tls_key_log_config_ = config;
   }
 
  private:
@@ -200,7 +218,8 @@ struct grpc_tls_credentials_options
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
-  tsi::tsi_tls_key_logger_config tls_key_logger_config_;
+  struct grpc_tls_key_log_config tls_key_log_config_;
+  grpc_core::RefCountedPtr<tsi::TlsKeyLogger> tls_key_logger_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

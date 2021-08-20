@@ -159,10 +159,12 @@ void TlsCredentialsOptions::set_identity_cert_name(
 }
 
 void TlsCredentialsOptions::set_tls_key_log_config(
-    TlsKeyLoggerConfig tls_key_log_config) {
-  c_credentials_options_->set_tls_key_logger_config(
-      tls_key_log_config.tls_key_log_file_path,
-      tls_key_log_config.tls_key_log_format);
+    const TlsKeyLoggerConfig& tls_key_log_config) {
+  struct grpc_tls_key_log_config c_config;
+  c_config.tls_key_log_file_path =
+      tls_key_log_config.get_tls_key_log_file_path();
+  c_config.key_logging_format = tls_key_log_config.get_tls_key_log_format();
+  c_credentials_options_->set_tls_key_logger_config(c_config);
 }
 
 void TlsChannelCredentialsOptions::set_server_verification_option(

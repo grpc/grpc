@@ -25,6 +25,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/grpc++/grpc++.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -156,10 +157,12 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void SetUp() override {
-    ::grpc::ServerBuilder builder;
 
+    ::grpc::ServerBuilder builder;
     ::grpc::ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.com.au");
+
+    gpr_setenv(GRPC_TLS_KEY_LOGGING_ENV_VAR, "true");
 
     if (num_listening_ports_ > 0) {
       ports_ = new int[num_listening_ports_];
@@ -273,6 +276,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         break;
       }
     }
+
+    gpr_unsetenv(GRPC_TLS_KEY_LOGGING_ENV_VAR);
   }
 
   void RunServerLoop() { server_->Wait(); }
