@@ -64,7 +64,7 @@ class CoreConfiguration {
   static const CoreConfiguration& BuildNewAndMaybeSet();
 
   // The configuration
-  static std::atomic<CoreConfiguration*> config_{nullptr};
+  static std::atomic<CoreConfiguration*> config_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
