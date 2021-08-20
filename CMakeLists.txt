@@ -753,24 +753,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bdp_estimator_test)
   endif()
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  add_dependencies(buildtests_cxx binder_smoke_test)
-<<<<<<< HEAD
->>>>>>> d9d2151716 (Re-generate project)
-=======
->>>>>>> af3d09bcdf (Re-generate project)
-<<<<<<< HEAD
->>>>>>> 3beb7393c3 (Re-generate project)
-=======
-=======
   add_dependencies(buildtests_cxx binder_server_test)
->>>>>>> 12ed40fe03 (Add binder server)
->>>>>>> 425cc1395e (Add binder server)
->>>>>>> 7d0119f534 (Add binder server)
   add_dependencies(buildtests_cxx binder_transport_test)
   add_dependencies(buildtests_cxx bitset_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
