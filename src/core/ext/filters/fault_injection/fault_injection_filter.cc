@@ -18,6 +18,8 @@
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
+#include <atomic>
+
 #include "absl/strings/numbers.h"
 
 #include <grpc/support/alloc.h>
@@ -28,7 +30,6 @@
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -40,9 +41,9 @@ TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 
 namespace {
 
-Atomic<uint32_t> g_active_faults{0};
+std::atomic<uint32_t> g_active_faults{0};
 static_assert(
-    std::is_trivially_destructible<Atomic<uint32_t>>::value,
+    std::is_trivially_destructible<std::atomic<uint32_t>>::value,
     "the active fault counter needs to have a trivially destructible type");
 
 inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
@@ -140,7 +141,7 @@ class CallData {
 
   // Finishes the fault injection, should only be called once.
   void FaultInjectionFinished() {
-    g_active_faults.FetchSub(1, MemoryOrder::RELAXED);
+    g_active_faults.fetch_sub(1, std::memory_order_relaxed);
   }
 
   // This is a callback that will be invoked after the delay timer is up.
@@ -400,10 +401,11 @@ void CallData::DecideWhetherToInjectFaults(
 }
 
 bool CallData::HaveActiveFaultsQuota(bool increment) {
-  if (g_active_faults.Load(MemoryOrder::ACQUIRE) >= fi_policy_->max_faults) {
+  if (g_active_faults.load(std::memory_order_acquire) >=
+      fi_policy_->max_faults) {
     return false;
   }
-  if (increment) g_active_faults.FetchAdd(1, MemoryOrder::RELAXED);
+  if (increment) g_active_faults.fetch_add(1, std::memory_order_relaxed);
   return true;
 }
 

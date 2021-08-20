@@ -183,7 +183,7 @@ class ClientChannel {
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
     grpc_closure* watcher_timer_init_;
-    Atomic<bool> done_{false};
+    std::atomic<bool> done_{false};
   };
 
   struct ResolverQueuedCall {
@@ -209,7 +209,7 @@ class ClientChannel {
 
   // Note: Does NOT return a new ref.
   grpc_error_handle disconnect_error() const {
-    return disconnect_error_.Load(MemoryOrder::ACQUIRE);
+    return disconnect_error_.load(std::memory_order_acquire);
   }
 
   // Note: All methods with "Locked" suffix must be invoked from within
@@ -348,7 +348,7 @@ class ClientChannel {
   // Fields accessed from both data plane mutex and control plane
   // work_serializer.
   //
-  Atomic<grpc_error_handle> disconnect_error_;
+  std::atomic<grpc_error_handle> disconnect_error_{GRPC_ERROR_NONE};
 
   //
   // Fields guarded by a mutex, since they need to be accessed

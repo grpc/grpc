@@ -53,7 +53,7 @@ struct PollWrapper {
 
 template <typename T>
 struct PollWrapper<Poll<T>> {
-  static Poll<T> Wrap(Poll<T>&& x) { return x; }
+  static Poll<T> Wrap(Poll<T>&& x) { return std::forward<Poll<T>>(x); }
 };
 
 template <typename T>

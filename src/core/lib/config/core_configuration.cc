@@ -18,7 +18,7 @@
 
 namespace grpc_core {
 
-std::atomic<CoreConfiguration*> CoreConfiguration::config_;
+std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 
 CoreConfiguration::Builder::Builder() = default;
 

@@ -40,7 +40,7 @@ SubchannelNode::SubchannelNode(std::string target_address,
 SubchannelNode::~SubchannelNode() {}
 
 void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
-  connectivity_state_.Store(state, MemoryOrder::RELAXED);
+  connectivity_state_.store(state, std::memory_order_relaxed);
 }
 
 void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
@@ -51,7 +51,7 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
 Json SubchannelNode::RenderJson() {
   // Create and fill the data child.
   grpc_connectivity_state state =
-      connectivity_state_.Load(MemoryOrder::RELAXED);
+      connectivity_state_.load(std::memory_order_relaxed);
   Json::Object data = {
       {"state",
        Json::Object{
