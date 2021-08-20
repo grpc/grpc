@@ -35,11 +35,6 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
   GPR_ASSERT(!args->is_last);
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
-  if (args->optional_transport == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to get transport.");
-  }
-  grpc_endpoint* endpoint =
-      grpc_transport_get_endpoint(args->optional_transport);
   grpc_authorization_policy_provider* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
           args->channel_args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
@@ -48,8 +43,8 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
         "Failed to get authorization provider.");
   }
   new (elem->channel_data) SdkServerAuthzFilter(
-      auth_context != nullptr ? auth_context->Ref() : nullptr, endpoint,
-      provider->Ref());
+      auth_context != nullptr ? auth_context->Ref() : nullptr,
+      /*endpoint=*/nullptr, provider->Ref());
   return GRPC_ERROR_NONE;
 }
 

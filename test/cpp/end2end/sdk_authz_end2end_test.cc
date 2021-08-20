@@ -50,6 +50,12 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
 
   ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
 
+  // Replaces existing credentials with insecure credentials.
+  void UseInsecureCredentials() {
+    server_creds_ = InsecureServerCredentials();
+    channel_creds_ = InsecureChannelCredentials();
+  }
+
   // Creates server with sdk authorization enabled when provider is not null.
   void InitServer(
       std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
@@ -331,6 +337,7 @@ TEST_F(
       "    }"
       "  ]"
       "}";
+  UseInsecureCredentials();
   InitServer(CreateStaticAuthzPolicyProvider(policy));
   auto channel = BuildChannel();
   ClientContext context;
