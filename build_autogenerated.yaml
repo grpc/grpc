@@ -4574,7 +4574,8 @@ targets:
 - name: bm_chttp2_transport
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/microbenchmarks/bm_transport.h
   src:
   - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:

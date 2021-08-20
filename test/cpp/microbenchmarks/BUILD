@@ -272,6 +272,15 @@ grpc_cc_test(
     deps = [":helpers"],
 )
 
+grpc_cc_library(
+    name = "bm_transport",
+    testonly = 1,
+    hdrs = ["bm_transport.h"],
+    deps = [
+        ":helpers",
+    ],
+)
+
 grpc_cc_test(
     name = "bm_chttp2_transport",
     srcs = ["bm_chttp2_transport.cc"],
@@ -280,7 +289,10 @@ grpc_cc_test(
         "no_windows",
         "nomsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":bm_transport",
+        ":helpers",
+    ],
 )
 
 grpc_cc_test(
