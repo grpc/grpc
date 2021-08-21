@@ -25,25 +25,69 @@ fixed = []
 
 
 def is_own_header(filename, header, header_type):
+    return False
+
+
+PORT_PLATFORM = -1
+OWN = 0
+SYSTEM_C = 1
+SYSTEM_CPP = 2
+OTHER_LIBRARIES = 3
+GRPC_SYSTEM = 4
+GRPC_PROJECT = 5
+
+
+def categorize_header(filename, header, header_type):
     (f_dirname, f_basename) = os.path.split(filename)
     (f_basename, f_ext) = os.path.splitext(f_basename)
 
     (h_dirname, h_basename) = os.path.split(header)
     (h_basename, h_ext) = os.path.splitext(h_basename)
 
+    if header_type == 'system' and header in [
+            'grpc/support/port_platform.h', 'grpc/impl/codegen/port_platform.h'
+    ]:
+        return PORT_PLATFORM
+
     if header_type == 'project':
         if f_dirname == h_dirname and f_basename == h_basename:
-            return True
+            return OWN
         if f_dirname.startswith('test'):
             if f_basename.endswith('_test'):
                 f_basename = f_basename[:-len('_test')]
             if f_basename == h_basename:
-                return True
+                return OWN
     elif header_type == 'system':
         if h_dirname in ['grpcpp', 'grpc']:
             if f_basename == h_basename:
-                return True
-    return False
+                return OWN
+
+    # Then C headers
+    if header_type == "system" and os.path.splitext(
+            header)[1] != '' and not header.startswith('grpc'):
+        return SYSTEM_C
+
+    # Then C++ headers
+    if header_type == "system" and os.path.splitext(
+            header)[1] == '' and not header.startswith('grpc'):
+        return SYSTEM_CPP
+
+    # Other libraries headers
+    if (header_type == "project" and not header.startswith('src/') and
+            not header.startswith('test/') and
+            not header.startswith('grpc/') and
+            not header.startswith('grpcpp/')):
+        return OTHER_LIBRARIES
+
+    # our 'system' headers
+    if header_type == "system" and header.startswith('grpc'):
+        return GRPC_SYSTEM
+
+    # our project headers
+    if header_type == "project":
+        return GRPC_PROJECT
+
+    return GRPC_PROJECT
 
 
 def fix(filename):
@@ -68,64 +112,102 @@ def fix(filename):
     # currently buffering comment
     comment = []
     # one include file
-    Include = collections.namedtuple(
-        "Include", ["path", "category", "comments_above", "comment_right"])
+    Include = collections.namedtuple("Include", [
+        "ifstack", "category", "path", "header_type", "comments_above",
+        "comment_right"
+    ])
     # list of all includes
     includes = []
     warned_about_skipping = False
-    for line in text.splitlines():
+    lines = text.splitlines()
+    ifstack = []
+    line_ifstack = []
+    for line_num, line in enumerate(lines):
+        if line.startswith('#if'):
+            ifstack = list(ifstack)
+            ifstack.append(line)
+        elif line.startswith('#endif'):
+            ifstack = ifstack[:-1]
+        line_ifstack.append(ifstack)
+    preamble_ifstack = None
+    for line_num, line in enumerate(lines):
         if state == "preamble":
             if line.startswith("#include"):
-                state = "includes"
+                preamble_ifstack = line_ifstack[line_num]
+                state = "postamble"
             else:
                 preamble.append(line)
-        if state == "includes":
+        if state == "postamble":
             if re.search(r"^\s*//.*", line):
                 comment.append(line)
             elif line.strip() == '':
-                if comment:
-                    comment.append(line)
+                comment.append(line)
             elif line.startswith('#include'):
-                line = line[len('#include'):]
-                m = re.search(r'"([^"]*)"(.*)', line)
-                comment = [line for line in comment if line != '']
-                if m:
-                    includes.append(
-                        Include(m.group(1), "project", comment, m.group(2)))
-                m = re.search(r'<([^>]*)>(.*)', line)
-                if m:
-                    includes.append(
-                        Include(m.group(1), "system", comment, m.group(2)))
-                comment = []
+                this_ifstack = line_ifstack[line_num]
+                usable = True
+                if usable and len(this_ifstack) < len(preamble_ifstack):
+                    usable = all(a == b for a, b in zip(
+                        this_ifstack[:len(preamble_ifstack)], preamble_ifstack))
+                if not usable:
+                    print('Unusable include %s:%d: %s' %
+                          (filename, line_num, line))
+                    postamble = postamble + comment + [line]
+                    comment = []
+                else:
+                    ifstack = tuple(this_ifstack[len(preamble_ifstack):])
+                    line = line[len('#include'):]
+                    for header_type, regex in (("project", r'"([^"]*)"(.*)'),
+                                               ("system", r'<([^>]*)>(.*)')):
+                        m = re.search(regex, line)
+                        if m:
+                            header = m.group(1)
+                            if header_type == "project" and header.startswith(
+                                    'include/grpc'):
+                                header_type = "system"
+                                header = header[len('include/'):]
+                            if header_type == "project" and header.startswith(
+                                    'grpc'):
+                                header_type = "system"
+                            includes.append(
+                                Include(
+                                    ifstack,
+                                    categorize_header(filename, header,
+                                                      header_type), header,
+                                    header_type,
+                                    [c for c in comment if c.strip() != ''],
+                                    m.group(2)))
+                            comment = []
             else:
-                state = "postamble"
-        if state == "postamble":
-            if line.startswith("#include"):
-                if not warned_about_skipping:
-                    print(
-                        "WARNING: includes found after main block in %s: skipping formatting"
-                        % filename)
-                    warned_about_skipping = True
-            postamble.append(line)
+                postamble = postamble + comment + [line]
+                comment = []
     while preamble and not preamble[-1].strip():
         preamble = preamble[:-1]
+
+    needs_port_platform = False
+    new_includes = []
+    for include in includes:
+        if include.category == PORT_PLATFORM:
+            needs_port_platform = True
+        else:
+            new_includes.append(include)
+    includes = new_includes
+    if filename.startswith('include/grpc/'):
+        needs_port_platform = True
+    if filename.startswith('src/core/'):
+        needs_port_platform = True
+    if needs_port_platform:
+        if '/impl/codegen/' in filename:
+            port_platform = "grpc/impl/codegen/port_platform.h"
+        else:
+            port_platform = 'grpc/support/port_platform.h'
+        includes.append(
+            Include((), PORT_PLATFORM, port_platform, "system", [], ""))
 
     if not includes:
         return
 
-    out = ''
-    for line in preamble:
-        out += '%s\n' % line
-
     new_includes = []
     for include in includes:
-        if include.category == "project" and include.path.startswith(
-                'include/grpc'):
-            include = Include(include.path[len('include/'):], "system",
-                              include.comments_above, include.comment_right)
-        if include.category == "project" and include.path.startswith('grpc'):
-            include = Include(include.path, "system", include.comments_above,
-                              include.comment_right)
         found = False
         for new_include in new_includes:
             if new_include.path == include.path and new_include.category == include.category:
@@ -134,135 +216,36 @@ def fix(filename):
             new_includes.append(include)
     includes = sorted(new_includes)
 
-    # first thing must be port_platform
-    new_includes = []
-    needs_port_platform = False
+    out = preamble
+    while out and out[-1].strip() == '':
+      out = out[:-1]
+
+    category = PORT_PLATFORM - 1
+    ifstack = ()
     for include in includes:
-        if include.category == "system" and include[
-                0] == 'grpc/support/port_platform.h':
-            needs_port_platform = True
-            continue
-        if include.category == "system" and include[
-                0] == 'grpc/impl/codegen/port_platform.h':
-            needs_port_platform = True
-            continue
-        new_includes.append(include)
-    includes = new_includes
-    if filename.startswith('include/grpc/'):
-        needs_port_platform = True
-    if filename.startswith('src/core/'):
-        needs_port_platform = True
-    if needs_port_platform:
-        if '/impl/codegen/' in filename:
-            out += '\n#include <grpc/impl/codegen/port_platform.h>\n'
-        else:
-            out += '\n#include <grpc/support/port_platform.h>\n'
+      if include.ifstack != ifstack:
+        for cond in ifstack:
+          out.append('#endif')
+        out.append('')
+        for cond in include.ifstack:
+          out.append(cond)
+        category = include.category
+        ifstack = include.ifstack
+      if include.category != category:
+        category = include.category
+        out.append('')
+      out.extend(include.comments_above)
+      if include.header_type == "project":
+        out.append('#include "%s"%s' % (include.path, include.comment_right))
+      else:
+        out.append('#include <%s>%s' % (include.path, include.comment_right))
+    for cond in ifstack:
+      out.append('#endif')
+    out.append('')
 
-    # Then own header
-    new_includes = []
-    for include in includes:
-        if is_own_header(filename, include.path, include.category):
-            if include.category == "project":
-                out += '\n#include "%s"%s\n' % (include.path,
-                                                include.comment_right)
-            else:
-                out += '\n#include <%s>%s\n' % (include.path,
-                                                include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
+    out.extend(postamble)
 
-    # Then C headers
-    new_includes = []
-    first = True
-    for include in includes:
-        if include.category == "system" and os.path.splitext(
-                include.path)[1] != '' and not include.path.startswith('grpc'):
-            if first:
-                out += '\n'
-                first = False
-            for line in include.comments_above:
-                out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include.path, include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
-
-    # Then C++ headers
-    new_includes = []
-    first = True
-    for include in includes:
-        if include.category == "system" and os.path.splitext(
-                include.path)[1] == '' and not include.path.startswith('grpc'):
-            if first:
-                out += '\n'
-                first = False
-            for line in include.comments_above:
-                out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include.path, include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
-
-    # Other libraries headers
-    new_includes = []
-    first = True
-    for include in includes:
-        if (include.category == "project" and
-                not include.path.startswith('src/') and
-                not include.path.startswith('test/') and
-                not include.path.startswith('grpc/') and
-                not include.path.startswith('grpcpp/')):
-            if first:
-                out += '\n'
-                first = False
-            for line in include.comments_above:
-                out += '%s\n' % line
-            out += '#include "%s"%s\n' % (include.path, include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
-
-    # our 'system' headers
-    new_includes = []
-    first = True
-    for include in includes:
-        if include.category == "system" and include.path.startswith('grpc'):
-            if first:
-                out += '\n'
-                first = False
-            for line in include.comments_above:
-                out += '%s\n' % line
-            out += '#include <%s>%s\n' % (include.path, include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
-
-    # our project headers
-    new_includes = []
-    first = True
-    for include in includes:
-        if include.category == "project":
-            if first:
-                out += '\n'
-                first = False
-            for line in include.comments_above:
-                out += '%s\n' % line
-            out += '#include "%s"%s\n' % (include.path, include.comment_right)
-        else:
-            new_includes.append(include)
-    includes = new_includes
-
-    if includes:
-        print("Error: missed includes in formatting: %s", includes)
-        sys.exit(1)
-
-    out += '\n'
-    for line in comment:
-        out += '%s\n' % line
-    for line in postamble:
-        out += '%s\n' % line
-
+    out = '\n'.join(out)
     if out.strip() != text.strip():
         fixed.append(filename)
         with open(filename, 'w') as f:
