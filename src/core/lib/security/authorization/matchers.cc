@@ -102,7 +102,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
           std::move(principal.header_matcher));
     case Rbac::Principal::RuleType::kPath:
       return absl::make_unique<PathAuthorizationMatcher>(
-          std::move(principal.string_matcher));
+          std::move(principal.string_matcher.value()));
   }
   return nullptr;
 }
@@ -180,14 +180,14 @@ bool AuthenticatedAuthorizationMatcher::Matches(
     // Connection is not authenticated.
     return false;
   }
-  if (matcher_.string_matcher().empty()) {
+  if (!matcher_.has_value()) {
     // Allows any authenticated user.
     return true;
   }
   std::vector<absl::string_view> uri_sans = args.GetUriSans();
   if (!uri_sans.empty()) {
     for (const auto& uri : uri_sans) {
-      if (matcher_.Match(uri)) {
+      if (matcher_->Match(uri)) {
         return true;
       }
     }
@@ -195,7 +195,7 @@ bool AuthenticatedAuthorizationMatcher::Matches(
   std::vector<absl::string_view> dns_sans = args.GetDnsSans();
   if (!dns_sans.empty()) {
     for (const auto& dns : dns_sans) {
-      if (matcher_.Match(dns)) {
+      if (matcher_->Match(dns)) {
         return true;
       }
     }

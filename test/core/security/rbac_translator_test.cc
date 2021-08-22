@@ -24,8 +24,8 @@ namespace {
 MATCHER_P2(EqualsPrincipalName, expected_matcher_type, expected_matcher_value,
            "") {
   return arg->type == Rbac::Principal::RuleType::kPrincipalName &&
-         arg->string_matcher.type() == expected_matcher_type &&
-         arg->string_matcher.string_matcher() == expected_matcher_value;
+         arg->string_matcher.value().type() == expected_matcher_type &&
+         arg->string_matcher.value().string_matcher() == expected_matcher_value;
 }
 
 MATCHER_P2(EqualsPath, expected_matcher_type, expected_matcher_value, "") {
@@ -352,6 +352,40 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
                                   ::testing::ElementsAre(EqualsPrincipalName(
                                       StringMatcher::Type::kPrefix,
                                       "")))))))))))));
+}
+
+TEST(GenerateRbacPoliciesTest, ParseSourceSuccessEmptyPrincipals) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_authenticated\","
+      "      \"source\": {"
+      "        \"principals\": []"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::kAllow);
+  EXPECT_THAT(rbac_policies.value().allow_policy.policies,
+              ::testing::ElementsAre(::testing::Pair(
+                  "authz_allow_authenticated",
+                  ::testing::AllOf(
+                      ::testing::Field(
+                          &Rbac::Policy::permissions,
+                          ::testing::Field(&Rbac::Permission::type,
+                                           Rbac::Permission::RuleType::kAny)),
+                      ::testing::Field(
+                          &Rbac::Policy::principals,
+                          ::testing::AllOf(
+                              ::testing::Field(
+                                  &Rbac::Principal::type,
+                                  Rbac::Principal::RuleType::kPrincipalName),
+                              ::testing::Field(&Rbac::Principal::string_matcher,
+                                               absl::nullopt)))))));
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectRequestType) {

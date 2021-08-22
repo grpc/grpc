@@ -19,6 +19,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include "include/grpc/impl/codegen/log.h"
+
 namespace grpc_core {
 
 //
@@ -200,8 +202,12 @@ Rbac::Principal::Principal(Principal::RuleType type, Principal principal)
 }
 Rbac::Principal::Principal(Principal::RuleType type) : type(type) {}
 Rbac::Principal::Principal(Principal::RuleType type,
-                           StringMatcher string_matcher)
-    : type(type), string_matcher(std::move(string_matcher)) {}
+                           absl::optional<StringMatcher> string_matcher)
+    : type(type), string_matcher(std::move(string_matcher)) {
+  if (type == RuleType::kPath) {
+    GPR_ASSERT(string_matcher.has_value());
+  }
+}
 Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip)
     : type(type), ip(std::move(ip)) {}
 Rbac::Principal::Principal(Principal::RuleType type,
@@ -276,7 +282,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kAny:
       return "any";
     case RuleType::kPrincipalName:
-      return absl::StrFormat("principal_name=%s", string_matcher.ToString());
+      return absl::StrFormat("principal_name=%s", string_matcher->ToString());
     case RuleType::kSourceIp:
       return absl::StrFormat("source_ip=%s", ip.ToString());
     case RuleType::kDirectRemoteIp:
@@ -286,7 +292,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kHeader:
       return absl::StrFormat("header=%s", header_matcher.ToString());
     case RuleType::kPath:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
+      return absl::StrFormat("path=%s", string_matcher->ToString());
     default:
       return "";
   }

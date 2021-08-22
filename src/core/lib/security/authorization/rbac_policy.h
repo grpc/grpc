@@ -113,7 +113,8 @@ struct Rbac {
     // For kAny RuleType.
     explicit Principal(Principal::RuleType type);
     // For kPrincipalName/kPath RuleType.
-    Principal(Principal::RuleType type, StringMatcher string_matcher);
+    Principal(Principal::RuleType type,
+              absl::optional<StringMatcher> string_matcher);
     // For kSourceIp/kDirectRemoteIp/kRemoteIp RuleType.
     Principal(Principal::RuleType type, CidrRange ip);
     // For kHeader RuleType.
@@ -126,7 +127,7 @@ struct Rbac {
 
     RuleType type;
     HeaderMatcher header_matcher;
-    StringMatcher string_matcher;
+    absl::optional<StringMatcher> string_matcher;
     CidrRange ip;
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.
