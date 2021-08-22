@@ -25,8 +25,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//test/core/util:grpc_suppressions",
         "//:gpr_platform",
+        "//test/core/util:grpc_suppressions",
     ],
 )
-
