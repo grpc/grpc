@@ -58,8 +58,8 @@ WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
 # Update go version.
-TEST_INFRA_GOVERSION=go1.16.6
-go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
+TEST_INFRA_GOVERSION=go1.17
+go install "golang.org/dl/${TEST_INFRA_GOVERSION}@latest"
 "${TEST_INFRA_GOVERSION}" download
 
 # Clone test-infra repository to one upper level directory than grpc.
@@ -112,8 +112,9 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
-# Create reports directory.
-mkdir -p runner
+# Create reports directories.
+mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
+
 
 # Run tests.
 time ../test-infra/bin/runner \
