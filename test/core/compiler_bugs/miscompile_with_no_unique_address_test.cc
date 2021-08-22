@@ -20,15 +20,14 @@
 // yet thankfully)
 template <int kInit>
 class A {
-public:
-  ~A() {
-    EXPECT_EQ(a_, kInit);
-  }
+ public:
+  ~A() { EXPECT_EQ(a_, kInit); }
   int a_ = kInit;
 };
-template <class T, int kInit> class P : A<kInit> {
-public:
-  P(T b) : b_(b) {}
+template <class T, int kInit>
+class P : A<kInit> {
+ public:
+  explicit P(T b) : b_(b) {}
   // clang 11 with MSAN miscompiles this and marks A::a_ as uninitialized during
   // P::~P() if GPR_NO_UNIQUE_ADDRESS is [[no_unique_address]] - so this test
   // stands to ensure that we have a working definition for this compiler so
@@ -36,7 +35,8 @@ public:
   GPR_NO_UNIQUE_ADDRESS T b_;
 };
 
-template <int kInit, class T> void c(T a) {
+template <int kInit, class T>
+void c(T a) {
   P<T, kInit> _(a);
 }
 
@@ -56,4 +56,3 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
