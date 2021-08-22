@@ -30,7 +30,9 @@ template <class T, int kInit> class P : A<kInit> {
 public:
   P(T b) : b_(b) {}
   // clang 11 with MSAN miscompiles this and marks A::a_ as uninitialized during
-  // P::~P().
+  // P::~P() if GPR_NO_UNIQUE_ADDRESS is [[no_unique_address]] - so this test
+  // stands to ensure that we have a working definition for this compiler so
+  // that we don't flag false negatives elsewhere in the codebase.
   GPR_NO_UNIQUE_ADDRESS T b_;
 };
 
