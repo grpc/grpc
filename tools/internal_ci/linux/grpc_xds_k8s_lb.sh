@@ -94,7 +94,7 @@ run_test() {
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
 #######################################
