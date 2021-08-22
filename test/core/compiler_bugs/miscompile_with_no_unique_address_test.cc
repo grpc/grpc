@@ -15,6 +15,9 @@
 #include <grpc/impl/codegen/port_platform.h>
 #include <gtest/gtest.h>
 
+// Make a template argument to test which bit pattern remains in A's destructor
+// to try and detect similar bugs in non-MSAN builds (none have been detected
+// yet thankfully)
 template <int kInit>
 class A {
 public:
@@ -26,6 +29,8 @@ public:
 template <class T, int kInit> class P : A<kInit> {
 public:
   P(T b) : b_(b) {}
+  // clang 11 with MSAN miscompiles this and marks A::a_ as uninitialized during
+  // P::~P().
   GPR_NO_UNIQUE_ADDRESS T b_;
 };
 
@@ -37,8 +42,12 @@ TEST(Miscompile, Zero) {
   c<0>([] {});
 }
 
-TEST(Miscompile, MinusOne) {
+TEST(Miscompile, One) {
   c<1>([] {});
+}
+
+TEST(Miscompile, MinusOne) {
+  c<-1>([] {});
 }
 
 int main(int argc, char** argv) {
