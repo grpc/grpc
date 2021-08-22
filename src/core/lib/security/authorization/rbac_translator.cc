@@ -14,6 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cctype>
+#include <unordered_set>
+
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
 #include "absl/strings/str_cat.h"
@@ -25,6 +28,16 @@
 namespace grpc_core {
 
 namespace {
+
+std::unordered_set<std::string> unsupported_headers = {"host",
+                                                       "connection",
+                                                       "keep-alive",
+                                                       "proxy-authenticate",
+                                                       "proxy-authorization",
+                                                       "te",
+                                                       "trailer",
+                                                       "transfer-encoding",
+                                                       "upgrade"};
 
 absl::string_view GetMatcherType(absl::string_view value,
                                  StringMatcher::Type* type) {
@@ -130,11 +143,12 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   if (it->second.type() != Json::Type::STRING) {
     return absl::InvalidArgumentError("\"key\" is not a string.");
   }
-  absl::string_view header_name = it->second.string_value();
-  // TODO(ashithasantosh): Add connection headers below.
+  std::string header_name = it->second.string_value();
+  std::transform(header_name.begin(), header_name.end(), header_name.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
   if (absl::StartsWith(header_name, ":") ||
-      absl::StartsWith(header_name, "grpc-") || header_name == "host" ||
-      header_name == "Host") {
+      absl::StartsWith(header_name, "grpc-") ||
+      unsupported_headers.find(header_name) != unsupported_headers.end()) {
     return absl::InvalidArgumentError(
         absl::StrFormat("Unsupported \"key\" %s.", header_name));
   }
