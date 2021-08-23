@@ -67,22 +67,16 @@ class XdsBootstrap {
     bool ShouldUseV3() const;
   };
 
-  // Creates bootstrap object, obtaining the bootstrap JSON as appropriate
-  // for the environment:
-  // - If the GRPC_XDS_BOOTSTRAP env var is set, reads the file it specifies
-  //   to obtain the bootstrap JSON.
-  // - Otherwise, if the GRPC_XDS_BOOTSTRAP_CONFIG env var is set, reads the
-  //   content of that env var to obtain the bootstrap JSON.
-  // - Otherwise, the JSON will be read from fallback_config (if non-null).
+  // Creates bootstrap object from json_string.
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error (e.g., no config found or error reading the file).
-  static std::unique_ptr<XdsBootstrap> Create(XdsClient* client,
-                                              TraceFlag* tracer,
-                                              const char* fallback_config,
-                                              grpc_error** error);
+  // error parsing the contents.
+  static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
+                                              grpc_error_handle* error);
 
-  // Do not instantiate directly -- use ReadFromFile() above instead.
-  XdsBootstrap(Json json, grpc_error** error);
+  // Do not instantiate directly -- use Create() above instead.
+  XdsBootstrap(Json json, grpc_error_handle* error);
+
+  std::string ToString() const;
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
@@ -98,16 +92,17 @@ class XdsBootstrap {
   }
 
  private:
-  grpc_error* ParseXdsServerList(Json* json);
-  grpc_error* ParseXdsServer(Json* json, size_t idx);
-  grpc_error* ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error* ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
-  grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
-  grpc_error* ParseNode(Json* json);
-  grpc_error* ParseLocality(Json* json);
-  grpc_error* ParseCertificateProviders(Json* json);
-  grpc_error* ParseCertificateProvider(const std::string& instance_name,
-                                       Json* certificate_provider_json);
+  grpc_error_handle ParseXdsServerList(Json* json);
+  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
+  grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
+  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
+                                      XdsServer* server);
+  grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
+  grpc_error_handle ParseNode(Json* json);
+  grpc_error_handle ParseLocality(Json* json);
+  grpc_error_handle ParseCertificateProviders(Json* json);
+  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
+                                             Json* certificate_provider_json);
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;

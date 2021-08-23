@@ -55,7 +55,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   struct Result {
     ServerAddressList addresses;
     RefCountedPtr<ServiceConfig> service_config;
-    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    grpc_error_handle service_config_error = GRPC_ERROR_NONE;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once grpc_error and
@@ -81,7 +81,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
-    virtual void ReturnError(grpc_error* error) = 0;
+    virtual void ReturnError(grpc_error_handle error) = 0;
 
     // TODO(yashkt): As part of the service config error handling
     // changes, add a method to parse the service config JSON string.

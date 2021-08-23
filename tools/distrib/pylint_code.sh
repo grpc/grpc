@@ -32,6 +32,7 @@ DIRS=(
 
 TEST_DIRS=(
     'src/python/grpcio_tests/tests'
+    'src/python/grpcio_tests/tests_gevent'
 )
 
 VIRTUALENV=python_pylint_venv

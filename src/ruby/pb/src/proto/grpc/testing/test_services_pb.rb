@@ -29,7 +29,7 @@ module Grpc
       # performance with various types of payload.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -70,7 +70,7 @@ module Grpc
       # that case.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -86,7 +86,7 @@ module Grpc
       # A service used to control reconnect server.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -102,7 +102,7 @@ module Grpc
       # A service used to obtain stats for verifying LB behavior.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -120,7 +120,7 @@ module Grpc
       # A service to remotely control health status of an xDS test server.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -136,7 +136,7 @@ module Grpc
       # A service to dynamically update the configuration of an xDS test client.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode

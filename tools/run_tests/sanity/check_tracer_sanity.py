@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import os
-import sys
 import re
+import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 

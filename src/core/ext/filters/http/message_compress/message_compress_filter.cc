@@ -131,25 +131,25 @@ class CallData {
   bool SkipMessageCompression();
   void InitializeState(grpc_call_element* elem);
 
-  grpc_error* ProcessSendInitialMetadata(grpc_call_element* elem,
-                                         grpc_metadata_batch* initial_metadata);
+  grpc_error_handle ProcessSendInitialMetadata(
+      grpc_call_element* elem, grpc_metadata_batch* initial_metadata);
 
   // Methods for processing a send_message batch
-  static void StartSendMessageBatch(void* elem_arg, grpc_error* unused);
-  static void OnSendMessageNextDone(void* elem_arg, grpc_error* error);
-  grpc_error* PullSliceFromSendMessage();
+  static void StartSendMessageBatch(void* elem_arg, grpc_error_handle unused);
+  static void OnSendMessageNextDone(void* elem_arg, grpc_error_handle error);
+  grpc_error_handle PullSliceFromSendMessage();
   void ContinueReadingSendMessage(grpc_call_element* elem);
   void FinishSendMessage(grpc_call_element* elem);
   void SendMessageBatchContinue(grpc_call_element* elem);
   static void FailSendMessageBatchInCallCombiner(void* calld_arg,
-                                                 grpc_error* error);
+                                                 grpc_error_handle error);
 
-  static void SendMessageOnComplete(void* calld_arg, grpc_error* error);
+  static void SendMessageOnComplete(void* calld_arg, grpc_error_handle error);
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_message_compression_algorithm message_compression_algorithm_ =
       GRPC_MESSAGE_COMPRESS_NONE;
-  grpc_error* cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
   /* Set to true, if the fields below are initialized. */
@@ -232,7 +232,7 @@ void CallData::InitializeState(grpc_call_element* elem) {
                     grpc_schedule_on_exec_ctx);
 }
 
-grpc_error* CallData::ProcessSendInitialMetadata(
+grpc_error_handle CallData::ProcessSendInitialMetadata(
     grpc_call_element* elem, grpc_metadata_batch* initial_metadata) {
   ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
   // Find the compression algorithm.
@@ -246,7 +246,7 @@ grpc_error* CallData::ProcessSendInitialMetadata(
       grpc_compression_algorithm_to_stream_compression_algorithm(
           compression_algorithm);
   // Hint compression algorithm.
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (message_compression_algorithm_ != GRPC_MESSAGE_COMPRESS_NONE) {
     InitializeState(elem);
     error = grpc_metadata_batch_add_tail(
@@ -281,7 +281,7 @@ grpc_error* CallData::ProcessSendInitialMetadata(
   return error;
 }
 
-void CallData::SendMessageOnComplete(void* calld_arg, grpc_error* error) {
+void CallData::SendMessageOnComplete(void* calld_arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(calld_arg);
   grpc_slice_buffer_reset_and_unref_internal(&calld->slices_);
   grpc_core::Closure::Run(DEBUG_LOCATION,
@@ -348,7 +348,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
 }
 
 void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
-                                                  grpc_error* error) {
+                                                  grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(calld_arg);
   if (calld->send_message_batch_ != nullptr) {
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -359,9 +359,9 @@ void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
 }
 
 // Pulls a slice from the send_message byte stream and adds it to slices_.
-grpc_error* CallData::PullSliceFromSendMessage() {
+grpc_error_handle CallData::PullSliceFromSendMessage() {
   grpc_slice incoming_slice;
-  grpc_error* error =
+  grpc_error_handle error =
       send_message_batch_->payload->send_message.send_message->Pull(
           &incoming_slice);
   if (error == GRPC_ERROR_NONE) {
@@ -382,7 +382,7 @@ void CallData::ContinueReadingSendMessage(grpc_call_element* elem) {
   }
   while (send_message_batch_->payload->send_message.send_message->Next(
       ~static_cast<size_t>(0), &on_send_message_next_done_)) {
-    grpc_error* error = PullSliceFromSendMessage();
+    grpc_error_handle error = PullSliceFromSendMessage();
     if (error != GRPC_ERROR_NONE) {
       // Closure callback; does not take ownership of error.
       FailSendMessageBatchInCallCombiner(this, error);
@@ -398,7 +398,7 @@ void CallData::ContinueReadingSendMessage(grpc_call_element* elem) {
 }
 
 // Async callback for ByteStream::Next().
-void CallData::OnSendMessageNextDone(void* elem_arg, grpc_error* error) {
+void CallData::OnSendMessageNextDone(void* elem_arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(elem_arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
@@ -421,7 +421,8 @@ void CallData::OnSendMessageNextDone(void* elem_arg, grpc_error* error) {
   }
 }
 
-void CallData::StartSendMessageBatch(void* elem_arg, grpc_error* /*unused*/) {
+void CallData::StartSendMessageBatch(void* elem_arg,
+                                     grpc_error_handle /*unused*/) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(elem_arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (calld->SkipMessageCompression()) {
@@ -458,7 +459,7 @@ void CallData::CompressStartTransportStreamOpBatch(
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
     GPR_ASSERT(!seen_initial_metadata_);
-    grpc_error* error = ProcessSendInitialMetadata(
+    grpc_error_handle error = ProcessSendInitialMetadata(
         elem, batch->payload->send_initial_metadata.send_initial_metadata);
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
@@ -503,8 +504,8 @@ void CompressStartTransportStreamOpBatch(
 }
 
 /* Constructor for call_data */
-grpc_error* CompressInitCallElem(grpc_call_element* elem,
-                                 const grpc_call_element_args* args) {
+grpc_error_handle CompressInitCallElem(grpc_call_element* elem,
+                                       const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
   return GRPC_ERROR_NONE;
 }
@@ -518,8 +519,8 @@ void CompressDestroyCallElem(grpc_call_element* elem,
 }
 
 /* Constructor for ChannelData */
-grpc_error* CompressInitChannelElem(grpc_channel_element* elem,
-                                    grpc_channel_element_args* args) {
+grpc_error_handle CompressInitChannelElem(grpc_channel_element* elem,
+                                          grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
   return GRPC_ERROR_NONE;
 }

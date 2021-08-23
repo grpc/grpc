@@ -76,7 +76,7 @@ extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
-grpc_error* grpc_ares_init(void);
+grpc_error_handle grpc_ares_init(void);
 
 /* Uninitialized gRPC ares wrapper. If there was more than one previous call to
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if

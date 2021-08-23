@@ -124,6 +124,12 @@ TEST_F(SliceTest, Add) {
   CheckSlice(spp, kContent);
 }
 
+TEST_F(SliceTest, Sub) {
+  Slice spp("0123456789");
+  Slice sub = spp.sub(1, 9);
+  CheckSlice(sub, "12345678");
+}
+
 TEST_F(SliceTest, Cslice) {
   grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::STEAL_REF);

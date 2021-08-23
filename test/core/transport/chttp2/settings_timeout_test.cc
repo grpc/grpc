@@ -39,6 +39,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 #include "test/core/util/port.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -104,18 +105,19 @@ class Client {
   void Connect() {
     grpc_core::ExecCtx exec_ctx;
     grpc_resolved_addresses* server_addresses = nullptr;
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
-    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_string(error);
+    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_std_string(error);
     ASSERT_GE(server_addresses->naddrs, 1UL);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
-                            nullptr /* channel_args */, server_addresses->addrs,
-                            grpc_core::ExecCtx::Get()->Now() + 1000);
+    grpc_tcp_client_connect(
+        state.closure(), &endpoint_, grpc_slice_allocator_create_unlimited(),
+        pollset_set, nullptr /* channel_args */, server_addresses->addrs,
+        grpc_core::ExecCtx::Get()->Now() + 1000);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
@@ -177,11 +179,12 @@ class Client {
     bool done() const { return gpr_atm_acq_load(&done_atm_) != 0; }
 
     // Caller does NOT take ownership of the error.
-    grpc_error* error() const { return error_; }
+    grpc_error_handle error() const { return error_; }
 
    private:
-    static void OnEventDone(void* arg, grpc_error* error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_string(error));
+    static void OnEventDone(void* arg, grpc_error_handle error) {
+      gpr_log(GPR_INFO, "OnEventDone(): %s",
+              grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = GRPC_ERROR_REF(error);
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -189,7 +192,7 @@ class Client {
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error* error_ = GRPC_ERROR_NONE;
+    grpc_error_handle error_ = GRPC_ERROR_NONE;
   };
 
   // Returns true if done, or false if deadline exceeded.
@@ -209,7 +212,7 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error* /*error*/) {
+  static void PollsetDestroy(void* arg, grpc_error_handle /*error*/) {
     grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);

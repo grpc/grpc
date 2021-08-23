@@ -41,6 +41,7 @@ struct grpc_channel_stack_builder {
   grpc_channel_args* args;
   grpc_transport* transport;
   grpc_resource_user* resource_user;
+  size_t preallocated_bytes;
   char* target;
   const char* name;
 };
@@ -174,17 +175,6 @@ grpc_transport* grpc_channel_stack_builder_get_transport(
   return builder->transport;
 }
 
-void grpc_channel_stack_builder_set_resource_user(
-    grpc_channel_stack_builder* builder, grpc_resource_user* resource_user) {
-  GPR_ASSERT(builder->resource_user == nullptr);
-  builder->resource_user = resource_user;
-}
-
-grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
-    grpc_channel_stack_builder* builder) {
-  return builder->resource_user;
-}
-
 bool grpc_channel_stack_builder_append_filter(
     grpc_channel_stack_builder* builder, const grpc_channel_filter* filter,
     grpc_post_filter_create_init_func post_init_func, void* user_data) {
@@ -267,7 +257,7 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
   gpr_free(builder);
 }
 
-grpc_error* grpc_channel_stack_builder_finish(
+grpc_error_handle grpc_channel_stack_builder_finish(
     grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
     grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
   // count the number of filters
@@ -294,7 +284,7 @@ grpc_error* grpc_channel_stack_builder_finish(
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       static_cast<char*>(*result) + prefix_bytes);
   // and initialize it
-  grpc_error* error = grpc_channel_stack_init(
+  grpc_error_handle error = grpc_channel_stack_init(
       initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
       filters, num_filters, builder->args, builder->transport, builder->name,
       channel_stack);

@@ -82,10 +82,10 @@ void grpc_plugin_credentials::pending_request_complete(pending_request* r) {
   Unref();
 }
 
-static grpc_error* process_plugin_result(
+static grpc_error_handle process_plugin_result(
     grpc_plugin_credentials::pending_request* r, const grpc_metadata* md,
     size_t num_md, grpc_status_code status, const char* error_details) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Getting metadata from plugin failed with error: ",
@@ -142,7 +142,7 @@ static void plugin_md_request_metadata_ready(void* request,
   r->creds->pending_request_complete(r);
   // If it has not been cancelled, process it.
   if (!r->cancelled) {
-    grpc_error* error =
+    grpc_error_handle error =
         process_plugin_result(r, md, num_md, status, error_details);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_request_metadata, error);
   } else if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
@@ -157,7 +157,7 @@ static void plugin_md_request_metadata_ready(void* request,
 bool grpc_plugin_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_error_handle* error) {
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.
@@ -231,7 +231,7 @@ bool grpc_plugin_credentials::get_request_metadata(
 }
 
 void grpc_plugin_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
   gpr_mu_lock(&mu_);
   for (pending_request* pending_request = pending_requests_;
        pending_request != nullptr; pending_request = pending_request->next) {

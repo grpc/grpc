@@ -62,14 +62,14 @@ void ClientChannelServiceConfigParser::Register() {
 namespace {
 
 absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
-                                                   grpc_error** error) {
+                                                   grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:healthCheckConfig error:should be of type object");
     return absl::nullopt;
   }
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   absl::optional<std::string> service_name;
   auto it = field.object_value().find("serviceName");
   if (it != field.object_value().end()) {
@@ -89,18 +89,19 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(
-    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
+    const grpc_channel_args* /*args*/, const Json& json,
+    grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   // Parse LB config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
-    grpc_error* parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
     if (parsed_lb_config == nullptr) {
-      std::vector<grpc_error*> lb_errors;
+      std::vector<grpc_error_handle> lb_errors;
       lb_errors.push_back(parse_error);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           "field:loadBalancingConfig", &lb_errors));
@@ -136,7 +137,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
   absl::optional<std::string> health_check_service_name;
   it = json.object_value().find("healthCheckConfig");
   if (it != json.object_value().end()) {
-    grpc_error* parsing_error = GRPC_ERROR_NONE;
+    grpc_error_handle parsing_error = GRPC_ERROR_NONE;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
     if (parsing_error != GRPC_ERROR_NONE) {
@@ -155,9 +156,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
+    const grpc_channel_args* /*args*/, const Json& json,
+    grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   // Parse waitForReady.
   absl::optional<bool> wait_for_ready;
   auto it = json.object_value().find("waitForReady");

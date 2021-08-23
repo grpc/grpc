@@ -51,7 +51,7 @@ class TimerState {
  private:
   // The on_complete callback used when sending a cancel_error batch down the
   // filter stack.  Yields the call combiner when the batch returns.
-  static void YieldCallCombiner(void* arg, grpc_error* /*ignored*/) {
+  static void YieldCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
@@ -62,7 +62,7 @@ class TimerState {
 
   // This is called via the call combiner, so access to deadline_state is
   // synchronized.
-  static void SendCancelOpInCallCombiner(void* arg, grpc_error* error) {
+  static void SendCancelOpInCallCombiner(void* arg, grpc_error_handle error) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
         GRPC_CLOSURE_INIT(&self->closure_, YieldCallCombiner, self, nullptr));
@@ -72,7 +72,7 @@ class TimerState {
   }
 
   // Timer callback.
-  static void TimerCallback(void* arg, grpc_error* error) {
+  static void TimerCallback(void* arg, grpc_error_handle error) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
@@ -135,7 +135,7 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
 }
 
 // Callback run when we receive trailing metadata.
-static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
+static void recv_trailing_metadata_ready(void* arg, grpc_error_handle error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
   // Invoke the original callback.
@@ -168,7 +168,7 @@ struct start_timer_after_init_state {
   grpc_millis deadline;
   grpc_closure closure;
 };
-static void start_timer_after_init(void* arg, grpc_error* error) {
+static void start_timer_after_init(void* arg, grpc_error_handle error) {
   struct start_timer_after_init_state* state =
       static_cast<struct start_timer_after_init_state*>(arg);
   grpc_deadline_state* deadline_state =
@@ -241,8 +241,8 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 //
 
 // Constructor for channel_data.  Used for both client and server filters.
-static grpc_error* deadline_init_channel_elem(grpc_channel_element* /*elem*/,
-                                              grpc_channel_element_args* args) {
+static grpc_error_handle deadline_init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
@@ -268,8 +268,8 @@ typedef struct server_call_data {
 } server_call_data;
 
 // Constructor for call_data.  Used for both client and server filters.
-static grpc_error* deadline_init_call_elem(grpc_call_element* elem,
-                                           const grpc_call_element_args* args) {
+static grpc_error_handle deadline_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) grpc_deadline_state(elem, *args, args->deadline);
   return GRPC_ERROR_NONE;
 }
@@ -292,7 +292,7 @@ static void deadline_client_start_transport_stream_op_batch(
 }
 
 // Callback for receiving initial metadata on the server.
-static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
+static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);

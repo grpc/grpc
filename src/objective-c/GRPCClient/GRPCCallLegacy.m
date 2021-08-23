@@ -271,10 +271,14 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)dealloc {
-  __block GRPCWrappedCall *wrappedCall = _wrappedCall;
-  dispatch_async(_callQueue, ^{
-    wrappedCall = nil;
-  });
+  if (_callQueue) {
+    __block GRPCWrappedCall *wrappedCall = _wrappedCall;
+    dispatch_async(_callQueue, ^{
+      wrappedCall = nil;
+    });
+  } else {
+    _wrappedCall = nil;
+  }
 }
 
 #pragma mark Read messages

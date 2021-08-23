@@ -56,9 +56,12 @@ static NSMutableDictionary *gHostCache;
   // scheme and without port, we'll use port 443. If it has a scheme, we pass it untouched to the C
   // gRPC library.
   // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL.host && hostURL.port == nil) {
-    address = [hostURL.host stringByAppendingString:@":443"];
+  if (![address hasPrefix:@"dns:"] && ![address hasPrefix:@"unix:"] &&
+      ![address hasPrefix:@"ipv4:"] && ![address hasPrefix:@"ipv6:"]) {
+    NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
+    if (hostURL.host && hostURL.port == nil) {
+      address = [hostURL.host stringByAppendingString:@":443"];
+    }
   }
 
   // Look up the GRPCHost in the cache.

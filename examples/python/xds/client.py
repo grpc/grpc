@@ -14,22 +14,29 @@
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
 from __future__ import print_function
-import logging
+
 import argparse
+import logging
 
 import grpc
-
+import grpc.experimental
 import helloworld_pb2
 import helloworld_pb2_grpc
 
 _DESCRIPTION = "Get a greeting from a server."
 
 
-def run(server_address):
-    with grpc.insecure_channel(server_address) as channel:
+def run(server_address, secure):
+    if secure:
+        fallback_creds = grpc.experimental.insecure_channel_credentials()
+        channel_creds = grpc.xds_channel_credentials(fallback_creds)
+        channel = grpc.secure_channel(server_address, channel_creds)
+    else:
+        channel = grpc.insecure_channel(server_address)
+    with channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-    print("Greeter client received: " + response.message)
+        print("Greeter client received: " + response.message)
 
 
 if __name__ == '__main__':
@@ -37,6 +44,10 @@ if __name__ == '__main__':
     parser.add_argument("server",
                         default=None,
                         help="The address of the server.")
+    parser.add_argument(
+        "--xds-creds",
+        action="store_true",
+        help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
     logging.basicConfig()
-    run(args.server)
+    run(args.server, args.xds_creds)

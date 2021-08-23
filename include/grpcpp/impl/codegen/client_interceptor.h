@@ -87,6 +87,10 @@ class ClientRpcInfo {
   /// Return the fully-specified method name
   const char* method() const { return method_; }
 
+  /// Return an identifying suffix for the client stub, or nullptr if one wasn't
+  /// specified.
+  const char* suffix_for_stats() const { return suffix_for_stats_; }
+
   /// Return a pointer to the channel on which the RPC is being sent
   ChannelInterface* channel() { return channel_; }
 
@@ -116,10 +120,12 @@ class ClientRpcInfo {
 
   // Constructor will only be called from ClientContext
   ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, grpc::ChannelInterface* channel)
+                const char* method, const char* suffix_for_stats,
+                grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
+        suffix_for_stats_(suffix_for_stats),
         channel_(channel) {}
 
   // Move assignment should only be used by ClientContext
@@ -162,6 +168,7 @@ class ClientRpcInfo {
   // TODO(yashykt): make type_ const once move-assignment is deleted
   Type type_{Type::UNKNOWN};
   const char* method_ = nullptr;
+  const char* suffix_for_stats_ = nullptr;
   grpc::ChannelInterface* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;

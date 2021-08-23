@@ -132,7 +132,7 @@ void test_bind_server_to_addr(const char* host, bool secure) {
 
 static int external_dns_works(const char* host) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error* error = grpc_blocking_resolve_address(host, "80", &res);
+  grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != nullptr) {
     grpc_resolved_addresses_destroy(res);

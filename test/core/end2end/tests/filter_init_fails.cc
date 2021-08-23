@@ -416,8 +416,8 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
  * Test filter - always fails to initialize a call
  */
 
-static grpc_error* init_call_elem(grpc_call_element* /*elem*/,
-                                  const grpc_call_element_args* /*args*/) {
+static grpc_error_handle init_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
@@ -427,8 +427,8 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
                               const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {}
 
-static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   if (g_channel_filter_init_failure) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),

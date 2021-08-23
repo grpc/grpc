@@ -43,6 +43,7 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -312,9 +313,11 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
 }
 BENCHMARK(BM_LameChannelCallCreateCoreSeparateBatch);
 
-static void FilterDestroy(void* arg, grpc_error* /*error*/) { gpr_free(arg); }
+static void FilterDestroy(void* arg, grpc_error_handle /*error*/) {
+  gpr_free(arg);
+}
 
-static void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
@@ -351,8 +354,8 @@ static void StartTransportStreamOp(grpc_call_element* /*elem*/,
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* /*op*/) {}
 
-static grpc_error* InitCallElem(grpc_call_element* /*elem*/,
-                                const grpc_call_element_args* /*args*/) {
+static grpc_error_handle InitCallElem(grpc_call_element* /*elem*/,
+                                      const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -363,8 +366,8 @@ static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* /*then_sched_closure*/) {}
 
-grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,
-                            grpc_channel_element_args* /*args*/) {
+grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
+                                  grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -642,8 +645,8 @@ static void StartTransportOp(grpc_channel_element* /*elem*/,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
-static grpc_error* InitCallElem(grpc_call_element* elem,
-                                const grpc_call_element_args* args) {
+static grpc_error_handle InitCallElem(grpc_call_element* elem,
+                                      const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
@@ -658,8 +661,8 @@ static void DestroyCallElem(grpc_call_element* /*elem*/,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, GRPC_ERROR_NONE);
 }
 
-grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,
-                            grpc_channel_element_args* /*args*/) {
+grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
+                                  grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -699,7 +702,9 @@ class IsolatedCallFixture : public TrackCounters {
         nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL);
+      channel_ = grpc_channel_create_with_builder(
+          builder, GRPC_CLIENT_CHANNEL, grpc_resource_user_create_unlimited(),
+          0);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }

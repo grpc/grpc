@@ -34,7 +34,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void on_server_destroyed(void* data, grpc_error* /*error*/) {
+static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
   server->shutdown = true;
 }
@@ -63,9 +63,12 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   addr->sin_family = GRPC_AF_INET;
   addr->sin_port = grpc_htons(static_cast<uint16_t>(port));
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
+  resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
-  grpc_error* error = grpc_tcp_server_create(&server->shutdown_complete,
-                                             nullptr, &server->tcp_server);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &server->shutdown_complete, nullptr,
+      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
+      &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
@@ -88,8 +91,8 @@ void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   gpr_mu_unlock(server->mu);
 }
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
-static void finish_pollset(void* arg, grpc_error* /*error*/) {
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void finish_pollset(void* arg, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(arg));
 }
 

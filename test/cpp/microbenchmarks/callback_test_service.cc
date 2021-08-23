@@ -46,9 +46,9 @@ int GetIntValueFromMetadata(
 }
 }  // namespace
 
-experimental::ServerUnaryReactor* CallbackStreamingTestService::Echo(
-    experimental::CallbackServerContext* context,
-    const EchoRequest* /*request*/, EchoResponse* response) {
+ServerUnaryReactor* CallbackStreamingTestService::Echo(
+    CallbackServerContext* context, const EchoRequest* /*request*/,
+    EchoResponse* response) {
   int response_msgs_size = GetIntValueFromMetadata(
       kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
@@ -61,13 +61,11 @@ experimental::ServerUnaryReactor* CallbackStreamingTestService::Echo(
   return reactor;
 }
 
-experimental::ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream(
-    experimental::CallbackServerContext* context) {
-  class Reactor
-      : public experimental::ServerBidiReactor<EchoRequest, EchoResponse> {
+ServerBidiReactor<EchoRequest, EchoResponse>*
+CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
+  class Reactor : public ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(experimental::CallbackServerContext* context) {
+    explicit Reactor(CallbackServerContext* context) {
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);

@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
+grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
   grpc_linked_mdelem* storage;
@@ -42,7 +42,7 @@ grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
   return grpc_metadata_batch_link_tail(&buffer->batch, storage);
 }
 
-grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   for (grpc_linked_mdelem* l = buffer->batch.list.head; l != nullptr;
        l = l->next) {

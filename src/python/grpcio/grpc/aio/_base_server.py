@@ -14,12 +14,13 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Mapping, Optional, Iterable, Sequence
+from typing import Generic, Iterable, Mapping, Optional, Sequence
 
 import grpc
 
-from ._typing import RequestType, ResponseType
 from ._metadata import Metadata
+from ._typing import RequestType
+from ._typing import ResponseType
 
 
 class Server(abc.ABC):
@@ -205,7 +206,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def invocation_metadata(self) -> Optional[Metadata]:
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.
@@ -304,3 +305,33 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
+
+    def trailing_metadata(self):
+        """Access value to be used as trailing metadata upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The trailing :term:`metadata` for the RPC.
+        """
+        raise NotImplementedError()
+
+    def code(self):
+        """Accesses the value to be used as status code upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The StatusCode value for the RPC.
+        """
+        raise NotImplementedError()
+
+    def details(self):
+        """Accesses the value to be used as detail string upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The details string of the RPC.
+        """
+        raise NotImplementedError()

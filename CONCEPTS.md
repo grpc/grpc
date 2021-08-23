@@ -14,7 +14,7 @@ of methods). From this description, gRPC will generate client and server side in
 in any of the supported languages. The server implements
 the service interface, which can be remotely invoked by the client interface.
 
-By default, gRPC uses [Protocol Buffers](https://github.com/google/protobuf) as the
+By default, gRPC uses [Protocol Buffers](https://github.com/protocolbuffers/protobuf) as the
 Interface Definition Language (IDL) for describing both the service interface
 and the structure of the payload messages. It is possible to use other
 alternatives if desired.

@@ -33,9 +33,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -74,7 +74,7 @@ static void on_connect_result_set(on_connect_result* result,
   result->fd_index = acceptor->fd_index;
 }
 
-static void server_weak_ref_shutdown(void* arg, grpc_error* error) {
+static void server_weak_ref_shutdown(void* arg, grpc_error_handle error) {
   server_weak_ref* weak_ref = static_cast<server_weak_ref*>(arg);
   weak_ref->server = NULL;
 }
@@ -117,7 +117,11 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
 static void test_no_op(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(NULL, NULL,
+                                    grpc_slice_allocator_factory_create(
+                                        grpc_resource_quota_create(nullptr)),
+                                    &s));
   grpc_tcp_server_unref(s);
   grpc_core::ExecCtx::Get()->Flush();
 }
@@ -125,7 +129,11 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(NULL, NULL,
+                                    grpc_slice_allocator_factory_create(
+                                        grpc_resource_quota_create(nullptr)) &
+                                        s));
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(s);
@@ -137,7 +145,11 @@ static void test_no_op_with_port(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(NULL, NULL,
+                                    grpc_slice_allocator_factory_create(
+                                        grpc_resource_quota_create(nullptr)) &
+                                        s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -157,7 +169,11 @@ static void test_no_op_with_port_and_start(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(NULL, NULL,
+                                    grpc_slice_allocator_factory_create(
+                                        grpc_resource_quota_create(nullptr)) &
+                                        s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port;
 
@@ -227,7 +243,11 @@ static void test_connect(unsigned n) {
   int svr_port;
   int svr1_port;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(NULL, NULL,
+                                    grpc_slice_allocator_factory_create(
+                                        grpc_resource_quota_create(nullptr)) &
+                                        s));
   unsigned i;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
@@ -282,7 +302,7 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(weak_ref.server == NULL);
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error_handle error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

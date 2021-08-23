@@ -34,7 +34,9 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
 
-  void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
+  void ReturnError(grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,

@@ -29,13 +29,13 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
-static grpc_error* channel_init_func(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle channel_init_func(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* call_init_func(grpc_call_element* /*elem*/,
-                                  const grpc_call_element_args* /*args*/) {
+static grpc_error_handle call_init_func(
+    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

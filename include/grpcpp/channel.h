@@ -114,7 +114,7 @@ class Channel final : public ::grpc::ChannelInterface,
   // with this channel (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the channel; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  ::grpc::CompletionQueue* callback_cq_ = nullptr;
+  std::atomic<CompletionQueue*> callback_cq_{nullptr};
 
   std::vector<
       std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>

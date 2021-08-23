@@ -37,8 +37,9 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static void recv_message_ready(void* user_data, grpc_error* error);
-static void recv_trailing_metadata_ready(void* user_data, grpc_error* error);
+static void recv_message_ready(void* user_data, grpc_error_handle error);
+static void recv_trailing_metadata_ready(void* user_data,
+                                         grpc_error_handle error);
 
 namespace grpc_core {
 
@@ -67,9 +68,10 @@ const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
-                                        const Json& json, grpc_error** error) {
+                                        const Json& json,
+                                        grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   // Max request size.
   int max_request_message_bytes = -1;
   auto it = json.object_value().find("maxRequestMessageBytes");
@@ -179,7 +181,7 @@ struct call_data {
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
   // The error caused by a message that is too large, or GRPC_ERROR_NONE
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   // Used by recv_message_ready.
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
@@ -187,20 +189,20 @@ struct call_data {
   // Original recv_trailing_metadata callback, invoked after our own.
   grpc_closure* original_recv_trailing_metadata_ready;
   bool seen_recv_trailing_metadata = false;
-  grpc_error* recv_trailing_metadata_error;
+  grpc_error_handle recv_trailing_metadata_error;
 };
 
 }  // namespace
 
 // Callback invoked when we receive a message.  Here we check the max
 // receive message size.
-static void recv_message_ready(void* user_data, grpc_error* error) {
+static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
       (*calld->recv_message)->length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
-    grpc_error* new_error = grpc_error_set_int(
+    grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrFormat("Received message larger than max (%u vs. %d)",
                             (*calld->recv_message)->length(),
@@ -233,7 +235,8 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
 
 // Callback invoked on completion of recv_trailing_metadata
 // Notifies the recv_trailing_metadata batch of any message size failures
-static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
+static void recv_trailing_metadata_ready(void* user_data,
+                                         grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->next_recv_message_ready != nullptr) {
@@ -291,7 +294,7 @@ static void message_size_start_transport_stream_op_batch(
 }
 
 // Constructor for call_data.
-static grpc_error* message_size_init_call_elem(
+static grpc_error_handle message_size_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
@@ -315,7 +318,7 @@ grpc_core::MessageSizeParsedConfig::message_size_limits get_message_size_limits(
 }
 
 // Constructor for channel_data.
-static grpc_error* message_size_init_channel_elem(
+static grpc_error_handle message_size_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);

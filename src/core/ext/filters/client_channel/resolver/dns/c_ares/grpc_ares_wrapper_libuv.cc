@@ -25,8 +25,8 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/parse_address.h"
 
 bool grpc_ares_query_ipv6() {
   /* The libuv grpc code currently does not have the code to probe for this,

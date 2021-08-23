@@ -352,7 +352,8 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
+  grpc_error_handle error =
+      grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
@@ -366,7 +367,8 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
+  grpc_error_handle error =
+      grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_NE(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);

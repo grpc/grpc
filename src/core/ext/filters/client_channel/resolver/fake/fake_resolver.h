@@ -42,6 +42,8 @@ class FakeResolver;
 class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
+  static const grpc_arg_pointer_vtable kChannelArgPointerVtable;
+
   FakeResolverResponseGenerator();
   ~FakeResolverResponseGenerator() override;
 
@@ -69,6 +71,7 @@ class FakeResolverResponseGenerator
   void SetFailureOnReresolution();
 
   // Returns a channel arg containing \a generator.
+  // TODO(roth): When we have time, make this a non-static method.
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.

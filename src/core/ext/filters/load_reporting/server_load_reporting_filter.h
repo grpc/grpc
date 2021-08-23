@@ -30,8 +30,8 @@ namespace grpc {
 
 class ServerLoadReportingChannelData : public ChannelData {
  public:
-  grpc_error* Init(grpc_channel_element* elem,
-                   grpc_channel_element_args* args) override;
+  grpc_error_handle Init(grpc_channel_element* elem,
+                         grpc_channel_element_args* args) override;
 
   // Getters.
   const char* peer_identity() { return peer_identity_; }
@@ -45,8 +45,8 @@ class ServerLoadReportingChannelData : public ChannelData {
 
 class ServerLoadReportingCallData : public CallData {
  public:
-  grpc_error* Init(grpc_call_element* elem,
-                   const grpc_call_element_args* args) override;
+  grpc_error_handle Init(grpc_call_element* elem,
+                         const grpc_call_element_args* args) override;
 
   void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
                grpc_closure* then_call_closure) override;
@@ -68,7 +68,7 @@ class ServerLoadReportingCallData : public CallData {
   static const char* GetStatusTagForStatus(grpc_status_code status);
 
   // Records the call start.
-  static void RecvInitialMetadataReady(void* arg, grpc_error* err);
+  static void RecvInitialMetadataReady(void* arg, grpc_error_handle err);
 
   // From the initial metadata, extracts the service_method_, target_host_, and
   // client_ip_and_lr_token_.

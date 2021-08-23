@@ -56,7 +56,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error* error) {
+        [](void* arg, grpc_error_handle error) {
           // queue the op on the completion queue
           AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
           alarm->Ref();
@@ -82,10 +82,10 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     Ref();
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error* error) {
+        [](void* arg, grpc_error_handle error) {
           grpc_core::Executor::Run(
               GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error* error) {
+                  [](void* arg, grpc_error_handle error) {
                     AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
                     alarm->callback_(error == GRPC_ERROR_NONE);
                     alarm->Unref();

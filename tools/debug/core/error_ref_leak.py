@@ -19,8 +19,8 @@
 
 # usage: python error_ref_leak < logfile.txt
 
-import sys
 import re
+import sys
 
 data = sys.stdin.readlines()
 

@@ -27,10 +27,12 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/error.h"
 
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
+
 typedef struct grpc_linked_error grpc_linked_error;
 
 struct grpc_linked_error {
-  grpc_error* err;
+  grpc_error_handle err;
   uint8_t next;
 };
 
@@ -57,5 +59,7 @@ struct grpc_error {
   uint8_t arena_capacity;
   intptr_t arena[0];
 };
+
+#endif  // GRPC_ERROR_IS_ABSEIL_STATUS
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

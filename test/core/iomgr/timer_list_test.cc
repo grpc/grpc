@@ -41,7 +41,7 @@ static int cb_called[MAX_CB][2];
 static const int64_t kMillisIn25Days = 2160000000;
 static const int64_t kHoursIn25Days = 600;
 
-static void cb(void* arg, grpc_error* error) {
+static void cb(void* arg, grpc_error_handle error) {
   cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
 }
 

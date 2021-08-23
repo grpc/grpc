@@ -98,7 +98,7 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* call_stack,
   return CALL_ELEMS_FROM_STACK(call_stack) + index;
 }
 
-grpc_error* grpc_channel_stack_init(
+grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* channel_args, grpc_transport* optional_transport,
@@ -120,7 +120,7 @@ grpc_error* grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   /* init per-filter data */
-  grpc_error* first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error = GRPC_ERROR_NONE;
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
@@ -129,7 +129,8 @@ grpc_error* grpc_channel_stack_init(
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
     elems[i].channel_data = user_data;
-    grpc_error* error = elems[i].filter->init_channel_elem(&elems[i], &args);
+    grpc_error_handle error =
+        elems[i].filter->init_channel_elem(&elems[i], &args);
     if (error != GRPC_ERROR_NONE) {
       if (first_error == GRPC_ERROR_NONE) {
         first_error = error;
@@ -161,10 +162,10 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   }
 }
 
-grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
-                                 int initial_refs, grpc_iomgr_cb_func destroy,
-                                 void* destroy_arg,
-                                 const grpc_call_element_args* elem_args) {
+grpc_error_handle grpc_call_stack_init(
+    grpc_channel_stack* channel_stack, int initial_refs,
+    grpc_iomgr_cb_func destroy, void* destroy_arg,
+    const grpc_call_element_args* elem_args) {
   grpc_channel_element* channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
   grpc_call_element* call_elems;
@@ -178,7 +179,7 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
-  grpc_error* first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error = GRPC_ERROR_NONE;
   for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
@@ -187,7 +188,7 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
   for (size_t i = 0; i < count; i++) {
-    grpc_error* error =
+    grpc_error_handle error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
     if (error != GRPC_ERROR_NONE) {
       if (first_error == GRPC_ERROR_NONE) {

@@ -65,7 +65,7 @@ const char* kBotoTestDate = "Mon, 09 Sep 2011 23:36:00 GMT";
 // AWS official example from the developer doc.
 // https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
 TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       "AKIDEXAMPLE", "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY", "", "GET",
       "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08",
@@ -83,7 +83,7 @@ TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetDescribeRegions) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, kAmzTestToken, "GET",
       "https://"
@@ -100,7 +100,7 @@ TEST(GrpcAwsRequestSignerTest, GetDescribeRegions) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, kAmzTestToken, "POST",
       "https://"
@@ -117,7 +117,7 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, "", "POST",
       "https://"
@@ -134,7 +134,7 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetHost) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(kBotoTestAccessKeyId,
                                      kBotoTestSecretAccessKey, kBotoTestToken,
                                      "GET", "https://host.foo.com", "us-east-1",
@@ -149,7 +149,7 @@ TEST(GrpcAwsRequestSignerTest, GetHost) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetHostDuplicateQueryParam) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "GET",
       "https://host.foo.com/?foo=Zoo&foo=aha", "us-east-1", "",
@@ -164,7 +164,7 @@ TEST(GrpcAwsRequestSignerTest, GetHostDuplicateQueryParam) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderKey) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
@@ -179,7 +179,7 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderKey) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderValue) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
@@ -194,7 +194,7 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderValue) {
 }
 
 TEST(GrpcAwsRequestSignerTest, SignPostWithHeader) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
@@ -209,7 +209,7 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithHeader) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithBodyNoCustomHeaders) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "foo=bar",
@@ -226,7 +226,7 @@ TEST(GrpcAwsRequestSignerTest, PostWithBodyNoCustomHeaders) {
 }
 
 TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/?foo=bar", "us-east-1", "",
@@ -241,7 +241,7 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
 }
 
 TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer("access_key_id", "secret_access_key",
                                      "token", "POST", "invalid_url",
                                      "us-east-1", "", {}, &error);
@@ -256,7 +256,7 @@ TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
 }
 
 TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::AwsRequestSigner signer(
       "access_key_id", "secret_access_key", "token", "POST", "invalid_url",
       "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},

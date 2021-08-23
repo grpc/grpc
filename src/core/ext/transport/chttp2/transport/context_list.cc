@@ -22,7 +22,7 @@
 
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
-                                    grpc_error* error) = nullptr;
+                                    grpc_error_handle error) = nullptr;
 void* (*get_copied_context_fn_g)(void*) = nullptr;
 }  // namespace
 
@@ -41,7 +41,7 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
 }
 
 void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
-                          grpc_error* error) {
+                          grpc_error_handle error) {
   ContextList* head = static_cast<ContextList*>(arg);
   ContextList* to_be_freed;
   while (head != nullptr) {
@@ -57,9 +57,8 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
   }
 }
 
-void grpc_http2_set_write_timestamps_callback(void (*fn)(void*,
-                                                         grpc_core::Timestamps*,
-                                                         grpc_error* error)) {
+void grpc_http2_set_write_timestamps_callback(
+    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
   write_timestamps_callback_g = fn;
 }
 

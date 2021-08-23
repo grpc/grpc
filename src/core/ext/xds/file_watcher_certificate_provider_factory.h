@@ -31,7 +31,7 @@ class FileWatcherCertificateProviderFactory
   class Config : public CertificateProviderFactory::Config {
    public:
     static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error** error);
+                                       grpc_error_handle* error);
 
     const char* name() const override;
 
@@ -58,7 +58,7 @@ class FileWatcherCertificateProviderFactory
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override;
+                                  grpc_error_handle* error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
       RefCountedPtr<CertificateProviderFactory::Config> config) override;

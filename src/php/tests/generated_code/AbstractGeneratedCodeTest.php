@@ -160,7 +160,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             },
         ));
         list($response, $status) = $call->wait();
-        $this->assertSame(\Grpc\STATUS_UNAUTHENTICATED, $status->code);
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testInvalidMethodName()

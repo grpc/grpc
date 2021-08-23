@@ -94,22 +94,23 @@ void grpc_metadata_batch_destroy(grpc_metadata_batch* batch) {
   }
 }
 
-grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md) {
-  grpc_error* out = grpc_error_set_str(
+grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
+                                          grpc_mdelem md) {
+  grpc_error_handle out = grpc_error_set_str(
       grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
                          grpc_slice_ref_internal(GRPC_MDKEY(md))),
       GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
   return out;
 }
 
-static grpc_error* GPR_ATTRIBUTE_NOINLINE error_with_md(grpc_mdelem md) {
+static grpc_error_handle GPR_ATTRIBUTE_NOINLINE error_with_md(grpc_mdelem md) {
   return grpc_attach_md_to_error(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"), md);
 }
 
-static grpc_error* link_callout(grpc_metadata_batch* batch,
-                                grpc_linked_mdelem* storage,
-                                grpc_metadata_batch_callouts_index idx) {
+static grpc_error_handle link_callout(grpc_metadata_batch* batch,
+                                      grpc_linked_mdelem* storage,
+                                      grpc_metadata_batch_callouts_index idx) {
   GPR_DEBUG_ASSERT(idx >= 0 && idx < GRPC_BATCH_CALLOUTS_COUNT);
   if (GPR_LIKELY(batch->idx.array[idx] == nullptr)) {
     ++batch->list.default_count;
@@ -119,12 +120,12 @@ static grpc_error* link_callout(grpc_metadata_batch* batch,
   return error_with_md(storage->md);
 }
 
-static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
-                                      grpc_linked_mdelem* storage)
+static grpc_error_handle maybe_link_callout(grpc_metadata_batch* batch,
+                                            grpc_linked_mdelem* storage)
     GRPC_MUST_USE_RESULT;
 
-static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
-                                      grpc_linked_mdelem* storage) {
+static grpc_error_handle maybe_link_callout(grpc_metadata_batch* batch,
+                                            grpc_linked_mdelem* storage) {
   grpc_metadata_batch_callouts_index idx =
       GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
@@ -145,9 +146,9 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
   batch->idx.array[idx] = nullptr;
 }
 
-grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
-                                         grpc_linked_mdelem* storage,
-                                         grpc_mdelem elem_to_add) {
+grpc_error_handle grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
+                                               grpc_linked_mdelem* storage,
+                                               grpc_mdelem elem_to_add) {
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_head(batch, storage);
@@ -169,10 +170,10 @@ static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
 }
 
-grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
-                                          grpc_linked_mdelem* storage) {
+grpc_error_handle grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
+                                                grpc_linked_mdelem* storage) {
   assert_valid_callouts(batch);
-  grpc_error* err = maybe_link_callout(batch, storage);
+  grpc_error_handle err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
     assert_valid_callouts(batch);
     return err;
@@ -185,12 +186,12 @@ grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
 // TODO(arjunroy): Need to revisit this and see what guarantees exist between
 // C-core and the internal-metadata subsystem. E.g. can we ensure a particular
 // metadata is never added twice, even in the presence of user supplied data?
-grpc_error* grpc_metadata_batch_link_head(
+grpc_error_handle grpc_metadata_batch_link_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_metadata_batch_callouts_index idx) {
   GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
   assert_valid_callouts(batch);
-  grpc_error* err = link_callout(batch, storage, idx);
+  grpc_error_handle err = link_callout(batch, storage, idx);
   if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
     assert_valid_callouts(batch);
     return err;
@@ -200,9 +201,9 @@ grpc_error* grpc_metadata_batch_link_head(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
-                                         grpc_linked_mdelem* storage,
-                                         grpc_mdelem elem_to_add) {
+grpc_error_handle grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
+                                               grpc_linked_mdelem* storage,
+                                               grpc_mdelem elem_to_add) {
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_tail(batch, storage);
@@ -224,10 +225,10 @@ static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
 }
 
-grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
-                                          grpc_linked_mdelem* storage) {
+grpc_error_handle grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
+                                                grpc_linked_mdelem* storage) {
   assert_valid_callouts(batch);
-  grpc_error* err = maybe_link_callout(batch, storage);
+  grpc_error_handle err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
     assert_valid_callouts(batch);
     return err;
@@ -237,12 +238,12 @@ grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_metadata_batch_link_tail(
+grpc_error_handle grpc_metadata_batch_link_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_metadata_batch_callouts_index idx) {
   GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
   assert_valid_callouts(batch);
-  grpc_error* err = link_callout(batch, storage, idx);
+  grpc_error_handle err = link_callout(batch, storage, idx);
   if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
     assert_valid_callouts(batch);
     return err;
@@ -323,11 +324,11 @@ absl::optional<absl::string_view> grpc_metadata_batch_get_value(
   return *concatenated_value;
 }
 
-grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
-                                           grpc_linked_mdelem* storage,
-                                           grpc_mdelem new_mdelem) {
+grpc_error_handle grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
+                                                 grpc_linked_mdelem* storage,
+                                                 grpc_mdelem new_mdelem) {
   assert_valid_callouts(batch);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_mdelem old_mdelem = storage->md;
   if (!grpc_slice_eq(GRPC_MDKEY(new_mdelem), GRPC_MDKEY(old_mdelem))) {
     maybe_unlink_callout(batch, storage);
@@ -364,7 +365,7 @@ size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
   return size;
 }
 
-static void add_error(grpc_error** composite, grpc_error* error,
+static void add_error(grpc_error_handle* composite, grpc_error_handle error,
                       const char* composite_error_string) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
@@ -373,12 +374,11 @@ static void add_error(grpc_error** composite, grpc_error* error,
   *composite = grpc_error_add_child(*composite, error);
 }
 
-grpc_error* grpc_metadata_batch_filter(grpc_metadata_batch* batch,
-                                       grpc_metadata_batch_filter_func func,
-                                       void* user_data,
-                                       const char* composite_error_string) {
+grpc_error_handle grpc_metadata_batch_filter(
+    grpc_metadata_batch* batch, grpc_metadata_batch_filter_func func,
+    void* user_data, const char* composite_error_string) {
   grpc_linked_mdelem* l = batch->list.head;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   while (l) {
     grpc_linked_mdelem* next = l->next;
     grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
@@ -402,7 +402,7 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
   for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
        elem = elem->next) {
     // Error unused in non-debug builds.
-    grpc_error* GRPC_UNUSED error = grpc_metadata_batch_add_tail(
+    grpc_error_handle GRPC_UNUSED error = grpc_metadata_batch_add_tail(
         dst, &storage[i++], GRPC_MDELEM_REF(elem->md));
     // The only way that grpc_metadata_batch_add_tail() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be

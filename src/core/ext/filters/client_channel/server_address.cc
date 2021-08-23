@@ -27,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
 

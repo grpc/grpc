@@ -47,6 +47,8 @@ namespace Grpc.Core.Internal
         static readonly bool isMono;
         static readonly bool isNet5OrHigher;
         static readonly bool isNetCore;
+        static readonly string frameworkDescription;
+        static readonly string clrVersion;
         static readonly string unityApplicationPlatform;
         static readonly bool isXamarin;
         static readonly bool isXamarinIOS;
@@ -72,6 +74,8 @@ namespace Grpc.Core.Internal
             isNet5OrHigher = false;
             isNetCore = false;
 #endif
+            frameworkDescription = TryGetFrameworkDescription();
+            clrVersion = TryGetClrVersion();
 
             // Detect mono runtime
             isMono = Type.GetType("Mono.Runtime") != null;
@@ -123,6 +127,18 @@ namespace Grpc.Core.Internal
         /// true if running on .NET 5+, false otherwise.
         /// </summary>
         public static bool IsNet5OrHigher => isNet5OrHigher;
+
+        /// <summary>
+        /// Contains <c>RuntimeInformation.FrameworkDescription</c> if the property is available on current TFM.
+        /// <c>null</c> otherwise.
+        /// </summary>
+        public static string FrameworkDescription => frameworkDescription;
+
+        /// <summary>
+        /// Contains the version of common language runtime obtained from <c>Environment.Version</c>
+        /// if the property is available on current TFM. <c>null</c> otherwise.
+        /// </summary>
+        public static string ClrVersion => clrVersion;
 
         /// <summary>
         /// true if running on .NET Core (CoreCLR) or NET 5+, false otherwise.
@@ -184,31 +200,54 @@ namespace Grpc.Core.Internal
             }
         }
 
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        static string GetUname()
+        /// <summary>
+        /// Returns description of the framework this process is running on.
+        /// Value is based on <c>RuntimeInformation.FrameworkDescription</c>.
+        /// </summary>
+        static string TryGetFrameworkDescription()
         {
-            var buffer = Marshal.AllocHGlobal(8192);
-            try
-            {
-                if (uname(buffer) == 0)
-                {
-                    return Marshal.PtrToStringAnsi(buffer);
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
+#if NETSTANDARD
+            return RuntimeInformation.FrameworkDescription;
+#else
+            // on full .NET framework we are targeting net45, and the property is only available starting from .NET Framework 4.7.1+
+            // try obtaining the value by reflection since we might be running on a newer framework even though we're targeting
+            // an older one.
+            var runtimeInformationClass = Type.GetType("System.Runtime.InteropServices.RuntimeInformation");
+            var frameworkDescriptionProperty = runtimeInformationClass?.GetTypeInfo().GetProperty("FrameworkDescription", BindingFlags.Static | BindingFlags.Public);
+            return frameworkDescriptionProperty?.GetValue(null)?.ToString();
+#endif
+        }
+
+        /// <summary>
+        /// Returns version of the common language runtime this process is running on.
+        /// Value is based on <c>Environment.Version</c>.
+        /// </summary>
+        static string TryGetClrVersion()
+        {
+#if NETSTANDARD1_5
+            return null;
+#else
+            return Environment.Version.ToString();
+#endif
+        }
+
+        /// <summary>
+        /// Returns the TFM of the Grpc.Core assembly.
+        /// </summary>
+        public static string GetGrpcCoreTargetFrameworkMoniker()
+        {
+#if NETSTANDARD1_5
+            return "netstandard1.5";
+#elif NETSTANDARD2_0
+            return "netstandard2.0";
+#elif NET45
+            return "net45";
+#else
+            // The TFM is determined at compile time.
+            // The is intentionally no "default" return clause here so that
+            // if the set of TFMs we build for changes and this method is not updated accordingly,
+            // it will result in compilation error.
+#endif
         }
     }
 }

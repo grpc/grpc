@@ -41,7 +41,7 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
                                grpc_resolved_addresses** addrs) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
@@ -69,7 +69,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {  // NOLINT
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
@@ -113,7 +113,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   struct ResolverOutput {
     grpc_core::Resolver::Result result;
-    grpc_error* error = nullptr;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     gpr_event ev;
 
     ResolverOutput() { gpr_event_init(&ev); }
@@ -133,7 +133,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
-  void ReturnError(grpc_error* error) override {
+  void ReturnError(grpc_error_handle error) override {
     ResolverOutput* output =
         reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);

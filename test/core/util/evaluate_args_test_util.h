@@ -22,8 +22,6 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/mock_authorization_endpoint.h"
 
 namespace grpc_core {

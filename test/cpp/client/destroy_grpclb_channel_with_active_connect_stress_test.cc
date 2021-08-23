@@ -40,9 +40,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "test/core/util/port.h"
@@ -68,10 +68,10 @@ void TryConnectAndDestroy() {
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   lb_address_result.service_config = grpc_core::ServiceConfig::Create(
       nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
   lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);

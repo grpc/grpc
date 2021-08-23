@@ -59,6 +59,13 @@ namespace Grpc.Tools
                 case CommonPlatformDetection.CpuArchitecture.Arm64: Cpu = "arm64"; break;
                 default: Cpu = ""; break;
             }
+
+            // Use x64 on macosx arm64 until a native protoc is shipped
+            if (Os == "macosx" && Cpu == "arm64")
+            {
+                Cpu = "x64";
+            }
+
             return true;
         }
     };

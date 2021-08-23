@@ -41,7 +41,6 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args);
-
   f.client_ep = p.client;
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
@@ -54,7 +53,7 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
 };
 
-static void destroy_pollset(void* p, grpc_error* /*error*/) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

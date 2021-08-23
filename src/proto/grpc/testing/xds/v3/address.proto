@@ -40,6 +40,13 @@ message SocketAddress {
   oneof port_specifier {
     uint32 port_value = 3;
   }
+
+  // The name of the custom resolver. This must have been registered with Envoy. If
+  // this is empty, a context dependent default applies. If the address is a concrete
+  // IP address, no resolution will occur. If address is a hostname this
+  // should be set for resolution other than DNS. Specifying a custom resolver with
+  // *STRICT_DNS* or *LOGICAL_DNS* will generate an error at runtime.
+  string resolver_name = 5;
 }
 
 // Addresses specify either a logical or physical address and port, which are

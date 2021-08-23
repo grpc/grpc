@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -126,12 +127,18 @@ class FileWatcherCertificateProvider final
   grpc_core::Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  std::string root_certificate_;
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
 };
+
+//  Checks if the private key matches the certificate's public key.
+//  Returns a not-OK status on failure, or a bool indicating
+//  whether the key/cert pair matches.
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    absl::string_view private_key, absl::string_view cert_chain);
 
 }  // namespace grpc_core
 

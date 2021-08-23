@@ -31,12 +31,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from datetime import datetime
+from datetime import timedelta
 import json
 import logging
 import pprint
-import urllib.request, urllib.error, urllib.parse
 
-from datetime import datetime, timedelta
+import urllib2
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 
@@ -45,10 +46,10 @@ COMMITS = 'https://api.github.com/repos/grpc/grpc/pulls/{pr_number}/commits'
 
 
 def gh(url):
-    request = urllib.request.Request(url)
+    request = urllib2.Request(url)
     if TOKEN:
         request.add_header('Authorization', 'token {}'.format(TOKEN))
-    response = urllib.request.urlopen(request)
+    response = urllib2.urlopen(request)
     return response.read()
 
 

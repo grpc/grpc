@@ -29,15 +29,15 @@
 typedef struct grpc_custom_resolver grpc_custom_resolver;
 
 typedef struct grpc_custom_resolver_vtable {
-  grpc_error* (*resolve)(const char* host, const char* port,
-                         grpc_resolved_addresses** res);
+  grpc_error_handle (*resolve)(const char* host, const char* port,
+                               grpc_resolved_addresses** res);
   void (*resolve_async)(grpc_custom_resolver* resolver, const char* host,
                         const char* port);
 } grpc_custom_resolver_vtable;
 
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
-                                  grpc_error* error);
+                                  grpc_error_handle error);
 
 /* Internal APIs */
 void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl);

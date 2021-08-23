@@ -18,8 +18,8 @@
 # symbols.
 # The script takes one parameter, which is the path to the link map file.
 
-import sys
 import re
+import sys
 
 
 def parse_link_map(filename):

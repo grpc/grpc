@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_core {
 
@@ -33,14 +34,14 @@ class Chttp2Connector : public SubchannelConnector {
   ~Chttp2Connector() override;
 
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
-  void Shutdown(grpc_error* error) override;
+  void Shutdown(grpc_error_handle error) override;
 
  private:
-  static void Connected(void* arg, grpc_error* error);
+  static void Connected(void* arg, grpc_error_handle error);
   void StartHandshakeLocked();
-  static void OnHandshakeDone(void* arg, grpc_error* error);
-  static void OnReceiveSettings(void* arg, grpc_error* error);
-  static void OnTimeout(void* arg, grpc_error* error);
+  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  static void OnReceiveSettings(void* arg, grpc_error_handle error);
+  static void OnTimeout(void* arg, grpc_error_handle error);
 
   // We cannot invoke notify_ until both OnTimeout() and OnReceiveSettings()
   // have been called since that is an indicator to the upper layer that we are
@@ -51,7 +52,7 @@ class Chttp2Connector : public SubchannelConnector {
   // invoked, we call MaybeNotify() again to actually invoke the notify_
   // callback. Note that this only happens if the handshake is done and the
   // connector is waiting on the SETTINGS frame.
-  void MaybeNotify(grpc_error* error);
+  void MaybeNotify(grpc_error_handle error);
 
   Mutex mu_;
   Args args_;
@@ -66,8 +67,9 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;
-  absl::optional<grpc_error*> notify_error_;
+  absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
+  grpc_resource_quota* resource_quota_ = nullptr;
 };
 
 }  // namespace grpc_core

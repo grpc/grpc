@@ -13,11 +13,12 @@
 # limitations under the License.
 """Tests for an actual dns resolution."""
 
-import unittest
 import logging
-import six
+import unittest
 
 import grpc
+import six
+
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 

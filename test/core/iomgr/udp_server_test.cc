@@ -172,7 +172,7 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
-static void destroy_pollset(void* p, grpc_error* /*error*/) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

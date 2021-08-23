@@ -38,7 +38,7 @@ static void ping_destroy(void* arg, grpc_cq_completion* /*storage*/) {
   gpr_free(arg);
 }
 
-static void ping_done(void* arg, grpc_error* error) {
+static void ping_done(void* arg, grpc_error_handle error) {
   ping_result* pr = static_cast<ping_result*>(arg);
   grpc_cq_end_op(pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy, pr,
                  &pr->completion_storage);

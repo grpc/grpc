@@ -31,7 +31,7 @@ cdef class _AsyncioTimer:
 
     def on_time_up(self):
         self._active = False
-        grpc_custom_timer_callback(self._grpc_timer, <grpc_error*>0)
+        grpc_custom_timer_callback(self._grpc_timer, <grpc_error_handle>0)
         cpython.Py_DECREF(self)
 
     def __repr__(self):

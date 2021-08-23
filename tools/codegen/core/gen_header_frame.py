@@ -19,9 +19,9 @@
    Write a set of strings containing a hpack encoded http2 frame that
    represents said headers."""
 
+import argparse
 import json
 import sys
-import argparse
 
 
 def append_never_indexed(payload_line, n, count, key, value):

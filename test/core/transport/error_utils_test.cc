@@ -26,7 +26,7 @@ namespace {
 
 // ---- Ok Status ----
 TEST(ErrorUtilsTest, AbslOkToGrpcError) {
-  grpc_error* error = absl_status_to_grpc_error(absl::OkStatus());
+  grpc_error_handle error = absl_status_to_grpc_error(absl::OkStatus());
   ASSERT_EQ(GRPC_ERROR_NONE, error);
   GRPC_ERROR_UNREF(error);
 }
@@ -39,7 +39,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 
 // ---- Asymmetry of conversions of "Special" errors ----
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
-  grpc_error* error =
+  grpc_error_handle error =
       absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
@@ -59,7 +59,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
 
 // ---- Ordinary statuses ----
 TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
-  grpc_error* error =
+  grpc_error_handle error =
       absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
   // Status code checks
   intptr_t code;
@@ -75,7 +75,7 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error* error = grpc_error_set_int(
+  grpc_error_handle error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "weighted_target: all children report state TRANSIENT_FAILURE"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);

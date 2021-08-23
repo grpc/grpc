@@ -81,7 +81,7 @@ cdef class _AsyncioSocket:
 
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
+                <grpc_error_handle>0
             )
 
     cdef void connect(self,
@@ -115,7 +115,7 @@ cdef class _AsyncioSocket:
             self._grpc_read_cb(
                 <grpc_custom_socket*>self._grpc_socket,
                 len(inbound_buffer),
-                <grpc_error*>0
+                <grpc_error_handle>0
             )
 
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb):
@@ -132,7 +132,7 @@ cdef class _AsyncioSocket:
             await self._writer.drain()
             self._grpc_write_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                <grpc_error*>0
+                <grpc_error_handle>0
             )
         except ConnectionError as connection_error:
             self._grpc_write_cb(

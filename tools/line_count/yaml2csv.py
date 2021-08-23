@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import yaml
 import argparse
-import datetime
 import csv
+import datetime
+
+import yaml
 
 argp = argparse.ArgumentParser(description='Convert cloc yaml to bigquery csv')
 argp.add_argument('-i', '--input', type=str)

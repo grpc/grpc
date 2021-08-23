@@ -7,7 +7,7 @@
 	ignore = dirty
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
-	url = https://github.com/google/protobuf.git
+	url = https://github.com/protocolbuffers/protobuf.git
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
@@ -49,3 +49,6 @@
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
+[submodule "third_party/opentelemetry"]
+	path = third_party/opentelemetry
+	url = https://github.com/open-telemetry/opentelemetry-proto.git

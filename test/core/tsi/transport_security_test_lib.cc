@@ -50,7 +50,7 @@ typedef struct handshaker_args {
   bool is_client;
   bool transferred_data;
   bool appended_unused_bytes;
-  grpc_error* error;
+  grpc_error_handle error;
 } handshaker_args;
 
 static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
@@ -289,15 +289,14 @@ void tsi_test_frame_protector_receive_message_from_peer(
   gpr_free(message_buffer);
 }
 
-grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
-                                   const unsigned char* bytes_to_send,
-                                   size_t bytes_to_send_size,
-                                   tsi_handshaker_result* handshaker_result) {
+grpc_error_handle on_handshake_next_done(
+    tsi_result result, void* user_data, const unsigned char* bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);

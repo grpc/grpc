@@ -36,7 +36,7 @@
 
 /* -- Composite call credentials. -- */
 
-static void composite_call_metadata_cb(void* arg, grpc_error* error);
+static void composite_call_metadata_cb(void* arg, grpc_error_handle error);
 
 namespace {
 struct grpc_composite_call_credentials_metadata_context {
@@ -64,7 +64,7 @@ struct grpc_composite_call_credentials_metadata_context {
 };
 }  // namespace
 
-static void composite_call_metadata_cb(void* arg, grpc_error* error) {
+static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
   grpc_composite_call_credentials_metadata_context* ctx =
       static_cast<grpc_composite_call_credentials_metadata_context*>(arg);
   if (error == GRPC_ERROR_NONE) {
@@ -91,7 +91,7 @@ static void composite_call_metadata_cb(void* arg, grpc_error* error) {
 bool grpc_composite_call_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
+    grpc_error_handle* error) {
   grpc_composite_call_credentials_metadata_context* ctx;
   ctx = new grpc_composite_call_credentials_metadata_context(
       this, pollent, auth_md_context, md_array, on_request_metadata);
@@ -112,7 +112,7 @@ bool grpc_composite_call_credentials::get_request_metadata(
 }
 
 void grpc_composite_call_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
   for (size_t i = 0; i < inner_.size(); ++i) {
     inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
   }

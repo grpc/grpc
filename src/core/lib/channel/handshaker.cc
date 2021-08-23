@@ -68,7 +68,7 @@ void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
 
 HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
 
-void HandshakeManager::Shutdown(grpc_error* why) {
+void HandshakeManager::Shutdown(grpc_error_handle why) {
   {
     MutexLock lock(&mu_);
     // Shutdown the handshaker that's currently in progress, if any.
@@ -83,12 +83,12 @@ void HandshakeManager::Shutdown(grpc_error* why) {
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
-bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
+bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
-            this, grpc_error_string(error), is_shutdown_, index_,
+            this, grpc_error_std_string(error).c_str(), is_shutdown_, index_,
             HandshakerArgsString(&args_).c_str());
   }
   GPR_ASSERT(index_ <= handshakers_.size());
@@ -121,7 +121,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
       gpr_log(GPR_INFO,
               "handshake_manager %p: handshaking complete -- scheduling "
               "on_handshake_done with error=%s",
-              this, grpc_error_string(error));
+              this, grpc_error_std_string(error).c_str());
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
@@ -142,7 +142,8 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
   return is_shutdown_;
 }
 
-void HandshakeManager::CallNextHandshakerFn(void* arg, grpc_error* error) {
+void HandshakeManager::CallNextHandshakerFn(void* arg,
+                                            grpc_error_handle error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
   bool done;
   {
@@ -157,7 +158,7 @@ void HandshakeManager::CallNextHandshakerFn(void* arg, grpc_error* error) {
   }
 }
 
-void HandshakeManager::OnTimeoutFn(void* arg, grpc_error* error) {
+void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled
     mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));

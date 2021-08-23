@@ -36,9 +36,8 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
   gpr_free(p->debug_data);
 }
 
-grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
-                                                  uint32_t length,
-                                                  uint8_t /*flags*/) {
+grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
+    grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
   if (length < 8) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("goaway frame too short (%d bytes)", length).c_str());
@@ -52,11 +51,11 @@ grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
-                                            grpc_chttp2_transport* t,
-                                            grpc_chttp2_stream* /*s*/,
-                                            const grpc_slice& slice,
-                                            int is_last) {
+grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
+                                                  grpc_chttp2_transport* t,
+                                                  grpc_chttp2_stream* /*s*/,
+                                                  const grpc_slice& slice,
+                                                  int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -71,7 +70,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id = (static_cast<uint32_t>(*cur)) << 24;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
@@ -79,7 +78,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
@@ -87,7 +86,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_LSI3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
@@ -95,7 +94,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->last_stream_id |= (static_cast<uint32_t>(*cur));
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR0:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
@@ -103,7 +102,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code = (static_cast<uint32_t>(*cur)) << 24;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
@@ -111,7 +110,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur)) << 16;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
@@ -119,7 +118,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur)) << 8;
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_ERR3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
@@ -127,7 +126,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       }
       p->error_code |= (static_cast<uint32_t>(*cur));
       ++cur;
-    /* fallthrough */
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHTTP2_GOAWAY_DEBUG:
       if (end != cur) {
         memcpy(p->debug_data + p->debug_pos, cur,

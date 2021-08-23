@@ -43,7 +43,7 @@
 
 #define STAGING_BUFFER_SIZE 8192
 
-static void on_read(void* user_data, grpc_error* error);
+static void on_read(void* user_data, grpc_error_handle error);
 
 namespace {
 struct secure_endpoint {
@@ -154,7 +154,7 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
   *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 }
 
-static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
+static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
@@ -169,7 +169,7 @@ static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
   SECURE_ENDPOINT_UNREF(ep, "read");
 }
 
-static void on_read(void* user_data, grpc_error* error) {
+static void on_read(void* user_data, grpc_error_handle error) {
   unsigned i;
   uint8_t keep_looping = 0;
   tsi_result result = TSI_OK;
@@ -373,7 +373,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg);
 }
 
-static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error* why) {
+static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   grpc_endpoint_shutdown(ep->wrapped_ep, why);
 }
@@ -416,12 +416,6 @@ static int endpoint_get_fd(grpc_endpoint* secure_ep) {
   return grpc_endpoint_get_fd(ep->wrapped_ep);
 }
 
-static grpc_resource_user* endpoint_get_resource_user(
-    grpc_endpoint* secure_ep) {
-  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_get_resource_user(ep->wrapped_ep);
-}
-
 static bool endpoint_can_track_err(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   return grpc_endpoint_can_track_err(ep->wrapped_ep);
@@ -434,7 +428,6 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_delete_from_pollset_set,
                                             endpoint_shutdown,
                                             endpoint_destroy,
-                                            endpoint_get_resource_user,
                                             endpoint_get_peer,
                                             endpoint_get_local_address,
                                             endpoint_get_fd,

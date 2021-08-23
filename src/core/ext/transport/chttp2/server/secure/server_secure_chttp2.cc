@@ -40,7 +40,7 @@
 namespace {
 
 grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error** error) {
+                                           grpc_error_handle* error) {
   grpc_server_credentials* server_credentials =
       grpc_find_server_credentials_in_args(args);
   if (server_credentials == nullptr) {
@@ -69,7 +69,7 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
 int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* err = GRPC_ERROR_NONE;
+  grpc_error_handle err = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_channel_args* args = nullptr;
@@ -121,8 +121,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (err != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
   }

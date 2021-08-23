@@ -223,7 +223,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
-GPR_TLS_DECL(g_last_seen_min_timer);
+static GPR_THREAD_LOCAL(grpc_millis) g_last_seen_min_timer;
 #endif
 
 struct shared_mutables {
@@ -247,7 +247,7 @@ static grpc_millis saturating_add(grpc_millis a, grpc_millis b) {
 
 static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
                                                        grpc_millis* next,
-                                                       grpc_error* error);
+                                                       grpc_error_handle error);
 
 static grpc_millis compute_min_deadline(timer_shard* shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
@@ -270,8 +270,8 @@ static void timer_list_init() {
   g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
 
 #if GPR_ARCH_64
-  gpr_tls_init(&g_last_seen_min_timer);
-  gpr_tls_set(&g_last_seen_min_timer, 0);
+
+  g_last_seen_min_timer = 0;
 #endif
 
   for (i = 0; i < g_num_shards; i++) {
@@ -303,7 +303,7 @@ static void timer_list_shutdown() {
   gpr_mu_destroy(&g_shared_mutables.mu);
 
 #if GPR_ARCH_64
-  gpr_tls_destroy(&g_last_seen_min_timer);
+
 #endif
 
   gpr_free(g_shards);
@@ -454,7 +454,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 static void timer_consume_kick(void) {
 #if GPR_ARCH_64
   /* Force re-evaluation of last seen min */
-  gpr_tls_set(&g_last_seen_min_timer, 0);
+  g_last_seen_min_timer = 0;
 #endif
 }
 
@@ -561,7 +561,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
 
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_timers(timer_shard* shard, grpc_millis now,
-                         grpc_millis* new_min_deadline, grpc_error* error) {
+                         grpc_millis* new_min_deadline,
+                         grpc_error_handle error) {
   size_t n = 0;
   grpc_timer* timer;
   gpr_mu_lock(&shard->mu);
@@ -580,9 +581,8 @@ static size_t pop_timers(timer_shard* shard, grpc_millis now,
   return n;
 }
 
-static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
-                                                       grpc_millis* next,
-                                                       grpc_error* error) {
+static grpc_timer_check_result run_some_expired_timers(
+    grpc_millis now, grpc_millis* next, grpc_error_handle error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
@@ -592,7 +592,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
   // safe since we know that both are pointer types and 64-bit wide
   grpc_millis min_timer = static_cast<grpc_millis>(
       gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
-  gpr_tls_set(&g_last_seen_min_timer, min_timer);
+  g_last_seen_min_timer = min_timer;
 #else
   // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
   // (like grpc_millis). So all reads and writes to g_shared_mutables.min_timer
@@ -679,7 +679,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
 #if GPR_ARCH_64
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
-  grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
+  grpc_millis min_timer = g_last_seen_min_timer;
 #else
   // On 32-bit systems, we currently do not have thread local support for 64-bit
   // types. In this case, directly read from g_shared_mutables.min_timer.
@@ -702,7 +702,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
-  grpc_error* shutdown_error =
+  grpc_error_handle shutdown_error =
       now != GRPC_MILLIS_INF_FUTURE
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");

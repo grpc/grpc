@@ -23,7 +23,9 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
@@ -40,7 +42,10 @@ typedef struct grpc_timer {
 #endif
 
   // Optional field used by custom timers
-  void* custom_timer;
+  union {
+    void* custom_timer;
+    grpc_event_engine::experimental::EventEngine::TaskHandle ee_task_handle;
+  };
 } grpc_timer;
 
 typedef enum {

@@ -42,8 +42,8 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
-    ctypedef struct grpc_experimental_completion_queue_functor:
-        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+    ctypedef struct grpc_completion_queue_functor:
+        void (*functor_run)(grpc_completion_queue_functor*, int);
 
 
 cdef extern from "grpc/grpc.h":
@@ -358,7 +358,7 @@ cdef extern from "grpc/grpc.h":
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
   grpc_completion_queue *grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
+    grpc_completion_queue_functor* shutdown_callback,
     void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
@@ -405,13 +405,14 @@ cdef extern from "grpc/grpc.h":
        grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
 
   ctypedef struct grpc_server_xds_status_notifier:
-    void (*on_serving_status_change)(void* user_data, const char* uri,
+    void (*on_serving_status_update)(void* user_data, const char* uri,
                                    grpc_status_code code,
                                    const char* error_message)
     void* user_data;
 
   grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-       grpc_server_xds_status_notifier notifier) nogil
+       grpc_server_xds_status_notifier notifier,
+       const grpc_channel_args* args) nogil
 
 
   int grpc_server_add_insecure_http2_port(
@@ -431,6 +432,8 @@ cdef extern from "grpc/grpc.h":
   char* grpc_channelz_get_channel(intptr_t channel_id)
   char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
   char* grpc_channelz_get_socket(intptr_t socket_id)
+
+  grpc_slice grpc_dump_xds_configs() nogil
 
 
 cdef extern from "grpc/grpc_security.h":
@@ -583,7 +586,7 @@ cdef extern from "grpc/grpc_security.h":
 
   ctypedef void (*grpc_credentials_plugin_metadata_cb)(
       void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
-      grpc_status_code status, const char *error_details)
+      grpc_status_code status, const char *error_details) nogil
 
   ctypedef struct grpc_metadata_credentials_plugin:
     int (*get_metadata)(
@@ -696,3 +699,7 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+
+cdef extern from "src/core/lib/iomgr/error.h":
+  const grpc_error* GRPC_ERROR_CANCELLED

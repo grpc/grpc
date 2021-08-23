@@ -52,7 +52,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($xdsCreds);
     }
 
-    public function testCreateXdsWithInsecure() {
+    public function disabled_testCreateXdsWithInsecure() {
         $xdsCreds = \Grpc\ChannelCredentials::createXds(
             \Grpc\ChannelCredentials::createInsecure()
         );
@@ -365,6 +365,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
                 ),
                 50306,
             ],
+            /*
             [
                 \Grpc\ChannelCredentials::createXds(
                     \Grpc\ChannelCredentials::createInSecure()
@@ -374,6 +375,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
                 ),
                 50307,
             ],
+            */
         ];
     }
 
@@ -436,6 +438,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
                 ),
                 50353,
             ],
+            /*
             [
                 \Grpc\ChannelCredentials::createXds(
                     \Grpc\ChannelCredentials::createSsl()
@@ -452,6 +455,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
                 ),
                 50355,
             ],
+            */
             [
                 \Grpc\ChannelCredentials::createSsl(),
                 \Grpc\ChannelCredentials::createXds(

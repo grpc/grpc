@@ -18,9 +18,8 @@ import asyncio
 import logging
 from typing import Awaitable, Callable, Tuple
 
-import grpc
-
 import _credentials
+import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
     "helloworld.proto")

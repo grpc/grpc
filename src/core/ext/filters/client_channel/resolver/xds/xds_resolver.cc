@@ -28,12 +28,12 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -82,14 +82,14 @@ class XdsResolver : public Resolver {
    public:
     Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::LdsUpdate update);
     Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::RdsUpdate update);
-    Notifier(RefCountedPtr<XdsResolver> resolver, grpc_error* error);
+    Notifier(RefCountedPtr<XdsResolver> resolver, grpc_error_handle error);
     explicit Notifier(RefCountedPtr<XdsResolver> resolver);
 
    private:
     enum Type { kLdsUpdate, kRdsUpdate, kError, kDoesNotExist };
 
-    static void RunInExecCtx(void* arg, grpc_error* error);
-    void RunInWorkSerializer(grpc_error* error);
+    static void RunInExecCtx(void* arg, grpc_error_handle error);
+    void RunInWorkSerializer(grpc_error_handle error);
 
     RefCountedPtr<XdsResolver> resolver_;
     grpc_closure closure_;
@@ -104,7 +104,9 @@ class XdsResolver : public Resolver {
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
       new Notifier(resolver_, std::move(listener));
     }
-    void OnError(grpc_error* error) override { new Notifier(resolver_, error); }
+    void OnError(grpc_error_handle error) override {
+      new Notifier(resolver_, error);
+    }
     void OnResourceDoesNotExist() override { new Notifier(resolver_); }
 
    private:
@@ -118,33 +120,81 @@ class XdsResolver : public Resolver {
     void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
       new Notifier(resolver_, std::move(route_config));
     }
-    void OnError(grpc_error* error) override { new Notifier(resolver_, error); }
+    void OnError(grpc_error_handle error) override {
+      new Notifier(resolver_, error);
+    }
     void OnResourceDoesNotExist() override { new Notifier(resolver_); }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class ClusterState
-      : public RefCounted<ClusterState, PolymorphicRefCount, kUnrefNoDelete> {
+  // An entry in the map of clusters that need to be present in the LB
+  // policy config.  The map holds a weak ref.  One strong ref is held by
+  // the ConfigSelector, and another is held by each call assigned to
+  // the cluster by the ConfigSelector.  The ref for each call is held
+  // until the call is committed.  When the strong refs go away, we hop
+  // back into the WorkSerializer to remove the entry from the map.
+  class ClusterState : public DualRefCounted<ClusterState> {
    public:
     using ClusterStateMap =
-        std::map<std::string, std::unique_ptr<ClusterState>>;
+        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
-    ClusterState(const std::string& cluster_name,
-                 ClusterStateMap* cluster_state_map)
-        : it_(cluster_state_map
-                  ->emplace(cluster_name, std::unique_ptr<ClusterState>(this))
+    ClusterState(RefCountedPtr<XdsResolver> resolver,
+                 const std::string& cluster_name)
+        : resolver_(std::move(resolver)),
+          it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first) {}
+
+    void Orphan() override {
+      auto* resolver = resolver_.release();
+      resolver->work_serializer_->Run(
+          [resolver]() {
+            resolver->MaybeRemoveUnusedClusters();
+            resolver->Unref();
+          },
+          DEBUG_LOCATION);
+    }
+
     const std::string& cluster() const { return it_->first; }
 
    private:
+    RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
+  };
+
+  // Call dispatch controller, created for each call handled by the
+  // ConfigSelector.  Holds a ref to the ClusterState object until the
+  // call is committed.
+  class XdsCallDispatchController
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit XdsCallDispatchController(
+        RefCountedPtr<ClusterState> cluster_state)
+        : cluster_state_(std::move(cluster_state)) {}
+
+    bool ShouldRetry() override {
+      // TODO(donnadionne): Implement the retry circuit breaker here.
+      return true;
+    }
+
+    void Commit() override {
+      // TODO(donnadionne): If ShouldRetry() was called previously,
+      // decrement the retry circuit breaker counter.
+      cluster_state_.reset();
+    }
+
+   private:
+    // Note: The XdsCallDispatchController object is never actually destroyed,
+    // so do not add any data members that require destruction unless you have
+    // some other way to clean them up.
+    RefCountedPtr<ClusterState> cluster_state_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver, grpc_error** error);
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      grpc_error_handle* error);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -183,7 +233,7 @@ class XdsResolver : public Resolver {
     using RouteTable = std::vector<Route>;
 
     void MaybeAddCluster(const std::string& name);
-    grpc_error* CreateMethodConfig(
+    grpc_error_handle CreateMethodConfig(
         const XdsApi::Route& route,
         const XdsApi::Route::ClusterWeight* cluster_weight,
         RefCountedPtr<ServiceConfig>* method_config);
@@ -192,15 +242,15 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
-    grpc_error* filter_error_ = GRPC_ERROR_NONE;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
   void OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update);
-  void OnError(grpc_error* error);
+  void OnError(grpc_error_handle error);
   void OnResourceDoesNotExist();
 
-  grpc_error* CreateServiceConfig(RefCountedPtr<ServiceConfig>* service_config);
+  grpc_error_handle CreateServiceConfig(
+      RefCountedPtr<ServiceConfig>* service_config);
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
@@ -247,7 +297,7 @@ XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
 }
 
 XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
-                                grpc_error* error)
+                                grpc_error_handle error)
     : resolver_(std::move(resolver)), type_(kError) {
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
@@ -259,14 +309,14 @@ XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver)
   ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
 }
 
-void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error* error) {
+void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error_handle error) {
   Notifier* self = static_cast<Notifier*>(arg);
   GRPC_ERROR_REF(error);
   self->resolver_->work_serializer_->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }
 
-void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
+void XdsResolver::Notifier::RunInWorkSerializer(grpc_error_handle error) {
   if (resolver_->xds_client_ == nullptr) {
     GRPC_ERROR_UNREF(error);
     delete this;
@@ -318,7 +368,7 @@ bool XdsResolver::XdsConfigSelector::Route::operator==(
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, grpc_error** error)
+    RefCountedPtr<XdsResolver> resolver, grpc_error_handle* error)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -370,16 +420,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  bool found_router = false;
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      found_router = true;
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
@@ -387,16 +429,9 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // Add C-core filter to list.
-    filters_.push_back(filter_impl->channel_filter());
-  }
-  // For compatibility with Envoy, if the router filter is not
-  // configured, we fail all RPCs.
-  if (!found_router) {
-    filter_error_ =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "no xDS HTTP router filter configured"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    filters_.push_back(&grpc_lame_filter);
+    if (filter_impl->channel_filter() != nullptr) {
+      filters_.push_back(filter_impl->channel_filter());
+    }
   }
 }
 
@@ -407,7 +442,6 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   }
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
-  GRPC_ERROR_UNREF(filter_error_);
 }
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
@@ -429,11 +463,47 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
   return nullptr;
 }
 
-grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
+grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route& route,
     const XdsApi::Route::ClusterWeight* cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
+  // Set retry policy if any.
+  if (route.retry_policy.has_value()) {
+    std::vector<std::string> retry_parts;
+    retry_parts.push_back(absl::StrFormat(
+        "\"retryPolicy\": {\n"
+        "      \"maxAttempts\": %d,\n"
+        "      \"initialBackoff\": \"%d.%09ds\",\n"
+        "      \"maxBackoff\": \"%d.%09ds\",\n"
+        "      \"backoffMultiplier\": 2,\n",
+        route.retry_policy->num_retries + 1,
+        route.retry_policy->retry_back_off.base_interval.seconds,
+        route.retry_policy->retry_back_off.base_interval.nanos,
+        route.retry_policy->retry_back_off.max_interval.seconds,
+        route.retry_policy->retry_back_off.max_interval.nanos));
+    std::vector<std::string> code_parts;
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+      code_parts.push_back("        \"CANCELLED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_DEADLINE_EXCEEDED)) {
+      code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+      code_parts.push_back("        \"INTERNAL\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+      code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+      code_parts.push_back("        \"UNAVAILABLE\"");
+    }
+    retry_parts.push_back(
+        absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
+                        absl::StrJoin(code_parts, ",\n")));
+    retry_parts.push_back(absl::StrFormat("    }"));
+    fields.emplace_back(absl::StrJoin(retry_parts, ""));
+  }
   // Set timeout.
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
@@ -447,18 +517,15 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
   grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (filter_impl->channel_filter() == nullptr) continue;
     // Allow filter to add channel args that may affect service config
     // parsing.
     args = filter_impl->ModifyChannelArgs(args);
@@ -486,7 +553,7 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
                                      "\n    ]"));
   }
   // Construct service config.
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!fields.empty()) {
     std::string json = absl::StrCat(
         "{\n"
@@ -506,20 +573,14 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  if (filter_error_ == GRPC_ERROR_NONE) return args;
-  grpc_arg error_arg = MakeLameClientErrorArg(filter_error_);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &error_arg, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+  return args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state =
-          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
+      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -561,6 +622,9 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  if (!header_value.has_value()) {
+    return absl::nullopt;
+  }
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -631,10 +695,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    XdsResolver* resolver =
-        static_cast<XdsResolver*>(resolver_->Ref().release());
-    ClusterState* cluster_state = it->second->Ref().release();
-    // Generate a hash
+    // Generate a hash.
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
@@ -643,8 +704,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          new_hash =
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          new_hash = static_cast<uint64_t>(
+              reinterpret_cast<uintptr_t>(resolver_.get()));
           break;
         default:
           GPR_ASSERT(0);
@@ -664,7 +725,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      hash = rand();
+      // We cannot directly use the result of rand() as the hash value,
+      // since it is a 32-bit number and not a 64-bit number and will
+      // therefore not be evenly distributed.
+      uint32_t upper = rand();
+      uint32_t lower = rand();
+      hash = (static_cast<uint64_t>(upper) << 32) | lower;
     }
     CallConfig call_config;
     if (method_config != nullptr) {
@@ -673,33 +739,14 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    call_config.call_attributes[kRequestRingHashAttribute] =
-        absl::StrFormat("%" PRIu64, hash.value());
-    call_config.on_call_committed = [resolver, cluster_state]() {
-      cluster_state->Unref();
-      ExecCtx::Run(
-          // TODO(roth): This hop into the ExecCtx is being done to avoid
-          // entering the WorkSerializer while holding the client channel data
-          // plane mutex, since that can lead to deadlocks. However, we should
-          // not have to solve this problem in each individual ConfigSelector
-          // implementation. When we have time, we should fix the client channel
-          // code to avoid this by not invoking the
-          // CallConfig::on_call_committed callback until after it has released
-          // the data plane mutex.
-          DEBUG_LOCATION,
-          GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error* /*error*/) {
-                auto* resolver = static_cast<XdsResolver*>(arg);
-                resolver->work_serializer_->Run(
-                    [resolver]() {
-                      resolver->MaybeRemoveUnusedClusters();
-                      resolver->Unref();
-                    },
-                    DEBUG_LOCATION);
-              },
-              resolver, nullptr),
-          GRPC_ERROR_NONE);
-    };
+    std::string hash_string = absl::StrCat(hash.value());
+    char* hash_value =
+        static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
+    memcpy(hash_value, hash_string.c_str(), hash_string.size());
+    hash_value[hash_string.size()] = '\0';
+    call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+    call_config.call_dispatch_controller =
+        args.arena->New<XdsCallDispatchController>(it->second->Ref());
     return call_config;
   }
   return CallConfig();
@@ -710,13 +757,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
-  grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = XdsClient::GetOrCreate(&error);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  xds_client_ = XdsClient::GetOrCreate(args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     result_handler_->ReturnError(error);
     return;
   }
@@ -813,11 +860,12 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   GenerateResult();
 }
 
-void XdsResolver::OnError(grpc_error* error) {
+void XdsResolver::OnError(grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
-          this, grpc_error_string(error));
+          this, grpc_error_std_string(error).c_str());
   Result result;
-  result.args = grpc_channel_args_copy(args_);
+  grpc_arg new_arg = xds_client_->MakeChannelArg();
+  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result.service_config_error = error;
   result_handler_->ReturnResult(std::move(result));
 }
@@ -836,7 +884,7 @@ void XdsResolver::OnResourceDoesNotExist() {
   result_handler_->ReturnResult(std::move(result));
 }
 
-grpc_error* XdsResolver::CreateServiceConfig(
+grpc_error_handle XdsResolver::CreateServiceConfig(
     RefCountedPtr<ServiceConfig>* service_config) {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
@@ -863,7 +911,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
       "  ]\n"
       "}");
   std::string json = absl::StrJoin(config_parts, "");
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   *service_config = ServiceConfig::Create(args_, json.c_str(), &error);
   return error;
 }
@@ -872,7 +920,7 @@ void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
@@ -888,8 +936,12 @@ void XdsResolver::GenerateResult() {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config->json_string().c_str());
   }
-  grpc_arg new_arg = config_selector->MakeChannelArg();
-  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
+  grpc_arg new_args[] = {
+      xds_client_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
+  };
+  result.args =
+      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
   result_handler_->ReturnResult(std::move(result));
 }
 

@@ -26,11 +26,11 @@ cdef class Server:
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
     cdef grpc_server_xds_status_notifier notifier
-    notifier.on_serving_status_change = NULL
+    notifier.on_serving_status_update = NULL
     notifier.user_data = NULL
     if xds:
       grpc_server_set_config_fetcher(self.c_server,
-        grpc_server_config_fetcher_xds_create(notifier))
+        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
     self.references.append(arguments)
 
   def request_call(

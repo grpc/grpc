@@ -15,8 +15,9 @@
 # limitations under the License.
 
 import collections
-import perfection
 import sys
+
+import perfection
 
 _MAX_HEADER_LIST_SIZE = 16 * 1024 * 1024
 

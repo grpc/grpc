@@ -148,7 +148,7 @@ class TestTcpServer {
     self->OnConnect(tcp, accepting_pollset, acceptor);
   }
 
-  static void OnFdReleased(void* arg, grpc_error* err) {
+  static void OnFdReleased(void* arg, grpc_error_handle err) {
     auto* self = static_cast<TestTcpServer*>(arg);
     self->OnFdReleased(err);
   }
@@ -165,7 +165,7 @@ class TestTcpServer {
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
 
-  void OnFdReleased(grpc_error* err) {
+  void OnFdReleased(grpc_error_handle err) {
     EXPECT_EQ(GRPC_ERROR_NONE, err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;

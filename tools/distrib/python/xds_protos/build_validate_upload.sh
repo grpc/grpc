@@ -15,15 +15,24 @@
 
 set -ex
 
-WORK_DIR="$(dirname "$0")"
+WORK_DIR=$(pwd)/"$(dirname "$0")"
 cd ${WORK_DIR}
 
-# Build the source wheel
-python3 setup.py sdist
+# Remove existing wheels
+rm -rf ${WORK_DIR}/dist
 
-# Run the tests to ensure all protos are importable
-python3 -m pip install .
-python3 generated_file_import_test.py
+# Generate the package content then build the source wheel
+python3 build.py
+python3 setup.py bdist_wheel
+
+# Run the tests to ensure all protos are importable, also avoid confusing normal
+# imports with relative imports
+pushd $(mktemp -d '/tmp/test_xds_protos.XXXXXX')
+python3 -m virtualenv env
+env/bin/python -m pip install ${WORK_DIR}/dist/*.whl
+cp ${WORK_DIR}/generated_file_import_test.py generated_file_import_test.py
+env/bin/python generated_file_import_test.py
+popd
 
 # Upload the package
 python3 -m twine check dist/*

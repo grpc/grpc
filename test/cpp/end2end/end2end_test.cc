@@ -23,7 +23,6 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/status_code_enum.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/credentials.h>
@@ -1267,6 +1266,9 @@ TEST_P(End2endTest, ClientCancelsBidi) {
   EchoResponse response;
   ClientContext context;
   std::string msg("hello");
+
+  // Send server_try_cancel value in the client metadata
+  context.AddMetadata(kClientTryCancelRequest, std::to_string(1));
 
   auto stream = stub_->BidiStream(&context);
 

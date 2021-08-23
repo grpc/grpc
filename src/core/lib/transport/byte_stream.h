@@ -56,7 +56,7 @@ class ByteStream : public Orphanable {
   // indicated by Next().
   //
   // Once a slice is returned into *slice, it is owned by the caller.
-  virtual grpc_error* Pull(grpc_slice* slice) = 0;
+  virtual grpc_error_handle Pull(grpc_slice* slice) = 0;
 
   // Shuts down the byte stream.
   //
@@ -65,7 +65,7 @@ class ByteStream : public Orphanable {
   //
   // The next call to Pull() (if any) will return the error passed to
   // Shutdown().
-  virtual void Shutdown(grpc_error* error) = 0;
+  virtual void Shutdown(grpc_error_handle error) = 0;
 
   uint32_t length() const { return length_; }
   uint32_t flags() const { return flags_; }
@@ -97,11 +97,11 @@ class SliceBufferByteStream : public ByteStream {
   void Orphan() override;
 
   bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-  grpc_error* Pull(grpc_slice* slice) override;
-  void Shutdown(grpc_error* error) override;
+  grpc_error_handle Pull(grpc_slice* slice) override;
+  void Shutdown(grpc_error_handle error) override;
 
  private:
-  grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle shutdown_error_ = GRPC_ERROR_NONE;
   grpc_slice_buffer backing_buffer_;
 };
 
@@ -131,8 +131,8 @@ class ByteStreamCache {
     void Orphan() override;
 
     bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-    grpc_error* Pull(grpc_slice* slice) override;
-    void Shutdown(grpc_error* error) override;
+    grpc_error_handle Pull(grpc_slice* slice) override;
+    void Shutdown(grpc_error_handle error) override;
 
     // Resets the byte stream to the start of the underlying stream.
     void Reset();
@@ -141,7 +141,7 @@ class ByteStreamCache {
     ByteStreamCache* cache_;
     size_t cursor_ = 0;
     size_t offset_ = 0;
-    grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle shutdown_error_ = GRPC_ERROR_NONE;
   };
 
   explicit ByteStreamCache(OrphanablePtr<ByteStream> underlying_stream);

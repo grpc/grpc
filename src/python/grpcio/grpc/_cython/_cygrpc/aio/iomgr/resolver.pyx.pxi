@@ -45,7 +45,7 @@ cdef class _AsyncioResolver:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
                 tuples_to_resolvaddr(resolved),
-                <grpc_error*>0
+                <grpc_error_handle>0
             )
 
     cdef void resolve(self, const char* host, const char* port):

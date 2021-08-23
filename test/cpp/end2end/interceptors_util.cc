@@ -27,8 +27,9 @@ std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 std::atomic<int> PhonyInterceptor::num_times_cancel_;
 
-void MakeCall(const std::shared_ptr<Channel>& channel) {
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+void MakeCall(const std::shared_ptr<Channel>& channel,
+              const StubOptions& options) {
+  auto stub = grpc::testing::EchoTestService::NewStub(channel, options);
   ClientContext ctx;
   EchoRequest req;
   req.mutable_param()->set_echo_metadata(true);
@@ -164,14 +165,13 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  stub->experimental_async()->Echo(&ctx, &req, &resp,
-                                   [&resp, &mu, &done, &cv](Status s) {
-                                     EXPECT_EQ(s.ok(), true);
-                                     EXPECT_EQ(resp.message(), "Hello");
-                                     std::lock_guard<std::mutex> l(mu);
-                                     done = true;
-                                     cv.notify_one();
-                                   });
+  stub->async()->Echo(&ctx, &req, &resp, [&resp, &mu, &done, &cv](Status s) {
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(resp.message(), "Hello");
+    std::lock_guard<std::mutex> l(mu);
+    done = true;
+    cv.notify_one();
+  });
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
     cv.wait(l);

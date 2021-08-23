@@ -24,7 +24,8 @@ import os
 import sys
 import time
 import uuid
-from . import massage_qps_stats
+
+import massage_qps_stats
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))

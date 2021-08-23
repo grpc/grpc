@@ -31,6 +31,7 @@ namespace Grpc.Core
     public abstract class ChannelCredentials
     {
         static readonly ChannelCredentials InsecureInstance = new InsecureCredentials();
+        static readonly ChannelCredentials SecureSslInstance = new SslCredentials();
 
         /// <summary>
         /// Creates a new instance of channel credentials
@@ -48,6 +49,22 @@ namespace Grpc.Core
             get
             {
                 return InsecureInstance;
+            }
+        }
+
+        /// <summary>
+        /// Returns instance of credentials that provides SSL security.
+        /// <para>
+        /// These credentials are the same as creating <see cref="SslCredentials"/> without parameters.
+        /// Apps that are using Grpc.Core can create <see cref="SslCredentials"/> directly to customize
+        /// the secure SSL credentials.
+        /// </para>
+        /// </summary>
+        public static ChannelCredentials SecureSsl
+        {
+            get
+            {
+                return SecureSslInstance;
             }
         }
 

@@ -27,13 +27,15 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:
     from python_utils.upload_test_results import upload_interop_results_to_bq
@@ -487,6 +489,7 @@ class PHP7Language:
 
     def __init__(self):
         self.client_cwd = None
+        self.server_cwd = None
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -494,6 +497,9 @@ class PHP7Language:
 
     def cloud_to_prod_env(self):
         return {}
+
+    def server_cmd(self, args):
+        return ['src/php/bin/interop_server.sh'] + args
 
     def global_env(self):
         return {}
@@ -505,7 +511,7 @@ class PHP7Language:
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'php7'
@@ -714,7 +720,7 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
     'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio'
+    'ruby', 'python', 'dart', 'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [

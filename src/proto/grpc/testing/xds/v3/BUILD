@@ -15,6 +15,7 @@
 licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
     name = "xds_v3",
@@ -86,6 +87,7 @@ grpc_proto_library(
     deps = [
         "base_proto",
         "config_source_proto",
+        "endpoint_proto",
     ],
 )
 
@@ -100,6 +102,14 @@ grpc_proto_library(
         "base_proto",
         "percent_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "extension_proto",
+    srcs = [
+        "extension.proto",
+    ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -242,6 +252,8 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
+        "base_proto",
+        "extension_proto",
         "string_proto",
     ],
 )
@@ -277,4 +289,30 @@ grpc_proto_library(
         "percent_proto",
         "route_proto",
     ],
+)
+
+py_proto_library(
+    name = "csds_py_pb2",
+    deps = [":_csds_proto_only"],
+)
+
+py_grpc_library(
+    name = "csds_py_pb2_grpc",
+    srcs = [":_csds_proto_only"],
+    deps = [":csds_py_pb2"],
+)
+
+py_proto_library(
+    name = "config_dump_py_pb2",
+    deps = [":_config_dump_proto_only"],
+)
+
+py_proto_library(
+    name = "base_py_pb2",
+    deps = [":_base_proto_only"],
+)
+
+py_proto_library(
+    name = "percent_py_pb2",
+    deps = [":_percent_proto_only"],
 )

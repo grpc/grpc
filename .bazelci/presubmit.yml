@@ -11,8 +11,8 @@
 # [3] https://github.com/grpc/grpc/pull/20784
 ---
 # TODO(yannic): Ideally, we should also enable buildifier and all platforms should test `//...`.
-platforms:
-  ubuntu1604:
+tasks:
+  ubuntu1804:
     build_targets:
       - //:all
       - //src/proto/...

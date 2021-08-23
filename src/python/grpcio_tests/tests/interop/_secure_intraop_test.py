@@ -16,11 +16,11 @@
 import unittest
 
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
 
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import _intraop_test_case
-from tests.interop import service
 from tests.interop import resources
+from tests.interop import service
 from tests.unit import test_common
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
