@@ -56,7 +56,7 @@ WORKER_POOL_32CORE=workers-32core-ci
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17
-go install "golang.org/dl/${TEST_INFRA_GOVERSION}@latest"
+go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
 # Clone test-infra repository to one upper level directory than grpc.
