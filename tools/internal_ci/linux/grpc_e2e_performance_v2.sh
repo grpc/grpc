@@ -29,10 +29,6 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
 
-# List tests that have running pods and are in errored state.
-# This is an unexpected condition, and it is logged here for monitoring.
-source tools/internal_ci/helper_scripts/list_leftover_loadtests.sh
-
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
