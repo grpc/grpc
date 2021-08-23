@@ -123,17 +123,54 @@ void MockCallback(void* arg, grpc_error_handle error) {
   }
 }
 
+using TestingMetadata = std::vector<std::pair<std::string, std::string>>;
+
+Metadata TestingMetadataToMetadata(const TestingMetadata& md) {
+  Metadata result(md.size());
+  for (size_t i = 0; i < md.size(); ++i) {
+    result[i].key = grpc_slice_from_cpp_string(md[i].first);
+    result[i].value = grpc_slice_from_cpp_string(md[i].second);
+  }
+  return result;
+}
+
+bool operator==(const Metadata& lhs, const TestingMetadata& rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < lhs.size(); ++i) {
+    if (lhs[i].ViewKey() != rhs[i].first) {
+      return false;
+    }
+    if (lhs[i].ViewValue() != rhs[i].second) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool operator!=(const Metadata& lhs, const TestingMetadata& rhs) {
+  return !(lhs == rhs);
+}
+
 // Matches with transactions having the desired flag, method_ref,
 // initial_metadata, and message_data.
 MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
            "") {
-  if (arg.GetFlags() != flag) return false;
+  Transaction tx = arg;
+  if (tx.GetFlags() != flag) return false;
   if (flag & kFlagPrefix) {
-    if (arg.GetMethodRef() != method_ref) return false;
-    if (arg.GetPrefixMetadata() != initial_metadata) return false;
+    if (tx.GetMethodRef() != method_ref) return false;
+    if (tx.GetPrefixMetadata() != initial_metadata) return false;
   }
   if (flag & kFlagMessageData) {
-    if (arg.GetMessageData() != message_data) return false;
+    if (tx.GetMessageData().size() != message_data.size()) return false;
+    const SliceBuffer& buffer = tx.GetMessageData();
+    for (size_t i = 0; i < buffer.size(); ++i) {
+      if (grpc_core::StringViewFromSlice(buffer[i]) != message_data[i]) {
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -145,7 +182,8 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
 
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
-void VerifyMetadataEqual(const Metadata& md, grpc_metadata_batch grpc_md) {
+void VerifyMetadataEqual(const TestingMetadata& md,
+                         grpc_metadata_batch grpc_md) {
   grpc_linked_mdelem* elm = grpc_md.list.head;
   for (size_t i = 0; i < md.size(); ++i) {
     ASSERT_NE(elm, nullptr);
@@ -159,7 +197,7 @@ void VerifyMetadataEqual(const Metadata& md, grpc_metadata_batch grpc_md) {
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
 struct MakeSendInitialMetadata {
-  MakeSendInitialMetadata(const Metadata& initial_metadata,
+  MakeSendInitialMetadata(const TestingMetadata& initial_metadata,
                           const std::string& method_ref,
                           grpc_transport_stream_op_batch* op)
       : storage(initial_metadata.size()) {
@@ -215,7 +253,7 @@ struct MakeSendMessage {
 };
 
 struct MakeSendTrailingMetadata {
-  explicit MakeSendTrailingMetadata(const Metadata& trailing_metadata,
+  explicit MakeSendTrailingMetadata(const TestingMetadata& trailing_metadata,
                                     grpc_transport_stream_op_batch* op) {
     EXPECT_TRUE(trailing_metadata.empty());
     grpc_metadata_batch_init(&grpc_trailing_metadata);
@@ -299,7 +337,7 @@ struct MakeRecvTrailingMetadata {
   absl::Notification notification;
 };
 
-const Metadata kDefaultMetadata = {
+const TestingMetadata kDefaultMetadata = {
     {"", ""},
     {"", "value"},
     {"key", ""},
@@ -310,14 +348,15 @@ constexpr char kDefaultMethodRef[] = "/some/path";
 constexpr char kDefaultMessage[] = "binder transport message";
 constexpr int kDefaultStatus = 0x1234;
 
-Metadata AppendMethodRef(const Metadata& md, const std::string& method_ref) {
-  Metadata result = md;
+TestingMetadata AppendMethodRef(const TestingMetadata& md,
+                                const std::string& method_ref) {
+  TestingMetadata result = md;
   result.emplace_back(":path", method_ref);
   return result;
 }
 
-Metadata AppendStatus(const Metadata& md, int status) {
-  Metadata result = md;
+TestingMetadata AppendStatus(const TestingMetadata& md, int status) {
+  TestingMetadata result = md;
   result.emplace_back("grpc-status", std::to_string(status));
   return result;
 }
@@ -346,14 +385,15 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
-  const Metadata kInitialMetadata = kDefaultMetadata;
+  const TestingMetadata kInitialMetadata = kDefaultMetadata;
   MakeSendInitialMetadata send_initial_metadata(kInitialMetadata, "", &op);
   MockGrpcClosure mock_on_complete;
   op.on_complete = mock_on_complete.GetGrpcClosure();
 
   ::testing::InSequence sequence;
-  EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
-                                   kFlagPrefix, "", kInitialMetadata, "")));
+  EXPECT_CALL(GetWireWriter(),
+              RpcCall(TransactionMatches(kFlagPrefix, "", kInitialMetadata,
+                                         std::vector<std::string>{""})));
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
@@ -366,7 +406,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
-  const Metadata kInitialMetadata = kDefaultMetadata;
+  const TestingMetadata kInitialMetadata = kDefaultMetadata;
   const std::string kMethodRef = kDefaultMethodRef;
   MakeSendInitialMetadata send_initial_metadata(kInitialMetadata, kMethodRef,
                                                 &op);
@@ -376,7 +416,8 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
   ::testing::InSequence sequence;
   EXPECT_CALL(GetWireWriter(),
               RpcCall(TransactionMatches(kFlagPrefix, kMethodRef.substr(1),
-                                         kInitialMetadata, "")));
+                                         kInitialMetadata,
+                                         std::vector<std::string>{""})));
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
@@ -396,9 +437,9 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
   op.on_complete = mock_on_complete.GetGrpcClosure();
 
   ::testing::InSequence sequence;
-  EXPECT_CALL(
-      GetWireWriter(),
-      RpcCall(TransactionMatches(kFlagMessageData, "", Metadata{}, kMessage)));
+  EXPECT_CALL(GetWireWriter(),
+              RpcCall(TransactionMatches(kFlagMessageData, "", Metadata{},
+                                         std::vector<std::string>{kMessage})));
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
@@ -414,14 +455,15 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   // The wireformat guarantees that suffix metadata will always be empty.
   // TODO(waynetu): Check whether gRPC can internally add extra trailing
   // metadata.
-  const Metadata kTrailingMetadata = {};
+  const TestingMetadata kTrailingMetadata = {};
   MakeSendTrailingMetadata send_trailing_metadata(kTrailingMetadata, &op);
   MockGrpcClosure mock_on_complete;
   op.on_complete = mock_on_complete.GetGrpcClosure();
 
   ::testing::InSequence sequence;
-  EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
-                                   kFlagSuffix, "", kTrailingMetadata, "")));
+  EXPECT_CALL(GetWireWriter(),
+              RpcCall(TransactionMatches(kFlagSuffix, "", kTrailingMetadata,
+                                         std::vector<std::string>{""})));
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
@@ -435,7 +477,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
 
-  const Metadata kInitialMetadata = kDefaultMetadata;
+  const TestingMetadata kInitialMetadata = kDefaultMetadata;
   const std::string kMethodRef = kDefaultMethodRef;
   MakeSendInitialMetadata send_initial_metadata(kInitialMetadata, kMethodRef,
                                                 &op);
@@ -446,17 +488,17 @@ TEST_F(BinderTransportTest, PerformSendAll) {
   // The wireformat guarantees that suffix metadata will always be empty.
   // TODO(waynetu): Check whether gRPC can internally add extra trailing
   // metadata.
-  const Metadata kTrailingMetadata = {};
+  const TestingMetadata kTrailingMetadata = {};
   MakeSendTrailingMetadata send_trailing_metadata(kTrailingMetadata, &op);
 
   MockGrpcClosure mock_on_complete;
   op.on_complete = mock_on_complete.GetGrpcClosure();
 
   ::testing::InSequence sequence;
-  EXPECT_CALL(GetWireWriter(),
-              RpcCall(TransactionMatches(
-                  kFlagPrefix | kFlagMessageData | kFlagSuffix,
-                  kMethodRef.substr(1), kInitialMetadata, kMessage)));
+  EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
+                                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
+                                   kMethodRef.substr(1), kInitialMetadata,
+                                   std::vector<std::string>{kMessage})));
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
@@ -472,10 +514,10 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
-  const Metadata kInitialMetadata = kDefaultMetadata;
+  const TestingMetadata kInitialMetadata = kDefaultMetadata;
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
-                                                            kInitialMetadata);
+  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
+      gbs->tx_code, TestingMetadataToMetadata(kInitialMetadata));
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
   recv_initial_metadata.notification.WaitForNotification();
@@ -494,10 +536,10 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-  const Metadata kInitialMetadataWithMethodRef =
+  const TestingMetadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
-      gbs->tx_code, kInitialMetadataWithMethodRef);
+      gbs->tx_code, TestingMetadataToMetadata(kInitialMetadataWithMethodRef));
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
   recv_initial_metadata.notification.WaitForNotification();
@@ -541,11 +583,11 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
 
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
-  const Metadata kTrailingMetadata = kDefaultMetadata;
+  const TestingMetadata kTrailingMetadata = kDefaultMetadata;
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
   constexpr int kStatus = kDefaultStatus;
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
-      gbs->tx_code, kTrailingMetadata, kStatus);
+      gbs->tx_code, TestingMetadataToMetadata(kTrailingMetadata), kStatus);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
   recv_trailing_metadata.notification.WaitForNotification();
@@ -566,18 +608,18 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-  const Metadata kInitialMetadataWithMethodRef =
+  const TestingMetadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
-      gbs->tx_code, kInitialMetadataWithMethodRef);
+      gbs->tx_code, TestingMetadataToMetadata(kInitialMetadataWithMethodRef));
 
   const std::string kMessage = kDefaultMessage;
   gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
 
-  Metadata trailing_metadata = kDefaultMetadata;
+  TestingMetadata trailing_metadata = kDefaultMetadata;
   constexpr int kStatus = kDefaultStatus;
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
-      gbs->tx_code, trailing_metadata, kStatus);
+      gbs->tx_code, TestingMetadataToMetadata(trailing_metadata), kStatus);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
   recv_trailing_metadata.notification.WaitForNotification();
@@ -603,7 +645,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
 
-  const Metadata kSendInitialMetadata = kDefaultMetadata;
+  const TestingMetadata kSendInitialMetadata = kDefaultMetadata;
   const std::string kMethodRef = kDefaultMethodRef;
   MakeSendInitialMetadata send_initial_metadata(kSendInitialMetadata,
                                                 kMethodRef, &op);
@@ -614,7 +656,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   // The wireformat guarantees that suffix metadata will always be empty.
   // TODO(waynetu): Check whether gRPC can internally add extra trailing
   // metadata.
-  const Metadata kSendTrailingMetadata = {};
+  const TestingMetadata kSendTrailingMetadata = {};
   MakeSendTrailingMetadata send_trailing_metadata(kSendTrailingMetadata, &op);
 
   MockGrpcClosure mock_on_complete;
@@ -623,10 +665,10 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   // TODO(waynetu): Currently, we simply drop the prefix '/' from the :path
   // argument to obtain the method name. Update the test if this turns out to be
   // incorrect.
-  EXPECT_CALL(GetWireWriter(),
-              RpcCall(TransactionMatches(
-                  kFlagPrefix | kFlagMessageData | kFlagSuffix,
-                  kMethodRef.substr(1), kSendInitialMetadata, kSendMessage)));
+  EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
+                                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
+                                   kMethodRef.substr(1), kSendInitialMetadata,
+                                   std::vector<std::string>{kSendMessage})));
   Expectation on_complete = EXPECT_CALL(mock_on_complete, Callback);
 
   // Recv callbacks can happen after the on_complete callback.
@@ -643,16 +685,16 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   grpc_core::ExecCtx::Get()->Flush();
 
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-  const Metadata kRecvInitialMetadata =
+  const TestingMetadata kRecvInitialMetadata =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
-      gbs->tx_code, kRecvInitialMetadata);
+      gbs->tx_code, TestingMetadataToMetadata(kRecvInitialMetadata));
   const std::string kRecvMessage = kDefaultMessage;
   gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kRecvMessage);
-  const Metadata kRecvTrailingMetadata = kDefaultMetadata;
+  const TestingMetadata kRecvTrailingMetadata = kDefaultMetadata;
   constexpr int kStatus = 0x1234;
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
-      gbs->tx_code, kRecvTrailingMetadata, kStatus);
+      gbs->tx_code, TestingMetadataToMetadata(kRecvTrailingMetadata), kStatus);
 
   grpc_core::ExecCtx::Get()->Flush();
   recv_initial_metadata.notification.WaitForNotification();
@@ -687,7 +729,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
 
-  const Metadata kInitialMetadata = {};
+  const TestingMetadata kInitialMetadata = {};
   grpc_transport_stream_op_batch op1{};
   grpc_transport_stream_op_batch_payload payload1(nullptr);
   op1.payload = &payload1;

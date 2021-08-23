@@ -22,7 +22,11 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_binder {
 
@@ -35,34 +39,82 @@ ABSL_CONST_INIT extern const int kFlagStatusDescription;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsParcelable;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsPartial;
 
-using Metadata = std::vector<std::pair<std::string, std::string>>;
+struct KeyValuePair {
+  grpc_slice key;
+  grpc_slice value;
+
+  KeyValuePair() : key(grpc_empty_slice()), value(grpc_empty_slice()) {}
+
+  ~KeyValuePair() {
+    grpc_slice_unref_internal(key);
+    grpc_slice_unref_internal(value);
+  }
+
+  // TODO(waynetu): Remove this constructor when we can directly read grpc_slice
+  // from binder.
+  KeyValuePair(std::string k, std::string v)
+      : key(grpc_slice_from_cpp_string(std::move(k))),
+        value(grpc_slice_from_cpp_string(std::move(v))) {}
+  KeyValuePair(grpc_slice k, grpc_slice v) : key(k), value(v) {}
+  KeyValuePair(const KeyValuePair& kv)
+      : key(grpc_slice_ref_internal(kv.key)),
+        value(grpc_slice_ref_internal(kv.value)) {}
+
+  absl::string_view ViewKey() const {
+    return grpc_core::StringViewFromSlice(key);
+  }
+  absl::string_view ViewValue() const {
+    return grpc_core::StringViewFromSlice(value);
+  }
+
+  bool operator==(const KeyValuePair& other) const {
+    return grpc_slice_eq(key, other.key) && grpc_slice_eq(value, other.value);
+  }
+};
+
+using Metadata = std::vector<KeyValuePair>;
+
+// Copying grpc_slice_buffer correctly is painful due to inlining. SliceBuffer
+// serves as a modern not-so-optimal representation of a buffer of slices.
+// The SliceBuffer *does not* own the slices it contains. Instead, others should
+// be responsible for un-refing the slice.
+using SliceBuffer = std::vector<grpc_slice>;
 
 class Transaction {
  public:
   Transaction(int tx_code, bool is_client)
-      : tx_code_(tx_code), is_client_(is_client) {}
-  // TODO(mingcl): Consider using string_view
+      : tx_code_(tx_code),
+        is_client_(is_client),
+        method_ref_(grpc_empty_slice()),
+        status_desc_(grpc_empty_slice()) {}
+
+  ~Transaction() {
+    grpc_slice_unref_internal(method_ref_);
+    grpc_slice_unref_internal(status_desc_);
+  }
+
   void SetPrefix(Metadata prefix_metadata) {
-    prefix_metadata_ = prefix_metadata;
+    prefix_metadata_ = std::move(prefix_metadata);
     GPR_ASSERT((flags_ & kFlagPrefix) == 0);
     flags_ |= kFlagPrefix;
   }
-  void SetMethodRef(std::string method_ref) {
+  void SetMethodRef(grpc_slice method_ref) {
     GPR_ASSERT(is_client_);
     method_ref_ = method_ref;
   }
-  void SetData(std::string message_data) {
-    message_data_ = message_data;
-    GPR_ASSERT((flags_ & kFlagMessageData) == 0);
-    flags_ |= kFlagMessageData;
+  void SetMessageData() { flags_ |= kFlagMessageData; }
+  void PushMessageData(grpc_slice message_slice) {
+    // We should call SetMessageData() before start pushing message data.
+    GPR_ASSERT((flags_ & kFlagMessageData) != 0);
+    message_data_.push_back(message_slice);
   }
   void SetSuffix(Metadata suffix_metadata) {
     if (is_client_) GPR_ASSERT(suffix_metadata.empty());
-    suffix_metadata_ = suffix_metadata;
+    suffix_metadata_ = std::move(suffix_metadata);
     GPR_ASSERT((flags_ & kFlagSuffix) == 0);
     flags_ |= kFlagSuffix;
   }
-  void SetStatusDescription(std::string status_desc) {
+  void SetStatusDescription(grpc_slice status_desc) {
     GPR_ASSERT(!is_client_);
     GPR_ASSERT((flags_ & kFlagStatusDescription) == 0);
     status_desc_ = status_desc;
@@ -79,20 +131,24 @@ class Transaction {
   int GetTxCode() const { return tx_code_; }
   int GetFlags() const { return flags_; }
 
-  absl::string_view GetMethodRef() const { return method_ref_; }
+  absl::string_view GetMethodRef() const {
+    return grpc_core::StringViewFromSlice(method_ref_);
+  }
+  const SliceBuffer& GetMessageData() const { return message_data_; }
+  absl::string_view GetStatusDesc() const {
+    return grpc_core::StringViewFromSlice(status_desc_);
+  }
   const Metadata& GetPrefixMetadata() const { return prefix_metadata_; }
   const Metadata& GetSuffixMetadata() const { return suffix_metadata_; }
-  absl::string_view GetMessageData() const { return message_data_; }
-  absl::string_view GetStatusDesc() const { return status_desc_; }
 
  private:
   int tx_code_;
   bool is_client_;
   Metadata prefix_metadata_;
   Metadata suffix_metadata_;
-  std::string method_ref_;
-  std::string message_data_;
-  std::string status_desc_;
+  grpc_slice method_ref_;
+  SliceBuffer message_data_;
+  grpc_slice status_desc_;
 
   int flags_ = 0;
 };

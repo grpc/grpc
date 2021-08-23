@@ -37,9 +37,9 @@ absl::Status WireWriterImpl::WriteInitialMetadata(const Transaction& tx,
     RETURN_IF_ERROR(parcel->WriteString(tx.GetMethodRef()));
   }
   RETURN_IF_ERROR(parcel->WriteInt32(tx.GetPrefixMetadata().size()));
-  for (const auto& md : tx.GetPrefixMetadata()) {
-    RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.first));
-    RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.second));
+  for (const auto& kv : tx.GetPrefixMetadata()) {
+    RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(kv.ViewKey()));
+    RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(kv.ViewValue()));
   }
   return absl::OkStatus();
 }
@@ -51,9 +51,9 @@ absl::Status WireWriterImpl::WriteTrailingMetadata(const Transaction& tx,
       RETURN_IF_ERROR(parcel->WriteString(tx.GetStatusDesc()));
     }
     RETURN_IF_ERROR(parcel->WriteInt32(tx.GetSuffixMetadata().size()));
-    for (const auto& md : tx.GetSuffixMetadata()) {
-      RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.first));
-      RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.second));
+    for (const auto& kv : tx.GetSuffixMetadata()) {
+      RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(kv.ViewKey()));
+      RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(kv.ViewValue()));
     }
   } else {
     // client suffix currently is always empty according to the wireformat
@@ -68,8 +68,16 @@ const int64_t WireWriterImpl::kBlockSize = 16 * 1024;
 const int64_t WireWriterImpl::kFlowControlWindowSize = 128 * 1024;
 
 bool WireWriterImpl::CanBeSentInOneTransaction(const Transaction& tx) const {
+  // There are three cases where the transaction can be sent directly:
+  // 1. There's no message data
+  // 2. The message data stream is empty (indicates an empty message from
+  // top-level)
+  // 3. The message data stream contains one slice and the length of the slice
+  // is small enough.
   return (tx.GetFlags() & kFlagMessageData) == 0 ||
-         tx.GetMessageData().size() <= kBlockSize;
+         tx.GetMessageData().empty() ||
+         (tx.GetMessageData().size() == 1 &&
+          GRPC_SLICE_LENGTH(tx.GetMessageData()[0]) <= kBlockSize);
 }
 
 absl::Status WireWriterImpl::RpcCallFastPath(const Transaction& tx) {
@@ -83,7 +91,16 @@ absl::Status WireWriterImpl::RpcCallFastPath(const Transaction& tx) {
     RETURN_IF_ERROR(WriteInitialMetadata(tx, parcel));
   }
   if (tx.GetFlags() & kFlagMessageData) {
-    RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(tx.GetMessageData()));
+    if (tx.GetMessageData().empty()) {
+      // Empty message stream indicates empty top-level message.
+      RETURN_IF_ERROR(parcel->WriteInt32(0));
+    } else {
+      GPR_ASSERT(tx.GetMessageData().size() == 1);
+      absl::string_view slice =
+          grpc_core::StringViewFromSlice(tx.GetMessageData()[0]);
+      RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(slice));
+      grpc_slice_unref_internal(tx.GetMessageData()[0]);
+    }
   }
   if (tx.GetFlags() & kFlagSuffix) {
     RETURN_IF_ERROR(WriteTrailingMetadata(tx, parcel));
@@ -110,35 +127,34 @@ bool WireWriterImpl::WaitForAcknowledgement() {
   return true;
 }
 
-absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
-  // TODO(mingcl): check tx_code <= last call id
-  grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(tx.GetTxCode() >= kFirstCallId);
-  if (CanBeSentInOneTransaction(tx)) {
-    return RpcCallFastPath(tx);
-  }
-  // Slow path: the message data is too large to fit in one transaction.
+absl::Status WireWriterImpl::SendSingleMessageSlice(const Transaction& tx,
+                                                    grpc_slice slice,
+                                                    bool is_first_slice,
+                                                    bool is_last_slice) {
   int& seq = seq_num_[tx.GetTxCode()];
   int original_flags = tx.GetFlags();
-  GPR_ASSERT(original_flags & kFlagMessageData);
-  absl::string_view data = tx.GetMessageData();
-  size_t bytes_sent = 0;
-  while (bytes_sent < data.size()) {
+  absl::string_view data = grpc_core::StringViewFromSlice(slice);
+  size_t bytes_sent = 0, len = data.size();
+  // The condition on the right is a small hack for empty messages. We will
+  // increment bytes_sent by at least one so for empty messages we will sent
+  // exactly one transaction.
+  while (bytes_sent < len || (bytes_sent == 0 && len == 0)) {
     if (!WaitForAcknowledgement()) {
       return absl::InternalError("Timeout waiting for acknowledgement");
     }
     RETURN_IF_ERROR(binder_->PrepareTransaction());
     WritableParcel* parcel = binder_->GetWritableParcel();
-    size_t size =
-        std::min(static_cast<size_t>(kBlockSize), data.size() - bytes_sent);
+    bool is_first_transaction = (is_first_slice && bytes_sent == 0);
+    bool is_last_transaction =
+        (is_last_slice && bytes_sent + kBlockSize >= len);
     int flags = kFlagMessageData;
-    if (bytes_sent == 0) {
+    if (is_first_transaction) {
       // This is the first transaction. Include initial metadata if there's any.
       if (original_flags & kFlagPrefix) {
         flags |= kFlagPrefix;
       }
     }
-    if (bytes_sent + kBlockSize >= data.size()) {
+    if (is_last_transaction) {
       // This is the last transaction. Include trailing metadata if there's any.
       if (original_flags & kFlagSuffix) {
         flags |= kFlagSuffix;
@@ -152,6 +168,7 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
     if (flags & kFlagPrefix) {
       RETURN_IF_ERROR(WriteInitialMetadata(tx, parcel));
     }
+    size_t size = std::min(static_cast<size_t>(kBlockSize), len - bytes_sent);
     RETURN_IF_ERROR(
         parcel->WriteByteArrayWithLength(data.substr(bytes_sent, size)));
     if (flags & kFlagSuffix) {
@@ -159,7 +176,29 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
     }
     num_outgoing_bytes_ += parcel->GetDataSize();
     RETURN_IF_ERROR(binder_->Transact(BinderTransportTxCode(tx.GetTxCode())));
-    bytes_sent += size;
+    bytes_sent += std::max<size_t>(1, size);
+  }
+  grpc_slice_unref_internal(slice);
+  return absl::OkStatus();
+}
+
+absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
+  // TODO(mingcl): check tx_code <= last call id
+  grpc_core::MutexLock lock(&mu_);
+  GPR_ASSERT(tx.GetTxCode() >= kFirstCallId);
+  // If there's no message data or the message data is completely empty.
+  if (CanBeSentInOneTransaction(tx)) {
+    return RpcCallFastPath(tx);
+  }
+  // Slow path: we have non-empty message data to be sent.
+  int original_flags = tx.GetFlags();
+  GPR_ASSERT(original_flags & kFlagMessageData);
+  const SliceBuffer& buffer = tx.GetMessageData();
+  GPR_ASSERT(!buffer.empty());
+  for (size_t i = 0; i < buffer.size(); ++i) {
+    RETURN_IF_ERROR(
+        SendSingleMessageSlice(tx, buffer[i], /*is_first_slice=*/(i == 0),
+                               /*is_last_slice=*/(i + 1 == buffer.size())));
   }
   return absl::OkStatus();
 }

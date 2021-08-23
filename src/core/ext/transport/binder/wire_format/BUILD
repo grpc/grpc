@@ -38,6 +38,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_base",
     ],
 )
 

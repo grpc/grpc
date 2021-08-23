@@ -101,6 +101,23 @@ class WireReaderTest : public ::testing::Test {
   MockReadableParcel mock_readable_parcel_;
 };
 
+using TestingMetadata = std::vector<std::pair<std::string, std::string>>;
+
+bool operator==(const Metadata& lhs, const TestingMetadata& rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < lhs.size(); ++i) {
+    if (lhs[i].ViewKey() != rhs[i].first) {
+      return false;
+    }
+    if (lhs[i].ViewValue() != rhs[i].second) {
+      return false;
+    }
+  }
+  return true;
+}
+
 MATCHER_P(StatusOrStrEq, target, "") {
   if (!arg.ok()) return false;
   return arg.value() == target;
@@ -192,7 +209,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagPrefixWithMetadata) {
   // sequence number
   ExpectReadInt32(0);
 
-  const std::vector<std::pair<std::string, std::string>> kMetadata = {
+  const TestingMetadata kMetadata = {
       {"", ""},
       {"", "value"},
       {"key", ""},

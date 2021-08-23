@@ -70,6 +70,9 @@ class WireWriterImpl : public WireWriter {
   // In the future, we should queue the transactions and release them later when
   // acknowledgement comes.
   bool WaitForAcknowledgement() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  absl::Status SendSingleMessageSlice(const Transaction& tx, grpc_slice slice,
+                                      bool is_first_slice, bool is_last_slice)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;

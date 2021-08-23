@@ -49,7 +49,7 @@ std::pair<StreamIdentifier, int> Decode<std::string>(const std::string& data) {
 template <>
 std::pair<StreamIdentifier, int> Decode<Metadata>(const Metadata& data) {
   assert(data.size() == 1);
-  const std::string& encoding = data[0].first;
+  std::string encoding = std::string(data[0].ViewKey());
   return Decode(encoding);
 }
 

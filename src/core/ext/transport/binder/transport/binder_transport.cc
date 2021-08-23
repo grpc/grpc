@@ -121,17 +121,12 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
 static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
                            const grpc_binder::Metadata& md) {
   grpc_metadata_batch_init(mb);
-  for (auto& p : md) {
+  for (auto& kv : md) {
     grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
         arena->Alloc(sizeof(grpc_linked_mdelem)));
     memset(glm, 0, sizeof(grpc_linked_mdelem));
-    grpc_slice key = grpc_slice_from_cpp_string(p.first);
-    grpc_slice value = grpc_slice_from_cpp_string(p.second);
-    glm->md = grpc_mdelem_from_slices(grpc_slice_intern(key),
-                                      grpc_slice_intern(value));
-    // Unref here to prevent memory leak
-    grpc_slice_unref_internal(key);
-    grpc_slice_unref_internal(value);
+    glm->md = grpc_mdelem_from_slices(grpc_slice_intern(kv.key),
+                                      grpc_slice_intern(kv.value));
     GPR_ASSERT(grpc_metadata_batch_link_tail(mb, glm) == GRPC_ERROR_NONE);
   }
 }
@@ -387,13 +382,14 @@ static void perform_stream_op_locked(void* stream_op,
         // TODO(b/192208403): Figure out if it is correct to simply drop '/'
         // prefix and treat it as rpc method name
         GPR_ASSERT(value[0] == '/');
-        std::string path = std::string(value).substr(1);
 
         // Only client send method ref.
         GPR_ASSERT(gbt->is_client);
-        tx.SetMethodRef(path);
+        tx.SetMethodRef(grpc_slice_ref_internal(grpc_slice_sub(
+            GRPC_MDVALUE(md->md), 1, GRPC_SLICE_LENGTH(GRPC_MDVALUE(md->md)))));
       } else {
-        init_md.emplace_back(std::string(key), std::string(value));
+        init_md.emplace_back(grpc_slice_ref_internal(GRPC_MDKEY(md->md)),
+                             grpc_slice_ref_internal(GRPC_MDVALUE(md->md)));
       }
     }
     tx.SetPrefix(init_md);
@@ -401,7 +397,8 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->send_message) {
     gpr_log(GPR_INFO, "send_message");
     size_t remaining = op->payload->send_message.send_message->length();
-    std::string message_data;
+    // Indicate that there's message data (though possibly empty) to be sent.
+    tx.SetMessageData();
     while (remaining > 0) {
       grpc_slice message_slice;
       // TODO(waynetu): Temporarily assume that the message is ready.
@@ -411,14 +408,9 @@ static void perform_stream_op_locked(void* stream_op,
           op->payload->send_message.send_message->Pull(&message_slice);
       // TODO(waynetu): Cancel the stream if error is not GRPC_ERROR_NONE.
       GPR_ASSERT(error == GRPC_ERROR_NONE);
-      uint8_t* p = GRPC_SLICE_START_PTR(message_slice);
-      size_t len = GRPC_SLICE_LENGTH(message_slice);
-      remaining -= len;
-      message_data += std::string(reinterpret_cast<char*>(p), len);
-      grpc_slice_unref_internal(message_slice);
+      tx.PushMessageData(message_slice);
+      remaining -= GRPC_SLICE_LENGTH(message_slice);
     }
-    gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
-    tx.SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?
     op->payload->send_message.send_message.reset();
@@ -445,7 +437,9 @@ static void perform_stream_op_locked(void* stream_op,
             grpc_core::StringViewFromSlice(GRPC_MDVALUE(md->md));
         gpr_log(GPR_INFO, "send trailing metatday key-value %s",
                 absl::StrCat(key, " ", value).c_str());
-        trailing_metadata.emplace_back(std::string(key), std::string(value));
+        trailing_metadata.emplace_back(
+            grpc_slice_ref_internal(GRPC_MDKEY(md->md)),
+            grpc_slice_ref_internal(GRPC_MDVALUE(md->md)));
       }
     }
     // TODO(mingcl): Will we ever has key-value pair here? According to

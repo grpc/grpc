@@ -94,6 +94,26 @@ TEST_P(End2EndBinderTransportTest, UnaryCallThroughFakeBinderChannel) {
 }
 
 TEST_P(End2EndBinderTransportTest,
+       UnaryCallWithEmptyMessageThroughFakeBinderChannel) {
+  grpc::ChannelArguments args;
+  grpc::ServerBuilder builder;
+  end2end_testing::EchoServer service;
+  builder.RegisterService(&service);
+  std::unique_ptr<grpc::Server> server = builder.BuildAndStart();
+  std::shared_ptr<grpc::Channel> channel = BinderChannel(server.get(), args);
+  std::unique_ptr<EchoService::Stub> stub = EchoService::NewStub(channel);
+  grpc::ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  request.set_text("");
+  grpc::Status status = stub->EchoUnaryCall(&context, request, &response);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(response.text(), "");
+
+  server->Shutdown();
+}
+
+TEST_P(End2EndBinderTransportTest,
        UnaryCallThroughFakeBinderChannelNonOkStatus) {
   grpc::ChannelArguments args;
   grpc::ServerBuilder builder;

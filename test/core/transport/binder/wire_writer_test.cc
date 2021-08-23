@@ -28,9 +28,19 @@ namespace grpc_binder {
 
 using ::testing::Return;
 
-MATCHER_P(StrEqInt8Ptr, target, "") {
-  return std::string(reinterpret_cast<const char*>(arg), target.size()) ==
-         target;
+using TestingMetadata = std::vector<std::pair<std::string, std::string>>;
+
+Metadata TestingMetadataToMetadata(const TestingMetadata& md) {
+  Metadata result(md.size());
+  for (size_t i = 0; i < md.size(); ++i) {
+    result[i].key = grpc_slice_from_cpp_string(md[i].first);
+    result[i].value = grpc_slice_from_cpp_string(md[i].second);
+  }
+  return result;
+}
+
+MATCHER_P2(StrEqInt8Ptr, target, size, "") {
+  return std::string(reinterpret_cast<const char*>(arg), size) == target;
 }
 
 TEST(WireWriterTest, RpcCall) {
@@ -46,8 +56,9 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_writable_parcel, WriteInt32(target.size()));
     if (!target.empty()) {
       // content
-      EXPECT_CALL(mock_writable_parcel,
-                  WriteByteArray(StrEqInt8Ptr(target), target.size()));
+      EXPECT_CALL(
+          mock_writable_parcel,
+          WriteByteArray(StrEqInt8Ptr(target, target.size()), target.size()));
     }
   };
 
@@ -76,7 +87,7 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_writable_parcel,
                 WriteString(absl::string_view("/example/method/ref")));
 
-    const std::vector<std::pair<std::string, std::string>> kMetadata = {
+    const TestingMetadata kMetadata = {
         {"", ""},
         {"", "value"},
         {"key", ""},
@@ -96,8 +107,8 @@ TEST(WireWriterTest, RpcCall) {
                 Transact(BinderTransportTxCode(kFirstCallId + 1)));
 
     Transaction tx(kFirstCallId + 1, /*is_client=*/true);
-    tx.SetPrefix(kMetadata);
-    tx.SetMethodRef("/example/method/ref");
+    tx.SetPrefix(TestingMetadataToMetadata(kMetadata));
+    tx.SetMethodRef(grpc_slice_from_static_string("/example/method/ref"));
     EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
   }
   {
@@ -110,7 +121,8 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_binder_ref, Transact(BinderTransportTxCode(kFirstCallId)));
 
     Transaction tx(kFirstCallId, /*is_client=*/true);
-    tx.SetData("data");
+    tx.SetMessageData();
+    tx.PushMessageData(grpc_slice_from_static_string("data"));
     EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
     sequence_number++;
   }
@@ -137,7 +149,7 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_writable_parcel,
                 WriteString(absl::string_view("/example/method/ref")));
 
-    const std::vector<std::pair<std::string, std::string>> kMetadata = {
+    const TestingMetadata kMetadata = {
         {"", ""},
         {"", "value"},
         {"key", ""},
@@ -161,9 +173,10 @@ TEST(WireWriterTest, RpcCall) {
     Transaction tx(kFirstCallId, /*is_client=*/true);
     // TODO(waynetu): Implement a helper function that automatically creates
     // EXPECT_CALL based on the tx object.
-    tx.SetPrefix(kMetadata);
-    tx.SetMethodRef("/example/method/ref");
-    tx.SetData("");
+    tx.SetPrefix(TestingMetadataToMetadata(kMetadata));
+    tx.SetMethodRef(grpc_slice_from_static_string("/example/method/ref"));
+    tx.SetMessageData();
+    tx.PushMessageData(grpc_slice_from_static_string(""));
     tx.SetSuffix({});
     EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
     sequence_number++;
@@ -198,7 +211,9 @@ TEST(WireWriterTest, RpcCall) {
 
     // Use a new stream.
     Transaction tx(kFirstCallId + 2, /*is_client=*/true);
-    tx.SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
+    tx.SetMessageData();
+    tx.PushMessageData(grpc_slice_from_cpp_string(
+        std::string(2 * WireWriterImpl::kBlockSize + 1, 'a')));
     EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
   }
   // Really large message with metadata
@@ -235,8 +250,10 @@ TEST(WireWriterTest, RpcCall) {
     // Use a new stream.
     Transaction tx(kFirstCallId + 3, /*is_client=*/true);
     tx.SetPrefix({});
-    tx.SetMethodRef("123");
-    tx.SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
+    tx.SetMethodRef(grpc_slice_from_static_string("123"));
+    tx.SetMessageData();
+    tx.PushMessageData(grpc_slice_from_cpp_string(
+        std::string(2 * WireWriterImpl::kBlockSize + 1, 'a')));
     tx.SetSuffix({});
     EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
   }

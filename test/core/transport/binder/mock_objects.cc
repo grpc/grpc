@@ -54,4 +54,13 @@ MockBinder::MockBinder() {
           });
 }
 
+MockWireWriter::MockWireWriter() {
+  ON_CALL(*this, RpcCall).WillByDefault([&](Transaction tx) {
+    for (grpc_slice slice : tx.GetMessageData()) {
+      grpc_slice_unref_internal(slice);
+    }
+    return absl::OkStatus();
+  });
+}
+
 }  // namespace grpc_binder
