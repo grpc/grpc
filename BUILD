@@ -1111,6 +1111,21 @@ grpc_cc_library(
         "gpr_platform",
     ],
 )
+grpc_cc_library(
+    name = "latch",
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/latch.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "intra_activity_waiter",
+    ],
+)
 
 grpc_cc_library(
     name = "ref_counted",
