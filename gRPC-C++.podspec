@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.40.0-dev'
+  version = '1.41.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -283,6 +283,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -526,6 +527,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/stream_compression.h',
                       'src/core/lib/compression/stream_compression_gzip.h',
                       'src/core/lib/compression/stream_compression_identity.h',
+                      'src/core/lib/config/core_configuration.h',
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
@@ -543,7 +545,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/arena.h',
-                      'src/core/lib/gprpp/atomic.h',
+                      'src/core/lib/gprpp/atomic_utils.h',
+                      'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/construct_destruct.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
@@ -946,6 +949,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -1189,6 +1193,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/compression/stream_compression.h',
                               'src/core/lib/compression/stream_compression_gzip.h',
                               'src/core/lib/compression/stream_compression_identity.h',
+                              'src/core/lib/config/core_configuration.h',
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
@@ -1206,7 +1211,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/arena.h',
-                              'src/core/lib/gprpp/atomic.h',
+                              'src/core/lib/gprpp/atomic_utils.h',
+                              'src/core/lib/gprpp/bitset.h',
                               'src/core/lib/gprpp/construct_destruct.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',

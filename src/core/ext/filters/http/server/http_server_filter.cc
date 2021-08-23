@@ -103,9 +103,9 @@ struct channel_data {
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   if (b->idx.named.grpc_message != nullptr) {
-    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
+    grpc_slice pct_encoded_msg = grpc_core::PercentEncodeSlice(
         GRPC_MDVALUE(b->idx.named.grpc_message->md),
-        grpc_compatible_percent_encoding_unreserved_bytes);
+        grpc_core::PercentEncodingType::Compatible);
     if (grpc_slice_is_equivalent(pct_encoded_msg,
                                  GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
       grpc_slice_unref_internal(pct_encoded_msg);

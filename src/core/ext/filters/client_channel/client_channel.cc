@@ -800,8 +800,8 @@ void ClientChannel::ExternalConnectivityWatcher::
 void ClientChannel::ExternalConnectivityWatcher::Notify(
     grpc_connectivity_state state, const absl::Status& /* status */) {
   bool done = false;
-  if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
-                                   MemoryOrder::RELAXED)) {
+  if (!done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
     return;  // Already done.
   }
   // Remove external watcher.
@@ -824,8 +824,8 @@ void ClientChannel::ExternalConnectivityWatcher::Notify(
 
 void ClientChannel::ExternalConnectivityWatcher::Cancel() {
   bool done = false;
-  if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
-                                   MemoryOrder::RELAXED)) {
+  if (!done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
     return;  // Already done.
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
@@ -1146,7 +1146,7 @@ ClientChannel::~ClientChannel() {
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
-  GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
+  GRPC_ERROR_UNREF(disconnect_error_.load(std::memory_order_relaxed));
 }
 
 OrphanablePtr<ClientChannel::LoadBalancedCall>
@@ -1770,9 +1770,10 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
-      GPR_ASSERT(disconnect_error_.Load(MemoryOrder::RELAXED) ==
+      GPR_ASSERT(disconnect_error_.load(std::memory_order_relaxed) ==
                  GRPC_ERROR_NONE);
-      disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
+      disconnect_error_.store(op->disconnect_with_error,
+                              std::memory_order_release);
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(

@@ -31,6 +31,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "context_test",
+    srcs = ["context_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:context",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
     external_deps = ["gtest"],
@@ -38,6 +50,36 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    # Why promise_map_test and not map_test?
+    # third_party/benchmark defines a map_test in its cmakefile, and we depend
+    # on that from our cmakefile, and cmake wants to have a flat namespace to
+    # deal with xcode/visual studio limitations... sooo... promise_map_test it
+    # is.
+    name = "promise_map_test",
+    srcs = ["map_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:map",
+        "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "race_test",
+    srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:race",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -55,6 +97,54 @@ grpc_cc_test(
         "//:capture",
         "//:promise",
         "//:promise_factory",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "if_test",
+    srcs = ["if_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:if",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:loop",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "join_test",
+    srcs = ["join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:join",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "try_join_test",
+    srcs = ["try_join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:try_join",
         "//test/core/util:grpc_suppressions",
     ],
 )

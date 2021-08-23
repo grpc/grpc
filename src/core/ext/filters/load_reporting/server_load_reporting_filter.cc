@@ -339,8 +339,8 @@ bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    static grpc_core::Atomic<bool> registered{false};
-    if (registered.Load(grpc_core::MemoryOrder::ACQUIRE)) return;
+    static std::atomic<bool> registered{false};
+    if (registered.load(std::memory_order_acquire)) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
@@ -353,7 +353,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
     ::grpc::load_reporter::MeasureEndBytesReceived();
     ::grpc::load_reporter::MeasureEndLatencyMs();
     ::grpc::load_reporter::MeasureOtherCallMetric();
-    registered.Store(true, grpc_core::MemoryOrder::RELEASE);
+    registered.store(true, std::memory_order_release);
   }
 } server_load_reporting_filter_static_registrar;
 

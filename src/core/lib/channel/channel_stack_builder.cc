@@ -41,6 +41,7 @@ struct grpc_channel_stack_builder {
   grpc_channel_args* args;
   grpc_transport* transport;
   grpc_resource_user* resource_user;
+  size_t preallocated_bytes;
   char* target;
   const char* name;
 };
@@ -172,17 +173,6 @@ void grpc_channel_stack_builder_set_transport(
 grpc_transport* grpc_channel_stack_builder_get_transport(
     grpc_channel_stack_builder* builder) {
   return builder->transport;
-}
-
-void grpc_channel_stack_builder_set_resource_user(
-    grpc_channel_stack_builder* builder, grpc_resource_user* resource_user) {
-  GPR_ASSERT(builder->resource_user == nullptr);
-  builder->resource_user = resource_user;
-}
-
-grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
-    grpc_channel_stack_builder* builder) {
-  return builder->resource_user;
 }
 
 bool grpc_channel_stack_builder_append_filter(

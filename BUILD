@@ -109,11 +109,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guileless"  # @unused
+g_stands_for = "goat"  # @unused
 
 core_version = "18.0.0"  # @unused
 
-version = "1.40.0-dev"  # @unused
+version = "1.41.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -330,6 +330,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "atomic_utils",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
@@ -342,6 +349,7 @@ grpc_cc_library(
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -379,6 +387,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -666,11 +675,9 @@ grpc_cc_library(
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
-        "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
-        "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -709,8 +716,15 @@ grpc_cc_library(
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "gpr_tls",
+    hdrs = ["src/core/lib/gpr/tls.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -774,13 +788,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "atomic",
+    name = "config",
+    srcs = [
+        "src/core/lib/config/core_configuration.cc",
+    ],
     language = "c++",
     public_hdrs = [
-        "src/core/lib/gprpp/atomic.h",
+        "src/core/lib/config/core_configuration.h",
     ],
     deps = [
-        "gpr",
+        "gpr_platform",
     ],
 )
 
@@ -858,6 +875,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "context",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/context.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_tls",
+    ],
+)
+
+grpc_cc_library(
+    name = "map",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/map.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
     name = "promise",
     external_deps = [
         "absl/types:optional",
@@ -899,6 +939,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "if",
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/if.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_status",
     external_deps = [
         "absl/status",
@@ -912,6 +966,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "race",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/race.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "loop",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/loop.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "switch",
     language = "c++",
     public_hdrs = [
@@ -921,11 +998,51 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "basic_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_join.h",
+    ],
+    deps = [
+        "bitset",
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
-        "atomic",
+        "atomic_utils",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -938,7 +1055,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
     deps = [
-        "atomic",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -1298,9 +1414,11 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "bitset",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
+        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
@@ -1317,7 +1435,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "atomic",
         "gpr_base",
         "grpc_base_c",
     ],
@@ -2582,6 +2699,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "hpack_encoder_index",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2648,6 +2779,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_encoder_index",
         "match",
         "popularity_count",
     ],

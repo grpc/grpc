@@ -94,6 +94,7 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/test_config.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 #include "src/cpp/server/csds/csds.h"
@@ -3579,7 +3580,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr,
                                 "incorrect_server_name");
@@ -5650,7 +5651,6 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5711,11 +5711,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
               StatusCode::UNAUTHENTICATED))
           .set_expected_error_code(StatusCode::UNAUTHENTICATED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5739,11 +5737,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
               StatusCode::DEADLINE_EXCEEDED))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   // Set num retries to 3, but due to longer back off, we expect only 1 retry
   // will take place.
   const size_t kNumRetries = 3;
@@ -5777,11 +5773,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
                   StatusCode::CANCELLED))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   // Set num retries to 3, but due to longer back off, we expect only 2 retry
   // will take place, while the 2nd one will obey the max backoff.
   const size_t kNumRetries = 3;
@@ -5822,11 +5816,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
                   StatusCode::CANCELLED))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5849,11 +5841,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
               StatusCode::DEADLINE_EXCEEDED))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5876,11 +5866,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
       response_state.error_message,
       ::testing::HasSubstr(
           "RouteAction RetryPolicy num_retries set to invalid value 0."));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5907,70 +5895,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
       response_state.error_message,
       ::testing::HasSubstr(
           "RouteAction RetryPolicy RetryBackoff missing base interval."));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
-}
-
-TEST_P(LdsRdsTest, XdsRetryPolicyDisabled) {
-  const size_t kNumRetries = 3;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct route config to set retry policy.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on(
-      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
-      "unavailable");
-  retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  SetRouteConfiguration(0, new_route_config);
-  // Ensure we don't retry on supported statuses.
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::CANCELLED));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
-          .set_expected_error_code(StatusCode::INTERNAL));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::RESOURCE_EXHAUSTED))
-          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
-          .set_expected_error_code(StatusCode::UNAVAILABLE));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  // Ensure we don't retry on an unsupported status.
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::UNAUTHENTICATED))
-          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
@@ -8487,6 +8411,150 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
   g_fake1_cert_data_map = nullptr;
+}
+
+TEST_P(XdsSecurityTest,
+       NacksCertificateValidationContextWithVerifyCertificateSpki) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->add_verify_certificate_spki("spki");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "CertificateValidationContext: verify_certificate_spki unsupported"));
+}
+
+TEST_P(XdsSecurityTest,
+       NacksCertificateValidationContextWithVerifyCertificateHash) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->add_verify_certificate_hash("hash");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "CertificateValidationContext: verify_certificate_hash unsupported"));
+}
+
+TEST_P(XdsSecurityTest,
+       NacksCertificateValidationContextWithRequireSignedCertificateTimes) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->mutable_require_signed_certificate_timestamp()
+      ->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("CertificateValidationContext: "
+                           "require_signed_certificate_timestamp unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->mutable_crl();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("CertificateValidationContext: crl unsupported"));
+}
+
+TEST_P(XdsSecurityTest,
+       NacksCertificateValidationContextWithCustomValidatorConfig) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->mutable_custom_validator_config();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "CertificateValidationContext: custom_validator_config unsupported"));
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {

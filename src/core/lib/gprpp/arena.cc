@@ -75,7 +75,7 @@ std::pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
 }
 
 size_t Arena::Destroy() {
-  size_t size = total_used_.Load(MemoryOrder::RELAXED);
+  size_t size = total_used_.load(std::memory_order_relaxed);
   this->~Arena();
   gpr_free_aligned(this);
   return size;
