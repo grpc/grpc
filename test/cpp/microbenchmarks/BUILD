@@ -284,6 +284,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_binder_transport",
+    srcs = ["bm_binder_transport.cc"],
+    tags = [
+        "no_mac",
+        "no_windows",
+        "nomsan",
+    ],
+    deps = [
+        ":helpers",
+        "//src/core/ext/transport/binder/transport:binder_transport",
+        "//src/core/ext/transport/binder/wire_format:binder",
+    ],
+)
+
+grpc_cc_test(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
     language = "C++",
