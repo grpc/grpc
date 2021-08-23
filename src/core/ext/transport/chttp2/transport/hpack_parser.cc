@@ -681,7 +681,6 @@ class HPackParser::String {
   String(String&& other) noexcept : value_(std::move(other.value_)) {
     other.value_ = absl::Span<const uint8_t>();
   }
-
   String& operator=(String&& other) noexcept {
     value_ = std::move(other.value_);
     other.value_ = absl::Span<const uint8_t>();

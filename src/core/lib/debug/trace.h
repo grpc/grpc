@@ -90,7 +90,7 @@ class TraceFlag {
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
   void Log(const char* file, int line, gpr_log_severity severity,
-           const char* format, ...) {
+           const char* format, ...) GPR_PRINT_FORMAT_CHECK(5, 6) {
     if (GPR_UNLIKELY(enabled())) {
       va_list args;
       va_start(args, format);

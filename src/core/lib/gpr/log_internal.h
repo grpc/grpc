@@ -19,7 +19,6 @@
 #include "grpc/support/log.h"
 
 /// Log a message, accepting a variadic argument list. See also \a gpr_log.
-// TODO(hork): look into vprintf format checking
 void gpr_vlog(const char* file, int line, gpr_log_severity severity,
               const char* format, va_list args);
 

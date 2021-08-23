@@ -54,10 +54,7 @@
 #define GRPC_FLUSH_READ_SIZE 4096
 
 grpc_core::TraceFlag grpc_cronet_trace(false, "cronet");
-#define CRONET_LOG(...)                 \
-  do {                                  \
-    grpc_cronet_trace.Log(__VA_ARGS__); \
-  } while (0)
+#define CRONET_LOG(...) grpc_cronet_trace.Log(__VA_ARGS__)
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,

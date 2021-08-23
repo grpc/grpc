@@ -150,6 +150,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
         wait_time != nullptr) {
       start_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
+
     Waiter self;
     PushWaiter(&self);
     do {
