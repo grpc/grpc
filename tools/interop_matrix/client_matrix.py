@@ -480,5 +480,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.35.0', ReleaseInfo()),
             ('v1.36.3', ReleaseInfo()),
             ('v1.37.0', ReleaseInfo()),
+            ('v1.38.1', ReleaseInfo()),
+            ('v1.39.1', ReleaseInfo()),
         ]),
 }
