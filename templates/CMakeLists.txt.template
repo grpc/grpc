@@ -86,6 +86,28 @@
         deps.append(d)
     return deps
 
+  def get_deps_cflags(target_dict):
+    deps = []
+    if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
+      deps.append("${_gRPC_BASELIB_CFLAGS}")
+    if target_dict.get('build', None) in ['protoc']:
+      deps.append("${_gRPC_PROTOBUF_PROTOC_CFLAGS}")
+    if target_dict.language == 'c++':
+      deps.append("${_gRPC_PROTOBUF_CFLAGS}")
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
+      deps.append("${_gRPC_ZLIB_CFLAGS}")
+      deps.append("${_gRPC_CARES_CFLAGS}")
+      deps.append("${_gRPC_ADDRESS_SORTING_CFLAGS}")
+      deps.append("${_gRPC_RE2_CFLAGS}")
+      deps.append("${_gRPC_UPB_CFLAGS}")
+    deps.append("${_gRPC_ALLTARGETS_CFLAGS}")
+    for d in target_dict.get('deps', []):
+      if d == 'benchmark':
+        deps.append("${_gRPC_BENCHMARK_CFLAGS}")
+      elif d == 'libssl':
+        deps.append("${_gRPC_SSL_CFLAGS}")
+    return deps
+
   def get_platforms_condition_begin(platforms):
     if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
       return ''
@@ -598,6 +620,13 @@
       <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
+  % if len(get_deps_cflags(lib)) > 0:
+  target_compile_options(${lib.name} PRIVATE
+  % for dep in get_deps_cflags(lib):
+    ${dep}
+  % endfor
+  )
+  % endif
   % if len(get_deps(lib)) > 0:
   target_link_libraries(${lib.name}
   % for dep in get_deps(lib):
