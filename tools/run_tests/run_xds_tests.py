@@ -1030,7 +1030,7 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
         with open(bootstrap_path) as f:
             md = json.load(f)['node']['metadata']
             match_labels = []
-            for k, v in md.items():
+            for k, v in list(md.items()):
                 match_labels.append({'name': k, 'value': v})
 
         not_match_labels = [{'name': 'fake', 'value': 'fail'}]

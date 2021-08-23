@@ -32,7 +32,7 @@ data = yaml.load(open(args.input).read())
 with open(args.output, 'w') as outf:
     writer = csv.DictWriter(
         outf, ['date', 'name', 'language', 'code', 'comment', 'blank'])
-    for key, value in data.items():
+    for key, value in list(data.items()):
         if key == 'header':
             continue
         if key == 'SUM':

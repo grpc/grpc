@@ -41,4 +41,4 @@ for line in sys.stdin:
 
 for obj, remaining in list(outstanding.items()):
     if remaining:
-        print('LEAKED: %s %r' % (obj, remaining))
+        print(('LEAKED: %s %r' % (obj, remaining)))

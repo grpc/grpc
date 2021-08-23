@@ -29,7 +29,7 @@ import argparse
 import sys
 from typing import Any, Dict, Iterable, List, Mapping, Type
 
-import loadtest_config
+from . import loadtest_config
 import yaml
 
 TEMPLATE_FILE_HEADER_COMMENT = """
@@ -61,7 +61,7 @@ def insert_worker(worker: Dict[str, Any], workers: List[Dict[str,
 
 def uniquify_workers(workermap: Dict[str, List[Dict[str, Any]]]) -> None:
     """Name workers if there is more than one for the same map key."""
-    for workers in workermap.values():
+    for workers in list(workermap.values()):
         if len(workers) <= 1:
             continue
         for i, worker in enumerate(workers):

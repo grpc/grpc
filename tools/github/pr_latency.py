@@ -37,7 +37,7 @@ import json
 import logging
 import pprint
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 
@@ -46,10 +46,10 @@ COMMITS = 'https://api.github.com/repos/grpc/grpc/pulls/{pr_number}/commits'
 
 
 def gh(url):
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     if TOKEN:
         request.add_header('Authorization', 'token {}'.format(TOKEN))
-    response = urllib2.urlopen(request)
+    response = urllib.request.urlopen(request)
     return response.read()
 
 

@@ -33,8 +33,8 @@ import sys
 from typing import Any, Dict, Iterable, Mapping, Optional, Type
 import uuid
 
-import scenario_config
-import scenario_config_exporter
+from . import scenario_config
+from . import scenario_config_exporter
 import yaml
 
 CONFIGURATION_FILE_HEADER_COMMENT = """
