@@ -5955,6 +5955,15 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: miscompile_with_no_unique_address_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
+  deps: []
+  uses_polling: false
 - name: mock_stream_test
   gtest: true
   build: test
