@@ -215,10 +215,8 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     GRPC_LOG_IF_ERROR("getpeername error", err);
     GRPC_ERROR_UNREF(err);
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
-            peer_name_string.c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s",
+                     sp->server, peer_name_string.c_str());
   ep = custom_tcp_endpoint_create(
       socket,
       grpc_slice_allocator_factory_create_slice_allocator(
@@ -376,11 +374,9 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     addr = &wildcard;
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s,
-            grpc_sockaddr_to_string(addr, false).c_str(),
-            grpc_error_std_string(error).c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "SERVER %p add_port %s error=%s", s,
+                     grpc_sockaddr_to_string(addr, false).c_str(),
+                     grpc_error_std_string(error).c_str());
 
   family = grpc_sockaddr_get_family(addr);
   socket =
@@ -416,9 +412,7 @@ static void tcp_server_start(grpc_tcp_server* server,
                              grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   grpc_tcp_listener* sp;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "SERVER_START %p", server);
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "SERVER_START %p", server);
   GPR_ASSERT(on_accept_cb);
   GPR_ASSERT(!server->on_accept_cb);
   server->on_accept_cb = on_accept_cb;

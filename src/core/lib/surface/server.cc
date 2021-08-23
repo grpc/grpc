@@ -1152,9 +1152,7 @@ void Server::ChannelData::Destroy() {
   server_->MaybeFinishShutdown();
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_server_channel_trace)) {
-    gpr_log(GPR_INFO, "Disconnected client");
-  }
+  grpc_server_channel_trace.Log(GPR_INFO, "Disconnected client");
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);
   op->set_accept_stream = true;
