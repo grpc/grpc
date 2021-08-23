@@ -102,7 +102,9 @@ def get_pr_data(pr_num):
         from urllib.request import Request
         from urllib.request import urlopen
     except ImportError:
-        import urllib.request, urllib.parse, urllib.error
+        import urllib.error
+        import urllib.parse
+        import urllib.request
         from urllib.request import HTTPError
         from urllib.request import Request
         from urllib.request import urlopen
@@ -143,7 +145,8 @@ def get_pr_titles(gitLogs):
         print(("---------- getting data for PR " + pr_num))
         pr = get_pr_data(pr_num)
         if pr == "error":
-            print(("\n***ERROR*** Error in getting data for PR " + pr_num + "\n"))
+            print(
+                ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n"))
             error_count += 1
             continue
         rl_no_found = False
@@ -183,7 +186,7 @@ def get_pr_titles(gitLogs):
             langs_pr["notinrel"].append(detail)
         elif rl_yes_found:
             print(("'Release notes:yes' found for " + pr_num + " with lang " +
-                  lang))
+                   lang))
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
 

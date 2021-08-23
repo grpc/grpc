@@ -18,9 +18,10 @@ import argparse
 import json
 import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 import uuid
-
-import urllib.request, urllib.error, urllib.parse
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
