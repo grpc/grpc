@@ -1587,10 +1587,8 @@ grpc_error_handle RetryPolicyParse(
     } else if (code == "unavailable") {
       retry_to_return.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
-        gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
-                std::string(code).c_str());
-      }
+      context.tracer->Log(GPR_INFO, "Unsupported retry_on policy %s.",
+                          std::string(code).c_str());
     }
   }
   // TODO(donnadionne): when we add support for per_try_timeout, we will need to

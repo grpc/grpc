@@ -245,10 +245,8 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     std::string addr_str = grpc_sockaddr_to_uri(&addr);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
-              addr_str.c_str());
-    }
+    grpc_tcp_trace.Log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
+                       addr_str.c_str());
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_str);
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);

@@ -1913,14 +1913,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::
 void RetryFilter::CallData::CallAttempt::BatchData::
     AddRetriableSendMessageOp() {
   auto* calld = call_attempt_->calld_;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "chand=%p calld=%p attempt=%p: starting calld->send_messages[%" PRIuPTR
-        "]",
-        calld->chand_, calld, call_attempt_.get(),
-        call_attempt_->started_send_message_count_);
-  }
+  grpc_retry_trace.Log(
+      GPR_INFO,
+      "chand=%p calld=%p attempt=%p: starting calld->send_messages[%" PRIuPTR
+      "]",
+      calld->chand_, calld, call_attempt_.get(),
+      call_attempt_->started_send_message_count_);
   ByteStreamCache* cache =
       calld->send_messages_[call_attempt_->started_send_message_count_];
   ++call_attempt_->started_send_message_count_;
