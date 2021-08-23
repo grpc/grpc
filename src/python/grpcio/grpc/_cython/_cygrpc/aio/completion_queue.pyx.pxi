@@ -172,23 +172,3 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                     <CallbackWrapper>context.callback_wrapper,
                     event.success
                 )
-
-
-cdef class CallbackCompletionQueue(BaseCompletionQueue):
-
-    def __cinit__(self):
-        self._loop = get_working_loop()
-        self._shutdown_completed = self._loop.create_future()
-        self._wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            self._loop,
-            CQ_SHUTDOWN_FAILURE_HANDLER)
-        self._cq = grpc_completion_queue_create_for_callback(
-            self._wrapper.c_functor(),
-            NULL
-        )
-
-    async def shutdown(self):
-        grpc_completion_queue_shutdown(self._cq)
-        await self._shutdown_completed
-        grpc_completion_queue_destroy(self._cq)
