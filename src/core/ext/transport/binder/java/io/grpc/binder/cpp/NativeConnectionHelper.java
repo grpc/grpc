@@ -25,9 +25,9 @@ import android.os.Parcel;
 final class NativeConnectionHelper {
   static SyncServiceConnection s;
 
-  static void tryEstablishConnection(Context context) {
+  static void tryEstablishConnection(Context context, String pkg, String cls) {
     s = new SyncServiceConnection(context);
-    s.tryConnect();
+    s.tryConnect(pkg, cls);
   }
 
   // TODO(mingcl): We should notify C++ once we got the service binder so they don't need to call
