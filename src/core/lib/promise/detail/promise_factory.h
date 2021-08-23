@@ -62,16 +62,6 @@ struct IsVoidCallableT<F, absl::void_t<decltype(std::declval<F>()())>> {
   static constexpr bool value = true;
 };
 
-// Wrap that trait in some nice syntax.
-template <typename T>
-constexpr bool IsVoidCallable() {
-  return IsVoidCallableT<T>::value;
-}
-
-// T -> T, const T& -> T
-template <typename T>
-using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
-
 // Given F(A,B,C,...), what's the return type?
 template <typename T, typename Ignored = void>
 struct ResultOfTInner;
@@ -99,6 +89,7 @@ class Curried {
  public:
   Curried(F&& f, Arg&& arg)
       : f_(std::forward<F>(f)), arg_(std::forward<Arg>(arg)) {}
+  Curried(const F& f, Arg&& arg) : f_(f), arg_(std::forward<Arg>(arg)) {}
   using Result = decltype(std::declval<F>()(std::declval<Arg>()));
   Result operator()() { return f_(arg_); }
 
@@ -110,9 +101,10 @@ class Curried {
 // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
 // capturing A.
 template <typename A, typename F>
-absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>(), PromiseLike<Curried<A, F>>>
+absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>::value,
+                  PromiseLike<Curried<RemoveCVRef<F>, A>>>
 PromiseFactoryImpl(F&& f, A&& arg) {
-  return Curried<A, F>(std::forward<F>(f), std::forward<A>(arg));
+  return Curried<RemoveCVRef<F>, A>(std::forward<F>(f), std::forward<A>(arg));
 }
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>

@@ -23,6 +23,12 @@ TEST(MapTest, Works) {
   EXPECT_EQ(x(), Poll<int>(21));
 }
 
+TEST(MapTest, JustElem) {
+  std::tuple<int, double> t(1, 3.2);
+  EXPECT_EQ(JustElem<1>()(t), 3.2);
+  EXPECT_EQ(JustElem<0>()(t), 1);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
