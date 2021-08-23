@@ -448,8 +448,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         chand_(chand),
         subchannel_(std::move(subchannel)),
         health_check_service_name_(std::move(health_check_service_name)) {
-    grpc_client_channel_routing_trace.Log(GPR_INFO,
-              "chand=%p: creating subchannel wrapper %p for subchannel %p",
+    grpc_client_channel_routing_trace.Log(
+        GPR_INFO, "chand=%p: creating subchannel wrapper %p for subchannel %p",
+        chand, this, subchannel_.get());
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
