@@ -175,20 +175,6 @@ def _populate_metadata_inplace(scenario_result):
 
 
 def _populate_metadata_from_file(scenario_result, test_metadata_file):
-    with open(test_metadata_file, 'r') as f:
-        test_metadata = json.loads(f.read())
-
-    # eliminate managedFields from metadata set
-    if 'managedFields' in test_metadata:
-        del test_metadata['managedFields']
-
-    # if use kubectl apply ..., kubectl will append current configuration to
-    # annotation, the field is deleted since it includes a lot of irrelevant
-    # information
-    annotations = test_metadata['annotations']
-    if 'kubectl.kubernetes.io/last-applied-configuration' in annotations:
-        del annotations['kubectl.kubernetes.io/last-applied-configuration']
-
     utc_timestamp = str(calendar.timegm(time.gmtime()))
     metadata = {'created': utc_timestamp}
 
@@ -202,12 +188,29 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
         )
     }
 
-    for key, value in _annotation_to_bq_metadata_key_map.items():
-        if key in annotations:
-            metadata[value] = annotations[key]
+    if os.access(test_metadata_file, os.R_OK):
+        with open(test_metadata_file, 'r') as f:
+            test_metadata = json.loads(f.read())
+
+        # eliminate managedFields from metadata set
+        if 'managedFields' in test_metadata:
+            del test_metadata['managedFields']
+
+        annotations = test_metadata.get('annotations', {})
+
+        # if use kubectl apply ..., kubectl will append current configuration to
+        # annotation, the field is deleted since it includes a lot of irrelevant
+        # information
+        if 'kubectl.kubernetes.io/last-applied-configuration' in annotations:
+            del annotations['kubectl.kubernetes.io/last-applied-configuration']
+
+        # dump all metadata as JSON to testMetadata field
+        scenario_result['testMetadata'] = json.dumps(test_metadata)
+        for key, value in _annotation_to_bq_metadata_key_map.items():
+            if key in annotations:
+                metadata[value] = annotations[key]
 
     scenario_result['metadata'] = metadata
-    scenario_result['testMetadata'] = json.dumps(test_metadata)
 
 
 argp = argparse.ArgumentParser(description='Upload result to big query.')
@@ -240,4 +243,5 @@ else:
     _upload_scenario_result_to_bigquery(dataset_id, table_id,
                                         args.file_to_upload,
                                         args.metadata_file_to_upload)
-print('Successfully uploaded %s to BigQuery.\n' % args.file_to_upload)
+print('Successfully uploaded %s and %s to BigQuery.\n' %
+      (args.file_to_upload, args.metadata_file_to_upload))
