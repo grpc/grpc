@@ -642,7 +642,8 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
       GPR_INFO,
       "[xds_client %p] Failed to connect to xds server (chand: %p) "
       "retry timer will fire in %" PRId64 "ms.",
-      chand()->xds_client(), chand(), timeout);
+      chand()->xds_client(), chand(),
+      GPR_MAX(next_attempt_time - ExecCtx::Get()->Now(), 0));
   this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start").release();
   grpc_timer_init(&retry_timer_, next_attempt_time, &on_retry_timer_);
   retry_timer_callback_pending_ = true;

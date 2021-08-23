@@ -239,7 +239,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
     OnConnectivityStateChange(grpc_connectivity_state new_state) {
-  *subchannel_list_->tracer().Log(
+  subchannel_list_->tracer()->Log(
       GPR_INFO,
       "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
       " (subchannel %p): connectivity changed: state=%s, "
@@ -281,7 +281,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     UnrefSubchannelLocked(const char* reason) {
   if (subchannel_ != nullptr) {
-    *subchannel_list_->tracer().Log(
+    subchannel_list_->tracer()->Log(
         GPR_INFO,
         "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
         " (subchannel %p): unreffing subchannel (%s)",
@@ -303,7 +303,7 @@ void SubchannelData<SubchannelListType,
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StartConnectivityWatchLocked() {
-  *subchannel_list_->tracer().Log(
+  subchannel_list_->tracer()->Log(
       GPR_INFO,
       "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
       " (subchannel %p): starting watch (from %s)",
@@ -322,7 +322,7 @@ void SubchannelData<SubchannelListType,
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     CancelConnectivityWatchLocked(const char* reason) {
-  *subchannel_list_->tracer().Log(
+  subchannel_list_->tracer()->Log(
       GPR_INFO,
       "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
       " (subchannel %p): canceling connectivity watch (%s)",

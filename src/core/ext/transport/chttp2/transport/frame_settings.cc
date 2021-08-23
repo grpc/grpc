@@ -263,10 +263,11 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           grpc_http_trace.Log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
                               t->is_client ? "CLI" : "SVR",
                               t->peer_string.c_str(), sp->name, parser->value);
-          grpc_http_trace.Log(GPR_ERROR,
-                              "CHTTP2: Ignoring unknown setting %d (value %d)",
-                              parser->id, parser->value);
-          break;
         }
+        grpc_http_trace.Log(GPR_ERROR,
+                            "CHTTP2: Ignoring unknown setting %d (value %d)",
+                            parser->id, parser->value);
+        break;
     }
   }
+}
