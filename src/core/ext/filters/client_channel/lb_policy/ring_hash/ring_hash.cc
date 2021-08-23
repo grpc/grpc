@@ -371,10 +371,11 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
               return lhs.hash < rhs.hash;
             });
-  grpc_lb_ring_hash_trace.Log(GPR_INFO,
-            "[RH %p picker %p] created picker from subchannel_list=%p "
-            "with %" PRIuPTR " ring entries",
-            parent_.get(), this, subchannel_list, ring_.size());
+  grpc_lb_ring_hash_trace.Log(
+      GPR_INFO,
+      "[RH %p picker %p] created picker from subchannel_list=%p "
+      "with %" PRIuPTR " ring entries",
+      parent_.get(), this, subchannel_list, ring_.size());
 }
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
@@ -577,13 +578,13 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RingHash* p = static_cast<RingHash*>(subchannel_list()->policy());
   grpc_lb_ring_hash_trace.Log(
-        GPR_INFO,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
-        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
-        p, subchannel(), subchannel_list(), Index(),
-        subchannel_list()->num_subchannels(),
-        ConnectivityStateName(last_connectivity_state_),
-        ConnectivityStateName(connectivity_state));
+      GPR_INFO,
+      "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
+      "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
+      p, subchannel(), subchannel_list(), Index(),
+      subchannel_list()->num_subchannels(),
+      ConnectivityStateName(last_connectivity_state_),
+      ConnectivityStateName(connectivity_state));
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
@@ -617,10 +618,11 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // loop of re-resolution.
   // Also attempt to reconnect.
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    grpc_lb_ring_hash_trace.Log(GPR_INFO,
-              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-              "Requesting re-resolution",
-              p, subchannel());
+    grpc_lb_ring_hash_trace.Log(
+        GPR_INFO,
+        "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+        "Requesting re-resolution",
+        p, subchannel());
     p->channel_control_helper()->RequestReresolution();
   }
   // Update state counters.
@@ -660,7 +662,8 @@ RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
 }
 
 RingHash::~RingHash() {
-  grpc_lb_ring_hash_trace.Log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
+  grpc_lb_ring_hash_trace.Log(GPR_INFO, "[RH %p] Destroying Ring Hash policy",
+                              this);
   GPR_ASSERT(subchannel_list_ == nullptr);
 }
 
@@ -673,8 +676,9 @@ void RingHash::ShutdownLocked() {
 void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }
 
 void RingHash::UpdateLocked(UpdateArgs args) {
-  grpc_lb_ring_hash_trace.Log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, args.addresses.size());
+  grpc_lb_ring_hash_trace.Log(
+      GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses", this,
+      args.addresses.size());
   config_ = std::move(args.config);
   // Filter out any address with weight 0.
   ServerAddressList addresses;
