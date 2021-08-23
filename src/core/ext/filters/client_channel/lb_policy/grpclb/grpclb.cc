@@ -1661,7 +1661,6 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
   }
   // Update the policy.
-
   grpc_lb_glb_trace.Log(GPR_INFO,
                         "[grpclb %p] Updating child policy handler %p", this,
                         child_policy_.get());
