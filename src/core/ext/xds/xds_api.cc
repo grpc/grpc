@@ -2290,6 +2290,7 @@ grpc_error_handle DownstreamTlsContextParse(
   }
   auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+  std::vector<grpc_error_handle> errors;
   if (typed_config != nullptr) {
     const upb_strview encoded_downstream_tls_context =
         google_protobuf_Any_value(typed_config);
@@ -2308,7 +2309,7 @@ grpc_error_handle DownstreamTlsContextParse(
       grpc_error_handle error =
           CommonTlsContextParse(context, common_tls_context,
                                 &downstream_tls_context->common_tls_context);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
     auto* require_client_certificate =
         envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
@@ -2317,23 +2318,38 @@ grpc_error_handle DownstreamTlsContextParse(
       downstream_tls_context->require_client_certificate =
           google_protobuf_BoolValue_value(require_client_certificate);
     }
+    auto* require_sni =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
+            downstream_tls_context_proto);
+    if (require_sni != nullptr &&
+        google_protobuf_BoolValue_value(require_sni)) {
+      errors.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("require_sni: unsupported"));
+    }
+    if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
+            downstream_tls_context_proto) !=
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
+    }
   }
   if (downstream_tls_context->common_tls_context
           .tls_certificate_certificate_provider_instance.instance_name
           .empty()) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "TLS configuration provided but no "
-        "tls_certificate_certificate_provider_instance found.");
+        "tls_certificate_certificate_provider_instance found."));
   }
   if (downstream_tls_context->require_client_certificate &&
       downstream_tls_context->common_tls_context.combined_validation_context
           .validation_context_certificate_provider_instance.instance_name
           .empty()) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "TLS configuration requires client certificates but no certificate "
-        "provider instance specified for validation.");
+        "provider instance specified for validation."));
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing DownstreamTlsContext",
+                                       &errors);
 }
 
 grpc_error_handle CidrRangeParse(
@@ -2424,67 +2440,73 @@ grpc_error_handle FilterChainParse(
     const EncodingContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     FilterChain* filter_chain) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  std::vector<grpc_error_handle> errors;
   auto* filter_chain_match =
       envoy_config_listener_v3_FilterChain_filter_chain_match(
           filter_chain_proto);
   if (filter_chain_match != nullptr) {
-    error = FilterChainMatchParse(filter_chain_match,
-                                  &filter_chain->filter_chain_match);
-    if (error != GRPC_ERROR_NONE) return error;
+    grpc_error_handle error = FilterChainMatchParse(
+        filter_chain_match, &filter_chain->filter_chain_match);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
   auto* filters =
       envoy_config_listener_v3_FilterChain_filters(filter_chain_proto, &size);
   if (size != 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "FilterChain should have exactly one filter: HttpConnectionManager; no "
-        "other filter is supported at the moment");
+        "other filter is supported at the moment"));
+  } else {
+    auto* typed_config =
+        envoy_config_listener_v3_Filter_typed_config(filters[0]);
+    if (typed_config == nullptr) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No typed_config found in filter."));
+    } else {
+      absl::string_view type_url =
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+      if (type_url !=
+          "type.googleapis.com/"
+          "envoy.extensions.filters.network.http_connection_manager.v3."
+          "HttpConnectionManager") {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("Unsupported filter type ", type_url).c_str()));
+      } else {
+        const upb_strview encoded_http_connection_manager =
+            google_protobuf_Any_value(typed_config);
+        const auto* http_connection_manager =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
+                encoded_http_connection_manager.data,
+                encoded_http_connection_manager.size, context.arena);
+        if (http_connection_manager == nullptr) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Could not parse HttpConnectionManager config from filter "
+              "typed_config"));
+        } else {
+          filter_chain->filter_chain_data =
+              std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
+          grpc_error_handle error = HttpConnectionManagerParse(
+              false /* is_client */, context, http_connection_manager, is_v2,
+              &filter_chain->filter_chain_data->http_connection_manager);
+          if (error != GRPC_ERROR_NONE) errors.push_back(error);
+        }
+      }
+    }
   }
-  auto* typed_config = envoy_config_listener_v3_Filter_typed_config(filters[0]);
-  if (typed_config == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No typed_config found in filter.");
-  }
-  absl::string_view type_url =
-      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
-  if (type_url !=
-      "type.googleapis.com/"
-      "envoy.extensions.filters.network.http_connection_manager.v3."
-      "HttpConnectionManager") {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Unsupported filter type ", type_url).c_str());
-  }
-  const upb_strview encoded_http_connection_manager =
-      google_protobuf_Any_value(typed_config);
-  const auto* http_connection_manager =
-      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
-          encoded_http_connection_manager.data,
-          encoded_http_connection_manager.size, context.arena);
-  if (http_connection_manager == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Could not parse HttpConnectionManager config from filter "
-        "typed_config");
-  }
-  filter_chain->filter_chain_data =
-      std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
-  error = HttpConnectionManagerParse(
-      false /* is_client */, context, http_connection_manager, is_v2,
-      &filter_chain->filter_chain_data->http_connection_manager);
-  if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
   if (XdsSecurityEnabled()) {
     auto* transport_socket =
         envoy_config_listener_v3_FilterChain_transport_socket(
             filter_chain_proto);
     if (transport_socket != nullptr) {
-      error = DownstreamTlsContextParse(
+      grpc_error_handle error = DownstreamTlsContextParse(
           context, transport_socket,
           &filter_chain->filter_chain_data->downstream_tls_context);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
   }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing FilterChain", &errors);
 }
 
 grpc_error_handle AddressParse(
