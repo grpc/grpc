@@ -212,7 +212,7 @@ class Activity : private Wakeable {
   Handle* handle_ ABSL_GUARDED_BY(mu_) = nullptr;
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
-  static thread_local Activity* g_current_activity_;
+  static GPR_THREAD_LOCAL(Activity*) g_current_activity_;
 };
 
 // Owned pointer to one Activity.
